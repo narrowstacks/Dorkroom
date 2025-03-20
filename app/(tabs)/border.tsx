@@ -14,6 +14,21 @@ import {
 } from "react-native";
 import { Switch } from "react-native";
 
+// Add window dimension hook
+const useWindowDimensions = () => {
+  const [dimensions, setDimensions] = useState(() => Dimensions.get("window"));
+
+  React.useEffect(() => {
+    const subscription = Dimensions.addEventListener("change", ({ window }) => {
+      setDimensions(window);
+    });
+
+    return () => subscription?.remove();
+  }, []);
+
+  return dimensions;
+};
+
 // Common aspect ratios
 const ASPECT_RATIOS = [
   {
@@ -162,9 +177,12 @@ const SelectList = ({
 };
 
 export default function BorderCalculator() {
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width > 768;
+
   // Form state
   const [aspectRatio, setAspectRatio] = useState(ASPECT_RATIOS[0].value);
-  const [paperSize, setPaperSize] = useState(PAPER_SIZES[0].value);
+  const [paperSize, setPaperSize] = useState(PAPER_SIZES[3].value);
   const [customAspectWidth, setCustomAspectWidth] = useState("");
   const [customAspectHeight, setCustomAspectHeight] = useState("");
   const [customPaperWidth, setCustomPaperWidth] = useState("");
@@ -174,8 +192,11 @@ export default function BorderCalculator() {
   const [horizontalOffset, setHorizontalOffset] = useState("0");
   const [verticalOffset, setVerticalOffset] = useState("0");
   const [showBlades, setShowBlades] = useState(false);
-  const [isLandscape, setIsLandscape] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(true);
   const [isRatioFlipped, setIsRatioFlipped] = useState(false);
+  const [offsetWarning, setOffsetWarning] = useState<string | null>(null);
+  const [clampedHorizontalOffset, setClampedHorizontalOffset] = useState(0);
+  const [clampedVerticalOffset, setClampedVerticalOffset] = useState(0);
 
   // Calculate dimensions and borders
   const calculation = useMemo(() => {
@@ -216,10 +237,10 @@ export default function BorderCalculator() {
 
     // Calculate print size to fit within paper with minimum borders
     const minBorderValue = parseFloat(minBorder) || 0;
-    const horizontalOffsetValue = enableOffset
+    let horizontalOffsetValue = enableOffset
       ? parseFloat(horizontalOffset) || 0
       : 0;
-    const verticalOffsetValue = enableOffset
+    let verticalOffsetValue = enableOffset
       ? parseFloat(verticalOffset) || 0
       : 0;
 
@@ -238,6 +259,45 @@ export default function BorderCalculator() {
       // Width limited
       printWidth = availableWidth;
       printHeight = availableWidth / printRatio;
+    }
+
+    // Calculate maximum allowed offsets to maintain minimum borders
+    const maxHorizontalOffset = Math.min(
+      (paperWidth - printWidth) / 2 - minBorderValue,
+      (paperWidth - printWidth) / 2
+    );
+    const maxVerticalOffset = Math.min(
+      (paperHeight - printHeight) / 2 - minBorderValue,
+      (paperHeight - printHeight) / 2
+    );
+
+    // Clamp offset values within allowed range
+    horizontalOffsetValue = Math.max(
+      -maxHorizontalOffset,
+      Math.min(maxHorizontalOffset, horizontalOffsetValue)
+    );
+    verticalOffsetValue = Math.max(
+      -maxVerticalOffset,
+      Math.min(maxVerticalOffset, verticalOffsetValue)
+    );
+
+    // Update clamped values in state
+    setClampedHorizontalOffset(horizontalOffsetValue);
+    setClampedVerticalOffset(verticalOffsetValue);
+
+    // Set warning message if offsets were clamped
+    const originalHorizontal = parseFloat(horizontalOffset) || 0;
+    const originalVertical = parseFloat(verticalOffset) || 0;
+
+    if (
+      originalHorizontal !== horizontalOffsetValue ||
+      originalVertical !== verticalOffsetValue
+    ) {
+      setOffsetWarning(
+        "Offset values have been adjusted to maintain minimum borders and stay within paper bounds"
+      );
+    } else {
+      setOffsetWarning(null);
     }
 
     const leftBorder = (paperWidth - printWidth) / 2 + horizontalOffsetValue;
@@ -294,11 +354,16 @@ export default function BorderCalculator() {
         <View
           style={[
             styles.mainContent,
-            Platform.OS === "web" && styles.webMainContent,
+            Platform.OS === "web" && isDesktop && styles.webMainContent,
           ]}
         >
           {/* Left Column - Form */}
-          <View style={[styles.form, Platform.OS === "web" && styles.webForm]}>
+          <View
+            style={[
+              styles.form,
+              Platform.OS === "web" && isDesktop && styles.webForm,
+            ]}
+          >
             {/* Aspect Ratio Selection */}
             <View style={styles.formGroup}>
               <Text style={styles.label}>aspect ratio:</Text>
@@ -403,7 +468,13 @@ export default function BorderCalculator() {
                   <View style={styles.inputGroup}>
                     <Text style={styles.label}>horizontal offset:</Text>
                     <TextInput
-                      style={styles.input}
+                      style={[
+                        styles.input,
+                        offsetWarning &&
+                          parseFloat(horizontalOffset) !==
+                            clampedHorizontalOffset &&
+                          styles.inputWarning,
+                      ]}
                       value={horizontalOffset}
                       onChangeText={setHorizontalOffset}
                       keyboardType="numeric"
@@ -413,7 +484,13 @@ export default function BorderCalculator() {
                   <View style={styles.inputGroup}>
                     <Text style={styles.label}>vertical offset:</Text>
                     <TextInput
-                      style={styles.input}
+                      style={[
+                        styles.input,
+                        offsetWarning &&
+                          parseFloat(verticalOffset) !==
+                            clampedVerticalOffset &&
+                          styles.inputWarning,
+                      ]}
                       value={verticalOffset}
                       onChangeText={setVerticalOffset}
                       keyboardType="numeric"
@@ -421,6 +498,9 @@ export default function BorderCalculator() {
                     />
                   </View>
                 </View>
+                {offsetWarning && (
+                  <Text style={styles.warningText}>{offsetWarning}</Text>
+                )}
               </View>
             )}
 
@@ -438,7 +518,7 @@ export default function BorderCalculator() {
             <View
               style={[
                 styles.previewSection,
-                Platform.OS === "web" && styles.webPreviewSection,
+                Platform.OS === "web" && isDesktop && styles.webPreviewSection,
               ]}
             >
               <View
@@ -612,6 +692,7 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: 16,
+    width: "100%",
   },
   formGroup: {
     gap: 8,
@@ -657,6 +738,8 @@ const styles = StyleSheet.create({
   previewSection: {
     gap: 16,
     alignItems: "center",
+    width: "100%",
+    marginTop: Platform.OS === "web" ? 32 : 16,
   },
   paperPreview: {
     backgroundColor: "#fff",
@@ -807,7 +890,17 @@ const styles = StyleSheet.create({
   webPreviewSection: {
     flex: 1,
     alignSelf: "stretch",
-    gap: 24,
+    marginTop: 0,
+  },
+  inputWarning: {
+    borderColor: "#FFA500",
+    borderWidth: 2,
+  },
+  warningText: {
+    color: "#FFA500",
+    fontSize: 14,
+    marginTop: 4,
+    textAlign: "center",
   },
   webSelect: {
     height: 48,
