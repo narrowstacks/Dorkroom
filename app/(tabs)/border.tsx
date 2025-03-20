@@ -1,33 +1,18 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React from "react";
 import {
   StyleSheet,
   View,
   ScrollView,
   Platform,
-  Dimensions,
   Pressable,
-  Modal,
-  TouchableOpacity,
-  TextInput,
-  TextInputProps,
   Text,
+  TextInput,
+  Switch,
 } from "react-native";
-import { Switch } from "react-native";
-
-// Add window dimension hook
-const useWindowDimensions = () => {
-  const [dimensions, setDimensions] = useState(() => Dimensions.get("window"));
-
-  React.useEffect(() => {
-    const subscription = Dimensions.addEventListener("change", ({ window }) => {
-      setDimensions(window);
-    });
-
-    return () => subscription?.remove();
-  }, []);
-
-  return dimensions;
-};
+import { SelectList } from "../components/SelectList";
+import { useWindowDimensions } from "../hooks/useWindowDimensions";
+import { useBorderCalculator } from "../hooks/useBorderCalculator";
+import { BLADE_THICKNESS } from "../constants/border";
 
 // Common aspect ratios
 const ASPECT_RATIOS = [
@@ -60,287 +45,43 @@ const PAPER_SIZES = [
   { label: "custom", value: "custom" },
 ];
 
-// UI Constants
-const BLADE_THICKNESS = 15;
-
-interface BorderCalculation {
-  leftBorder: number;
-  rightBorder: number;
-  topBorder: number;
-  bottomBorder: number;
-  printWidth: number;
-  printHeight: number;
-  paperWidth: number;
-  paperHeight: number;
-}
-
-// Custom SelectList component
-const SelectList = ({
-  value,
-  onValueChange,
-  items,
-  placeholder,
-}: {
-  value: string;
-  onValueChange: (value: string) => void;
-  items: { label: string; value: string }[];
-  placeholder?: string;
-}) => {
-  const [modalVisible, setModalVisible] = useState(false);
-  const selectedItem = items.find((item) => item.value === value);
-
-  // Use native select on web
-  if (Platform.OS === "web") {
-    return (
-      <select
-        value={value}
-        onChange={(e) => onValueChange(e.target.value)}
-        style={{
-          ...styles.webSelect,
-          appearance: "none",
-          WebkitAppearance: "none",
-          MozAppearance: "none",
-          backgroundImage:
-            'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.4-12.8z%22%2F%3E%3C%2Fsvg%3E")',
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "right 12px top 50%",
-          backgroundSize: "12px auto",
-          cursor: "pointer",
-        }}
-      >
-        {items.map((item) => (
-          <option key={item.value} value={item.value}>
-            {item.label}
-          </option>
-        ))}
-      </select>
-    );
-  }
-
-  return (
-    <>
-      <TouchableOpacity
-        style={styles.selectButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <Text style={styles.selectButtonText}>
-          {selectedItem?.label || placeholder || "Select an option"}
-        </Text>
-      </TouchableOpacity>
-
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {placeholder || "Select an option"}
-            </Text>
-            <ScrollView>
-              {items.map((item) => (
-                <TouchableOpacity
-                  key={item.value}
-                  style={[
-                    styles.modalOption,
-                    item.value === value && styles.modalOptionSelected,
-                  ]}
-                  onPress={() => {
-                    onValueChange(item.value);
-                    setModalVisible(false);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.modalOptionText,
-                      item.value === value && styles.modalOptionTextSelected,
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.modalCloseButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    </>
-  );
-};
-
 export default function BorderCalculator() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
 
-  // Form state
-  const [aspectRatio, setAspectRatio] = useState(ASPECT_RATIOS[0].value);
-  const [paperSize, setPaperSize] = useState(PAPER_SIZES[3].value);
-  const [customAspectWidth, setCustomAspectWidth] = useState("");
-  const [customAspectHeight, setCustomAspectHeight] = useState("");
-  const [customPaperWidth, setCustomPaperWidth] = useState("");
-  const [customPaperHeight, setCustomPaperHeight] = useState("");
-  const [minBorder, setMinBorder] = useState("0.5");
-  const [enableOffset, setEnableOffset] = useState(false);
-  const [horizontalOffset, setHorizontalOffset] = useState("0");
-  const [verticalOffset, setVerticalOffset] = useState("0");
-  const [showBlades, setShowBlades] = useState(false);
-  const [isLandscape, setIsLandscape] = useState(true);
-  const [isRatioFlipped, setIsRatioFlipped] = useState(false);
-  const [offsetWarning, setOffsetWarning] = useState<string | null>(null);
-  const [clampedHorizontalOffset, setClampedHorizontalOffset] = useState(0);
-  const [clampedVerticalOffset, setClampedVerticalOffset] = useState(0);
-
-  // Calculate dimensions and borders
-  const calculation = useMemo(() => {
-    let paperWidth: number;
-    let paperHeight: number;
-    let ratioWidth: number;
-    let ratioHeight: number;
-
-    // Get paper dimensions
-    if (paperSize === "custom") {
-      paperWidth = parseFloat(customPaperWidth) || 0;
-      paperHeight = parseFloat(customPaperHeight) || 0;
-    } else {
-      const selectedPaper = PAPER_SIZES.find((p) => p.value === paperSize);
-      paperWidth = selectedPaper?.width ?? 0;
-      paperHeight = selectedPaper?.height ?? 0;
-    }
-
-    // Get aspect ratio dimensions
-    if (aspectRatio === "custom") {
-      ratioWidth = parseFloat(customAspectWidth) || 0;
-      ratioHeight = parseFloat(customAspectHeight) || 0;
-    } else {
-      const selectedRatio = ASPECT_RATIOS.find((r) => r.value === aspectRatio);
-      ratioWidth = selectedRatio?.width ?? 0;
-      ratioHeight = selectedRatio?.height ?? 0;
-    }
-
-    // Apply orientation
-    if (isLandscape) {
-      [paperWidth, paperHeight] = [paperHeight, paperWidth];
-    }
-
-    // Apply ratio flip
-    if (isRatioFlipped) {
-      [ratioWidth, ratioHeight] = [ratioHeight, ratioWidth];
-    }
-
-    // Calculate print size to fit within paper with minimum borders
-    const minBorderValue = parseFloat(minBorder) || 0;
-    let horizontalOffsetValue = enableOffset
-      ? parseFloat(horizontalOffset) || 0
-      : 0;
-    let verticalOffsetValue = enableOffset
-      ? parseFloat(verticalOffset) || 0
-      : 0;
-
-    const availableWidth = paperWidth - 2 * minBorderValue;
-    const availableHeight = paperHeight - 2 * minBorderValue;
-    const printRatio = ratioWidth / ratioHeight;
-
-    let printWidth: number;
-    let printHeight: number;
-
-    if (availableWidth / availableHeight > printRatio) {
-      // Height limited
-      printHeight = availableHeight;
-      printWidth = availableHeight * printRatio;
-    } else {
-      // Width limited
-      printWidth = availableWidth;
-      printHeight = availableWidth / printRatio;
-    }
-
-    // Calculate maximum allowed offsets to maintain minimum borders
-    const maxHorizontalOffset = Math.min(
-      (paperWidth - printWidth) / 2 - minBorderValue,
-      (paperWidth - printWidth) / 2
-    );
-    const maxVerticalOffset = Math.min(
-      (paperHeight - printHeight) / 2 - minBorderValue,
-      (paperHeight - printHeight) / 2
-    );
-
-    // Clamp offset values within allowed range
-    horizontalOffsetValue = Math.max(
-      -maxHorizontalOffset,
-      Math.min(maxHorizontalOffset, horizontalOffsetValue)
-    );
-    verticalOffsetValue = Math.max(
-      -maxVerticalOffset,
-      Math.min(maxVerticalOffset, verticalOffsetValue)
-    );
-
-    // Update clamped values in state
-    setClampedHorizontalOffset(horizontalOffsetValue);
-    setClampedVerticalOffset(verticalOffsetValue);
-
-    // Set warning message if offsets were clamped
-    const originalHorizontal = parseFloat(horizontalOffset) || 0;
-    const originalVertical = parseFloat(verticalOffset) || 0;
-
-    if (
-      originalHorizontal !== horizontalOffsetValue ||
-      originalVertical !== verticalOffsetValue
-    ) {
-      setOffsetWarning(
-        "Offset values have been adjusted to maintain minimum borders and stay within paper bounds"
-      );
-    } else {
-      setOffsetWarning(null);
-    }
-
-    const leftBorder = (paperWidth - printWidth) / 2 + horizontalOffsetValue;
-    const rightBorder = (paperWidth - printWidth) / 2 - horizontalOffsetValue;
-    const topBorder = (paperHeight - printHeight) / 2 + verticalOffsetValue;
-    const bottomBorder = (paperHeight - printHeight) / 2 - verticalOffsetValue;
-
-    return {
-      leftBorder,
-      rightBorder,
-      topBorder,
-      bottomBorder,
-      printWidth,
-      printHeight,
-      paperWidth,
-      paperHeight,
-    };
-  }, [
-    paperSize,
-    customPaperWidth,
-    customPaperHeight,
+  const {
     aspectRatio,
+    setAspectRatio,
+    paperSize,
+    setPaperSize,
     customAspectWidth,
+    setCustomAspectWidth,
     customAspectHeight,
+    setCustomAspectHeight,
+    customPaperWidth,
+    setCustomPaperWidth,
+    customPaperHeight,
+    setCustomPaperHeight,
     minBorder,
-    horizontalOffset,
-    verticalOffset,
-    isLandscape,
-    isRatioFlipped,
+    setMinBorder,
     enableOffset,
-  ]);
-
-  // Preview scaling
-  const previewScale = useMemo(() => {
-    if (!calculation) return 1;
-    const { width } = Dimensions.get("window");
-    const maxPreviewWidth = Math.min(width - 32, 400);
-    const selectedPaper = PAPER_SIZES.find((p) => p.value === paperSize);
-    const paperWidth = isLandscape
-      ? selectedPaper?.height ?? (parseFloat(customPaperHeight) || 0)
-      : selectedPaper?.width ?? (parseFloat(customPaperWidth) || 0);
-    return maxPreviewWidth / (paperWidth || 1);
-  }, [paperSize, customPaperWidth, customPaperHeight, isLandscape]);
+    setEnableOffset,
+    horizontalOffset,
+    setHorizontalOffset,
+    verticalOffset,
+    setVerticalOffset,
+    showBlades,
+    setShowBlades,
+    isLandscape,
+    setIsLandscape,
+    isRatioFlipped,
+    setIsRatioFlipped,
+    offsetWarning,
+    clampedHorizontalOffset,
+    clampedVerticalOffset,
+    calculation,
+    previewScale,
+  } = useBorderCalculator();
 
   return (
     <ScrollView style={styles.container}>
@@ -525,22 +266,8 @@ export default function BorderCalculator() {
                 style={[
                   styles.paperPreview,
                   {
-                    width:
-                      (isLandscape
-                        ? PAPER_SIZES.find((p) => p.value === paperSize)
-                            ?.height ??
-                          (parseFloat(customPaperHeight) || 0)
-                        : PAPER_SIZES.find((p) => p.value === paperSize)
-                            ?.width ??
-                          (parseFloat(customPaperWidth) || 0)) * previewScale,
-                    height:
-                      (isLandscape
-                        ? PAPER_SIZES.find((p) => p.value === paperSize)
-                            ?.width ??
-                          (parseFloat(customPaperWidth) || 0)
-                        : PAPER_SIZES.find((p) => p.value === paperSize)
-                            ?.height ??
-                          (parseFloat(customPaperHeight) || 0)) * previewScale,
+                    width: calculation.paperWidth * previewScale,
+                    height: calculation.paperHeight * previewScale,
                   },
                 ]}
               >
@@ -622,46 +349,57 @@ export default function BorderCalculator() {
 
               <View style={styles.resultContainer}>
                 <Text style={styles.subtitle}>result</Text>
-                <Text style={styles.resultText}>
-                  image dimensions: {calculation.printWidth.toFixed(2)} x{" "}
-                  {calculation.printHeight.toFixed(2)} inches
-                </Text>
-                <Text style={styles.resultText}>
-                  left blade:{" "}
-                  {(
-                    calculation.printWidth +
-                    calculation.leftBorder -
-                    calculation.rightBorder
-                  ).toFixed(2)}{" "}
-                  inches
-                </Text>
-                <Text style={styles.resultText}>
-                  right blade:{" "}
-                  {(
-                    calculation.printWidth -
-                    calculation.leftBorder +
-                    calculation.rightBorder
-                  ).toFixed(2)}{" "}
-                  inches
-                </Text>
-                <Text style={styles.resultText}>
-                  top blade:{" "}
-                  {(
-                    calculation.printHeight +
-                    calculation.topBorder -
-                    calculation.bottomBorder
-                  ).toFixed(2)}{" "}
-                  inches
-                </Text>
-                <Text style={styles.resultText}>
-                  bottom blade:{" "}
-                  {(
-                    calculation.printHeight -
-                    calculation.topBorder +
-                    calculation.bottomBorder
-                  ).toFixed(2)}{" "}
-                  inches
-                </Text>
+                <View style={styles.resultRow}>
+                  <Text style={styles.resultLabel}>image dimensions:</Text>
+                  <Text style={styles.resultValue}>
+                    {calculation.printWidth.toFixed(2)} x{" "}
+                    {calculation.printHeight.toFixed(2)} inches
+                  </Text>
+                </View>
+                <View style={styles.resultRow}>
+                  <Text style={styles.resultLabel}>left blade:</Text>
+                  <Text style={styles.resultValue}>
+                    {(
+                      calculation.printWidth +
+                      calculation.leftBorder -
+                      calculation.rightBorder
+                    ).toFixed(2)}{" "}
+                    inches
+                  </Text>
+                </View>
+                <View style={styles.resultRow}>
+                  <Text style={styles.resultLabel}>right blade:</Text>
+                  <Text style={styles.resultValue}>
+                    {(
+                      calculation.printWidth -
+                      calculation.leftBorder +
+                      calculation.rightBorder
+                    ).toFixed(2)}{" "}
+                    inches
+                  </Text>
+                </View>
+                <View style={styles.resultRow}>
+                  <Text style={styles.resultLabel}>top blade:</Text>
+                  <Text style={styles.resultValue}>
+                    {(
+                      calculation.printHeight +
+                      calculation.topBorder -
+                      calculation.bottomBorder
+                    ).toFixed(2)}{" "}
+                    inches
+                  </Text>
+                </View>
+                <View style={styles.resultRow}>
+                  <Text style={styles.resultLabel}>bottom blade:</Text>
+                  <Text style={styles.resultValue}>
+                    {(
+                      calculation.printHeight -
+                      calculation.topBorder +
+                      calculation.bottomBorder
+                    ).toFixed(2)}{" "}
+                    inches
+                  </Text>
+                </View>
               </View>
             </View>
           )}
@@ -705,21 +443,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     color: "#000",
-  },
-  pickerContainer: {
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  picker: {
-    width: "100%",
-    ...Platform.select({
-      ios: {
-        height: 120,
-      },
-      android: {
-        height: 50,
-      },
-    }),
   },
   inputGroup: {
     flex: 1,
@@ -792,75 +515,36 @@ const styles = StyleSheet.create({
   resultContainer: {
     alignItems: "center",
     gap: 8,
+    width: "100%",
+    maxWidth: 400,
   },
-  resultText: {
+  resultRow: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-between",
+    gap: 16,
+  },
+  resultLabel: {
     fontSize: 16,
     color: "#000",
-    textAlign: "center",
+    textAlign: "right",
     fontFamily: Platform.select({
       ios: "Menlo",
       android: "monospace",
       web: "monospace",
     }),
-  },
-  selectButton: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    justifyContent: "center",
-    backgroundColor: "#fff",
-  },
-  selectButtonText: {
-    fontSize: 16,
-    color: "#000",
-  },
-  modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
   },
-  modalContent: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    padding: 16,
-    maxHeight: "80%",
-    backgroundColor: "#fff",
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 16,
-    textAlign: "center",
-    color: "#000",
-  },
-  modalOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  modalOptionSelected: {
-    backgroundColor: "#4CAF50",
-  },
-  modalOptionText: {
+  resultValue: {
     fontSize: 16,
     color: "#000",
-  },
-  modalOptionTextSelected: {
-    color: "#fff",
-  },
-  modalCloseButton: {
-    marginTop: 16,
-    paddingVertical: 12,
-    alignItems: "center",
-    backgroundColor: "#ccc",
-    borderRadius: 8,
-  },
-  modalCloseButtonText: {
-    fontSize: 16,
-    color: "#fff",
-    fontWeight: "600",
+    textAlign: "left",
+    fontFamily: Platform.select({
+      ios: "Menlo",
+      android: "monospace",
+      web: "monospace",
+    }),
+    flex: 1,
   },
   header: {
     flexDirection: "row",
@@ -901,16 +585,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4,
     textAlign: "center",
-  },
-  webSelect: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    color: "#000",
-    backgroundColor: "#fff",
-    width: "100%",
   },
 });
