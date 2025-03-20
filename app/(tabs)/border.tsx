@@ -5,14 +5,16 @@ import {
   ScrollView,
   Platform,
   Pressable,
-  Text,
   TextInput,
   Switch,
 } from "react-native";
-import { SelectList } from "../components/SelectList";
-import { useWindowDimensions } from "../hooks/useWindowDimensions";
-import { useBorderCalculator } from "../hooks/useBorderCalculator";
-import { BLADE_THICKNESS } from "../constants/border";
+import { SelectList } from "@/components/SelectList";
+import { useWindowDimensions } from "@/hooks/useWindowDimensions";
+import { useBorderCalculator } from "@/hooks/useBorderCalculator";
+import { BLADE_THICKNESS } from "@/constants/border";
+import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 // Common aspect ratios
 const ASPECT_RATIOS = [
@@ -48,6 +50,10 @@ const PAPER_SIZES = [
 export default function BorderCalculator() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
+  const backgroundColor = useThemeColor({}, "background");
+  const textColor = useThemeColor({}, "text");
+  const borderColor = useThemeColor({}, "icon");
+  const tintColor = useThemeColor({}, "tint");
 
   const {
     aspectRatio,
@@ -84,133 +90,154 @@ export default function BorderCalculator() {
   } = useBorderCalculator();
 
   return (
-    <ScrollView style={styles.container}>
-      <View
+    <ScrollView style={[styles.container, { backgroundColor }]}>
+      <ThemedView
         style={[styles.content, Platform.OS === "web" && styles.webContent]}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>border calculator</Text>
-        </View>
+        <ThemedView style={styles.header}>
+          <ThemedText type="large" style={styles.title}>
+            border calculator
+          </ThemedText>
+        </ThemedView>
 
-        <View
+        <ThemedView
           style={[
             styles.mainContent,
             Platform.OS === "web" && isDesktop && styles.webMainContent,
           ]}
         >
           {/* Left Column - Form */}
-          <View
+          <ThemedView
             style={[
               styles.form,
               Platform.OS === "web" && isDesktop && styles.webForm,
             ]}
           >
             {/* Aspect Ratio Selection */}
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>aspect ratio:</Text>
+            <ThemedView style={styles.formGroup}>
+              <ThemedText style={styles.label}>aspect ratio:</ThemedText>
               <SelectList
                 value={aspectRatio}
                 onValueChange={setAspectRatio}
                 items={ASPECT_RATIOS}
                 placeholder="Select aspect ratio"
               />
-            </View>
+            </ThemedView>
 
             {/* Custom Aspect Ratio Inputs */}
             {aspectRatio === "custom" && (
-              <View style={styles.formGroup}>
-                <View style={styles.row}>
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.label}>width:</Text>
+              <ThemedView style={styles.formGroup}>
+                <ThemedView style={styles.row}>
+                  <ThemedView style={styles.inputGroup}>
+                    <ThemedText style={styles.label}>width:</ThemedText>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, { color: textColor, borderColor }]}
                       value={customAspectWidth}
                       onChangeText={setCustomAspectWidth}
                       keyboardType="numeric"
                       placeholder="Width"
+                      placeholderTextColor={borderColor}
                     />
-                  </View>
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.label}>height:</Text>
+                  </ThemedView>
+                  <ThemedView style={styles.inputGroup}>
+                    <ThemedText style={styles.label}>height:</ThemedText>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, { color: textColor, borderColor }]}
                       value={customAspectHeight}
                       onChangeText={setCustomAspectHeight}
                       keyboardType="numeric"
                       placeholder="Height"
+                      placeholderTextColor={borderColor}
                     />
-                  </View>
-                </View>
-              </View>
+                  </ThemedView>
+                </ThemedView>
+              </ThemedView>
             )}
 
             {/* Paper Size Selection */}
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>paper size:</Text>
+            <ThemedView style={styles.formGroup}>
+              <ThemedText style={styles.label}>paper size:</ThemedText>
               <SelectList
                 value={paperSize}
                 onValueChange={setPaperSize}
                 items={PAPER_SIZES}
                 placeholder="Select paper size"
               />
-            </View>
+            </ThemedView>
 
             {/* Custom Paper Size Inputs */}
             {paperSize === "custom" && (
-              <View style={styles.formGroup}>
-                <View style={styles.row}>
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.label}>width (inches):</Text>
+              <ThemedView style={styles.formGroup}>
+                <ThemedView style={styles.row}>
+                  <ThemedView style={styles.inputGroup}>
+                    <ThemedText style={styles.label}>
+                      width (inches):
+                    </ThemedText>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, { color: textColor, borderColor }]}
                       value={customPaperWidth}
                       onChangeText={setCustomPaperWidth}
                       keyboardType="numeric"
                       placeholder="Width"
+                      placeholderTextColor={borderColor}
                     />
-                  </View>
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.label}>height (inches):</Text>
+                  </ThemedView>
+                  <ThemedView style={styles.inputGroup}>
+                    <ThemedText style={styles.label}>
+                      height (inches):
+                    </ThemedText>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, { color: textColor, borderColor }]}
                       value={customPaperHeight}
                       onChangeText={setCustomPaperHeight}
                       keyboardType="numeric"
                       placeholder="Height"
+                      placeholderTextColor={borderColor}
                     />
-                  </View>
-                </View>
-              </View>
+                  </ThemedView>
+                </ThemedView>
+              </ThemedView>
             )}
 
             {/* Minimum Border Input */}
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>minimum border (inches):</Text>
+            <ThemedView style={styles.formGroup}>
+              <ThemedText style={styles.label}>
+                minimum border (inches):
+              </ThemedText>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: textColor, borderColor }]}
                 value={minBorder}
                 onChangeText={setMinBorder}
                 keyboardType="numeric"
                 placeholder="0.5"
+                placeholderTextColor={borderColor}
               />
-            </View>
+            </ThemedView>
 
             {/* Offset Toggle and Inputs */}
-            <View style={styles.formGroup}>
-              <View style={styles.row}>
-                <Text style={styles.label}>enable offsets:</Text>
-                <Switch value={enableOffset} onValueChange={setEnableOffset} />
-              </View>
-            </View>
+            <ThemedView style={styles.formGroup}>
+              <ThemedView style={styles.row}>
+                <ThemedText style={styles.label}>enable offsets:</ThemedText>
+                <Switch
+                  value={enableOffset}
+                  onValueChange={setEnableOffset}
+                  trackColor={{ false: borderColor, true: tintColor }}
+                  thumbColor={enableOffset ? tintColor : "#f4f3f4"}
+                />
+              </ThemedView>
+            </ThemedView>
 
             {enableOffset && (
-              <View style={styles.formGroup}>
-                <View style={styles.row}>
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.label}>horizontal offset:</Text>
+              <ThemedView style={styles.formGroup}>
+                <ThemedView style={styles.row}>
+                  <ThemedView style={styles.inputGroup}>
+                    <ThemedText style={styles.label}>
+                      horizontal offset:
+                    </ThemedText>
                     <TextInput
                       style={[
                         styles.input,
+                        { color: textColor, borderColor },
                         offsetWarning &&
                           parseFloat(horizontalOffset) !==
                             clampedHorizontalOffset &&
@@ -220,13 +247,17 @@ export default function BorderCalculator() {
                       onChangeText={setHorizontalOffset}
                       keyboardType="numeric"
                       placeholder="0"
+                      placeholderTextColor={borderColor}
                     />
-                  </View>
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.label}>vertical offset:</Text>
+                  </ThemedView>
+                  <ThemedView style={styles.inputGroup}>
+                    <ThemedText style={styles.label}>
+                      vertical offset:
+                    </ThemedText>
                     <TextInput
                       style={[
                         styles.input,
+                        { color: textColor, borderColor },
                         offsetWarning &&
                           parseFloat(verticalOffset) !==
                             clampedVerticalOffset &&
@@ -236,42 +267,51 @@ export default function BorderCalculator() {
                       onChangeText={setVerticalOffset}
                       keyboardType="numeric"
                       placeholder="0"
+                      placeholderTextColor={borderColor}
                     />
-                  </View>
-                </View>
+                  </ThemedView>
+                </ThemedView>
                 {offsetWarning && (
-                  <Text style={styles.warningText}>{offsetWarning}</Text>
+                  <ThemedText style={styles.warningText}>
+                    {offsetWarning}
+                  </ThemedText>
                 )}
-              </View>
+              </ThemedView>
             )}
 
             {/* Blade Toggle */}
-            <View style={styles.formGroup}>
-              <View style={styles.row}>
-                <Text style={styles.label}>show blades:</Text>
-                <Switch value={showBlades} onValueChange={setShowBlades} />
-              </View>
-            </View>
-          </View>
+            <ThemedView style={styles.formGroup}>
+              <ThemedView style={styles.row}>
+                <ThemedText style={styles.label}>show blades:</ThemedText>
+                <Switch
+                  value={showBlades}
+                  onValueChange={setShowBlades}
+                  trackColor={{ false: borderColor, true: tintColor }}
+                  thumbColor={showBlades ? tintColor : "#f4f3f4"}
+                />
+              </ThemedView>
+            </ThemedView>
+          </ThemedView>
 
           {/* Right Column - Preview and Results */}
           {calculation && (
-            <View
+            <ThemedView
               style={[
                 styles.previewSection,
                 Platform.OS === "web" && isDesktop && styles.webPreviewSection,
               ]}
             >
-              <View
+              <ThemedView
                 style={[
                   styles.paperPreview,
                   {
                     width: calculation.paperWidth * previewScale,
                     height: calculation.paperHeight * previewScale,
+                    borderColor,
                   },
                 ]}
               >
-                <View
+                <ThemedView
                   style={[
                     styles.printPreview,
                     {
@@ -279,12 +319,13 @@ export default function BorderCalculator() {
                       height: calculation.printHeight * previewScale,
                       left: calculation.leftBorder * previewScale,
                       top: calculation.topBorder * previewScale,
+                      backgroundColor: borderColor,
                     },
                   ]}
                 />
                 {showBlades && (
                   <>
-                    <View
+                    <ThemedView
                       style={[
                         styles.blade,
                         styles.bladeVertical,
@@ -292,10 +333,11 @@ export default function BorderCalculator() {
                           left:
                             calculation.leftBorder * previewScale -
                             BLADE_THICKNESS,
+                          backgroundColor: borderColor,
                         },
                       ]}
                     />
-                    <View
+                    <ThemedView
                       style={[
                         styles.blade,
                         styles.bladeVertical,
@@ -303,10 +345,11 @@ export default function BorderCalculator() {
                           right:
                             calculation.rightBorder * previewScale -
                             BLADE_THICKNESS,
+                          backgroundColor: borderColor,
                         },
                       ]}
                     />
-                    <View
+                    <ThemedView
                       style={[
                         styles.blade,
                         styles.bladeHorizontal,
@@ -314,10 +357,11 @@ export default function BorderCalculator() {
                           top:
                             calculation.topBorder * previewScale -
                             BLADE_THICKNESS,
+                          backgroundColor: borderColor,
                         },
                       ]}
                     />
-                    <View
+                    <ThemedView
                       style={[
                         styles.blade,
                         styles.bladeHorizontal,
@@ -325,86 +369,101 @@ export default function BorderCalculator() {
                           bottom:
                             calculation.bottomBorder * previewScale -
                             BLADE_THICKNESS,
+                          backgroundColor: borderColor,
                         },
                       ]}
                     />
                   </>
                 )}
-              </View>
+              </ThemedView>
 
-              <View style={styles.buttonContainer}>
+              <ThemedView style={styles.buttonContainer}>
                 <Pressable
-                  style={styles.button}
+                  style={[styles.button, { backgroundColor: tintColor }]}
                   onPress={() => setIsLandscape(!isLandscape)}
                 >
-                  <Text style={styles.buttonText}>flip paper orientation</Text>
+                  <ThemedText style={styles.buttonText}>
+                    flip paper orientation
+                  </ThemedText>
                 </Pressable>
                 <Pressable
-                  style={styles.button}
+                  style={[styles.button, { backgroundColor: tintColor }]}
                   onPress={() => setIsRatioFlipped(!isRatioFlipped)}
                 >
-                  <Text style={styles.buttonText}>flip aspect ratio</Text>
+                  <ThemedText style={styles.buttonText}>
+                    flip aspect ratio
+                  </ThemedText>
                 </Pressable>
-              </View>
+              </ThemedView>
 
-              <View style={styles.resultContainer}>
-                <Text style={styles.subtitle}>result</Text>
-                <View style={styles.resultRow}>
-                  <Text style={styles.resultLabel}>image dimensions:</Text>
-                  <Text style={styles.resultValue}>
+              <ThemedView style={styles.resultContainer}>
+                <ThemedText type="largeSemiBold" style={styles.subtitle}>
+                  result
+                </ThemedText>
+                <ThemedView style={styles.resultRow}>
+                  <ThemedText style={styles.resultLabel}>
+                    image dimensions:
+                  </ThemedText>
+                  <ThemedText style={styles.resultValue}>
                     {calculation.printWidth.toFixed(2)} x{" "}
                     {calculation.printHeight.toFixed(2)} inches
-                  </Text>
-                </View>
-                <View style={styles.resultRow}>
-                  <Text style={styles.resultLabel}>left blade:</Text>
-                  <Text style={styles.resultValue}>
+                  </ThemedText>
+                </ThemedView>
+                <ThemedView style={styles.resultRow}>
+                  <ThemedText style={styles.resultLabel}>
+                    left blade:
+                  </ThemedText>
+                  <ThemedText style={styles.resultValue}>
                     {(
                       calculation.printWidth +
                       calculation.leftBorder -
                       calculation.rightBorder
                     ).toFixed(2)}{" "}
                     inches
-                  </Text>
-                </View>
-                <View style={styles.resultRow}>
-                  <Text style={styles.resultLabel}>right blade:</Text>
-                  <Text style={styles.resultValue}>
+                  </ThemedText>
+                </ThemedView>
+                <ThemedView style={styles.resultRow}>
+                  <ThemedText style={styles.resultLabel}>
+                    right blade:
+                  </ThemedText>
+                  <ThemedText style={styles.resultValue}>
                     {(
                       calculation.printWidth -
                       calculation.leftBorder +
                       calculation.rightBorder
                     ).toFixed(2)}{" "}
                     inches
-                  </Text>
-                </View>
-                <View style={styles.resultRow}>
-                  <Text style={styles.resultLabel}>top blade:</Text>
-                  <Text style={styles.resultValue}>
+                  </ThemedText>
+                </ThemedView>
+                <ThemedView style={styles.resultRow}>
+                  <ThemedText style={styles.resultLabel}>top blade:</ThemedText>
+                  <ThemedText style={styles.resultValue}>
                     {(
                       calculation.printHeight +
                       calculation.topBorder -
                       calculation.bottomBorder
                     ).toFixed(2)}{" "}
                     inches
-                  </Text>
-                </View>
-                <View style={styles.resultRow}>
-                  <Text style={styles.resultLabel}>bottom blade:</Text>
-                  <Text style={styles.resultValue}>
+                  </ThemedText>
+                </ThemedView>
+                <ThemedView style={styles.resultRow}>
+                  <ThemedText style={styles.resultLabel}>
+                    bottom blade:
+                  </ThemedText>
+                  <ThemedText style={styles.resultValue}>
                     {(
                       calculation.printHeight -
                       calculation.topBorder +
                       calculation.bottomBorder
                     ).toFixed(2)}{" "}
                     inches
-                  </Text>
-                </View>
-              </View>
-            </View>
+                  </ThemedText>
+                </ThemedView>
+              </ThemedView>
+            </ThemedView>
           )}
-        </View>
-      </View>
+        </ThemedView>
+      </ThemedView>
     </ScrollView>
   );
 }
@@ -412,7 +471,6 @@ export default function BorderCalculator() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   content: {
     padding: 16,
@@ -421,12 +479,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     textAlign: "center",
-    color: "#000",
   },
   subtitle: {
     fontSize: 20,
-    fontWeight: "600",
-    color: "#000",
   },
   form: {
     gap: 16,
@@ -442,7 +497,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    color: "#000",
   },
   inputGroup: {
     flex: 1,
@@ -451,12 +505,9 @@ const styles = StyleSheet.create({
   input: {
     height: 40,
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 8,
     paddingHorizontal: 12,
     fontSize: 16,
-    color: "#000",
-    backgroundColor: "#fff",
   },
   previewSection: {
     gap: 16,
@@ -465,18 +516,14 @@ const styles = StyleSheet.create({
     marginTop: Platform.OS === "web" ? 32 : 16,
   },
   paperPreview: {
-    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#ccc",
     position: "relative",
   },
   printPreview: {
     position: "absolute",
-    backgroundColor: "#8d8d8d",
   },
   blade: {
     position: "absolute",
-    backgroundColor: "#333333",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -503,7 +550,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   button: {
-    backgroundColor: "#4CAF50",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -526,7 +572,6 @@ const styles = StyleSheet.create({
   },
   resultLabel: {
     fontSize: 16,
-    color: "#000",
     textAlign: "right",
     fontFamily: Platform.select({
       ios: "Menlo",
@@ -537,7 +582,6 @@ const styles = StyleSheet.create({
   },
   resultValue: {
     fontSize: 16,
-    color: "#000",
     textAlign: "left",
     fontFamily: Platform.select({
       ios: "Menlo",
