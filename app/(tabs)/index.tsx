@@ -1,74 +1,229 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import {
+  StyleSheet,
+  Platform,
+  Image,
+  Linking,
+  Pressable,
+  Dimensions,
+  ScrollView,
+} from "react-native";
+import { Link } from "expo-router";
+import { ReactNode, useEffect, useState } from "react";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { ExternalLink } from "@/components/ExternalLink";
+
+// Add window dimension hook
+const useWindowDimensions = () => {
+  const [dimensions, setDimensions] = useState(() => Dimensions.get("window"));
+
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener("change", ({ window }) => {
+      setDimensions(window);
+    });
+
+    return () => subscription?.remove();
+  }, []);
+
+  return dimensions;
+};
+
+interface LinkButtonProps {
+  href: string;
+  title: string;
+  color: string;
+  disabled?: boolean;
+  children: ReactNode;
+}
+
+const LinkButton = ({
+  href,
+  title,
+  color,
+  disabled = false,
+  children,
+}: LinkButtonProps) => {
+  const buttonStyle = {
+    ...styles.linkButton,
+    backgroundColor: color,
+    ...(disabled ? styles.linkButtonDisabled : {}),
+  };
+
+  const ButtonContent = () => (
+    <ThemedText style={styles.linkButtonText}>{children}</ThemedText>
+  );
+
+  if (disabled) {
+    return (
+      <ThemedView style={buttonStyle}>
+        <ButtonContent />
+      </ThemedView>
+    );
+  }
+
+  if (href.startsWith("http")) {
+    return (
+      <Pressable style={buttonStyle} onPress={() => Linking.openURL(href)}>
+        <ButtonContent />
+      </Pressable>
+    );
+  }
+
+  return (
+    <Link href={href as any} asChild>
+      <Pressable style={buttonStyle}>
+        <ButtonContent />
+      </Pressable>
+    </Link>
+  );
+};
 
 export default function HomeScreen() {
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width > 768;
+
+  const containerStyle = {
+    ...styles.container,
+    ...(isDesktop && styles.containerDesktop),
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
+    <ScrollView>
+      <ThemedView style={containerStyle}>
+        <ThemedView style={styles.content}>
+          <ThemedText type="title" style={styles.mainTitle}>
+            dorkroom.art
+          </ThemedText>
+          <ThemedText type="subtitle" style={styles.subtitle}>
+            darkroom and photography calculators
+          </ThemedText>
+          <ThemedText style={styles.byline}>
+            by{" "}
+            <ThemedText
+              style={styles.link}
+              onPress={() => Linking.openURL("https://www.affords.art")}
+            >
+              aaron f.a.
+            </ThemedText>
+          </ThemedText>
+
+          <ThemedView style={styles.section}>
+            <ThemedText type="subtitle">darkroom printing</ThemedText>
+            <LinkButton
+              href="/border"
+              color="#4CAF50"
+              title="border calculator"
+            >
+              border calculator
+            </LinkButton>
+            <LinkButton
+              href="/exposure"
+              color="#9C27B0"
+              title="stop-based exposure calculator"
+            >
+              stop-based exposure calculator
+            </LinkButton>
+            <LinkButton
+              href="/resize"
+              color="#2196F3"
+              title="print resize calculator"
+            >
+              print resize calculator
+            </LinkButton>
+          </ThemedView>
+
+          <ThemedView style={styles.section}>
+            <ThemedText type="subtitle">
+              film shooting and developing
+            </ThemedText>
+            <LinkButton href="#" color="#666" disabled title="coming soon!">
+              exposure calculator
+            </LinkButton>
+            <LinkButton href="#" color="#666" disabled title="coming soon!">
+              developer dilution calculator
+            </LinkButton>
+            <LinkButton href="#" color="#666" disabled title="coming soon!">
+              push/pull calculator
+            </LinkButton>
+            <LinkButton href="#" color="#666" disabled title="coming soon!">
+              reciprocity calculator
+            </LinkButton>
+          </ThemedView>
+
+          <ThemedView style={styles.section}>
+            <LinkButton
+              href="https://github.com/narrowstacks/Darkroom-Calculators"
+              color="#24292e"
+              title="contribute on github"
+            >
+              contribute on github
+            </LinkButton>
+            <LinkButton
+              href="https://ko-fi.com/affords"
+              color="#FF5E5B"
+              title="support this site!"
+            >
+              support this site!
+            </LinkButton>
+          </ThemedView>
+        </ThemedView>
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    padding: 16,
+    alignItems: "center",
   },
-  stepContainer: {
-    gap: 8,
+  containerDesktop: {
+    paddingHorizontal: 0,
+  },
+  content: {
+    width: Platform.OS === "web" ? 480 : "100%",
+    maxWidth: 480,
+    alignItems: "center",
+  },
+  mainTitle: {
+    fontSize: 32,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  subtitle: {
+    fontSize: 18,
+    marginBottom: 4,
+    fontStyle: "italic",
+  },
+  byline: {
+    marginBottom: 24,
+    fontStyle: "italic",
+  },
+  link: {
+    color: "#2196F3",
+    textDecorationLine: "underline",
+  },
+  section: {
+    width: "100%",
+    marginBottom: 24,
+    gap: 12,
+    alignItems: "center",
+  },
+  linkButton: {
+    width: "100%",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  linkButtonDisabled: {
+    backgroundColor: "#666",
+    opacity: 0.7,
+  },
+  linkButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "500",
   },
 });
