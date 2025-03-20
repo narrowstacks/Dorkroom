@@ -31,5 +31,19 @@ export const PAPER_SIZES: PaperSize[] = [
   { label: "custom", value: "custom", width: 0, height: 0 },
 ];
 
+export const EASEL_SIZES: PaperSize[] = [
+  { label: "5x7", value: "5x7", width: 5, height: 7 },
+  { label: "14x14", value: "11x14", width: 11, height: 14 },
+  { label: "20x20", value: "16x20", width: 16, height: 20 },
+  { label: "24x24", value: "20x24", width: 20, height: 24 },
+];
+
 // UI Constants
-export const BLADE_THICKNESS = 15; 
+export const BLADE_THICKNESS = 15;
+
+// Default export to satisfy router requirement
+export default {
+  ASPECT_RATIOS,
+  PAPER_SIZES,
+  BLADE_THICKNESS,
+}; 

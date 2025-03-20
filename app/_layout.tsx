@@ -9,6 +9,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { useColorScheme } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import "react-native-reanimated";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -37,12 +38,14 @@ function AppContent() {
   const theme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
 
   return (
-    <NavigationThemeProvider value={theme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-    </NavigationThemeProvider>
+    <SafeAreaProvider>
+      <NavigationThemeProvider value={theme}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+      </NavigationThemeProvider>
+    </SafeAreaProvider>
   );
 }

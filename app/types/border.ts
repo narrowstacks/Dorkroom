@@ -1,18 +1,19 @@
-export interface AspectRatio {
+
+interface AspectRatio {
   label: string;
   value: string;
   width?: number;
   height?: number;
 }
 
-export interface PaperSize {
+interface PaperSize {
   label: string;
   value: string;
   width: number;
   height: number;
 }
 
-export interface BorderCalculation {
+interface BorderCalculation {
   leftBorder: number;
   rightBorder: number;
   topBorder: number;
@@ -23,9 +24,19 @@ export interface BorderCalculation {
   paperHeight: number;
 }
 
-export interface SelectListProps {
+interface SelectListProps {
   value: string;
   onValueChange: (value: string) => void;
   items: { label: string; value: string }[];
   placeholder?: string;
-} 
+}
+
+const types = {
+  AspectRatio: {} as AspectRatio,
+  PaperSize: {} as PaperSize,
+  BorderCalculation: {} as BorderCalculation,
+  SelectListProps: {} as SelectListProps,
+};
+
+export type { AspectRatio, PaperSize, BorderCalculation, SelectListProps };
+export default types; 

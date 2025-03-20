@@ -23,7 +23,7 @@ export function useBorderCalculator() {
   const [horizontalOffset, setHorizontalOffset] = useState("0");
   const [verticalOffset, setVerticalOffset] = useState("0");
   const [showBlades, setShowBlades] = useState(false);
-  const [isLandscape, setIsLandscape] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(true);
   const [isRatioFlipped, setIsRatioFlipped] = useState(false);
 
   const calculation = useMemo<BorderCalculation | null>(() => {
@@ -99,23 +99,10 @@ export function useBorderCalculator() {
       const hOffset = parseFloat(horizontalOffset) || 0;
       const vOffset = parseFloat(verticalOffset) || 0;
 
-      // Clamp offsets to prevent negative borders
-      const maxHOffset = Math.min(
-        rawHorizontalBorder - minBorderValue,
-        rawHorizontalBorder - minBorderValue
-      );
-      const maxVOffset = Math.min(
-        rawVerticalBorder - minBorderValue,
-        rawVerticalBorder - minBorderValue
-      );
-
-      const clampedHOffset = Math.max(-maxHOffset, Math.min(maxHOffset, hOffset));
-      const clampedVOffset = Math.max(-maxVOffset, Math.min(maxVOffset, vOffset));
-
-      leftBorder += clampedHOffset;
-      rightBorder -= clampedHOffset;
-      topBorder += clampedVOffset;
-      bottomBorder -= clampedVOffset;
+      leftBorder += hOffset;
+      rightBorder -= hOffset;
+      topBorder += vOffset;
+      bottomBorder -= vOffset;
     }
 
     return {
@@ -149,29 +136,25 @@ export function useBorderCalculator() {
 
     const hOffset = parseFloat(horizontalOffset) || 0;
     const vOffset = parseFloat(verticalOffset) || 0;
-    const minBorderValue = parseFloat(minBorder) || 0;
 
-    const rawHorizontalBorder = (calculation.paperWidth - calculation.printWidth) / 2;
-    const rawVerticalBorder = (calculation.paperHeight - calculation.printHeight) / 2;
+    // Calculate the position of the print area edges
+    const leftEdge = calculation.leftBorder;
+    const rightEdge = calculation.paperWidth - calculation.rightBorder;
+    const topEdge = calculation.topBorder;
+    const bottomEdge = calculation.paperHeight - calculation.bottomBorder;
 
-    const maxHOffset = Math.min(
-      rawHorizontalBorder - minBorderValue,
-      rawHorizontalBorder - minBorderValue
-    );
-    const maxVOffset = Math.min(
-      rawVerticalBorder - minBorderValue,
-      rawVerticalBorder - minBorderValue
-    );
-
-    const clampedHOffset = Math.max(-maxHOffset, Math.min(maxHOffset, hOffset));
-    const clampedVOffset = Math.max(-maxVOffset, Math.min(maxVOffset, vOffset));
-
-    if (hOffset !== clampedHOffset || vOffset !== clampedVOffset) {
-      return "Offset values have been adjusted to maintain minimum borders";
+    // Check if any edge is outside the paper bounds
+    if (
+      leftEdge < 0 ||
+      rightEdge > calculation.paperWidth ||
+      topEdge < 0 ||
+      bottomEdge > calculation.paperHeight
+    ) {
+      return "Warning: Photo extends beyond paper edges";
     }
 
     return null;
-  }, [calculation, enableOffset, horizontalOffset, verticalOffset, minBorder]);
+  }, [calculation, enableOffset, horizontalOffset, verticalOffset]);
 
   // Calculate preview scale
   const previewScale = useMemo(() => {

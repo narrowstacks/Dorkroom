@@ -13,4 +13,6 @@ export const useWindowDimensions = () => {
   }, []);
 
   return dimensions;
-}; 
+};
+
+export default useWindowDimensions; 

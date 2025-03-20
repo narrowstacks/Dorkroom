@@ -1,1 +1,1 @@
-export const BLADE_THICKNESS = 2; 
+export const BLADE_THICKNESS = 24; 
