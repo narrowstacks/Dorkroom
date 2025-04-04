@@ -3,14 +3,6 @@ import { Dimensions } from 'react-native';
 import { BorderCalculation } from '../types/border';
 import { ASPECT_RATIOS, PAPER_SIZES, EASEL_SIZES } from '../constants/border';
 
-// Helper function to find the appropriate easel slot
-const findEaselSlot = (paperWidth: number, paperHeight: number) => {
-  // Find the smallest easel slot that can accommodate the paper
-  return EASEL_SIZES.find(slot => 
-    slot.width >= paperWidth && slot.height >= paperHeight
-  ) || EASEL_SIZES[0]; // Fallback to smallest slot if none found
-};
-
 export const useBorderCalculator = () => {
   // Form state
   const [aspectRatio, setAspectRatio] = useState(ASPECT_RATIOS[0].value);
@@ -67,29 +59,12 @@ export const useBorderCalculator = () => {
       [ratioWidth, ratioHeight] = [ratioHeight, ratioWidth];
     }
 
-    // Find appropriate easel slot
-    const easelSlot = findEaselSlot(paperWidth, paperHeight);
-    
-    // Calculate easel slot differences
-    const widthDifference = easelSlot.width - paperWidth;
-    const heightDifference = easelSlot.height - paperHeight;
-
-    // Create automatic offset to compensate for easel slot differences
-    // We apply -widthDifference/2 to horizontal offset and -heightDifference/2 to vertical offset
-    // This will shift the print to be centered within the easel slot rather than the paper
-    let autoHorizontalOffset = -widthDifference / 2;
-    let autoVerticalOffset = -heightDifference / 2;
-
     // Calculate print size to fit within paper with minimum borders
     const minBorderValue = parseFloat(minBorder) || 0;
     
-    // Apply user offsets on top of automatic offsets if enabled
+    // Apply user offsets if enabled
     let horizontalOffsetValue = enableOffset ? parseFloat(horizontalOffset) || 0 : 0;
     let verticalOffsetValue = enableOffset ? parseFloat(verticalOffset) || 0 : 0;
-    
-    // Combine automatic and user offsets
-    horizontalOffsetValue += autoHorizontalOffset;
-    verticalOffsetValue += autoVerticalOffset;
 
     const availableWidth = paperWidth - 2 * minBorderValue;
     const availableHeight = paperHeight - 2 * minBorderValue;
@@ -128,13 +103,13 @@ export const useBorderCalculator = () => {
       Math.min(maxVerticalOffset, verticalOffsetValue)
     );
 
-    // Update clamped values in state - only store the user's portion of the offset
-    setClampedHorizontalOffset(horizontalOffsetValue - autoHorizontalOffset);
-    setClampedVerticalOffset(verticalOffsetValue - autoVerticalOffset);
+    // Update clamped values in state
+    setClampedHorizontalOffset(horizontalOffsetValue);
+    setClampedVerticalOffset(verticalOffsetValue);
 
     // Set warning message if offsets were clamped
-    const originalHorizontal = (parseFloat(horizontalOffset) || 0) + autoHorizontalOffset;
-    const originalVertical = (parseFloat(verticalOffset) || 0) + autoVerticalOffset;
+    const originalHorizontal = parseFloat(horizontalOffset) || 0;
+    const originalVertical = parseFloat(verticalOffset) || 0;
 
     if (
       originalHorizontal !== horizontalOffsetValue ||
@@ -160,8 +135,8 @@ export const useBorderCalculator = () => {
       bottomBorder,
       printWidth,
       printHeight,
-      paperWidth: easelSlot.width, // Use easel slot width instead of paper width
-      paperHeight: easelSlot.height, // Use easel slot height instead of paper height
+      paperWidth,
+      paperHeight,
     };
   }, [
     paperSize,

@@ -399,6 +399,7 @@ export default function BorderCalculator() {
                       onChangeText={setCustomAspectWidth}
                       keyboardType="numeric"
                       placeholder="Width"
+                      defaultValue="2"
                       placeholderTextColor={borderColor}
                     />
                   </ThemedView>
@@ -410,6 +411,7 @@ export default function BorderCalculator() {
                       onChangeText={setCustomAspectHeight}
                       keyboardType="numeric"
                       placeholder="Height"
+                      defaultValue="3"
                       placeholderTextColor={borderColor}
                     />
                   </ThemedView>
@@ -437,6 +439,7 @@ export default function BorderCalculator() {
                       onChangeText={setCustomPaperWidth}
                       keyboardType="numeric"
                       placeholder="Width"
+                      defaultValue="8"
                       placeholderTextColor={borderColor}
                     />
                   </ThemedView>
@@ -450,6 +453,7 @@ export default function BorderCalculator() {
                       onChangeText={setCustomPaperHeight}
                       keyboardType="numeric"
                       placeholder="Height"
+                      defaultValue="10"
                       placeholderTextColor={borderColor}
                     />
                   </ThemedView>
@@ -620,13 +624,7 @@ const styles = StyleSheet.create({
   },
   blade: {
     position: "absolute",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
     elevation: 5,
   },
   bladeVertical: {
