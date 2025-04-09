@@ -14,6 +14,84 @@ const calculateBladeThickness = (paperWidth: number, paperHeight: number): numbe
   return Math.round(BLADE_THICKNESS * cappedScale);
 };
 
+const calculateOptimalMinBorder = (
+  paperWidth: number,
+  paperHeight: number,
+  ratioWidth: number,
+  ratioHeight: number,
+  currentMinBorder: number
+): number => {
+  // Calculate the print size that would fit with the current minimum border
+  const availableWidth = paperWidth - 2 * currentMinBorder;
+  const availableHeight = paperHeight - 2 * currentMinBorder;
+  const printRatio = ratioWidth / ratioHeight;
+
+  let printWidth: number;
+  let printHeight: number;
+
+  if (availableWidth / availableHeight > printRatio) {
+    // Height limited
+    printHeight = availableHeight;
+    printWidth = availableHeight * printRatio;
+  } else {
+    // Width limited
+    printWidth = availableWidth;
+    printHeight = availableWidth / printRatio;
+  }
+
+  // Calculate the borders that would result in blade positions divisible by 0.25
+  const targetBladePositions = [
+    printWidth + (paperWidth - printWidth) / 2, // Left blade
+    printWidth - (paperWidth - printWidth) / 2, // Right blade
+    printHeight + (paperHeight - printHeight) / 2, // Top blade
+    printHeight - (paperHeight - printHeight) / 2, // Bottom blade
+  ];
+
+  // Find the minimum border that makes all blade positions divisible by 0.25
+  let optimalMinBorder = currentMinBorder;
+  let bestScore = Infinity;
+
+  // Try different minimum border values around the current value
+  for (let i = -0.5; i <= 0.5; i += 0.01) {
+    const testMinBorder = currentMinBorder + i;
+    if (testMinBorder <= 0) continue;
+
+    const testAvailableWidth = paperWidth - 2 * testMinBorder;
+    const testAvailableHeight = paperHeight - 2 * testMinBorder;
+
+    let testPrintWidth: number;
+    let testPrintHeight: number;
+
+    if (testAvailableWidth / testAvailableHeight > printRatio) {
+      testPrintHeight = testAvailableHeight;
+      testPrintWidth = testAvailableHeight * printRatio;
+    } else {
+      testPrintWidth = testAvailableWidth;
+      testPrintHeight = testAvailableWidth / printRatio;
+    }
+
+    const testBladePositions = [
+      testPrintWidth + (paperWidth - testPrintWidth) / 2,
+      testPrintWidth - (paperWidth - testPrintWidth) / 2,
+      testPrintHeight + (paperHeight - testPrintHeight) / 2,
+      testPrintHeight - (paperHeight - testPrintHeight) / 2,
+    ];
+
+    // Calculate how close each blade position is to being divisible by 0.25
+    const score = testBladePositions.reduce((sum, pos) => {
+      const remainder = pos % 0.25;
+      return sum + Math.min(remainder, 0.25 - remainder);
+    }, 0);
+
+    if (score < bestScore) {
+      bestScore = score;
+      optimalMinBorder = testMinBorder;
+    }
+  }
+
+  return Number(optimalMinBorder.toFixed(2));
+};
+
 export const useBorderCalculator = () => {
   // Form state
   const [aspectRatio, setAspectRatio] = useState(ASPECT_RATIOS[0].value);
@@ -336,6 +414,18 @@ export const useBorderCalculator = () => {
     // Calculations
     calculation,
     previewScale,
+    // New function
+    calculateOptimalMinBorder: () => {
+      if (!calculation) return;
+      const optimalBorder = calculateOptimalMinBorder(
+        calculation.paperWidth,
+        calculation.paperHeight,
+        calculation.printWidth,
+        calculation.printHeight,
+        parseFloat(minBorder) || 0
+      );
+      setMinBorder(optimalBorder.toString());
+    },
   };
 };
 

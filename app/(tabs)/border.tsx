@@ -88,6 +88,7 @@ export default function BorderCalculator() {
     bladeWarning,
     calculation,
     minBorderWarning,
+    calculateOptimalMinBorder,
   } = useBorderCalculator();
 
   const renderPicker = (
@@ -447,17 +448,29 @@ export default function BorderCalculator() {
 
             {/* Minimum Border Input */}
             <ThemedView style={styles.formGroup}>
-              <ThemedText style={styles.label}>
-                minimum border (inches):
-              </ThemedText>
-              <TextInput
-                style={[styles.input, { color: textColor, borderColor }]}
-                value={minBorder}
-                onChangeText={setMinBorder}
-                keyboardType="numeric"
-                placeholder="0.5"
-                placeholderTextColor={borderColor}
-              />
+              <ThemedView style={styles.row}>
+                <ThemedView style={styles.inputGroup}>
+                  <ThemedText style={styles.label}>
+                    minimum border (inches):
+                  </ThemedText>
+                  <TextInput
+                    style={[styles.input, { color: textColor, borderColor }]}
+                    value={minBorder}
+                    onChangeText={setMinBorder}
+                    keyboardType="numeric"
+                    placeholder="0.5"
+                    placeholderTextColor={borderColor}
+                  />
+                </ThemedView>
+                <Pressable
+                  style={[styles.roundButton, { backgroundColor: tintColor }]}
+                  onPress={calculateOptimalMinBorder}
+                >
+                  <ThemedText style={styles.buttonText}>
+                    round to 0.25"
+                  </ThemedText>
+                </Pressable>
+              </ThemedView>
             </ThemedView>
 
             {/* Toggles Row */}
@@ -777,5 +790,12 @@ const styles = StyleSheet.create({
   easelInstructionText: {
     fontSize: 14,
     textAlign: "center",
+  },
+  roundButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginLeft: 8,
+    alignSelf: "flex-end",
   },
 });
