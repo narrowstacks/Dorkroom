@@ -33,6 +33,7 @@ export const PAPER_SIZES: PaperSize[] = [
 
 export const EASEL_SIZES: PaperSize[] = [
   { label: "5x7", value: "5x7", width: 5, height: 7 },
+  { label: "8x10", value: "8x10", width: 8, height: 10 },
   { label: "11x14", value: "11x14", width: 11, height: 14 },
   { label: "16x20", value: "16x20", width: 16, height: 20 },
   { label: "20x24", value: "20x24", width: 20, height: 24 },

@@ -37,6 +37,10 @@ interface BorderCalculation {
   rightBladePos: number;
   topBladePos: number;
   bottomBladePos: number;
+  
+  // Easel information
+  isNonStandardSize: boolean;
+  easelSize: { width: number; height: number };
 }
 
 interface SelectListProps {

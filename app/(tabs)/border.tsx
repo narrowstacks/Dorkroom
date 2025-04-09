@@ -72,6 +72,8 @@ export default function BorderCalculator() {
     setMinBorder,
     enableOffset,
     setEnableOffset,
+    ignoreMinBorder,
+    setIgnoreMinBorder,
     horizontalOffset,
     setHorizontalOffset,
     verticalOffset,
@@ -83,6 +85,7 @@ export default function BorderCalculator() {
     isRatioFlipped,
     setIsRatioFlipped,
     offsetWarning,
+    bladeWarning,
     calculation,
   } = useBorderCalculator();
 
@@ -305,6 +308,37 @@ export default function BorderCalculator() {
                     {calculation.bottomBladePos.toFixed(2)} inches
                   </ThemedText>
                 </ThemedView>
+                {calculation.isNonStandardSize && (
+                  <ThemedView
+                    style={[
+                      styles.easelInstructionBox,
+                      {
+                        borderColor: tintColor,
+                        backgroundColor: tintColor + "20",
+                      },
+                    ]}
+                  >
+                    <ThemedText
+                      type="defaultSemiBold"
+                      style={styles.easelInstructionTitle}
+                    >
+                      Non-Standard Paper Size
+                    </ThemedText>
+                    <ThemedText style={styles.easelInstructionText}>
+                      Use a {calculation.easelSize.width}x
+                      {calculation.easelSize.height} easel slot.
+                    </ThemedText>
+                    <ThemedText style={styles.easelInstructionText}>
+                      {" "}
+                      Position paper in the slot all the way to the left.
+                    </ThemedText>
+                  </ThemedView>
+                )}
+                {bladeWarning && (
+                  <ThemedText style={styles.warningText}>
+                    {bladeWarning}
+                  </ThemedText>
+                )}
               </ThemedView>
             </ThemedView>
           )}
@@ -441,49 +475,71 @@ export default function BorderCalculator() {
             </ThemedView>
 
             {enableOffset && (
-              <ThemedView style={styles.formGroup}>
-                <ThemedView style={styles.row}>
-                  <ThemedView style={styles.inputGroup}>
+              <>
+                <ThemedView style={styles.formGroup}>
+                  <ThemedView style={styles.row}>
                     <ThemedText style={styles.label}>
-                      horizontal offset:
+                      ignore min border:
                     </ThemedText>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        { color: textColor, borderColor },
-                        offsetWarning && styles.inputWarning,
-                      ]}
-                      value={horizontalOffset}
-                      onChangeText={setHorizontalOffset}
-                      keyboardType="numeric"
-                      placeholder="0"
-                      placeholderTextColor={borderColor}
+                    <Switch
+                      value={ignoreMinBorder}
+                      onValueChange={setIgnoreMinBorder}
+                      trackColor={{ false: borderColor, true: tintColor }}
+                      thumbColor={ignoreMinBorder ? tintColor : "#f4f3f4"}
                     />
                   </ThemedView>
-                  <ThemedView style={styles.inputGroup}>
-                    <ThemedText style={styles.label}>
-                      vertical offset:
+                  {ignoreMinBorder && (
+                    <ThemedText style={styles.infoText}>
+                      Print can be positioned freely but will stay within paper
+                      edges
                     </ThemedText>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        { color: textColor, borderColor },
-                        offsetWarning && styles.inputWarning,
-                      ]}
-                      value={verticalOffset}
-                      onChangeText={setVerticalOffset}
-                      keyboardType="numeric"
-                      placeholder="0"
-                      placeholderTextColor={borderColor}
-                    />
-                  </ThemedView>
+                  )}
                 </ThemedView>
-                {offsetWarning && (
-                  <ThemedText style={styles.warningText}>
-                    {offsetWarning}
-                  </ThemedText>
-                )}
-              </ThemedView>
+
+                <ThemedView style={styles.formGroup}>
+                  <ThemedView style={styles.row}>
+                    <ThemedView style={styles.inputGroup}>
+                      <ThemedText style={styles.label}>
+                        horizontal offset:
+                      </ThemedText>
+                      <TextInput
+                        style={[
+                          styles.input,
+                          { color: textColor, borderColor },
+                          offsetWarning && styles.inputWarning,
+                        ]}
+                        value={horizontalOffset}
+                        onChangeText={setHorizontalOffset}
+                        keyboardType="numeric"
+                        placeholder="0"
+                        placeholderTextColor={borderColor}
+                      />
+                    </ThemedView>
+                    <ThemedView style={styles.inputGroup}>
+                      <ThemedText style={styles.label}>
+                        vertical offset:
+                      </ThemedText>
+                      <TextInput
+                        style={[
+                          styles.input,
+                          { color: textColor, borderColor },
+                          offsetWarning && styles.inputWarning,
+                        ]}
+                        value={verticalOffset}
+                        onChangeText={setVerticalOffset}
+                        keyboardType="numeric"
+                        placeholder="0"
+                        placeholderTextColor={borderColor}
+                      />
+                    </ThemedView>
+                  </ThemedView>
+                  {offsetWarning && (
+                    <ThemedText style={styles.warningText}>
+                      {offsetWarning}
+                    </ThemedText>
+                  )}
+                </ThemedView>
+              </>
             )}
           </ThemedView>
         </ThemedView>
@@ -659,6 +715,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: "center",
   },
+  infoText: {
+    fontSize: 14,
+    marginTop: 4,
+    fontStyle: "italic",
+  },
   picker: {
     width: "100%",
     height: 48,
@@ -686,5 +747,22 @@ const styles = StyleSheet.create({
   },
   toggleColumn: {
     flex: 1,
+  },
+  easelInstructionBox: {
+    borderWidth: 1,
+    padding: 16,
+    borderRadius: 8,
+    marginTop: 16,
+    marginBottom: 8,
+    width: "100%",
+  },
+  easelInstructionTitle: {
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  easelInstructionText: {
+    fontSize: 14,
+    textAlign: "center",
   },
 });
