@@ -1,7 +1,18 @@
 import { useState, useMemo } from 'react';
 import { Dimensions } from 'react-native';
 import { BorderCalculation } from '../types/border';
-import { ASPECT_RATIOS, PAPER_SIZES, EASEL_SIZES } from '../constants/border';
+import { ASPECT_RATIOS, PAPER_SIZES, EASEL_SIZES, BLADE_THICKNESS } from '../constants/border';
+
+// Base paper size for blade thickness calculation (20x24)
+const BASE_PAPER_AREA = 20 * 24;
+
+const calculateBladeThickness = (paperWidth: number, paperHeight: number): number => {
+  const paperArea = paperWidth * paperHeight;
+  const scaleFactor = BASE_PAPER_AREA / paperArea;
+  // Cap the maximum scale factor to avoid too thick blades
+  const cappedScale = Math.min(scaleFactor, 2);
+  return Math.round(BLADE_THICKNESS * cappedScale);
+};
 
 export const useBorderCalculator = () => {
   // Form state
@@ -23,6 +34,8 @@ export const useBorderCalculator = () => {
   const [bladeWarning, setBladeWarning] = useState<string | null>(null);
   const [clampedHorizontalOffset, setClampedHorizontalOffset] = useState(0);
   const [clampedVerticalOffset, setClampedVerticalOffset] = useState(0);
+  const [lastValidMinBorder, setLastValidMinBorder] = useState("0.5");
+  const [minBorderWarning, setMinBorderWarning] = useState<string | null>(null);
 
   // Calculate dimensions and borders
   const calculation = useMemo<BorderCalculation>(() => {
@@ -60,8 +73,26 @@ export const useBorderCalculator = () => {
     const orientedRatioHeight = isRatioFlipped ? ratioWidth : ratioHeight;
 
     // Calculate print size to fit within paper with minimum borders
-    const minBorderValue = parseFloat(minBorder) || 0;
-    
+    let minBorderValue = parseFloat(minBorder) || 0;
+    const maxPossibleBorder = Math.min(
+      orientedPaperWidth / 2,
+      orientedPaperHeight / 2
+    );
+
+    // Validate minimum border value
+    if (minBorderValue >= maxPossibleBorder) {
+      // Use last valid value and show warning
+      setMinBorderWarning(
+        `Minimum border value would result in zero/negative image size. Using ${lastValidMinBorder} instead.`
+      );
+      // Use last valid value for calculations
+      minBorderValue = parseFloat(lastValidMinBorder) || 0;
+    } else {
+      // Update last valid value and clear warning
+      setLastValidMinBorder(minBorder);
+      setMinBorderWarning(null);
+    }
+
     // Apply user offsets if enabled
     let horizontalOffsetValue = enableOffset ? parseFloat(horizontalOffset) || 0 : 0;
     let verticalOffsetValue = enableOffset ? parseFloat(verticalOffset) || 0 : 0;
@@ -175,19 +206,28 @@ export const useBorderCalculator = () => {
     console.log(`Easel width offset: ${easelWidthOffset}`);
     console.log(`Easel height offset: ${easelHeightOffset}`);
 
-
-
     // Calculate blade positions
+    const bladeThickness = calculateBladeThickness(orientedPaperWidth, orientedPaperHeight);
     const leftBladePos = printWidth + leftBorder - rightBorder + easelWidthOffset;
     const rightBladePos = printWidth - leftBorder + rightBorder - easelWidthOffset;
     const topBladePos = printHeight + topBorder - bottomBorder + easelHeightOffset;
     const bottomBladePos = printHeight - topBorder + bottomBorder - easelHeightOffset;
 
-    // Check if any blade position is under 2 inches
-    if (leftBladePos < 2 || rightBladePos < 2 || topBladePos < 2 || bottomBladePos < 2) {
-      setBladeWarning("Warning: Most easels do not have markings below 2 inches!");
-    } else {
+    // Create warning message for blade positions
+    let warningMessage = "";
+        // Check if any blade position is under 2 inches
+    if (Math.abs(leftBladePos) < 2 || Math.abs(rightBladePos) < 2 || Math.abs(topBladePos) < 2 || Math.abs(bottomBladePos) < 2) {
+      warningMessage = "Warning: Most easels do not have markings below 2 inches!";
+    }
+    // Check if any blade position is negative
+    if (leftBladePos < 0 || rightBladePos < 0 || topBladePos < 0 || bottomBladePos < 0) {
+      warningMessage = warningMessage + "\n" + "Warning: Negative blade position detected! \nFor negative values, set your blade to the markings of the opposite blade.";
+    }
+
+    if (warningMessage === "") {
       setBladeWarning(null);
+    } else {
+      setBladeWarning(warningMessage);
     }
 
     return {
@@ -212,6 +252,7 @@ export const useBorderCalculator = () => {
       rightBladePos,
       topBladePos,
       bottomBladePos,
+      bladeThickness,
       // Add easel information
       isNonStandardSize: easelWidthDifference > 0 || easelHeightDifference > 0,
       easelSize: {
@@ -289,6 +330,7 @@ export const useBorderCalculator = () => {
     setIsRatioFlipped,
     offsetWarning,
     bladeWarning,
+    minBorderWarning,
     clampedHorizontalOffset,
     clampedVerticalOffset,
     // Calculations

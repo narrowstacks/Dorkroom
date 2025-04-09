@@ -38,6 +38,8 @@ interface BorderCalculation {
   topBladePos: number;
   bottomBladePos: number;
   
+  bladeThickness: number;
+  
   // Easel information
   isNonStandardSize: boolean;
   easelSize: { width: number; height: number };

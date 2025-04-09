@@ -87,6 +87,7 @@ export default function BorderCalculator() {
     offsetWarning,
     bladeWarning,
     calculation,
+    minBorderWarning,
   } = useBorderCalculator();
 
   const renderPicker = (
@@ -203,8 +204,11 @@ export default function BorderCalculator() {
                           styles.bladeVertical,
                           {
                             left: `${calculation.leftBorderPercent}%`,
-                            transform: [{ translateX: -BLADE_THICKNESS }],
+                            transform: [
+                              { translateX: -calculation.bladeThickness },
+                            ],
                             backgroundColor: borderColor,
+                            width: calculation.bladeThickness,
                           },
                         ]}
                       />
@@ -214,8 +218,11 @@ export default function BorderCalculator() {
                           styles.bladeVertical,
                           {
                             right: `${calculation.rightBorderPercent}%`,
-                            transform: [{ translateX: BLADE_THICKNESS }],
+                            transform: [
+                              { translateX: calculation.bladeThickness },
+                            ],
                             backgroundColor: borderColor,
+                            width: calculation.bladeThickness,
                           },
                         ]}
                       />
@@ -225,8 +232,11 @@ export default function BorderCalculator() {
                           styles.bladeHorizontal,
                           {
                             top: `${calculation.topBorderPercent}%`,
-                            transform: [{ translateY: -BLADE_THICKNESS }],
+                            transform: [
+                              { translateY: -calculation.bladeThickness },
+                            ],
                             backgroundColor: borderColor,
+                            height: calculation.bladeThickness,
                           },
                         ]}
                       />
@@ -236,8 +246,11 @@ export default function BorderCalculator() {
                           styles.bladeHorizontal,
                           {
                             bottom: `${calculation.bottomBorderPercent}%`,
-                            transform: [{ translateY: BLADE_THICKNESS }],
+                            transform: [
+                              { translateY: calculation.bladeThickness },
+                            ],
                             backgroundColor: borderColor,
+                            height: calculation.bladeThickness,
                           },
                         ]}
                       />
@@ -324,10 +337,7 @@ export default function BorderCalculator() {
                     >
                       Non-Standard Paper Size
                     </ThemedText>
-                    <ThemedText style={styles.easelInstructionText}>
-                      Use a {calculation.easelSize.width}x
-                      {calculation.easelSize.height} easel slot.
-                    </ThemedText>
+
                     <ThemedText style={styles.easelInstructionText}>
                       {" "}
                       Position paper in the slot all the way to the left.
@@ -337,6 +347,11 @@ export default function BorderCalculator() {
                 {bladeWarning && (
                   <ThemedText style={styles.warningText}>
                     {bladeWarning}
+                  </ThemedText>
+                )}
+                {minBorderWarning && (
+                  <ThemedText style={styles.warningText}>
+                    {minBorderWarning}
                   </ThemedText>
                 )}
               </ThemedView>
@@ -619,12 +634,10 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   bladeVertical: {
-    width: BLADE_THICKNESS,
     top: -1000,
     bottom: -1000,
   },
   bladeHorizontal: {
-    height: BLADE_THICKNESS,
     left: -1000,
     right: -1000,
   },
