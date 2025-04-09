@@ -341,7 +341,9 @@ export default function BorderCalculator() {
 
                     <ThemedText style={styles.easelInstructionText}>
                       {" "}
-                      Position paper in the slot all the way to the left.
+                      Position paper in the {calculation.easelSize.width}x
+                      {calculation.easelSize.height} slot all the way to the
+                      left.
                     </ThemedText>
                   </ThemedView>
                 )}
@@ -582,7 +584,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: Platform.OS === "ios" ? 100 : 80, // Extra padding for tab bar
+    paddingBottom:
+      Platform.OS === "ios" || Platform.OS === "android" ? 100 : 80, // Extra padding for tab bar
   },
   content: {
     flex: 1,
