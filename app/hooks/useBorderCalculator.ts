@@ -128,6 +128,26 @@ export const useBorderCalculator = () => {
     const topBorder = (paperHeight - printHeight) / 2 + verticalOffsetValue;
     const bottomBorder = (paperHeight - printHeight) / 2 - verticalOffsetValue;
 
+    // Calculate preview scaling
+    const { width: windowWidth } = Dimensions.get("window");
+    const PREVIEW_HEIGHT = 300; // Fixed preview height in pixels
+    const previewScale = PREVIEW_HEIGHT / Math.max(paperWidth, paperHeight);
+    const previewWidth = PREVIEW_HEIGHT * (paperWidth / paperHeight);
+    
+    // Calculate percentages for positioning elements
+    const printWidthPercent = (printWidth / paperWidth) * 100;
+    const printHeightPercent = (printHeight / paperHeight) * 100;
+    const leftBorderPercent = (leftBorder / paperWidth) * 100;
+    const topBorderPercent = (topBorder / paperHeight) * 100;
+    const rightBorderPercent = (rightBorder / paperWidth) * 100;
+    const bottomBorderPercent = (bottomBorder / paperHeight) * 100;
+    
+    // Calculate blade positions
+    const leftBladePos = printWidth + leftBorder - rightBorder;
+    const rightBladePos = printWidth - leftBorder + rightBorder;
+    const topBladePos = printHeight + topBorder - bottomBorder;
+    const bottomBladePos = printHeight - topBorder + bottomBorder;
+
     return {
       leftBorder,
       rightBorder,
@@ -137,6 +157,19 @@ export const useBorderCalculator = () => {
       printHeight,
       paperWidth,
       paperHeight,
+      previewScale,
+      previewHeight: PREVIEW_HEIGHT,
+      previewWidth,
+      printWidthPercent,
+      printHeightPercent,
+      leftBorderPercent,
+      topBorderPercent,
+      rightBorderPercent,
+      bottomBorderPercent,
+      leftBladePos,
+      rightBladePos,
+      topBladePos,
+      bottomBladePos
     };
   }, [
     paperSize,

@@ -9,12 +9,12 @@ import {
   Switch,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { useWindowDimensions } from "@/hooks/useWindowDimensions";
-import { useBorderCalculator } from "@/hooks/useBorderCalculator";
-import { BLADE_THICKNESS } from "@/constants/border";
-import { ThemedView } from "@/components/ThemedView";
-import { ThemedText } from "@/components/ThemedText";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useWindowDimensions } from "../hooks/useWindowDimensions";
+import { useBorderCalculator } from "../hooks/useBorderCalculator";
+import { BLADE_THICKNESS } from "../constants/border";
+import { ThemedView } from "../../components/ThemedView";
+import { ThemedText } from "../../components/ThemedText";
+import { useThemeColor } from "../hooks/useThemeColor";
 
 // Common aspect ratios
 const ASPECT_RATIOS = [
@@ -55,10 +55,6 @@ export default function BorderCalculator() {
   const borderColor = useThemeColor({}, "icon");
   const tintColor = useThemeColor({}, "tint");
 
-  // Add constant preview height
-  const PREVIEW_HEIGHT = 300; // pixels
-  const [previewScale, setPreviewScale] = React.useState(1);
-
   const {
     aspectRatio,
     setAspectRatio,
@@ -89,17 +85,6 @@ export default function BorderCalculator() {
     offsetWarning,
     calculation,
   } = useBorderCalculator();
-
-  // Calculate scale based on paper dimensions
-  React.useEffect(() => {
-    if (calculation) {
-      // Calculate scale based on the larger dimension to ensure the preview fits within our height
-      const scale =
-        PREVIEW_HEIGHT /
-        Math.max(calculation.paperWidth, calculation.paperHeight);
-      setPreviewScale(scale);
-    }
-  }, [calculation]);
 
   const renderPicker = (
     value: string,
@@ -179,10 +164,8 @@ export default function BorderCalculator() {
                 style={[
                   styles.previewContainer,
                   {
-                    height: PREVIEW_HEIGHT,
-                    width:
-                      PREVIEW_HEIGHT *
-                      (calculation.paperWidth / calculation.paperHeight),
+                    height: calculation.previewHeight,
+                    width: calculation.previewWidth,
                     borderColor,
                   },
                 ]}
@@ -201,22 +184,10 @@ export default function BorderCalculator() {
                     style={[
                       styles.printPreview,
                       {
-                        width: `${
-                          (calculation.printWidth / calculation.paperWidth) *
-                          100
-                        }%`,
-                        height: `${
-                          (calculation.printHeight / calculation.paperHeight) *
-                          100
-                        }%`,
-                        left: `${
-                          (calculation.leftBorder / calculation.paperWidth) *
-                          100
-                        }%`,
-                        top: `${
-                          (calculation.topBorder / calculation.paperHeight) *
-                          100
-                        }%`,
+                        width: `${calculation.printWidthPercent}%`,
+                        height: `${calculation.printHeightPercent}%`,
+                        left: `${calculation.leftBorderPercent}%`,
+                        top: `${calculation.topBorderPercent}%`,
                         backgroundColor: borderColor,
                       },
                     ]}
@@ -228,11 +199,7 @@ export default function BorderCalculator() {
                           styles.blade,
                           styles.bladeVertical,
                           {
-                            left: `${
-                              (calculation.leftBorder /
-                                calculation.paperWidth) *
-                              100
-                            }%`,
+                            left: `${calculation.leftBorderPercent}%`,
                             transform: [{ translateX: -BLADE_THICKNESS }],
                             backgroundColor: borderColor,
                           },
@@ -243,11 +210,7 @@ export default function BorderCalculator() {
                           styles.blade,
                           styles.bladeVertical,
                           {
-                            right: `${
-                              (calculation.rightBorder /
-                                calculation.paperWidth) *
-                              100
-                            }%`,
+                            right: `${calculation.rightBorderPercent}%`,
                             transform: [{ translateX: BLADE_THICKNESS }],
                             backgroundColor: borderColor,
                           },
@@ -258,11 +221,7 @@ export default function BorderCalculator() {
                           styles.blade,
                           styles.bladeHorizontal,
                           {
-                            top: `${
-                              (calculation.topBorder /
-                                calculation.paperHeight) *
-                              100
-                            }%`,
+                            top: `${calculation.topBorderPercent}%`,
                             transform: [{ translateY: -BLADE_THICKNESS }],
                             backgroundColor: borderColor,
                           },
@@ -273,11 +232,7 @@ export default function BorderCalculator() {
                           styles.blade,
                           styles.bladeHorizontal,
                           {
-                            bottom: `${
-                              (calculation.bottomBorder /
-                                calculation.paperHeight) *
-                              100
-                            }%`,
+                            bottom: `${calculation.bottomBorderPercent}%`,
                             transform: [{ translateY: BLADE_THICKNESS }],
                             backgroundColor: borderColor,
                           },
@@ -325,12 +280,7 @@ export default function BorderCalculator() {
                     left blade:
                   </ThemedText>
                   <ThemedText style={styles.resultValue}>
-                    {(
-                      calculation.printWidth +
-                      calculation.leftBorder -
-                      calculation.rightBorder
-                    ).toFixed(2)}{" "}
-                    inches
+                    {calculation.leftBladePos.toFixed(2)} inches
                   </ThemedText>
                 </ThemedView>
                 <ThemedView style={styles.resultRow}>
@@ -338,23 +288,13 @@ export default function BorderCalculator() {
                     right blade:
                   </ThemedText>
                   <ThemedText style={styles.resultValue}>
-                    {(
-                      calculation.printWidth -
-                      calculation.leftBorder +
-                      calculation.rightBorder
-                    ).toFixed(2)}{" "}
-                    inches
+                    {calculation.rightBladePos.toFixed(2)} inches
                   </ThemedText>
                 </ThemedView>
                 <ThemedView style={styles.resultRow}>
                   <ThemedText style={styles.resultLabel}>top blade:</ThemedText>
                   <ThemedText style={styles.resultValue}>
-                    {(
-                      calculation.printHeight +
-                      calculation.topBorder -
-                      calculation.bottomBorder
-                    ).toFixed(2)}{" "}
-                    inches
+                    {calculation.topBladePos.toFixed(2)} inches
                   </ThemedText>
                 </ThemedView>
                 <ThemedView style={styles.resultRow}>
@@ -362,12 +302,7 @@ export default function BorderCalculator() {
                     bottom blade:
                   </ThemedText>
                   <ThemedText style={styles.resultValue}>
-                    {(
-                      calculation.printHeight -
-                      calculation.topBorder +
-                      calculation.bottomBorder
-                    ).toFixed(2)}{" "}
-                    inches
+                    {calculation.bottomBladePos.toFixed(2)} inches
                   </ThemedText>
                 </ThemedView>
               </ThemedView>

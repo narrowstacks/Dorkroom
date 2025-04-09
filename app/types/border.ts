@@ -1,4 +1,3 @@
-
 interface AspectRatio {
   label: string;
   value: string;
@@ -22,6 +21,22 @@ interface BorderCalculation {
   printHeight: number;
   paperWidth: number;
   paperHeight: number;
+  
+  previewScale: number;
+  previewHeight: number;
+  previewWidth: number;
+  
+  printWidthPercent: number;
+  printHeightPercent: number;
+  leftBorderPercent: number;
+  topBorderPercent: number;
+  rightBorderPercent: number;
+  bottomBorderPercent: number;
+  
+  leftBladePos: number;
+  rightBladePos: number;
+  topBladePos: number;
+  bottomBladePos: number;
 }
 
 interface SelectListProps {
