@@ -92,10 +92,7 @@ app.json
 
 ### Scripts
 
-- `npm start`: Start Expo development server
-- `npm run android`: Start Android development
-- `npm run ios`: Start iOS development
-- `npm run web`: Start web development
+- `npx expo start`: Start Expo development server
 - `npm test`: Run Jest tests
 - `npm run lint`: Run Expo linting
 - `npm run reset-project`: Reset project state
