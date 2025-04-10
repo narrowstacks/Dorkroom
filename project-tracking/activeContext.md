@@ -1,4 +1,4 @@
-# Dorkroom React Native App - Active Context
+# Dorkroom App - Active Context
 
 ## Current Development Focus
 
@@ -49,6 +49,7 @@ The Dorkroom app is currently in active development with a primary focus on impl
 - Film development tracking features
 - Testing implementation
 - Performance optimizations
+- Final styling
 
 ## Recent Changes
 
