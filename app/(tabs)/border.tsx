@@ -573,6 +573,75 @@ export default function BorderCalculator() {
             )}
           </ThemedView>
         </ThemedView>
+
+        {/* Information about the tool */}
+        <ThemedView
+          style={[
+            styles.infoSection,
+            Platform.OS === "web" && isDesktop && styles.webInfoSection,
+          ]}
+        >
+          <ThemedText type="largeSemiBold" style={styles.infoTitle}>
+            about this tool
+          </ThemedText>
+
+          <ThemedText style={styles.infoContentText}>
+            The border calculator helps you determine the optimal placement of
+            your enlarger easel blades when printing photos, ensuring consistent
+            and aesthetically pleasing borders.
+          </ThemedText>
+
+          <ThemedText type="defaultSemiBold" style={styles.infoSubtitle}>
+            how to use:
+          </ThemedText>
+          <ThemedText style={styles.infoContentText}>
+            1. Select your desired aspect ratio (the ratio of your negative or
+            image)
+          </ThemedText>
+          <ThemedText style={styles.infoContentText}>
+            2. Choose your paper size (the size of photo paper you're printing
+            on)
+          </ThemedText>
+          <ThemedText style={styles.infoContentText}>
+            3. Set your minimum border width (at least 0.5" recommended for
+            handling)
+          </ThemedText>
+          <ThemedText style={styles.infoContentText}>
+            4. Optionally enable offsets to shift the image from center
+          </ThemedText>
+          <ThemedText style={styles.infoContentText}>
+            5. View the blade positions in the results section
+          </ThemedText>
+
+          <ThemedText type="defaultSemiBold" style={styles.infoSubtitle}>
+            blade measurements:
+          </ThemedText>
+          <ThemedText style={styles.infoContentText}>
+            The measurements shown are distances from the edge of your enlarger
+            baseboard to where each blade should be positioned. For non-standard
+            paper sizes, follow the instructions to place your paper in the
+            appropriate easel slot.
+          </ThemedText>
+
+          <ThemedText type="defaultSemiBold" style={styles.infoSubtitle}>
+            tips:
+          </ThemedText>
+          <ThemedText style={styles.infoContentText}>
+            • The "round to 0.25" button suggests a border size that results in
+            measurements aligned to quarter-inch increments
+          </ThemedText>
+          <ThemedText style={styles.infoContentText}>
+            • For uniform borders, keep offsets at 0
+          </ThemedText>
+          <ThemedText style={styles.infoContentText}>
+            • The "flip paper orientation" button rotates the paper between
+            portrait and landscape
+          </ThemedText>
+          <ThemedText style={styles.infoContentText}>
+            • The "flip aspect ratio" button swaps the width and height of your
+            image
+          </ThemedText>
+        </ThemedView>
       </ThemedView>
     </ScrollView>
   );
@@ -746,8 +815,8 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 14,
-    marginTop: 4,
-    fontStyle: "italic",
+    marginBottom: 8,
+    lineHeight: 20,
   },
   picker: {
     width: "100%",
@@ -800,5 +869,34 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginLeft: 8,
     alignSelf: "flex-end",
+  },
+  infoSection: {
+    padding: 16,
+    marginTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#ccc",
+  },
+  infoTitle: {
+    fontSize: 20,
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  infoSubtitle: {
+    fontSize: 16,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  infoContentText: {
+    fontSize: 14,
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  webInfoSection: {
+    maxWidth: 1024,
+    marginHorizontal: "auto",
+    width: "100%",
+    padding: 24,
+    borderTopWidth: 1,
+    borderTopColor: "#ccc",
   },
 });

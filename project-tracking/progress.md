@@ -104,6 +104,7 @@
     <li class="item-complete">[x] Calculate blade positions</li>
     <li class="item-incomplete">[ ] Save custom presets</li>
     <li class="item-incomplete">[ ] Offline functionality</li>
+    <li class ="item-incomplete"> [ ] Information & instructions </li>
   </ul>
 </div>
 </details>
@@ -128,6 +129,7 @@
     <li class="item-complete">[x] Display in seconds and stops</li>
     <li class="item-incomplete">[ ] Save custom presets</li>
     <li class="item-incomplete">[ ] Offline functionality</li>
+    <li class ="item-incomplete"> [ ] Information & instructions </li>
   </ul>
 </div>
 </details>
@@ -152,6 +154,7 @@
     <li class="item-incomplete">[ ] Manual stop input</li>
     <li class="item-incomplete">[ ] Visual feedback</li>
     <li class="item-incomplete">[ ] Save custom presets</li>
+    <li class ="item-incomplete"> [ ] Information & instructions </li>
   </ul>
 </div>
 </details>
@@ -176,6 +179,7 @@
     <li class="item-incomplete">[ ] Calculate equivalent exposure</li>
     <li class="item-incomplete">[ ] Display results clearly</li>
     <li class="item-incomplete">[ ] Save custom presets</li>
+    <li class ="item-incomplete"> [ ] Information & instructions </li>
   </ul>
 </div>
 </details>
@@ -183,21 +187,22 @@
 <details>
 <summary><strong>Reciprocity Calculator</strong></summary>
 <div class="feature-card">
-  <span class="status-not-started">Not Started</span>
+  <span class="status-in-progress">In Progress</span>
   <p>Priority: <span class="priority-medium">Medium</span></p>
   <p>Description: Calculate reciprocity failure compensation</p>
   
   <div class="progress-bar-container">
-    <div class="progress-bar" style="width: 0%"></div>
+    <div class="progress-bar" style="width: 80%"></div>
   </div>
   
   <strong>Requirements:</strong>
   <ul>
-    <li class="item-incomplete">[ ] Input metered exposure time</li>
-    <li class="item-incomplete">[ ] Select film type</li>
-    <li class="item-incomplete">[ ] Input custom reciprocity factor</li>
-    <li class="item-incomplete">[ ] Calculate adjusted exposure time</li>
-    <li class="item-incomplete">[ ] Display calculation formula</li>
+    <li class="item-complete">[x] Input metered exposure time</li>
+    <li class="item-complete">[x] Select film type</li>
+    <li class="item-complete">[x] Input custom reciprocity factor</li>
+    <li class="item-complete">[x] Calculate adjusted exposure time</li>
+    <li class="item-complete">[x] Display calculation formula</li>
+    <li class="item-complete">[x] Visual representation of time difference</li>
     <li class="item-incomplete">[ ] Save custom presets</li>
   </ul>
 </div>

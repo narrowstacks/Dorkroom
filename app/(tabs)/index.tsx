@@ -92,10 +92,10 @@ export default function HomeScreen() {
     <ScrollView>
       <ThemedView style={containerStyle}>
         <ThemedView style={styles.content}>
-          <ThemedText type="title" style={styles.mainTitle}>
+          <ThemedText type="large" style={styles.mainTitle}>
             dorkroom.art
           </ThemedText>
-          <ThemedText type="subtitle" style={styles.subtitle}>
+          <ThemedText type="large" style={styles.subtitle}>
             darkroom and photography calculators
           </ThemedText>
           <ThemedText style={styles.byline}>
@@ -109,7 +109,9 @@ export default function HomeScreen() {
           </ThemedText>
 
           <ThemedView style={styles.section}>
-            <ThemedText type="subtitle">darkroom printing</ThemedText>
+            <ThemedText type="large" style={styles.sectionTitle}>
+              darkroom printing
+            </ThemedText>
             <LinkButton
               href="/border"
               color="#4CAF50"
@@ -134,7 +136,7 @@ export default function HomeScreen() {
           </ThemedView>
 
           <ThemedView style={styles.section}>
-            <ThemedText type="subtitle">
+            <ThemedText type="large" style={styles.sectionTitle}>
               film shooting and developing
             </ThemedText>
             <LinkButton href="#" color="#666" disabled title="coming soon!">
@@ -146,7 +148,11 @@ export default function HomeScreen() {
             <LinkButton href="#" color="#666" disabled title="coming soon!">
               push/pull calculator
             </LinkButton>
-            <LinkButton href="#" color="#666" disabled title="coming soon!">
+            <LinkButton
+              href="/reciprocity"
+              color="#FF9800"
+              title="reciprocity calculator"
+            >
               reciprocity calculator
             </LinkButton>
           </ThemedView>
@@ -209,6 +215,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     gap: 12,
     alignItems: "center",
+  },
+  sectionTitle: {
+    fontSize: 18,
   },
   linkButton: {
     width: "100%",

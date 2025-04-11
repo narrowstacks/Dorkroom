@@ -17,12 +17,12 @@ The Dorkroom app is currently in active development with a primary focus on impl
    - Calculate exposure time adjustments based on print size changes
    - Conversion between seconds and stops
 
-3. **Additional Calculators** - MEDIUM PRIORITY (NOT STARTED)
-   - Stop-Based Exposure Calculator
-   - Camera Exposure Calculator
-   - Reciprocity Calculator
-   - Developer Dilution Calculator
-   - Push/Pull Calculator
+3. **Additional Calculators** - MEDIUM PRIORITY
+   - Stop-Based Exposure Calculator (NOT STARTED)
+   - Camera Exposure Calculator (NOT STARTED)
+   - Reciprocity Calculator (COMPLETED)
+   - Developer Dilution Calculator (NOT STARTED)
+   - Push/Pull Calculator (NOT STARTED)
 
 ### Platform-Specific Development
 
@@ -47,6 +47,7 @@ The Dorkroom app is currently in active development with a primary focus on impl
 - Basic navigation with tab-based layout
 - Print Border Calculator core functionality
 - Print Resizing Calculator basic implementation
+- Reciprocity Calculator implementation
 - Theme support (light/dark mode)
 - Basic UI components
 - Core functionality working across web and mobile platforms
@@ -99,12 +100,18 @@ The Dorkroom app is currently in active development with a primary focus on impl
    - Implement calculation logic
    - Add visual feedback
 
-4. Implement data persistence layer
+4. Add preset functionality to Reciprocity Calculator
+
+   - Create UI for saving custom presets
+   - Implement local storage for presets
+   - Add preset selection UI
+
+5. Implement data persistence layer
 
    - Local storage for calculator settings
    - User preferences
 
-5. Rework and beautify UI to platform standards.
+6. Rework and beautify UI to platform standards.
    - Light/dark/darkroom (red/black)/high contrast (e-ink black/white)
    - Implement platform-specific UI optimizations for web
    - Implement platform-specific UI optimizations for iOS/Android

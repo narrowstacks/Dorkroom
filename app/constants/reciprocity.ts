@@ -1,0 +1,73 @@
+// Constants for Reciprocity Calculator
+
+// Film reciprocity factors
+// The formula used is: AdjustedTime = MeteredTime^factor
+export const FILM_TYPES = [
+  {
+    label: "Kodak Tri-X 400",
+    value: "tri-x",
+    factor: 1.31,
+  },
+  {
+    label: "Kodak T-Max 100",
+    value: "tmax100",
+    factor: 1.26,
+  },
+  {
+    label: "Kodak T-Max 400",
+    value: "tmax400",
+    factor: 1.22,
+  },
+  {
+    label: "Ilford HP5+",
+    value: "hp5",
+    factor: 1.31,
+  },
+  {
+    label: "Ilford Delta 100",
+    value: "delta100",
+    factor: 1.29,
+  },
+  {
+    label: "Ilford Delta 400",
+    value: "delta400",
+    factor: 1.26,
+  },
+  {
+    label: "Ilford FP4+",
+    value: "fp4",
+    factor: 1.33,
+  },
+  {
+    label: "Fuji Acros 100",
+    value: "acros",
+    factor: 1.14, // Has minimal reciprocity failure
+  },
+  {
+    label: "Fuji Neopan 400",
+    value: "neopan",
+    factor: 1.29,
+  },
+  {
+    label: "Foma 100",
+    value: "foma100",
+    factor: 1.35,
+  },
+  {
+    label: "Shanghai GP3 100",
+    value: "gp3",
+    factor: 1.35,
+  },
+  {
+    label: "Custom",
+    value: "custom",
+  },
+];
+
+// Common exposure time presets in seconds
+export const EXPOSURE_PRESETS = [
+  1, 2, 4, 8, 15, 30, 60, 120, 240, 480
+];
+
+// Blade thickness in pixels for the visual representation
+export const BLADE_THICKNESS = 8; 

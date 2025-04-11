@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   TextInput,
@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
+import { useThemeColor } from "../hooks/useThemeColor";
 
 interface NumberInputProps {
   value: string;
@@ -20,6 +21,9 @@ const NumberInput = ({
   onChangeText,
   placeholder,
 }: NumberInputProps) => {
+  const textColor = useThemeColor({}, "text");
+  const borderColor = useThemeColor({}, "icon");
+
   const increment = () => {
     const newValue = (parseFloat(value) + 0.1).toFixed(1);
     onChangeText(newValue);
@@ -35,15 +39,15 @@ const NumberInput = ({
   return (
     <View style={styles.numberInputContainer}>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { color: textColor, borderColor: borderColor }]}
         value={value}
         onChangeText={onChangeText}
         keyboardType="decimal-pad"
         placeholder={placeholder}
-        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+        placeholderTextColor={`${textColor}80`}
       />
       {Platform.OS === "web" && (
-        <View style={styles.spinnerButtons}>
+        <View style={[styles.spinnerButtons, { borderLeftColor: borderColor }]}>
           <TouchableOpacity style={styles.spinnerButton} onPress={increment}>
             <ThemedText style={styles.spinnerButtonText}>▲</ThemedText>
           </TouchableOpacity>
@@ -64,6 +68,26 @@ export const ResizeCalculator = () => {
   const [originalTime, setOriginalTime] = useState("10");
   const [newTime, setNewTime] = useState("");
   const [stopsDifference, setStopsDifference] = useState("");
+  const [isAspectRatioMatched, setIsAspectRatioMatched] = useState(true);
+
+  // Use "tint" color for warning as it's likely a distinctive color in the theme
+  const warningColor = "#ff0707"; // Fallback to amber/yellow warning color
+
+  const checkAspectRatio = () => {
+    const origWidth = parseFloat(originalWidth);
+    const origLength = parseFloat(originalLength);
+    const newW = parseFloat(newWidth);
+    const newL = parseFloat(newLength);
+
+    if (origWidth <= 0 || origLength <= 0 || newW <= 0 || newL <= 0) {
+      return;
+    }
+
+    const originalRatio = (origWidth / origLength).toFixed(3);
+    const newRatio = (newW / newL).toFixed(3);
+
+    setIsAspectRatioMatched(originalRatio === newRatio);
+  };
 
   const calculateExposure = () => {
     const originalArea = parseFloat(originalWidth) * parseFloat(originalLength);
@@ -74,13 +98,24 @@ export const ResizeCalculator = () => {
 
     setNewTime(newTimeValue.toFixed(1));
     setStopsDifference(stops.toFixed(2));
+
+    // Check aspect ratio whenever calculating
+    checkAspectRatio();
   };
+
+  // Calculate exposure time when component mounts with default values
+  useEffect(() => {
+    calculateExposure();
+  }, []);
+
+  // Check aspect ratio when dimensions change
+  useEffect(() => {
+    checkAspectRatio();
+  }, [originalWidth, originalLength, newWidth, newLength]);
 
   return (
     <ThemedView style={styles.container}>
       <View style={styles.contentContainer}>
-        <ThemedText style={styles.title}>Print Resizing Calculator</ThemedText>
-
         <View style={styles.columnsContainer}>
           {/* Initial image size */}
           <View style={styles.column}>
@@ -130,6 +165,15 @@ export const ResizeCalculator = () => {
             </View>
           </View>
         </View>
+
+        {/* Aspect Ratio Warning */}
+        {!isAspectRatioMatched && (
+          <View style={styles.warningContainer}>
+            <ThemedText style={[styles.warningText, { color: warningColor }]}>
+              ⚠️ The aspect ratios of the initial and new sizes don't match!
+            </ThemedText>
+          </View>
+        )}
 
         {/* Original Exposure Time */}
         <View style={styles.exposureTimeContainer}>
@@ -185,13 +229,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     width: "100%",
-    maxWidth: 600,
+    maxWidth: 500,
     marginBottom: 30,
   },
   column: {
     flex: 1,
     alignItems: "center",
-    maxWidth: 250,
+    maxWidth: 200,
   },
   groupLabel: {
     fontSize: 18,
@@ -216,12 +260,10 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 5,
     padding: 8,
-    width: 80,
+    width: 60,
     textAlign: "center",
-    color: "#FFFFFF",
     ...(Platform.OS === "web" && {
       paddingRight: 20, // Make room for spinner buttons
       appearance: "none", // Remove default browser styling
@@ -238,7 +280,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     borderLeftWidth: 1,
-    borderLeftColor: "#ccc",
   },
   spinnerButton: {
     width: 20,
@@ -248,7 +289,6 @@ const styles = StyleSheet.create({
   },
   spinnerButtonText: {
     fontSize: 8,
-    color: "#FFFFFF",
   },
   unit: {
     marginLeft: 10,
@@ -257,8 +297,10 @@ const styles = StyleSheet.create({
   exposureTimeContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 30,
+    marginBottom: 15,
     justifyContent: "center",
+    width: "100%",
+    maxWidth: 350,
   },
   calculateButton: {
     backgroundColor: "#007AFF",
@@ -280,5 +322,16 @@ const styles = StyleSheet.create({
   result: {
     fontSize: 18,
     marginBottom: 10,
+  },
+  warningContainer: {
+    marginBottom: 15,
+    width: "100%",
+    maxWidth: 500,
+    alignItems: "center",
+  },
+  warningText: {
+    fontSize: 10,
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });
