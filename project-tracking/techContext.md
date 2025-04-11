@@ -7,6 +7,7 @@
 - **Runtime**: Node.js
 - **Package Manager**: npm
 - **Architecture**: Expo Router (File-based routing)
+- **Styling**: NativeWind (Tailwind CSS for React Native) with Gluestack UI
 
 ## Development Environment
 
@@ -30,6 +31,12 @@
 - `expo-blur`: Blur effects
 - `expo-haptics`: Haptic feedback
 - `expo-symbols`: Symbol components
+
+### Styling Dependencies
+
+- `nativewind`: Tailwind CSS for React Native
+- `@gluestack-ui/themed`: Pre-built UI components
+- `prettier-plugin-tailwindcss`: Tailwind class sorting
 
 ### Navigation
 

@@ -37,3 +37,9 @@ export const commonStyles = {
     // Web-specific styles
   },
 };
+
+export default {
+  fonts,
+  getPlatformFont,
+  commonStyles,
+};
