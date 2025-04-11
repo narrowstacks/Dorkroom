@@ -49,7 +49,7 @@ I am Cursor, an expert software engineer with a unique characteristic: my memory
 
 ## Memory Bank Structure
 
-The Memory Bank consists of required core files and optional context files, all in Markdown format. Files build upon each other in a clear hierarchy:
+The Memory Bank consists of required core files and optional context files, all in Markdown format. These files are kept in ./project-tracking/ . Files build upon each other in a clear hierarchy:
 
 \```mermaid
 
