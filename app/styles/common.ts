@@ -6,10 +6,10 @@ export const fonts = {
     primary: 'Roboto',
   },
   ios: {
-    primary: 'Menlo',
+    primary: 'San Francisco',
   },
   web: {
-    primary: 'Arial',
+    primary: 'Roboto',
   },
 };
 

@@ -114,6 +114,13 @@ export const useBorderCalculator = () => {
   const [clampedVerticalOffset, setClampedVerticalOffset] = useState(0);
   const [lastValidMinBorder, setLastValidMinBorder] = useState("0.5");
   const [minBorderWarning, setMinBorderWarning] = useState<string | null>(null);
+  // Image state & functions
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  const [isCropping, setIsCropping] = useState(false);
+  const [cropOffset, setCropOffset] = useState({ x: 0, y: 0 });
+  const [cropScale, setCropScale] = useState(1);
+  const [imageLayout, setImageLayout] = useState({ width: 0, height: 0 });
 
   // Function to reset all values to defaults
   const resetToDefaults = () => {
@@ -433,6 +440,13 @@ export const useBorderCalculator = () => {
     minBorderWarning,
     clampedHorizontalOffset,
     clampedVerticalOffset,
+    // Image state & functions
+    selectedImageUri,
+    imageDimensions,
+    isCropping,
+    cropOffset,
+    cropScale,
+    imageLayout,
     // Calculations
     calculation,
     previewScale,
