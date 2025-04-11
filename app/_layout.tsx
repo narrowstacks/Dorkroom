@@ -1,6 +1,7 @@
 import "../app/styles/global.css";
 import "@/app/styles/global.css";
-import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+import { GluestackUIProvider } from "@gluestack-ui/themed";
+import { config } from "@gluestack-ui/config";
 import {
   DarkTheme,
   DefaultTheme,
@@ -33,7 +34,7 @@ export default function RootLayout() {
     return null;
   }
 
-  return <GluestackUIProvider mode="light"><AppContent /></GluestackUIProvider>;
+  return <AppContent />;
 }
 
 function AppContent() {
@@ -41,7 +42,11 @@ function AppContent() {
   const theme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
 
   return (
-    <GluestackUIProvider mode="light"><SafeAreaProvider>
+    <GluestackUIProvider
+      config={config}
+      colorMode={colorScheme === "dark" ? "dark" : "light"}
+    >
+      <SafeAreaProvider>
         <NavigationThemeProvider value={theme}>
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -49,6 +54,7 @@ function AppContent() {
           </Stack>
           <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
         </NavigationThemeProvider>
-      </SafeAreaProvider></GluestackUIProvider>
+      </SafeAreaProvider>
+    </GluestackUIProvider>
   );
 }
