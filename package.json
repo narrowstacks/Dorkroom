@@ -15,6 +15,7 @@
     "preset": "jest-expo"
   },
   "dependencies": {
+    "@expo-google-fonts/dev": "^0.3.0",
     "@expo/vector-icons": "^14.0.2",
     "@react-native-community/slider": "^4.5.6",
     "@react-native-picker/picker": "^2.11.0",

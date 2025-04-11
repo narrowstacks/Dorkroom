@@ -15,6 +15,7 @@ import { FILM_TYPES, EXPOSURE_PRESETS } from "../constants/reciprocity";
 import { ThemedView } from "../../components/ThemedView";
 import { ThemedText } from "../../components/ThemedText";
 import { useThemeColor } from "../hooks/useThemeColor";
+import { fonts } from "../styles/common";
 
 export default function ReciprocityCalculator() {
   const { width } = useWindowDimensions();
@@ -345,15 +346,18 @@ const styles = StyleSheet.create({
   },
   picker: {
     width: "100%",
-    height: 48,
     borderWidth: 1,
     borderRadius: 8,
     ...Platform.select({
       android: {
         marginVertical: 0,
+        height: 70,
       },
       web: {
         marginVertical: 4,
+      },
+      ios: {
+        marginVertical: 48,
       },
     }),
   },
@@ -393,9 +397,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "right",
     fontFamily: Platform.select({
-      ios: "Menlo",
-      android: "monospace",
-      web: "monospace",
+      ios: fonts.ios.primary,
+      android: fonts.android.primary,
+      web: fonts.web.primary,
     }),
     flex: 1,
   },
@@ -403,9 +407,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "left",
     fontFamily: Platform.select({
-      ios: "Menlo",
-      android: "monospace",
-      web: "monospace",
+      ios: fonts.ios.primary,
+      android: fonts.android.primary,
+      web: fonts.web.primary,
     }),
     flex: 1,
   },
@@ -416,9 +420,9 @@ const styles = StyleSheet.create({
     position: "relative",
     bottom: 0,
     fontFamily: Platform.select({
-      ios: "Menlo",
-      android: "monospace",
-      web: "monospace",
+      ios: fonts.ios.primary,
+      android: fonts.android.primary,
+      web: fonts.web.primary,
     }),
   },
   visualContainer: {
@@ -439,9 +443,9 @@ const styles = StyleSheet.create({
   timeBarValue: {
     fontSize: 14,
     fontFamily: Platform.select({
-      ios: "Menlo",
-      android: "monospace",
-      web: "monospace",
+      ios: fonts.ios.primary,
+      android: fonts.android.primary,
+      web: fonts.web.primary,
     }),
   },
   timeBar: {
@@ -460,9 +464,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 4,
     fontFamily: Platform.select({
-      ios: "Menlo",
-      android: "monospace",
-      web: "monospace",
+      ios: fonts.ios.primary,
+      android: fonts.android.primary,
+      web: fonts.web.primary,
     }),
   },
   helpText: {
