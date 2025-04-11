@@ -115,6 +115,28 @@ export const useBorderCalculator = () => {
   const [lastValidMinBorder, setLastValidMinBorder] = useState("0.5");
   const [minBorderWarning, setMinBorderWarning] = useState<string | null>(null);
 
+  // Function to reset all values to defaults
+  const resetToDefaults = () => {
+    setAspectRatio(ASPECT_RATIOS[0].value);
+    setPaperSize(PAPER_SIZES[3].value);
+    setCustomAspectWidth("");
+    setCustomAspectHeight("");
+    setCustomPaperWidth("");
+    setCustomPaperHeight("");
+    setMinBorder("0.5");
+    setEnableOffset(false);
+    setIgnoreMinBorder(false);
+    setHorizontalOffset("0");
+    setVerticalOffset("0");
+    setShowBlades(false);
+    setIsLandscape(true);
+    setIsRatioFlipped(false);
+    setLastValidMinBorder("0.5");
+    setOffsetWarning(null);
+    setBladeWarning(null);
+    setMinBorderWarning(null);
+  };
+
   // Calculate dimensions and borders
   const calculation = useMemo<BorderCalculation>(() => {
     let paperWidth: number;
@@ -294,8 +316,8 @@ export const useBorderCalculator = () => {
     // Create warning message for blade positions
     let warningMessage = "";
         // Check if any blade position is under 2 inches
-    if (Math.abs(leftBladePos) < 2 || Math.abs(rightBladePos) < 2 || Math.abs(topBladePos) < 2 || Math.abs(bottomBladePos) < 2) {
-      warningMessage = "Warning: Most easels do not have markings below 2 inches!";
+    if (Math.abs(leftBladePos) < 3 || Math.abs(rightBladePos) < 3 || Math.abs(topBladePos) < 3 || Math.abs(bottomBladePos) < 3) {
+      warningMessage = "Warning: Most easels do not have markings below 3 inches!";
     }
     // Check if any blade position is negative
     if (leftBladePos < 0 || rightBladePos < 0 || topBladePos < 0 || bottomBladePos < 0) {
@@ -414,7 +436,7 @@ export const useBorderCalculator = () => {
     // Calculations
     calculation,
     previewScale,
-    // New function
+    // Functions
     calculateOptimalMinBorder: () => {
       if (!calculation) return;
       const optimalBorder = calculateOptimalMinBorder(
@@ -426,6 +448,7 @@ export const useBorderCalculator = () => {
       );
       setMinBorder(optimalBorder.toString());
     },
+    resetToDefaults,
   };
 };
 

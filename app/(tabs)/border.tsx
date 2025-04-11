@@ -8,6 +8,7 @@ import {
   TextInput,
   Switch,
 } from "react-native";
+import Slider from "@react-native-community/slider";
 import { Picker } from "@react-native-picker/picker";
 import { useWindowDimensions } from "../hooks/useWindowDimensions";
 import { useBorderCalculator } from "../hooks/useBorderCalculator";
@@ -89,6 +90,7 @@ export default function BorderCalculator() {
     calculation,
     minBorderWarning,
     calculateOptimalMinBorder,
+    resetToDefaults,
   } = useBorderCalculator();
 
   const renderPicker = (
@@ -358,6 +360,16 @@ export default function BorderCalculator() {
                   </ThemedText>
                 )}
               </ThemedView>
+
+              {/* Reset Button */}
+              <Pressable
+                style={[styles.resetButton, { backgroundColor: "#ff6b6b" }]}
+                onPress={resetToDefaults}
+              >
+                <ThemedText style={styles.buttonText}>
+                  reset to defaults
+                </ThemedText>
+              </Pressable>
             </ThemedView>
           )}
 
@@ -450,20 +462,40 @@ export default function BorderCalculator() {
 
             {/* Minimum Border Input */}
             <ThemedView style={styles.formGroup}>
+              <ThemedText style={styles.label}>
+                minimum border (inches):
+              </ThemedText>
+
               <ThemedView style={styles.row}>
-                <ThemedView style={styles.inputGroup}>
-                  <ThemedText style={styles.label}>
-                    minimum border (inches):
-                  </ThemedText>
-                  <TextInput
-                    style={[styles.input, { color: textColor, borderColor }]}
-                    value={minBorder}
-                    onChangeText={setMinBorder}
-                    keyboardType="numeric"
-                    placeholder="0.5"
-                    placeholderTextColor={borderColor}
-                  />
-                </ThemedView>
+                <TextInput
+                  style={[
+                    styles.input,
+                    { color: textColor, borderColor },
+                    Platform.OS === "web" && isDesktop && styles.minBorderInput,
+                  ]}
+                  value={minBorder}
+                  onChangeText={setMinBorder}
+                  keyboardType="numeric"
+                  placeholder="0.5"
+                  placeholderTextColor={borderColor}
+                />
+
+                {Platform.OS === "web" && isDesktop && (
+                  <ThemedView style={styles.sliderContainer}>
+                    <Slider
+                      style={styles.webSlider}
+                      minimumValue={0}
+                      maximumValue={6}
+                      step={0.25}
+                      value={parseFloat(minBorder) || 0}
+                      onValueChange={(value) => setMinBorder(value.toString())}
+                      minimumTrackTintColor={tintColor}
+                      maximumTrackTintColor={borderColor}
+                      thumbTintColor={tintColor}
+                    />
+                  </ThemedView>
+                )}
+
                 <Pressable
                   style={[styles.roundButton, { backgroundColor: tintColor }]}
                   onPress={calculateOptimalMinBorder}
@@ -473,6 +505,31 @@ export default function BorderCalculator() {
                   </ThemedText>
                 </Pressable>
               </ThemedView>
+
+              {(Platform.OS === "ios" ||
+                Platform.OS === "android" ||
+                (Platform.OS === "web" && !isDesktop)) && (
+                <ThemedView style={styles.mobileSliderContainer}>
+                  <Slider
+                    style={styles.mobileSlider}
+                    minimumValue={0}
+                    maximumValue={6}
+                    step={0.25}
+                    value={parseFloat(minBorder) || 0}
+                    onValueChange={(value) => setMinBorder(value.toString())}
+                    minimumTrackTintColor={tintColor}
+                    maximumTrackTintColor={borderColor}
+                    thumbTintColor={tintColor}
+                  />
+                  <ThemedView style={styles.sliderLabels}>
+                    <ThemedText style={styles.sliderLabel}>0"</ThemedText>
+                    <ThemedText style={styles.sliderLabel}>1.5"</ThemedText>
+                    <ThemedText style={styles.sliderLabel}>3"</ThemedText>
+                    <ThemedText style={styles.sliderLabel}>4.5"</ThemedText>
+                    <ThemedText style={styles.sliderLabel}>6"</ThemedText>
+                  </ThemedView>
+                </ThemedView>
+              )}
             </ThemedView>
 
             {/* Toggles Row */}
@@ -527,7 +584,7 @@ export default function BorderCalculator() {
                 </ThemedView>
 
                 <ThemedView style={styles.formGroup}>
-                  <ThemedView style={styles.row}>
+                  <ThemedView style={[styles.row, styles.offsetRow]}>
                     <ThemedView style={styles.inputGroup}>
                       <ThemedText style={styles.label}>
                         horizontal offset:
@@ -544,6 +601,28 @@ export default function BorderCalculator() {
                         placeholder="0"
                         placeholderTextColor={borderColor}
                       />
+                      <Slider
+                        style={styles.offsetSlider}
+                        minimumValue={-3}
+                        maximumValue={3}
+                        step={0.25}
+                        value={parseFloat(horizontalOffset) || 0}
+                        onValueChange={(value) =>
+                          setHorizontalOffset(value.toString())
+                        }
+                        minimumTrackTintColor={tintColor}
+                        maximumTrackTintColor={borderColor}
+                        thumbTintColor={tintColor}
+                      />
+                      <ThemedView style={styles.offsetSliderLabels}>
+                        <ThemedText style={styles.sliderLabel}>-3"</ThemedText>
+                        <ThemedText style={styles.sliderLabel}>
+                          -1.5"
+                        </ThemedText>
+                        <ThemedText style={styles.sliderLabel}>0"</ThemedText>
+                        <ThemedText style={styles.sliderLabel}>1.5"</ThemedText>
+                        <ThemedText style={styles.sliderLabel}>3"</ThemedText>
+                      </ThemedView>
                     </ThemedView>
                     <ThemedView style={styles.inputGroup}>
                       <ThemedText style={styles.label}>
@@ -561,6 +640,28 @@ export default function BorderCalculator() {
                         placeholder="0"
                         placeholderTextColor={borderColor}
                       />
+                      <Slider
+                        style={styles.offsetSlider}
+                        minimumValue={-3}
+                        maximumValue={3}
+                        step={0.25}
+                        value={parseFloat(verticalOffset) || 0}
+                        onValueChange={(value) =>
+                          setVerticalOffset(value.toString())
+                        }
+                        minimumTrackTintColor={tintColor}
+                        maximumTrackTintColor={borderColor}
+                        thumbTintColor={tintColor}
+                      />
+                      <ThemedView style={styles.offsetSliderLabels}>
+                        <ThemedText style={styles.sliderLabel}>-3"</ThemedText>
+                        <ThemedText style={styles.sliderLabel}>
+                          -1.5"
+                        </ThemedText>
+                        <ThemedText style={styles.sliderLabel}>0"</ThemedText>
+                        <ThemedText style={styles.sliderLabel}>1.5"</ThemedText>
+                        <ThemedText style={styles.sliderLabel}>3"</ThemedText>
+                      </ThemedView>
                     </ThemedView>
                   </ThemedView>
                   {offsetWarning && (
@@ -603,8 +704,7 @@ export default function BorderCalculator() {
             on)
           </ThemedText>
           <ThemedText style={styles.infoContentText}>
-            3. Set your minimum border width (at least 0.5" recommended for
-            handling)
+            3. Set your minimum border width (at least 0.5" recommended)
           </ThemedText>
           <ThemedText style={styles.infoContentText}>
             4. Optionally enable offsets to shift the image from center
@@ -619,8 +719,8 @@ export default function BorderCalculator() {
           <ThemedText style={styles.infoContentText}>
             The measurements shown are distances from the edge of your enlarger
             baseboard to where each blade should be positioned. For non-standard
-            paper sizes, follow the instructions to place your paper in the
-            appropriate easel slot.
+            paper sizes (sizes that don't have a standard easel slot), follow
+            the instructions to place your paper in the appropriate easel slot.
           </ThemedText>
 
           <ThemedText type="defaultSemiBold" style={styles.infoSubtitle}>
@@ -678,9 +778,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 16,
+    marginTop: 8,
   },
   label: {
     fontSize: 16,
+    marginBottom: Platform.OS === "web" ? 0 : 4,
   },
   inputGroup: {
     flex: 1,
@@ -692,6 +794,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     fontSize: 16,
+    marginBottom: 4,
   },
   previewSection: {
     gap: 16,
@@ -868,7 +971,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 8,
     marginLeft: 8,
-    alignSelf: "flex-end",
+    alignSelf: "center",
+    minWidth: Platform.OS === "web" ? 140 : 160,
+    justifyContent: "center",
+    alignItems: "center",
   },
   infoSection: {
     padding: 16,
@@ -898,5 +1004,63 @@ const styles = StyleSheet.create({
     padding: 24,
     borderTopWidth: 1,
     borderTopColor: "#ccc",
+  },
+  minBorderInput: {
+    width: 80,
+    flex: 0,
+  },
+  sliderContainer: {
+    flex: 1,
+    marginHorizontal: 8,
+  },
+  webSlider: {
+    width: "100%",
+    height: 40,
+  },
+  mobileSliderContainer: {
+    marginTop: 16,
+    width: "100%",
+  },
+  mobileSlider: {
+    width: "100%",
+    height: 40,
+  },
+  sliderLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginTop: 4,
+  },
+  sliderLabel: {
+    fontSize: 12,
+    textAlign: "center",
+  },
+  offsetSlider: {
+    width: "100%",
+    height: 40,
+    marginTop: 4,
+  },
+  offsetSliderLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginTop: 4,
+  },
+  offsetRow: {
+    alignItems: "flex-start",
+    gap: 24,
+  },
+  resetButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 16,
+    alignSelf: "center",
+    minWidth: Platform.OS === "web" ? 140 : 160,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
   },
 });

@@ -92,8 +92,8 @@ export default function ResizeScreen() {
             tips:
           </ThemedText>
           <ThemedText style={styles.infoContentText}>
-            • The results of this should only be treated as a best-guess. Always
-            make a test strip when resizing prints!
+            • The results of this should only be treated as a best-guess
+            estimate. Always make a test strip when resizing prints!
           </ThemedText>
 
           <ThemedText style={styles.infoContentText}>

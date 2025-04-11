@@ -58,6 +58,33 @@ export default function TabLayout() {
             ),
           }}
         />
+        <Tabs.Screen
+          name="exposure"
+          options={{
+            title: "Stops",
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={28} name="timer" color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="cameraExposure"
+          options={{
+            title: "Exposure",
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={28} name="camera.fill" color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="reciprocity"
+          options={{
+            title: "Reciprocity",
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={28} name="clock.fill" color={color} />
+            ),
+          }}
+        />
       </Tabs>
     </SafeAreaView>
   );

@@ -269,4 +269,58 @@
 - Native API integration
 - Device feature detection
 
+## Calculator Components Architecture
+
+### Calculator Pattern
+
+- Separation of UI and calculation logic
+- Calculator UI components in `app/(tabs)/`
+- Calculator logic in custom hooks under `hooks/`
+- Consistent data flow: inputs → hook processing → UI feedback
+
+### Calculator Types
+
+#### Print Border Calculator
+
+- Uses `useBorderCalculator` hook
+- Calculates blade positions for adjustable easels
+- Complex state management for multiple form inputs
+- Visual feedback through diagram rendering
+
+#### Print Resizing Calculator
+
+- Uses custom logic for calculating exposure adjustments
+- Simple conversion between original and new sizes
+- Area-based exposure calculation
+
+#### Stop-Based Exposure Calculator
+
+- Uses `useExposureCalculator` hook
+- Implements standard darkroom stop adjustments
+- Supports both fractional (1/3, 1/2) and full stop changes
+- Formula-based calculation with proper rounding
+
+#### Camera Exposure Calculator
+
+- Uses `useCameraExposureCalculator` hook
+- Implements the exposure triangle relationship
+- Maintains equivalent exposure across settings
+- Handles conversion between fractional and decimal time notation
+- Rounds to standard camera values (aperture, shutter, ISO)
+
+#### Reciprocity Calculator
+
+- Specialized calculator for film reciprocity
+- Film-specific calculations with formulas
+- Custom formula option for specialized films
+
+### Calculator UI Patterns
+
+- Consistent layout across calculator screens
+- Responsive design for all platforms
+- Information sections to provide usage guidance
+- Visual feedback for results
+- Error state handling
+- Platform-specific input controls (pickers, sliders)
+
 This document will be updated as new patterns are established or existing patterns evolve.

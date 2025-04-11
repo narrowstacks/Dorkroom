@@ -52,12 +52,26 @@ assets/
     adaptive-icon.png
     favicon.png
     splash-icon.png
-src/
-  components/
-  screens/
-  navigation/
+app/
+  (tabs)/
+    _layout.tsx          # Tab navigation layout
+    index.tsx            # Home screen
+    border.tsx           # Print Border Calculator
+    resize.tsx           # Print Resizing Calculator
+    exposure.tsx         # Stop-Based Exposure Calculator
+    cameraExposure.tsx   # Camera Exposure Calculator
+    reciprocity.tsx      # Reciprocity Calculator
   hooks/
-  utils/
+    useBorderCalculator.ts
+    useExposureCalculator.ts
+    useCameraExposureCalculator.ts
+    useReciprocityCalculator.ts
+    useThemeColor.ts
+    useWindowDimensions.ts
+  components/
+    ui/
+    ThemedText.tsx
+    ThemedView.tsx
 App.js
 app.json
 ```
@@ -161,5 +175,20 @@ app.json
 - Input sanitization
 - Platform-specific security best practices
 - Web-specific protection against XSS and CSRF
+
+## Calculator Hooks
+
+The app implements a series of specialized calculator hooks to handle the complex calculations required for darkroom printing:
+
+- **useBorderCalculator**: Handles border calculations for various paper sizes and aspect ratios
+- **useExposureCalculator**: Manages exposure time adjustments based on stop changes
+- **useCameraExposureCalculator**: Implements the exposure triangle logic for equivalent exposures
+- **useReciprocityCalculator**: Handles film reciprocity failure calculations
+
+These hooks follow the pattern of:
+
+- Taking inputs through state
+- Processing calculations based on established formulas
+- Returning calculated values and additional helper functions
 
 This document will be updated as the project evolves and new technical decisions are made.

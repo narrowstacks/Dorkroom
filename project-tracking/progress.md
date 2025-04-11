@@ -137,24 +137,24 @@
 <details>
 <summary><strong>Stop-Based Exposure Calculator</strong></summary>
 <div class="feature-card">
-  <span class="status-not-started">Not Started</span>
+  <span class="status-progress">Completed</span>
   <p>Priority: <span class="priority-medium">Medium</span></p>
   <p>Description: Calculate new exposure times based on stop changes</p>
   
   <div class="progress-bar-container">
-    <div class="progress-bar" style="width: 0%"></div>
+    <div class="progress-bar" style="width: 85%"></div>
   </div>
   
   <strong>Requirements:</strong>
   <ul>
-    <li class="item-incomplete">[ ] Input original exposure time</li>
-    <li class="item-incomplete">[ ] +/- 1/2 stop adjustment buttons</li>
-    <li class="item-incomplete">[ ] +/- 1/3 stop adjustment buttons</li>
-    <li class="item-incomplete">[ ] +/- 1 stop adjustment buttons</li>
-    <li class="item-incomplete">[ ] Manual stop input</li>
-    <li class="item-incomplete">[ ] Visual feedback</li>
+    <li class="item-complete">[x] Input original exposure time</li>
+    <li class="item-complete">[x] +/- 1/2 stop adjustment buttons</li>
+    <li class="item-complete">[x] +/- 1/3 stop adjustment buttons</li>
+    <li class="item-complete">[x] +/- 1 stop adjustment buttons</li>
+    <li class="item-complete">[x] Manual stop input</li>
+    <li class="item-complete">[x] Visual feedback</li>
     <li class="item-incomplete">[ ] Save custom presets</li>
-    <li class ="item-incomplete"> [ ] Information & instructions </li>
+    <li class="item-complete">[x] Information & instructions</li>
   </ul>
 </div>
 </details>
@@ -162,24 +162,26 @@
 <details>
 <summary><strong>Camera Exposure Calculator</strong></summary>
 <div class="feature-card">
-  <span class="status-not-started">Not Started</span>
+  <span class="status-complete">Completed</span>
   <p>Priority: <span class="priority-medium">Medium</span></p>
   <p>Description: Calculate equivalent exposures</p>
   
   <div class="progress-bar-container">
-    <div class="progress-bar" style="width: 0%"></div>
+    <div class="progress-bar" style="width: 90%"></div>
   </div>
   
   <strong>Requirements:</strong>
   <ul>
-    <li class="item-incomplete">[ ] Input original exposure time</li>
-    <li class="item-incomplete">[ ] Input original aperture</li>
-    <li class="item-incomplete">[ ] Input original ISO</li>
-    <li class="item-incomplete">[ ] Select value to change</li>
-    <li class="item-incomplete">[ ] Calculate equivalent exposure</li>
-    <li class="item-incomplete">[ ] Display results clearly</li>
+    <li class="item-complete">[x] Input original exposure time</li>
+    <li class="item-complete">[x] Input original aperture</li>
+    <li class="item-complete">[x] Input original ISO</li>
+    <li class="item-complete">[x] Select value to change</li>
+    <li class="item-complete">[x] Calculate equivalent exposure</li>
+    <li class="item-complete">[x] Display results clearly</li>
+    <li class="item-complete">[x] Round to standard camera values</li>
+    <li class="item-complete">[x] Pre-calculated default values</li>
     <li class="item-incomplete">[ ] Save custom presets</li>
-    <li class ="item-incomplete"> [ ] Information & instructions </li>
+    <li class="item-complete">[x] Information & instructions</li>
   </ul>
 </div>
 </details>

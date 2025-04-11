@@ -139,7 +139,11 @@ export default function HomeScreen() {
             <ThemedText type="large" style={styles.sectionTitle}>
               film shooting and developing
             </ThemedText>
-            <LinkButton href="#" color="#666" disabled title="coming soon!">
+            <LinkButton
+              href="/cameraExposure"
+              color="#3F51B5"
+              title="exposure calculator"
+            >
               exposure calculator
             </LinkButton>
             <LinkButton href="#" color="#666" disabled title="coming soon!">

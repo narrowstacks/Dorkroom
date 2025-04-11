@@ -411,10 +411,10 @@ const styles = StyleSheet.create({
   },
   subscript: {
     fontSize: 10,
-    lineHeight: 30,
+    lineHeight: 25,
     textAlignVertical: "bottom",
     position: "relative",
-    bottom: -5,
+    bottom: 0,
     fontFamily: Platform.select({
       ios: "Menlo",
       android: "monospace",
