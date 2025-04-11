@@ -59,6 +59,15 @@ These calculations are traditionally done manually or with separate tools, which
 - Depth of field calculations
 - Lighting ratio tools
 
+### Educational Content
+
+- Photography Knowledge Base with comprehensive articles and cross-references
+- Technique Guides with step-by-step visual instructions
+- Formula Explainers that detail the math behind calculator functions
+- Film and Paper Database with specifications and usage recommendations
+- Interactive Learning Modules for self-paced education
+- Contextual Help System integrated with calculators
+
 ## User Experience Goals
 
 ### Accessibility
@@ -75,12 +84,34 @@ These calculations are traditionally done manually or with separate tools, which
 - Data persistence
 - Error prevention
 
+### Platform-Specific Experience
+
+#### Web Experience
+
+- Optimized for desktop workflows
+- Keyboard shortcuts for power users
+- Responsive design for various screen sizes
+- Browser compatibility across major browsers
+- Quick access to all calculators and reference materials
+
+#### Mobile Experience
+
+- Touch-optimized controls
+- Native feeling navigation and interactions
+- Platform-specific design patterns (iOS, Android)
+- Optimized for on-the-go use in darkroom environments
+- Quick access to frequently used calculations
+
 ### Educational Value
 
 - Clear explanations of calculations
 - Helpful tips and guidance
 - Process documentation
 - Best practices information
+- Comprehensive knowledge base with searchable articles
+- Interactive learning modules with progress tracking
+- Context-sensitive help integrated with calculators
+- Visual guides and demonstrations
 
 ## Value Proposition
 
@@ -96,6 +127,9 @@ Dorkroom provides photographers with a reliable, accurate, and accessible set of
 4. Receive blade positioning instructions
 5. Apply settings to darkroom easel
 
+**Web-specific**: Precise input via keyboard, larger visualization, ability to print instructions  
+**Mobile-specific**: Touch sliders for quick adjustments, saved presets for darkroom use
+
 ### Print Resizing
 
 1. Input original print size and print exposure time
@@ -103,11 +137,17 @@ Dorkroom provides photographers with a reliable, accurate, and accessible set of
 3. Output new exposure time in both seconds and change in stops
 4. Optionally save custom preset with name.
 
+**Web-specific**: Tabular format for quick comparison of multiple size changes  
+**Mobile-specific**: Simple interface optimized for single calculations, history of recent calculations
+
 ### Stop-Based Exposure Calculator
 
 1. Input original exposure time
 2. Select change in stops, either by manual number entry, or buttons that add or remove 1/2, 1/3, or 1 stop
 3. Output new calculated exposure time
+
+**Web-specific**: Keyboard shortcuts for quick adjustments, detailed visual feedback  
+**Mobile-specific**: Touch-friendly adjustment buttons, simple display optimized for darkroom visibility
 
 ### Camera Exposure Calculator
 
@@ -158,6 +198,22 @@ TMax Films
 4. Track development process
 5. Record results
 
+### Knowledge Base Navigation
+
+1. Browse categories or search for specific topics
+2. Access detailed articles with images and diagrams
+3. Follow cross-references to related topics
+4. Bookmark or save articles for future reference
+5. Optionally contribute personal notes (for logged-in users)
+
+### Interactive Learning
+
+1. Select a learning module based on interest or skill level
+2. Progress through sequential lessons with interactive elements
+3. Complete practice exercises and quizzes
+4. Track progress through modules
+5. Apply learned concepts directly in relevant calculators
+
 ## Success Criteria
 
 - Reduction in calculation errors
@@ -173,3 +229,7 @@ TMax Films
 - Advanced calculation options
 - Custom formula support
 - Expanded film type database
+- User-contributed educational content
+- Video tutorials and demonstrations
+- Expert masterclasses and specialized technique guides
+- Integration with photography schools and curriculum

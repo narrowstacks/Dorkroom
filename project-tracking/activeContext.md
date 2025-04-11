@@ -24,6 +24,21 @@ The Dorkroom app is currently in active development with a primary focus on impl
    - Developer Dilution Calculator
    - Push/Pull Calculator
 
+### Platform-Specific Development
+
+1. **Web Interface** - HIGH PRIORITY (IN PROGRESS)
+
+   - Optimize responsive layout for desktop browsers
+   - Implement keyboard shortcuts for power users
+   - Ensure browser compatibility across major browsers
+   - Optimize performance for web-specific contexts
+
+2. **Mobile Interface** - HIGH PRIORITY (IN PROGRESS)
+   - Optimize touch controls and gestures
+   - Implement platform-specific UI components (iOS/Android)
+   - Ensure proper appearance across various mobile screen sizes
+   - Optimize for battery efficiency and performance
+
 ## Implementation Status
 
 ### Completed Components and Features
@@ -34,6 +49,7 @@ The Dorkroom app is currently in active development with a primary focus on impl
 - Print Resizing Calculator basic implementation
 - Theme support (light/dark mode)
 - Basic UI components
+- Core functionality working across web and mobile platforms
 
 ### In Progress
 
@@ -41,6 +57,8 @@ The Dorkroom app is currently in active development with a primary focus on impl
 - Data persistence for calculator settings
 - UI/UX improvements
 - Additional calculator implementations
+- Web interface optimizations
+- Mobile interface platform-specific enhancements
 
 ### Not Started
 
@@ -50,6 +68,8 @@ The Dorkroom app is currently in active development with a primary focus on impl
 - Testing implementation
 - Performance optimizations
 - Final styling
+- Web-specific keyboard shortcuts
+- Platform-specific gesture implementations
 
 ## Recent Changes
 
@@ -58,6 +78,7 @@ The Dorkroom app is currently in active development with a primary focus on impl
 - Added Print Resizing Calculator
 - Configured theme support for light and dark modes
 - Implemented responsive layouts
+- Added tracking for web and mobile interface development
 
 ## Next Tasks
 
@@ -83,8 +104,10 @@ The Dorkroom app is currently in active development with a primary focus on impl
    - Local storage for calculator settings
    - User preferences
 
-5. Rework and beautiful UI to platform standards.
+5. Rework and beautify UI to platform standards.
    - Light/dark/darkroom (red/black)/high contrast (e-ink black/white)
+   - Implement platform-specific UI optimizations for web
+   - Implement platform-specific UI optimizations for iOS/Android
 
 ## Active Decisions
 

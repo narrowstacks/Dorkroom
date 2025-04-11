@@ -209,4 +209,64 @@
 - Screen size handling
 - Orientation support
 
+## Web Interface Patterns
+
+### Web Navigation
+
+- Browser history integration
+- Deep linking support
+- Proper URL routing
+- Page title management
+
+### Web-Specific Components
+
+- Desktop-optimized inputs
+- Keyboard navigation
+- Focus management
+- Hover state handling
+
+### Web Performance
+
+- Code splitting
+- Bundle optimization
+- Asset preloading
+- Browser caching strategies
+
+### Web Accessibility
+
+- ARIA attributes
+- Keyboard focus trapping
+- Screen reader optimization
+- Color contrast compliance
+
+## Mobile Interface Patterns
+
+### Mobile Navigation
+
+- Native feeling transitions
+- Tab bar customization
+- Stack navigation gestures
+- Modal presentation
+
+### Mobile-Specific Components
+
+- Touch-optimized inputs
+- Gesture handling
+- Platform-specific UI components
+- Native feedback (haptics, sounds)
+
+### Mobile Performance
+
+- Memory management
+- Image optimization
+- Minimized re-renders
+- Background task handling
+
+### Mobile Platform Integration
+
+- iOS-specific patterns
+- Android-specific patterns
+- Native API integration
+- Device feature detection
+
 This document will be updated as new patterns are established or existing patterns evolve.

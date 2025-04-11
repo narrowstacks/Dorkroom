@@ -114,6 +114,33 @@ app.json
 - Must support offline functionality
 - Must implement proper error handling
 
+## Platform-Specific Technical Requirements
+
+### Web Requirements
+
+- **Browsers**: Support for Chrome, Firefox, Safari, and Edge (latest 2 versions)
+- **Responsiveness**: Fully responsive from mobile to desktop viewports
+- **PWA Support**: Progressive Web App capabilities
+- **SEO**: Basic SEO optimization for public pages
+- **Keyboard Navigation**: Full keyboard accessibility
+- **Performance**: Target Lighthouse performance score of 90+
+
+### iOS Requirements
+
+- **Minimum iOS Version**: iOS 13+
+- **Devices**: iPhone (all sizes) and iPad support
+- **UI Guidelines**: Adhere to Apple Human Interface Guidelines
+- **Native Features**: Haptic feedback, share extensions integration
+- **Optimization**: Support for different screen sizes and notches
+
+### Android Requirements
+
+- **Minimum Android Version**: Android 8+ (API level 26)
+- **Material Design**: Follow Material Design guidelines
+- **Device Support**: Various screen sizes and aspect ratios
+- **Performance**: Optimization for lower-end devices
+- **Native Features**: Back button handling, notifications
+
 ## Performance Considerations
 
 - Use of React Native Reanimated for smooth animations
@@ -121,6 +148,9 @@ app.json
 - Efficient state management
 - Proper memory management
 - Optimized rendering
+- Platform-specific performance optimizations
+- Web-specific bundle optimization
+- Mobile-specific battery and memory optimizations
 
 ## Security Considerations
 
@@ -129,5 +159,7 @@ app.json
 - Secure API communication
 - Proper error handling
 - Input sanitization
+- Platform-specific security best practices
+- Web-specific protection against XSS and CSRF
 
 This document will be updated as the project evolves and new technical decisions are made.
