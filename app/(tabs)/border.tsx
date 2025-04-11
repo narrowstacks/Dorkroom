@@ -9,13 +9,30 @@ import {
   Switch,
 } from "react-native";
 import Slider from "@react-native-community/slider";
-import { Picker } from "@react-native-picker/picker";
 import { useWindowDimensions } from "../hooks/useWindowDimensions";
 import { useBorderCalculator } from "../hooks/useBorderCalculator";
 import { BLADE_THICKNESS } from "../constants/border";
 import { ThemedView } from "../../components/ThemedView";
 import { ThemedText } from "../../components/ThemedText";
 import { useThemeColor } from "../hooks/useThemeColor";
+import {
+  Box,
+  Button,
+  ButtonText,
+  HStack,
+  Select,
+  SelectTrigger,
+  SelectInput,
+  SelectIcon,
+  Icon,
+  ChevronDownIcon,
+  SelectPortal,
+  SelectBackdrop,
+  SelectContent,
+  SelectDragIndicatorWrapper,
+  SelectDragIndicator,
+  SelectItem,
+} from "@gluestack-ui/themed";
 
 // Common aspect ratios
 const ASPECT_RATIOS = [
@@ -96,46 +113,31 @@ export default function BorderCalculator() {
   const renderPicker = (
     value: string,
     onValueChange: (value: string) => void,
-    items: Array<{ label: string; value: string }>
+    items: Array<{ label: string; value: string }>,
+    placeholder: string = "Select an option"
   ) => {
-    if (Platform.OS === "ios") {
-      return (
-        <ThemedView style={[styles.pickerContainer, { borderColor }]}>
-          <Picker
-            selectedValue={value}
-            onValueChange={onValueChange}
-            itemStyle={{ color: textColor, height: 120 }}
-          >
+    return (
+      <Select selectedValue={value} onValueChange={onValueChange}>
+        <SelectTrigger variant="outline" size="md">
+          <SelectInput placeholder={placeholder} />
+          <SelectIcon as={ChevronDownIcon} mr="$3" />
+        </SelectTrigger>
+        <SelectPortal>
+          <SelectBackdrop />
+          <SelectContent>
+            <SelectDragIndicatorWrapper>
+              <SelectDragIndicator />
+            </SelectDragIndicatorWrapper>
             {items.map((item) => (
-              <Picker.Item
+              <SelectItem
                 key={item.value}
                 label={item.label}
                 value={item.value}
               />
             ))}
-          </Picker>
-        </ThemedView>
-      );
-    }
-
-    return (
-      <Picker
-        selectedValue={value}
-        onValueChange={onValueChange}
-        style={[
-          styles.picker,
-          {
-            backgroundColor,
-            color: textColor,
-            borderColor,
-          },
-        ]}
-        dropdownIconColor={textColor}
-      >
-        {items.map((item) => (
-          <Picker.Item key={item.value} label={item.label} value={item.value} />
-        ))}
-      </Picker>
+          </SelectContent>
+        </SelectPortal>
+      </Select>
     );
   };
 
@@ -159,7 +161,7 @@ export default function BorderCalculator() {
             Platform.OS === "web" && isDesktop && styles.webMainContent,
           ]}
         >
-          {/* Preview and Results Section - Now shown first on mobile */}
+          {/* Preview and Results Section - Shown at top of screen on mobile */}
           {calculation && (
             <ThemedView
               style={[
@@ -184,6 +186,7 @@ export default function BorderCalculator() {
                       width: "100%",
                       height: "100%",
                       borderColor,
+                      backgroundColor: "white",
                     },
                   ]}
                 >
@@ -195,7 +198,7 @@ export default function BorderCalculator() {
                         height: `${calculation.printHeightPercent}%`,
                         left: `${calculation.leftBorderPercent}%`,
                         top: `${calculation.topBorderPercent}%`,
-                        backgroundColor: borderColor,
+                        backgroundColor: "grey",
                       },
                     ]}
                   />
@@ -262,24 +265,24 @@ export default function BorderCalculator() {
                 </ThemedView>
               </ThemedView>
 
-              <ThemedView style={styles.buttonContainer}>
-                <Pressable
-                  style={[styles.button, { backgroundColor: tintColor }]}
+              <HStack style={styles.buttonContainer}>
+                <Button
                   onPress={() => setIsLandscape(!isLandscape)}
+                  variant="outline"
                 >
-                  <ThemedText style={styles.buttonText}>
+                  <ButtonText>
                     flip paper orientation
-                  </ThemedText>
-                </Pressable>
-                <Pressable
-                  style={[styles.button, { backgroundColor: tintColor }]}
+                  </ButtonText>
+                </Button>
+                <Button
                   onPress={() => setIsRatioFlipped(!isRatioFlipped)}
+                  variant="outline"
                 >
-                  <ThemedText style={styles.buttonText}>
+                  <ButtonText>
                     flip aspect ratio
-                  </ThemedText>
-                </Pressable>
-              </ThemedView>
+                  </ButtonText>
+                </Button>
+              </HStack>
 
               <ThemedView style={styles.resultContainer}>
                 <ThemedText type="largeSemiBold" style={styles.subtitle}>
@@ -362,14 +365,13 @@ export default function BorderCalculator() {
               </ThemedView>
 
               {/* Reset Button */}
-              <Pressable
-                style={[styles.resetButton, { backgroundColor: "#ff6b6b" }]}
+              <Button
                 onPress={resetToDefaults}
+                variant="negative"
+                action="negative"
               >
-                <ThemedText style={styles.buttonText}>
-                  reset to defaults
-                </ThemedText>
-              </Pressable>
+                <ButtonText>reset to defaults</ButtonText>
+              </Button>
             </ThemedView>
           )}
 
@@ -383,7 +385,12 @@ export default function BorderCalculator() {
             {/* Aspect Ratio Selection */}
             <ThemedView style={styles.formGroup}>
               <ThemedText style={styles.label}>aspect ratio:</ThemedText>
-              {renderPicker(aspectRatio, setAspectRatio, ASPECT_RATIOS)}
+              {renderPicker(
+                aspectRatio,
+                setAspectRatio,
+                ASPECT_RATIOS,
+                "Select Aspect Ratio"
+              )}
             </ThemedView>
 
             {/* Custom Aspect Ratio Inputs */}
@@ -421,7 +428,12 @@ export default function BorderCalculator() {
             {/* Paper Size Selection */}
             <ThemedView style={styles.formGroup}>
               <ThemedText style={styles.label}>paper size:</ThemedText>
-              {renderPicker(paperSize, setPaperSize, PAPER_SIZES)}
+              {renderPicker(
+                paperSize,
+                setPaperSize,
+                PAPER_SIZES,
+                "Select Paper Size"
+              )}
             </ThemedView>
 
             {/* Custom Paper Size Inputs */}
@@ -496,14 +508,12 @@ export default function BorderCalculator() {
                   </ThemedView>
                 )}
 
-                <Pressable
-                  style={[styles.roundButton, { backgroundColor: tintColor }]}
+                <Button
                   onPress={calculateOptimalMinBorder}
+                  variant="outline"
                 >
-                  <ThemedText style={styles.buttonText}>
-                    round to 0.25"
-                  </ThemedText>
-                </Pressable>
+                  <ButtonText>round to 0.25"</ButtonText>
+                </Button>
               </ThemedView>
 
               {(Platform.OS === "ios" ||
@@ -835,15 +845,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "center",
   },
-  button: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: "#000000",
-    fontSize: 16,
-  },
+
   resultContainer: {
     alignItems: "center",
     gap: 8,
@@ -966,16 +968,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
   },
-  roundButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginLeft: 8,
-    alignSelf: "center",
-    minWidth: Platform.OS === "web" ? 140 : 160,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   infoSection: {
     padding: 16,
     marginTop: 16,
@@ -1062,5 +1054,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,
+  },
+  roundButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginLeft: 8,
+    alignSelf: "center",
+    minWidth: Platform.OS === "web" ? 140 : 160,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
