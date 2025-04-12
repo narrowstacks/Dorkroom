@@ -324,11 +324,11 @@ export const useBorderCalculator = () => {
     let warningMessage = "";
         // Check if any blade position is under 2 inches
     if (Math.abs(leftBladePos) < 3 || Math.abs(rightBladePos) < 3 || Math.abs(topBladePos) < 3 || Math.abs(bottomBladePos) < 3) {
-      warningMessage = "Warning: Most easels do not have markings below 3 inches!";
+      warningMessage = "Most easels don't have markings below 3 in!";
     }
     // Check if any blade position is negative
     if (leftBladePos < 0 || rightBladePos < 0 || topBladePos < 0 || bottomBladePos < 0) {
-      warningMessage = warningMessage + "\n" + "Warning: Negative blade position detected! \nFor negative values, set your blade to the markings of the opposite blade.";
+      warningMessage = warningMessage + "\n" + "Negative blade position detected! \nFor negative values, set your blade to the markings of the opposite blade.";
     }
 
     if (warningMessage === "") {

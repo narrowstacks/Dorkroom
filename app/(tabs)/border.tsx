@@ -134,7 +134,7 @@ export default function BorderCalculator() {
             placeholder={!displayValue ? placeholder : undefined} // Show placeholder only when no value
             value={displayValue}
             editable={false} // Make non-editable
-            // pointerEvents="none" // Consider adding if editable={false} doesn't prevent interaction styles
+            style={{ pointerEvents: "none" }} // Use style prop for pointerEvents
           />
           <SelectIcon as={ChevronDownIcon} mr="$3" />
         </SelectTrigger>
@@ -712,7 +712,7 @@ export default function BorderCalculator() {
           ]}
         >
           <ThemedText type="largeSemiBold" style={styles.infoTitle}>
-            about this tool
+            About this Tool
           </ThemedText>
 
           <ThemedText style={styles.infoContentText}>
@@ -722,7 +722,7 @@ export default function BorderCalculator() {
           </ThemedText>
 
           <ThemedText type="defaultSemiBold" style={styles.infoSubtitle}>
-            how to use:
+            How to Use:
           </ThemedText>
           <ThemedText style={styles.infoContentText}>
             1. Select your desired aspect ratio (the ratio of your negative or
@@ -743,7 +743,7 @@ export default function BorderCalculator() {
           </ThemedText>
 
           <ThemedText type="defaultSemiBold" style={styles.infoSubtitle}>
-            blade measurements:
+            Blade Measurements:
           </ThemedText>
           <ThemedText style={styles.infoContentText}>
             The measurements shown are distances from the edge of your enlarger
@@ -753,7 +753,7 @@ export default function BorderCalculator() {
           </ThemedText>
 
           <ThemedText type="defaultSemiBold" style={styles.infoSubtitle}>
-            tips:
+            Tips:
           </ThemedText>
           <ThemedText style={styles.infoContentText}>
             • The "round to 0.25" button suggests a border size that results in
