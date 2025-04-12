@@ -8,7 +8,7 @@ import {
   TextInput,
 } from "react-native";
 import { useWindowDimensions } from "../hooks/useWindowDimensions";
-import { useExposureCalculator } from "../../hooks/useExposureCalculator";
+import { useExposureCalculator } from "../hooks/useExposureCalculator";
 import { ThemedView } from "../../components/ThemedView";
 import { ThemedText } from "../../components/ThemedText";
 import { useThemeColor } from "../hooks/useThemeColor";

@@ -146,7 +146,7 @@ export const useCameraExposureCalculator = () => {
     }
     
     return null;
-  }, [aperture, iso, shutterSpeed, settingToChange, newValue, parseShutterSpeed, formatShutterSpeed, calculateEV, findClosestShutterSpeed]);
+  }, [aperture, iso, shutterSpeed, settingToChange, newValue, parseShutterSpeed, calculateEV, findClosestShutterSpeed]);
 
   return {
     aperture,
@@ -161,4 +161,6 @@ export const useCameraExposureCalculator = () => {
     setNewValue,
     equivalentExposure: calculateEquivalentExposure
   };
-}; 
+};
+
+export default useCameraExposureCalculator; 

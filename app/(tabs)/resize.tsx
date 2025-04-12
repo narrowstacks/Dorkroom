@@ -17,7 +17,7 @@ import {
   Button,
   ButtonText,
 } from "@gluestack-ui/themed";
-import { useResizeCalculator } from "../../hooks/useResizeCalculator";
+import { useResizeCalculator } from "../hooks/useResizeCalculator";
 import { NumberInput } from "../../components/NumberInput";
 
 export default function ResizeScreen() {

@@ -8,7 +8,7 @@ import {
   TextInputProps,
 } from "react-native";
 import { ThemedText } from "./ThemedText"; // Adjusted path relative to components dir
-import { useThemeColor } from "../hooks/useThemeColor"; // Adjusted path relative to components dir
+import { useThemeColor } from "../app/hooks/useThemeColor"; // Updated path
 
 interface NumberInputProps extends TextInputProps {
   value: string;

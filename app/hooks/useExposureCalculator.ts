@@ -76,4 +76,6 @@ export const useExposureCalculator = () => {
     adjustStops,
     updateExposure,
   };
-}; 
+};
+
+export default useExposureCalculator; 

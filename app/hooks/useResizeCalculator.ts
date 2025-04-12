@@ -115,4 +115,6 @@ export const useResizeCalculator = () => {
     isAspectRatioMatched,
     calculateExposure, // Expose the function to be called on button press
   };
-}; 
+};
+
+export default useResizeCalculator; 

@@ -8,17 +8,17 @@ import {
   TextInput,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { useWindowDimensions } from "../../hooks/useWindowDimensions";
+import { useWindowDimensions } from "../hooks/useWindowDimensions";
 import {
   useCameraExposureCalculator,
   APERTURE_VALUES,
   ISO_VALUES,
   SHUTTER_SPEED_VALUES,
   ExposureSetting,
-} from "../../hooks/useCameraExposureCalculator";
+} from "../hooks/useCameraExposureCalculator";
 import { ThemedView } from "../../components/ThemedView";
 import { ThemedText } from "../../components/ThemedText";
-import { useThemeColor } from "../../hooks/useThemeColor";
+import { useThemeColor } from "../hooks/useThemeColor";
 
 export default function CameraExposureCalculator() {
   const { width } = useWindowDimensions();

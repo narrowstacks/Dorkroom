@@ -9,7 +9,7 @@ import {
   Switch,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { useWindowDimensions } from "../../hooks/useWindowDimensions";
+import { useWindowDimensions } from "../hooks/useWindowDimensions";
 import { useReciprocityCalculator } from "../hooks/useReciprocityCalculator";
 import { FILM_TYPES, EXPOSURE_PRESETS } from "../constants/reciprocity";
 import { ThemedView } from "../../components/ThemedView";

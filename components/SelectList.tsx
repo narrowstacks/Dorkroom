@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, View, ScrollView, Pressable } from "react-native";
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useThemeColor } from "@/app/hooks/useThemeColor";
 
 interface SelectListProps {
   value: string;
