@@ -1,10 +1,28 @@
 import { useState, useMemo } from 'react';
 import { FILM_TYPES } from '../constants/reciprocity';
 import { ReciprocityCalculation } from '../types/reciprocity';
-import { formatTime, parseTimeInput } from './commonFunctions';
 
 // Maximum width for visual representation of time bars in pixels
 const MAX_BAR_WIDTH = 300;
+
+// Helper function to convert time to a readable format (s, m, h)
+const formatTime = (seconds: number): string => {
+  if (seconds < 60) {
+    return `${Math.round(seconds * 10) / 10} seconds`;
+  } else if (seconds < 3600) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.round((seconds % 60) * 10) / 10;
+    return remainingSeconds === 0 
+      ? `${minutes} minutes` 
+      : `${minutes} minutes ${remainingSeconds} seconds`;
+  } else {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return minutes === 0 
+      ? `${hours} hours` 
+      : `${hours} hours ${minutes} minutes`;
+  }
+};
 
 export const useReciprocityCalculator = () => {
   // Form state
@@ -13,6 +31,44 @@ export const useReciprocityCalculator = () => {
   const [customFactor, setCustomFactor] = useState('1.3');
   const [formattedTime, setFormattedTime] = useState<string | null>(null);
   const [timeFormatError, setTimeFormatError] = useState<string | null>(null);
+
+  // Parse time input (accepts various formats: 1s, 1m30s, 1h15m, etc.)
+  const parseTimeInput = (input: string): number | null => {
+    // Clean up the input
+    const cleaned = input.toLowerCase().trim();
+    
+    // If input is just a number, assume it's seconds
+    if (/^\d+(\.\d+)?$/.test(cleaned)) {
+      return parseFloat(cleaned);
+    }
+    
+    // Try to parse complex time formats
+    let seconds = 0;
+    let valid = false;
+    
+    // Extract hours
+    const hourMatch = cleaned.match(/(\d+(\.\d+)?)\s*h/);
+    if (hourMatch) {
+      seconds += parseFloat(hourMatch[1]) * 3600;
+      valid = true;
+    }
+    
+    // Extract minutes
+    const minuteMatch = cleaned.match(/(\d+(\.\d+)?)\s*m(?!s)/);
+    if (minuteMatch) {
+      seconds += parseFloat(minuteMatch[1]) * 60;
+      valid = true;
+    }
+    
+    // Extract seconds
+    const secondMatch = cleaned.match(/(\d+(\.\d+)?)\s*s/);
+    if (secondMatch) {
+      seconds += parseFloat(secondMatch[1]);
+      valid = true;
+    }
+    
+    return valid ? seconds : null;
+  };
 
   // Format time input when it changes
   const handleTimeChange = (text: string) => {

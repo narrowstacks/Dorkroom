@@ -2,10 +2,17 @@ import { useState, useMemo } from 'react';
 import { Dimensions } from 'react-native';
 import { BorderCalculation } from '../types/border';
 import { ASPECT_RATIOS, PAPER_SIZES, EASEL_SIZES, BLADE_THICKNESS } from '../constants/border';
-import { calculateBladeThickness } from './commonFunctions';
 
 // Base paper size for blade thickness calculation (20x24)
 const BASE_PAPER_AREA = 20 * 24;
+
+const calculateBladeThickness = (paperWidth: number, paperHeight: number): number => {
+  const paperArea = paperWidth * paperHeight;
+  const scaleFactor = BASE_PAPER_AREA / paperArea;
+  // Cap the maximum scale factor to avoid too thick blades
+  const cappedScale = Math.min(scaleFactor, 2);
+  return Math.round(BLADE_THICKNESS * cappedScale);
+};
 
 const calculateOptimalMinBorder = (
   paperWidth: number,
@@ -307,7 +314,7 @@ export const useBorderCalculator = () => {
     console.log(`Easel height offset: ${easelHeightOffset}`);
 
     // Calculate blade positions
-    const bladeThickness = calculateBladeThickness(orientedPaperWidth, orientedPaperHeight, BASE_PAPER_AREA, BLADE_THICKNESS);
+    const bladeThickness = calculateBladeThickness(orientedPaperWidth, orientedPaperHeight);
     const leftBladePos = printWidth + leftBorder - rightBorder + easelWidthOffset;
     const rightBladePos = printWidth - leftBorder + rightBorder - easelWidthOffset;
     const topBladePos = printHeight + topBorder - bottomBorder + easelHeightOffset;
