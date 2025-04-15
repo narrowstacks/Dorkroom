@@ -9,13 +9,14 @@ import {
   Switch,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { useWindowDimensions } from "../hooks/useWindowDimensions";
-import { useReciprocityCalculator } from "../hooks/useReciprocityCalculator";
-import { FILM_TYPES, EXPOSURE_PRESETS } from "../constants/reciprocity";
-import { ThemedView } from "../../components/ThemedView";
-import { ThemedText } from "../../components/ThemedText";
-import { useThemeColor } from "../hooks/useThemeColor";
-import { fonts } from "../styles/common";
+import Slider from "@react-native-community/slider";
+import { useWindowDimensions } from "@/hooks/useWindowDimensions";
+import { useReciprocityCalculator } from "@/hooks/useReciprocityCalculator";
+import { FILM_TYPES, EXPOSURE_PRESETS } from "@/constants/reciprocity";
+import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { fonts } from "@/styles/common";
 
 export default function ReciprocityCalculator() {
   const { width } = useWindowDimensions();

@@ -1,4 +1,4 @@
-import { AspectRatio, PaperSize } from '../types/border';
+import { AspectRatio, PaperSize } from '@/types/border';
 
 // Common aspect ratios
 export const ASPECT_RATIOS: AspectRatio[] = [

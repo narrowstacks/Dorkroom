@@ -1,5 +1,4 @@
-import "../app/styles/global.css";
-import "@/app/styles/global.css";
+import "@/styles/global.css";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
 import {

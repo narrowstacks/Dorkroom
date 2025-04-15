@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { FILM_TYPES } from '../constants/reciprocity';
-import { ReciprocityCalculation } from '../types/reciprocity';
+import { FILM_TYPES } from '@/constants/reciprocity';
+import { ReciprocityCalculation } from '@/types/reciprocity';
 
 // Maximum width for visual representation of time bars in pixels
 const MAX_BAR_WIDTH = 300;

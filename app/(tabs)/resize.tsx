@@ -17,8 +17,9 @@ import {
   Button,
   ButtonText,
 } from "@gluestack-ui/themed";
-import { useResizeCalculator } from "../hooks/useResizeCalculator";
-import { NumberInput } from "../../components/NumberInput";
+import { useWindowDimensions } from "@/hooks/useWindowDimensions";
+import { useResizeCalculator } from "@/hooks/useResizeCalculator";
+import { NumberInput } from "@/components/NumberInput";
 
 export default function ResizeScreen() {
   const inverseSquareLawUrl = "https://en.wikipedia.org/wiki/Inverse-square_law";

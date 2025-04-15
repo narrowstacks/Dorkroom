@@ -9,13 +9,13 @@ import {
   Switch,
 } from "react-native";
 import Slider from "@react-native-community/slider";
-import { useWindowDimensions } from "../hooks/useWindowDimensions";
-import { useBorderCalculator } from "../hooks/useBorderCalculator";
-import { BLADE_THICKNESS } from "../constants/border";
-import { ThemedView } from "../../components/ThemedView";
-import { ThemedText } from "../../components/ThemedText";
-import { useThemeColor } from "../hooks/useThemeColor";
-import { getPlatformFont } from '../styles/common';
+import { useWindowDimensions } from "@/hooks/useWindowDimensions";
+import { useBorderCalculator } from "@/hooks/useBorderCalculator";
+import { BLADE_THICKNESS } from "@/constants/border";
+import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { getPlatformFont } from '@/styles/common';
 import {
   Box,
   Button,

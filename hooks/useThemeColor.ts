@@ -1,5 +1,5 @@
 import { useColorScheme } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { Colors } from '@/constants/Colors';
 
 // Ensure type is inferred from both light and dark themes
 type ColorKeys = keyof (typeof Colors)['light'] & keyof (typeof Colors)['dark'];

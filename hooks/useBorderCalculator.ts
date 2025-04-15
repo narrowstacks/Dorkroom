@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Dimensions } from 'react-native';
-import { BorderCalculation } from '../types/border';
-import { ASPECT_RATIOS, PAPER_SIZES, EASEL_SIZES, BLADE_THICKNESS } from '../constants/border';
+import { BorderCalculation } from '@/types/border';
+import { ASPECT_RATIOS, PAPER_SIZES, EASEL_SIZES, BLADE_THICKNESS } from '@/constants/border';
 
 // Base paper size for blade thickness calculation (20x24)
 const BASE_PAPER_AREA = 20 * 24;
