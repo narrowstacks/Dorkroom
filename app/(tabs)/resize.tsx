@@ -19,6 +19,7 @@ import {
 } from "@gluestack-ui/themed";
 import { useResizeCalculator } from "../hooks/useResizeCalculator";
 import { NumberInput } from "../../components/NumberInput";
+import Head from "expo-router/head";
 
 export default function ResizeScreen() {
   const inverseSquareLawUrl = "https://en.wikipedia.org/wiki/Inverse-square_law";
@@ -77,6 +78,10 @@ export default function ResizeScreen() {
       }}
       keyboardShouldPersistTaps="handled"
     >
+      <Head>
+        <title>Print Resize Calculator</title>
+        <meta name="description" content="Calculate the correct exposure time for your prints when resizing them." />
+      </Head>
       <Box sx={{ flex: 1 }}>
         <Box className="w-full max-w-2xl mx-auto p-4 md:p-6">
           <Box className="items-center w-full mb-4">

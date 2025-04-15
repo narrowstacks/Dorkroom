@@ -7,6 +7,7 @@ import {
   Pressable,
   TextInput,
 } from "react-native";
+import Head from "expo-router/head"; 
 import { Picker } from "@react-native-picker/picker";
 import { useWindowDimensions } from "../hooks/useWindowDimensions";
 import {
@@ -70,6 +71,11 @@ export default function CameraExposureCalculator() {
     }
 
     return (
+      <>
+      <Head>
+        <title>Camera Exposure Calculator</title>
+        <meta name="description" content="Calculate the correct exposure time for your prints when resizing them." />
+      </Head>
       <Picker
         selectedValue={value}
         onValueChange={onValueChange}
@@ -88,6 +94,7 @@ export default function CameraExposureCalculator() {
           <Picker.Item key={item} label={item} value={item} />
         ))}
       </Picker>
+      </>
     );
   };
 

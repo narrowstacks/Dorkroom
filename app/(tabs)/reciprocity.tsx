@@ -8,6 +8,7 @@ import {
   TextInput,
   Switch,
 } from "react-native";
+import Head from "expo-router/head";
 import { Picker } from "@react-native-picker/picker";
 import { useWindowDimensions } from "../hooks/useWindowDimensions";
 import { useReciprocityCalculator } from "../hooks/useReciprocityCalculator";
@@ -85,6 +86,11 @@ export default function ReciprocityCalculator() {
   };
 
   return (
+    <>
+    <Head>
+      <title>Reciprocity Calculator</title>
+      <meta name="description" content="Calculate the correct exposure time for your prints when resizing them." />
+    </Head>
     <ScrollView
       style={[styles.container, { backgroundColor }]}
       contentContainerStyle={styles.scrollContent}
@@ -262,6 +268,7 @@ export default function ReciprocityCalculator() {
         </ThemedView>
       </ThemedView>
     </ScrollView>
+    </>
   );
 }
 

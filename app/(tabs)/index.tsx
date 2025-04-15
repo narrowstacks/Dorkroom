@@ -1,3 +1,4 @@
+import React from "react";
 import {
   StyleSheet,
   Platform,
@@ -9,6 +10,7 @@ import {
 } from "react-native";
 import { Link } from "expo-router";
 import { ReactNode, useEffect, useState } from "react";
+import Head from "expo-router/head";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -89,97 +91,103 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView>
-      <ThemedView style={containerStyle}>
-        <ThemedView style={styles.content}>
-          <ThemedText type="large" style={styles.mainTitle}>
-            dorkroom.art
-          </ThemedText>
-          <ThemedText type="large" style={styles.subtitle}>
-            darkroom and photography calculators
-          </ThemedText>
-          <ThemedText style={styles.byline}>
-            by{" "}
-            <ThemedText
-              style={styles.link}
-              onPress={() => Linking.openURL("https://www.affords.art")}
-            >
-              aaron f.a.
+    <>
+      <Head>
+        <title>Dorkroom.art - Darkroom and Photography Calculators</title>
+        <meta name="description" content="Free online calculators for film photographers and darkroom printers. Includes border calculator, exposure calculator, print resize calculator, and more." />
+      </Head>
+      <ScrollView>
+        <ThemedView style={containerStyle}>
+          <ThemedView style={styles.content}>
+            <ThemedText type="large" style={styles.mainTitle}>
+              dorkroom.art
             </ThemedText>
-          </ThemedText>
-
-          <ThemedView style={styles.section}>
-            <ThemedText type="large" style={styles.sectionTitle}>
-              darkroom printing
+            <ThemedText type="large" style={styles.subtitle}>
+              darkroom and photography calculators
             </ThemedText>
-            <LinkButton
-              href="/border"
-              color="#4CAF50"
-              title="border calculator"
-            >
-              border calculator
-            </LinkButton>
-            <LinkButton
-              href="/exposure"
-              color="#9C27B0"
-              title="stop-based exposure calculator"
-            >
-              stop-based exposure calculator
-            </LinkButton>
-            <LinkButton
-              href="/resize"
-              color="#2196F3"
-              title="print resize calculator"
-            >
-              print resize calculator
-            </LinkButton>
-          </ThemedView>
-
-          <ThemedView style={styles.section}>
-            <ThemedText type="large" style={styles.sectionTitle}>
-              film shooting and developing
+            <ThemedText style={styles.byline}>
+              by{" "}
+              <ThemedText
+                style={styles.link}
+                onPress={() => Linking.openURL("https://www.affords.art")}
+              >
+                aaron f.a.
+              </ThemedText>
             </ThemedText>
-            <LinkButton
-              href="/cameraExposure"
-              color="#3F51B5"
-              title="exposure calculator"
-            >
-              exposure calculator
-            </LinkButton>
-            <LinkButton href="#" color="#666" disabled title="coming soon!">
-              developer dilution calculator
-            </LinkButton>
-            <LinkButton href="#" color="#666" disabled title="coming soon!">
-              push/pull calculator
-            </LinkButton>
-            <LinkButton
-              href="/reciprocity"
-              color="#FF9800"
-              title="reciprocity calculator"
-            >
-              reciprocity calculator
-            </LinkButton>
-          </ThemedView>
 
-          <ThemedView style={styles.section}>
-            <LinkButton
-              href="https://github.com/narrowstacks/Darkroom-Calculators"
-              color="#24292e"
-              title="contribute on github"
-            >
-              contribute on github
-            </LinkButton>
-            <LinkButton
-              href="https://ko-fi.com/affords"
-              color="#FF5E5B"
-              title="support this site!"
-            >
-              support this site!
-            </LinkButton>
+            <ThemedView style={styles.section}>
+              <ThemedText type="large" style={styles.sectionTitle}>
+                darkroom printing
+              </ThemedText>
+              <LinkButton
+                href="/border"
+                color="#4CAF50"
+                title="border calculator"
+              >
+                border calculator
+              </LinkButton>
+              <LinkButton
+                href="/exposure"
+                color="#9C27B0"
+                title="stop-based exposure calculator"
+              >
+                stop-based exposure calculator
+              </LinkButton>
+              <LinkButton
+                href="/resize"
+                color="#2196F3"
+                title="print resize calculator"
+              >
+                print resize calculator
+              </LinkButton>
+            </ThemedView>
+
+            <ThemedView style={styles.section}>
+              <ThemedText type="large" style={styles.sectionTitle}>
+                film shooting and developing
+              </ThemedText>
+              <LinkButton
+                href="/cameraExposure"
+                color="#3F51B5"
+                title="exposure calculator"
+              >
+                exposure calculator
+              </LinkButton>
+              <LinkButton href="#" color="#666" disabled title="coming soon!">
+                developer dilution calculator
+              </LinkButton>
+              <LinkButton href="#" color="#666" disabled title="coming soon!">
+                push/pull calculator
+              </LinkButton>
+              <LinkButton
+                href="/reciprocity"
+                color="#FF9800"
+                title="reciprocity calculator"
+              >
+                reciprocity calculator
+              </LinkButton>
+            </ThemedView>
+
+            <ThemedView style={styles.section}>
+              <LinkButton
+                href="https://github.com/narrowstacks/Darkroom-Calculators"
+                color="#24292e"
+                title="contribute on github"
+              >
+                contribute on github
+              </LinkButton>
+              <LinkButton
+                href="https://ko-fi.com/affords"
+                color="#FF5E5B"
+                title="support this site!"
+              >
+                support this site!
+              </LinkButton>
+            </ThemedView>
           </ThemedView>
         </ThemedView>
-      </ThemedView>
-    </ScrollView>
+      </ScrollView>
+    </>
   );
 }
 
