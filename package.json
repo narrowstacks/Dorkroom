@@ -4,17 +4,17 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
-    "reset-project": "node ./scripts/reset-project.js",
+    "reset-project": "bun ./scripts/reset-project.js",
     "android": "DARK_MODE=media expo start --android",
     "ios": "DARK_MODE=media expo start --ios",
     "web": "DARK_MODE=media expo start --web",
-    "test": "jest --watchAll",
+    "test": "bun test",
     "lint": "expo lint",
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "clean": "turbo run clean && rm -rf node_modules",
-    "vercel-build": "npx expo export:web",
-    "deploy": "vercel deploy"
+    "dev": "bun turbo run dev",
+    "build": "bun turbo run build",
+    "clean": "bun turbo run clean && rm -rf node_modules",
+    "vercel-build": "bunx expo export:web",
+    "deploy": "bunx vercel deploy"
   },
   "jest": {
     "preset": "jest-expo"

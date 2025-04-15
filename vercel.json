@@ -1,20 +1,14 @@
 {
-  "version": 2,
-  "builds": [
+  "buildCommand": "bunx expo export -p web",
+  "outputDirectory": "dist",
+  "devCommand": "bun run dev",
+  "cleanUrls": true,
+  "framework": null,
+  "rewrites": [
     {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+      "source": "/:path*",
+      "destination": "/"
     }
   ],
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/(.+)", "dest": "/index.html" },
-    { "src": "/", "dest": "/index.html" }
-  ],
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-} 
+  "installCommand": "curl -fsSL https://bun.sh/install | bash && ~/.bun/bin/bun install"
+}
