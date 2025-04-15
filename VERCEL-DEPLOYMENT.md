@@ -42,10 +42,22 @@ npm run deploy
    - Output directory: `dist`
    - Install command: `npm install`
 
+## Client-Side Routing
+
+The application uses Expo Router for navigation, which requires specific configuration to work properly on Vercel:
+
+1. The `vercel.json` file includes special routing rules to handle client-side navigation
+2. The `app/+html.tsx` file provides web-specific entry point support
+3. If you experience issues with navigation where only the home page loads:
+   - Verify that the `vercel.json` file has the correct rewrites and routes
+   - Try clearing your browser cache or using a private/incognito window
+   - Check the browser console for any routing errors
+
 ## Configuration Files
 
 - `vercel.json`: Contains Vercel-specific deployment configuration
 - `app.json`: Contains Expo configuration including web settings
+- `app/+html.tsx`: Web-specific entry point for Expo Router
 
 ## Troubleshooting
 
