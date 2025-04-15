@@ -10,12 +10,10 @@
     "web": "DARK_MODE=media expo start --web",
     "test": "bun test",
     "lint": "expo lint",
-    "dev": "bun turbo run dev",
-    "build": "bun turbo run build",
-    "clean": "bun turbo run clean && rm -rf node_modules",
-    "vercel-build": "NODE_OPTIONS='--max-old-space-size=8192' EXPO_ROUTER_STATIC_RENDERING=1 npx expo export -p web",
-    "build-minimal": "NODE_OPTIONS='--max-old-space-size=8192' EXPO_PUBLIC_DISABLE_STATIC_RENDERING=1 npx expo export -p web",
-    "build-diagnostics": "NODE_OPTIONS='--max-old-space-size=4096 --trace-warnings' DEBUG=expo:* bunx expo export -p web",
+    "dev": "expo start",
+    "build": "expo export -p web",
+    "clean": "rm -rf node_modules .expo dist",
+    "vercel-build": "bunx expo export -p web",
     "deploy": "bunx vercel deploy"
   },
   "jest": {
