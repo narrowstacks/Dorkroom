@@ -12,11 +12,9 @@ import Slider from "@react-native-community/slider";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import {
   useCameraExposureCalculator,
-  APERTURE_VALUES,
-  ISO_VALUES,
-  SHUTTER_SPEED_VALUES,
   ExposureSetting,
 } from "@/hooks/useCameraExposureCalculator";
+import { APERTURE_VALUES, ISO_VALUES, SHUTTER_SPEED_VALUES } from "@/constants/exposure";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeColor } from "@/hooks/useThemeColor";

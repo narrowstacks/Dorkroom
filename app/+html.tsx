@@ -7,8 +7,8 @@ export default function Root({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-        <title>DorkroomReact</title>
-        <meta name="description" content="Dorkroom React Native App" />
+        <title>Dorkroom</title>
+        <meta name="description" content="Dorkroom" />
         <ScrollViewStyleReset />
       </head>
       <body>
