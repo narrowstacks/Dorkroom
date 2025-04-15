@@ -19,6 +19,8 @@ type ColorScheme = {
 export const Colors: {
   light: ColorScheme;
   dark: ColorScheme;
+  darkroom: ColorScheme;
+  eInk: ColorScheme;
 } = {
   light: {
     text: '#11181C',
@@ -36,7 +38,25 @@ export const Colors: {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
-    listItemText: '#FFFFFF',
+    listItemText: '#000000',
+  },
+  darkroom: {
+    background: '#000000',
+    text: '#FF0000',
+    tint: '#FF0000',
+    icon: '#FF0000',
+    tabIconDefault: '#FF0000',
+    tabIconSelected: '#FF0000',
+    listItemText: '#000000',
+  },
+  eInk: {
+    background: '#FFFFFF',
+    text: '#000000',
+    tint: '#000000',
+    icon: '#000000',
+    tabIconDefault: '#000000',
+    tabIconSelected: '#000000',
+    listItemText: '#000000',
   },
 };
 

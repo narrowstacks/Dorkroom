@@ -124,6 +124,19 @@ export default function ExposureCalculator() {
             {/* Result Section */}
             {newTime && (
               <ThemedView style={styles.resultContainer}>
+                {/* Time difference display */}
+                {originalTime && newTime && (
+                  <ThemedView style={styles.timeDifferenceContainer}>
+                    <ThemedText style={styles.timeDifferenceLabel}>
+                      {parseFloat(newTime) > parseFloat(originalTime) 
+                        ? "add:" 
+                        : "remove:"}
+                    </ThemedText>
+                    <ThemedText style={styles.timeDifferenceValue}>
+                      {Math.abs(parseFloat(newTime) - parseFloat(originalTime)).toFixed(2)} seconds
+                    </ThemedText>
+                  </ThemedView>
+                )}
                 <ThemedText type="largeSemiBold" style={styles.subtitle}>
                   new exposure time
                 </ThemedText>
@@ -150,7 +163,7 @@ export default function ExposureCalculator() {
             The exposure calculator helps you adjust your exposure time by
             stops. Each stop represents a doubling or halving of the light
             reaching the paper. This is handy when you are changing your
-            aperture when darkroom printing.
+            aperture or doing f-stop printing when darkroom printing.
           </ThemedText>
 
           <ThemedText type="defaultSemiBold" style={styles.infoSubtitle}>
@@ -178,7 +191,7 @@ export default function ExposureCalculator() {
             • Use 1 stop adjustments for significant changes
           </ThemedText>
           <ThemedText style={styles.infoContentText}>
-            • Because exposure is logarithmic, half stops are not exactly half
+            • Worth noting: Because exposure is logarithmic, half stops are not exactly half
             the exposure time
           </ThemedText>
         </ThemedView>
@@ -273,6 +286,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     marginTop: 16,
+  },
+  timeDifferenceContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 5,
+    padding: 3,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  timeDifferenceLabel: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  timeDifferenceValue: {
+    fontSize: 16,
+    fontFamily: Platform.select({
+      ios: "Menlo",
+      android: "monospace",
+      web: "monospace",
+    }),
   },
   resultValue: {
     fontSize: 24,

@@ -1,5 +1,5 @@
-import React from "react";
-import { Platform, Linking, StyleSheet, View } from "react-native";
+import React, { useEffect } from "react";
+import { Platform, Linking } from "react-native";
 import {
   ScrollView,
   Box,
@@ -16,16 +16,27 @@ import {
   InfoIcon,
   Button,
   ButtonText,
+  Switch,
+  FormControl,
+  FormControlLabel,
+  FormControlLabelText,
+  View,
 } from "@gluestack-ui/themed";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { useResizeCalculator } from "@/hooks/useResizeCalculator";
 import { NumberInput } from "@/components/NumberInput";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 export default function ResizeScreen() {
   const inverseSquareLawUrl = "https://en.wikipedia.org/wiki/Inverse-square_law";
+  const { width } = useWindowDimensions();
+  const isNarrowScreen = width < 600; // Define narrow screens as less than 600px
+  const backgroundColor = useThemeColor({}, "background");
 
   // Use the custom hook for state and logic
   const {
+    isEnlargerHeightMode,
+    setIsEnlargerHeightMode,
     originalWidth,
     setOriginalWidth,
     originalLength,
@@ -40,106 +51,161 @@ export default function ResizeScreen() {
     stopsDifference,
     isAspectRatioMatched,
     calculateExposure,
+    originalHeight,
+    setOriginalHeight,
+    newHeight,
+    setNewHeight,
   } = useResizeCalculator();
 
-  // Define styles *before* using them in the return statement
-  // Styles object will be partially unused after refactoring Text components
-  const styles = StyleSheet.create({
-    warningContainer: {
-      marginBottom: 15,
-      width: "100%",
-      maxWidth: 500,
-      alignItems: "center",
-    },
-    warningText: {
-      fontSize: 12,
-      fontWeight: "bold",
-      textAlign: "center",
-    },
-    exposureTimeContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 20,
-      justifyContent: "center",
-      width: "100%",
-      maxWidth: 400,
-    },
-    resultsContainer: {
-      alignItems: "center",
-      marginTop: 10,
-    },
-  });
+  // Add useEffect to trigger calculation when mode changes
+  useEffect(() => {
+    if (originalWidth && originalLength && originalTime) {
+      calculateExposure();
+    }
+  }, [isEnlargerHeightMode]);
+
+  // Add useEffect to dynamically recalculate when any input changes
+  useEffect(() => {
+    // In enlarger height mode, check for required height inputs
+    if (isEnlargerHeightMode) {
+      if (originalHeight && newHeight && originalTime) {
+        calculateExposure();
+      }
+    } 
+    // In print size mode, check for width and length inputs
+    else {
+      if (originalWidth && originalLength && newWidth && newLength && originalTime) {
+        calculateExposure();
+      }
+    }
+  }, [
+    originalWidth, 
+    originalLength, 
+    newWidth, 
+    newLength, 
+    originalTime, 
+    originalHeight, 
+    newHeight, 
+    isEnlargerHeightMode
+  ]);
 
   return (
     <ScrollView
+      style={[{ flex: 1, backgroundColor }]}
       contentContainerStyle={{
         flexGrow: 1,
         paddingBottom: Platform.select({ ios: 100, android: 100, default: 80 }),
       }}
       keyboardShouldPersistTaps="handled"
     >
-      <Box sx={{ flex: 1 }}>
+      <Box flex={1}>
         <Box className="w-full max-w-2xl mx-auto p-4 md:p-6">
-          <Box className="items-center w-full mb-4">
-            <Heading size="xl" className="text-center">
+          <Box className="flex items-center justify-center w-full mb-4">
+            <Heading size="xl" className="text-center" textAlign="center" width="100%">
               Print Resize Calculator
             </Heading>
           </Box>
 
-          <View className="w-full items-center pb-5">
-            <HStack justifyContent="center" w="$full" maxWidth={500} mb="$8">
-              {/* Initial image size */}
-              <Box className="flex-1 max-w-[200px] mx-2.5">
-                <Text size="lg" fontWeight="$bold" mb="$4" textAlign="center">
-                  Initial Image Size
-                </Text>
-                <HStack alignItems="center" mb="$4" space="sm">
-                  <Text w="$16" textAlign="right">Width:</Text>
-                  <NumberInput
-                    value={originalWidth}
-                    onChangeText={setOriginalWidth}
-                    placeholder="4"
-                  />
-                  <Text minWidth={30} textAlign="left">in</Text>
-                </HStack>
-                <HStack alignItems="center" mb="$4" space="sm">
-                  <Text w="$16" textAlign="right">Height:</Text>
-                  <NumberInput
-                    value={originalLength}
-                    onChangeText={setOriginalLength}
-                    placeholder="6"
-                  />
-                  <Text minWidth={30} textAlign="left">in</Text>
-                </HStack>
-              </Box>
+          {/* Mode Toggle */}
+          <Box width="100%" alignItems="center" mb="$4">
+            <FormControl>
+              <HStack space="md" alignItems="center" justifyContent="center" paddingTop={10}>
+                <FormControlLabel>
+                  <FormControlLabelText>Print Size</FormControlLabelText>
+                </FormControlLabel>
+                <Switch
+                  value={isEnlargerHeightMode}
+                  onValueChange={(value) => {
+                    setIsEnlargerHeightMode(value);
+                  }}
+                />
+                <FormControlLabel>
+                  <FormControlLabelText>Enlarger Height</FormControlLabelText>
+                </FormControlLabel>
+              </HStack>
+            </FormControl>
+          </Box>
 
-              {/* New image size */}
-              <Box className="flex-1 max-w-[200px] mx-2.5">
-                <Text size="lg" fontWeight="$bold" mb="$4" textAlign="center">New Image Size</Text>
-                <HStack alignItems="center" mb="$4" space="sm">
-                  <Text w="$16" textAlign="right">Width:</Text>
+          <Box className="w-full items-center pb-5" alignItems="center">
+            {!isEnlargerHeightMode ? (
+              <HStack justifyContent="center" alignItems="center" w="$full" space="lg" mb="$8">
+                {/* Initial image size */}
+                <Box className="max-w-[200px]">
+                  <Text size="lg" fontWeight="$bold" mb="$4" textAlign="center">
+                    Initial Image Size
+                  </Text>
+                  <HStack alignItems="center" mb="$4" space="sm">
+                    <Text w="$16" textAlign="right">Width:</Text>
+                    <NumberInput
+                      value={originalWidth}
+                      onChangeText={setOriginalWidth}
+                      placeholder="4"
+                    />
+                    <Text minWidth={30} textAlign="left">in</Text>
+                  </HStack>
+                  <HStack alignItems="center" mb="$4" space="sm">
+                    <Text w="$16" textAlign="right">Height:</Text>
+                    <NumberInput
+                      value={originalLength}
+                      onChangeText={setOriginalLength}
+                      placeholder="6"
+                    />
+                    <Text minWidth={30} textAlign="left">in</Text>
+                  </HStack>
+                </Box>
+
+                {/* New image size */}
+                <Box className="max-w-[200px]">
+                  <Text size="lg" fontWeight="$bold" mb="$4" textAlign="center">New Image Size</Text>
+                  <HStack alignItems="center" mb="$4" space="sm">
+                    <Text w="$16" textAlign="right">Width:</Text>
+                    <NumberInput
+                      value={newWidth}
+                      onChangeText={setNewWidth}
+                      placeholder="6"
+                    />
+                    <Text minWidth={30} textAlign="left">in</Text>
+                  </HStack>
+                  <HStack alignItems="center" mb="$4" space="sm">
+                    <Text w="$16" textAlign="right">Height:</Text>
+                    <NumberInput
+                      value={newLength}
+                      onChangeText={setNewLength}
+                      placeholder="9"
+                    />
+                    <Text minWidth={30} textAlign="left">in</Text>
+                  </HStack>
+                </Box>
+              </HStack>
+            ) : (
+              <VStack width="100%" maxWidth={350} space="md" mb="$8" alignItems="center">
+                <Text size="lg" fontWeight="$bold" mb="$2" textAlign="center">
+                  Enlarger Heights
+                </Text>
+                <HStack alignItems="center" mb="$2" space="sm" width="100%" justifyContent="center">
+                  <Text w="$16" textAlign="right">Original Height:</Text>
                   <NumberInput
-                    value={newWidth}
-                    onChangeText={setNewWidth}
-                    placeholder="6"
+                    value={originalHeight}
+                    onChangeText={setOriginalHeight}
+                    placeholder="500"
                   />
-                  <Text minWidth={30} textAlign="left">in</Text>
+                  <Text minWidth={30} textAlign="left">cm</Text>
                 </HStack>
-                <HStack alignItems="center" mb="$4" space="sm">
-                  <Text w="$16" textAlign="right">Height:</Text>
+                <HStack alignItems="center" mb="$2" space="sm" width="100%" justifyContent="center">
+                  <Text w="$16" textAlign="right">New Height:</Text>
                   <NumberInput
-                    value={newLength}
-                    onChangeText={setNewLength}
-                    placeholder="9"
+                    value={newHeight}
+                    onChangeText={setNewHeight}
+                    placeholder="600"
                   />
-                  <Text minWidth={30} textAlign="left">in</Text>
+                  <Text minWidth={30} textAlign="left">cm</Text>
                 </HStack>
-              </Box>
-            </HStack>
+              </VStack>
+            )}
 
             {/* Aspect Ratio Warning */}
-            {!isAspectRatioMatched && (
-              <Alert action="warning" variant="outline" mb="$4">
+            {!isEnlargerHeightMode && !isAspectRatioMatched && (
+              <Alert action="warning" variant="outline" mb="$4" width="100%" maxWidth={350}>
                 <AlertIcon as={InfoIcon} size="lg" mr="$3" />
                 <AlertText>
                   The aspect ratios of the initial and new sizes don't match!
@@ -148,7 +214,7 @@ export default function ResizeScreen() {
             )}
 
             {/* Original Exposure Time */}
-            <View style={styles.exposureTimeContainer}>
+            <HStack justifyContent="center" alignItems="center" mb="$4" width="100%" maxWidth={350}>
               <Text mr="$2.5">Original Exposure Time:</Text>
               <NumberInput
                 value={originalTime}
@@ -156,187 +222,242 @@ export default function ResizeScreen() {
                 placeholder="10"
               />
               <Text ml="$2.5" minWidth={30} textAlign="left">seconds</Text>
-            </View>
-
-            <Button
-              onPress={calculateExposure}
-              mb="$8"
-              w="100%"
-              maxWidth={350}
-              action="positive"
-            >
-              <ButtonText>Calculate New Exposure Time</ButtonText>
-            </Button>
+            </HStack>
 
             {/* Results */}
-            <View style={styles.resultsContainer}>
-              <Text size="lg" mb="$2.5">
+            <VStack alignItems="center" space="sm" width="100%" alignSelf="center">
+              <Text size="lg" mb="$2" textAlign="center">
                 New Exposure Time: {newTime || "---"} seconds
               </Text>
-              <Text size="lg" mb="$2.5">
-                Stops Difference: {stopsDifference || "---"} stops
+              <Text size="lg" mb="$2" textAlign="center">
+                Difference in Stops: {stopsDifference || "---"} stops
               </Text>
-            </View>
-          </View>
+            </VStack>
+          </Box>
         </Box>
 
         <Divider my="$4" />
 
-        {Platform.OS === "web" ? (
-          <HStack space="md" justifyContent="center" alignItems="flex-start">
-            {/* Empty Box for spacing on the left */}
-            <Box flex={1} />
+        {/* About This Tool with conditional container */}
+        <Box
+          className={Platform.OS === "web" && !isNarrowScreen ? "rounded-xl p-4 md:p-6 max-w-md sm:max-w-md" : "p-4 md:p-6 mx-auto"}
+          sx={{
+            p: "$4",
+            borderWidth: Platform.OS === "web" && !isNarrowScreen ? 1 : 0,
+            borderColor: "$coolGray300",
+            _dark: {
+              borderColor: "$coolGray600",
+              bg: Platform.OS === "web" && !isNarrowScreen ? "$black" : undefined,
+            },
+            _light: { bg: "$coolGray100" },
+            flex: Platform.OS === "web" && !isNarrowScreen ? 1 : undefined,
+            rounded: Platform.OS === "web" && !isNarrowScreen ? "$xl" : undefined,
+            width: Platform.OS === "web" && !isNarrowScreen ? "50%" : "100%",
+            maxWidth: Platform.OS === "web" && !isNarrowScreen ? undefined : 500,
+            marginLeft: Platform.OS === "web" && !isNarrowScreen ? "auto" : undefined,
+            marginRight: Platform.OS === "web" && !isNarrowScreen ? "auto" : undefined,
+            marginHorizontal: Platform.OS === "web" && !isNarrowScreen ? "10%" : undefined,
+          }}
+        >
+          <Heading 
+            size="lg" 
+            className="text-center mb-4" 
+            textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+            width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined}
+          >
+            About This Tool
+          </Heading>
+          <VStack 
+            space="sm" 
+            alignItems={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+            width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined}
+          >
+            <Text 
+              textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+              width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined} 
+              paddingHorizontal={Platform.OS === "web" && isNarrowScreen ? 0 : undefined}
+            >
+              The print resize calculator helps you determine the correct exposure
+              time when enlarging or reducing the size of your darkroom prints.
+            </Text>
 
-            {/* Original Content Box */}
-            <Box
-              className="rounded-xl p-4 md:p-6 max-w-xs"
-              sx={{
-                p: "$4",
-                borderWidth: 1,
-                borderColor: "$coolGray300",
-                _dark: {
-                  borderColor: "$coolGray600",
-                  bg: "$black",
-                },
-                _light: { bg: "$coolGray100" },
-                flex: 1,
-                rounded: "$xl",
-              }}            >
-              <Heading size="lg" className="text-center mb-4">
-                About This Tool
-              </Heading>
-              <VStack space="sm">
-                <Text>
-                  The print resize calculator helps you determine the correct exposure
-                  time when enlarging or reducing the size of your darkroom prints.
-                </Text>
-
-                <Heading size="md" className="mt-4 mb-2">
-                  How to use:
-                </Heading>
-                <Text>1. Enter the width and height of your original print</Text>
-                <Text>2. Enter the width and height of your desired new print size</Text>
-                <Text>3. Enter the original exposure time in seconds</Text>
-                <Text>4. Click "Calculate New Exposure Time" to see the results</Text>
-
-                <Heading size="md" className="mt-4 mb-2">
-                  How it works:
-                </Heading>
-                <Text>
-                  When you change the size of a print, the light is spread across a
-                  different area, affecting the exposure needed. This is caused by the{" "}
-                  <Link href={inverseSquareLawUrl} isExternal>
-                    <LinkText>inverse-square law</LinkText>
-                  </Link>
-                  . This calculator uses the ratio of the areas to determine the new
-                  exposure time.
-                </Text>
-                <Text>
-                  The formula used is:
-                </Text>
-                <Text bold>
-                  New Time = Original Time × (New Area ÷ Original Area)
-                </Text>
-
-                <Heading size="md" className="mt-4 mb-2">
-                  Tips:
-                </Heading>
-                <Text>
-                  • The results of this should only be treated as a best-guess
-                  estimate. Always make a test strip when resizing prints!
-                </Text>
-                <Text>
-                  • The "stops difference" shows how much you're changing exposure in
-                  photographic stops.
-                </Text>
-                <Text>
-                  • A positive stops value means more exposure is needed (larger
-                  print).
-                </Text>
-                <Text>
-                  • A negative stops value means less exposure is needed (smaller
-                  print).
-                </Text>
-              </VStack>
-            </Box>
-
-            {/* Empty Box for spacing on the right */}
-            <Box flex={1} />
-          </HStack>
-        ) : (
-          <Box
-            className="p-4 md:p-6 max-w-sm mx-auto"
-            sx={{
-              borderWidth: 0,
-              borderColor: "$coolGray300",
-              _dark: {
-                borderColor: "$coolGray600",
-              },
-              _light: { bg: "$coolGray100" },
-            }}>
-            <Heading size="lg" className="text-center mb-4">
-              About This Tool
+            <Heading 
+              size="md" 
+              className="mt-4 mb-2" 
+              textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+              width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined}
+            >
+              How to use:
             </Heading>
-            <VStack space="sm">
-              <Text>
-                The print resize calculator helps you determine the correct exposure
-                time when enlarging or reducing the size of your darkroom prints.
-              </Text>
+            <Text 
+              textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+              width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined} 
+              paddingHorizontal={Platform.OS === "web" && isNarrowScreen ? 0 : undefined}
+            >
+              1. Choose your calculation method: Print Size or Enlarger Height. Print size is easier to use, but using enlarger height with a well calibrated enlarger is more accurate.
+            </Text>
+            {isEnlargerHeightMode ? (
+              <>
+                <Text 
+                  textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+                  width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined} 
+                  paddingHorizontal={Platform.OS === "web" && isNarrowScreen ? 0 : undefined}
+                >
+                  2. Enter the original and new enlarger heights (lens to paper distance)
+                </Text>
+                <Text 
+                  textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+                  width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined} 
+                  paddingHorizontal={Platform.OS === "web" && isNarrowScreen ? 0 : undefined}
+                >
+                  3. Enter the original exposure time in seconds
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text 
+                  textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+                  width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined} 
+                  paddingHorizontal={Platform.OS === "web" && isNarrowScreen ? 0 : undefined}
+                >
+                  2. Enter the width and height of your original print
+                </Text>
+                <Text 
+                  textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+                  width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined} 
+                  paddingHorizontal={Platform.OS === "web" && isNarrowScreen ? 0 : undefined}
+                >
+                  3. Enter the width and height of your desired new print size
+                </Text>
+                <Text 
+                  textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+                  width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined} 
+                  paddingHorizontal={Platform.OS === "web" && isNarrowScreen ? 0 : undefined}
+                >
+                  4. Enter the original exposure time in seconds
+                </Text>
+              </>
+            )}
+            <Text 
+              textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+              width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined} 
+              paddingHorizontal={Platform.OS === "web" && isNarrowScreen ? 0 : undefined}
+            >
+              {isEnlargerHeightMode ? "4" : "5"}. Click "Calculate New Exposure Time" to see the results
+            </Text>
 
-              <Heading size="md" className="mt-4 mb-2">
-                How to use:
-              </Heading>
-              <Text>1. Enter the width and height of your original print</Text>
-              <Text>2. Enter the width and height of your desired new print size</Text>
-              <Text>3. Enter the original exposure time in seconds</Text>
-              <Text>4. Click "Calculate New Exposure Time" to see the results</Text>
+            <Heading 
+              size="md" 
+              className="mt-4 mb-2" 
+              textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+              width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined}
+            >
+              How it works:
+            </Heading>
+            <Text 
+              textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+              width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined} 
+              paddingHorizontal={Platform.OS === "web" && isNarrowScreen ? 0 : undefined}
+            >
+              When you change the size of a print, the light is spread across a
+              different area, affecting the exposure needed. This is caused by the{" "}
+              <Link href={inverseSquareLawUrl} isExternal>
+                <LinkText>inverse-square law</LinkText>
+              </Link>
+              .
+            </Text>
+            <Text 
+              textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+              width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined} 
+              paddingHorizontal={Platform.OS === "web" && isNarrowScreen ? 0 : undefined}
+            >
+              The formula used depends on your selected mode:
+            </Text>
+            {isEnlargerHeightMode ? (
+              <Text 
+                fontWeight="bold" 
+                textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : "left"} 
+                width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined}
+              >
+                New Time = Original Time × (New Height)² ÷ (Original Height)²
+              </Text>
+            ) : Platform.OS === "web" && !isNarrowScreen ? (
+              <Text fontWeight="bold" textAlign="center">
+                New Time = Original Time × (New Area ÷ Original Area)
+              </Text>
+            ) : (
+              <>
+                <Text 
+                  fontWeight="bold" 
+                  textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : "center"} 
+                  width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined}
+                >
+                  New Time =
+                </Text>
+                <Text 
+                  fontWeight="bold" 
+                  textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : "center"} 
+                  width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined}
+                >
+                  Original Time × (New Area ÷ Prev. Area)
+                </Text>
+                <Text fontWeight="bold" className="text-center">
+                  
+                </Text>
+              </>
+            )}
 
-              <Heading size="md" className="mt-4 mb-2">
-                How it works:
-              </Heading>
-              <Text>
-                When you change the size of a print, the light is spread across a
-                different area, affecting the exposure needed. This is caused by the{" "}
-                <Link href={inverseSquareLawUrl} isExternal>
-                  <LinkText>inverse-square law</LinkText>
-                </Link>
-                . This calculator uses the ratio of the areas to determine the new
-                exposure time.
+            <Heading 
+              size="md" 
+              className="mt-4 mb-2" 
+              textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+              width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined}
+            >
+              Tips:
+            </Heading>
+            <Text 
+              textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+              width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined} 
+              paddingHorizontal={Platform.OS === "web" && isNarrowScreen ? 0 : undefined}
+            >
+              • The results of this should only be treated as a best-guess
+              estimate. Always make a test strip when resizing prints!
+            </Text>
+            <Text 
+              textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+              width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined} 
+              paddingHorizontal={Platform.OS === "web" && isNarrowScreen ? 0 : undefined}
+            >
+              • The "stops difference" shows how much you're changing exposure in
+              photographic stops.
+            </Text>
+            <Text 
+              textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+              width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined} 
+              paddingHorizontal={Platform.OS === "web" && isNarrowScreen ? 0 : undefined}
+            >
+              • A positive stops value means more exposure is needed (larger
+              print).
+            </Text>
+            <Text 
+              textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+              width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined} 
+              paddingHorizontal={Platform.OS === "web" && isNarrowScreen ? 0 : undefined}
+            >
+              • A negative stops value means less exposure is needed (smaller
+              print).
+            </Text>
+            {isEnlargerHeightMode && (
+              <Text 
+                textAlign={Platform.OS === "web" && isNarrowScreen ? "center" : undefined} 
+                width={Platform.OS === "web" && isNarrowScreen ? "100%" : undefined} 
+                paddingHorizontal={Platform.OS === "web" && isNarrowScreen ? 0 : undefined}
+              >
+                • Using enlarger height is often more accurate when the enlarger stays in the same position.
               </Text>
-              <Text>
-                The formula used is:
-              </Text>
-              <Text bold className="text-left">
-                New Time =
-              </Text>
-              <Text bold className="text-center">
-                Original Time × (New Area ÷ Prev. Area)
-              </Text>
-              <Text bold className="text-center">
-                
-              </Text>
-              <Heading size="md" className="mt-4 mb-2">
-                Tips:
-              </Heading>
-              <Text>
-                • The results of this should only be treated as a best-guess
-                estimate. Always make a test strip when resizing prints!
-              </Text>
-              <Text>
-                • The "stops difference" shows how much you're changing exposure in
-                photographic stops.
-              </Text>
-              <Text>
-                • A positive stops value means more exposure is needed (larger
-                print).
-              </Text>
-              <Text>
-                • A negative stops value means less exposure is needed (smaller
-                print).
-              </Text>
-            </VStack>
-          </Box>
-        )}
+            )}
+          </VStack>
+        </Box>
       </Box>
     </ScrollView>
   );

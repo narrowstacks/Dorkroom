@@ -25,6 +25,16 @@ export const useExposureCalculator = () => {
     updateExposure(defaultTime, defaultStops);
   }, [updateExposure]);
 
+  // Recalculate exposure when originalTime changes
+  useEffect(() => {
+    if (originalTime) {
+      const numericStops = parseFloat(stops);
+      if (!isNaN(numericStops)) {
+        updateExposure(originalTime, numericStops);
+      }
+    }
+  }, [originalTime, stops, updateExposure]);
+
   const adjustStops = useCallback((increment: number) => {
     if (!originalTime) return;
     const currentStops = parseFloat(stops);
