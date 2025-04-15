@@ -2,20 +2,20 @@
 
 ## Current Development Focus
 
-The Dorkroom app is currently in active development with a primary focus on implementing the core calculator features. The project is built using React Native with Expo and uses a file-based routing system with expo-router.
+The Dorkroom app is in active development, focusing on core calculator features and cross-platform UI/UX improvements. The Print Border Calculator remains the highest priority and is in progress. Print Resizing Calculator is started. Stop-Based Exposure, Camera Exposure, and Reciprocity Calculators are completed. Developer Dilution and Push/Pull Calculators are not started.
 
 ### Priority Features
 
 1. **Print Border Calculator** - HIGHEST PRIORITY (IN PROGRESS)
-
    - Core feature for darkroom printing
    - Calculation of blade positions for different paper sizes and aspect ratios
    - Visual feedback implementation
+   - Preset saving and offline support planned
 
 2. **Print Resizing Calculator** - HIGH PRIORITY (STARTED)
-
    - Calculate exposure time adjustments based on print size changes
    - Conversion between seconds and stops
+   - Preset saving and offline support planned
 
 3. **Additional Calculators** - MEDIUM PRIORITY
    - Stop-Based Exposure Calculator (COMPLETED)
@@ -27,22 +27,19 @@ The Dorkroom app is currently in active development with a primary focus on impl
 ### Platform-Specific Development
 
 1. **Web Interface** - HIGH PRIORITY (IN PROGRESS)
-
-   - Optimize responsive layout for desktop browsers
-   - Implement keyboard shortcuts for power users
-   - Ensure browser compatibility across major browsers
-   - Optimize performance for web-specific contexts
+   - Responsive layout optimization
+   - Keyboard shortcuts for power users (planned)
+   - Browser compatibility and performance optimization
 
 2. **Mobile Interface** - HIGH PRIORITY (IN PROGRESS)
-   - Optimize touch controls and gestures
-   - Implement platform-specific UI components (iOS/Android)
-   - Ensure proper appearance across various mobile screen sizes
-   - Optimize for battery efficiency and performance
+   - Touch controls and gestures
+   - Platform-specific UI components (iOS/Android)
+   - Responsive layouts for various screen sizes
+   - Battery and performance optimization
 
 ## Implementation Status
 
 ### Completed Components and Features
-
 - Project infrastructure with Expo Router
 - Basic navigation with tab-based layout
 - Print Border Calculator core functionality
@@ -55,16 +52,13 @@ The Dorkroom app is currently in active development with a primary focus on impl
 - Core functionality working across web and mobile platforms
 
 ### In Progress
-
 - Print Border Calculator refinements
-- Data persistence for calculator settings
+- Data persistence for calculator settings (planned)
 - UI/UX improvements
 - Additional calculator implementations
-- Web interface optimizations
-- Mobile interface platform-specific enhancements
+- Web and mobile interface optimizations
 
 ### Not Started
-
 - Offline functionality
 - User presets system
 - Film development tracking features
@@ -75,96 +69,43 @@ The Dorkroom app is currently in active development with a primary focus on impl
 - Platform-specific gesture implementations
 
 ## Recent Changes
-
-- Implemented Print Border Calculator core functionality
-- Set up basic tab navigation structure
-- Added Print Resizing Calculator
-- Configured theme support for light and dark modes
-- Implemented responsive layouts
-- Added tracking for web and mobile interface development
-- Implemented Camera Exposure Calculator
-- Enhanced Camera Exposure Calculator with standard shutter speed rounding and pre-calculated defaults
-- Implemented Stop-Based Exposure Calculator with stop adjustment buttons and manual input
+- Print Border Calculator core functionality implemented
+- Basic tab navigation structure set up
+- Print Resizing Calculator added
+- Theme support for light and dark modes configured
+- Responsive layouts implemented
+- Camera Exposure Calculator implemented and enhanced
+- Stop-Based Exposure Calculator implemented with adjustment buttons and manual input
 
 ## Next Tasks
-
-1. Complete Print Border Calculator
-
-   - Add ability to save custom presets
-   - Implement offline functionality
-   - Enhance visual feedback
-
-2. Enhance Print Resizing Calculator
-
-   - Add preset functionality
-   - Improve UI/UX
-
-3. Begin implementing Developer Dilution Calculator
-
-   - Create UI components
-   - Implement calculation logic
-   - Add visual feedback
-
-4. Add preset functionality to completed calculators
-
-   - Create UI for saving custom presets
-   - Implement local storage for presets
-   - Add preset selection UI
-
+1. Complete Print Border Calculator (presets, offline, visual feedback)
+2. Enhance Print Resizing Calculator (presets, UI/UX)
+3. Begin Developer Dilution Calculator (UI, logic, feedback)
+4. Add preset functionality to calculators
 5. Implement data persistence layer
-
-   - Local storage for calculator settings
-   - User preferences
-
-6. Rework and beautify UI to platform standards.
-   - Light/dark/darkroom (red/black)/high contrast (e-ink black/white)
-   - Implement platform-specific UI optimizations for web
-   - Implement platform-specific UI optimizations for iOS/Android
+6. Rework and beautify UI to platform standards (light/dark/darkroom/high contrast)
 
 ## Active Decisions
-
-### Technical Decisions
-
-- Using Expo Router for navigation instead of React Navigation directly
-- File-based routing structure for simplicity and maintainability
-- Using functional components with hooks for state management
-- Using custom hooks for calculator logic separation
-
-### Design Decisions
-
+- Expo Router for navigation
+- File-based routing structure
+- Functional components with hooks
+- Custom hooks for calculator logic
 - Bottom tab navigation for main features
-- Modern, clean UI with focus on usability
-- Support for both light and dark themes
-- Platform-specific UI/UX considerations
-
-### Feature Prioritization
-
-- Focus on completing Border Calculator as core feature
-- Sequential development of additional calculators
-- Emphasis on accuracy and usability over feature quantity
+- Modern, clean UI with usability focus
+- Light/dark theme support
+- Platform-specific UI/UX
+- Focus on Border Calculator, sequential calculator development, accuracy/usability over feature quantity
 
 ## Technical Considerations
+- Accurate calculations across calculators
+- Consistent UI/UX across platforms
+- Data persistence (planned)
+- Performance for complex calculations
+- Expo Router conventions, tab-based navigation, custom hooks for logic, UI separated from business logic
+- Core navigation: Expo Router, React Navigation
+- Animation: React Native Reanimated
+- Icons: Expo Vector Icons
+- Haptics: Expo Haptics
+- Safe area: React Native Safe Area Context
 
-### Current Challenges
-
-- Ensuring accurate calculations across all calculator features
-- Maintaining consistent UI/UX across platforms
-- Implementing proper data persistence
-- Optimizing performance for complex calculations
-
-### Architecture Notes
-
-- App structure follows Expo Router conventions with `/app` directory
-- Tab-based navigation in `/(tabs)` directory
-- Custom hooks for calculator logic in `/hooks` directory
-- UI components separated from business logic
-
-### Dependencies
-
-- Core navigation using Expo Router and React Navigation
-- Animation support with React Native Reanimated
-- Vector icons from Expo Vector Icons
-- Haptic feedback using Expo Haptics
-- Safe area handling with React Native Safe Area Context
-
-This document will be continuously updated as development progresses to reflect the current state and focus of the project.
+This document will be updated as development progresses.

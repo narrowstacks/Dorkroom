@@ -46,5 +46,6 @@ export const BLADE_THICKNESS = 15;
 export default {
   ASPECT_RATIOS,
   PAPER_SIZES,
+  EASEL_SIZES,
   BLADE_THICKNESS,
 }; 

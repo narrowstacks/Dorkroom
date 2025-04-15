@@ -105,3 +105,15 @@ Dorkroom provides the users with helpful calculators for darkroom printing, film
 - Release preparation
 
 This document will be updated as the project evolves and new requirements are identified.
+
+---
+
+## Current State Note (2025)
+
+- Print Border Calculator: In Progress
+- Print Resizing Calculator: Started
+- Stop-Based Exposure, Camera Exposure, Reciprocity Calculators: Completed
+- Developer Dilution, Push/Pull Calculators: Not Started
+- Web and mobile interface work: Ongoing
+- Offline functionality, data persistence, preset systems: Not yet implemented
+- Testing and performance optimization: Planned but not started

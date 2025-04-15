@@ -1,50 +1,89 @@
-# Welcome to your Expo app 👋
+# Dorkroom 📷
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Dorkroom is a cross-platform React Native application built with Expo, designed to provide photographers with helpful calculators for darkroom printing, film developing, and other photography related tasks. The main feature is the Print Border Calculator, which helps users determine blade positions on adjustable darkroom easels for various paper sizes and aspect ratios.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **Print Border Calculator**: Calculate blade positions for adjustable darkroom easels
+- **Print Resizing Calculator**: Calculate exposure adjustments based on print size changes
+- **Stop-Based Exposure Calculator**: Calculate exposure adjustments by stops
+- **Camera Exposure Calculator**: Calculate equivalent camera exposure settings
+- **Reciprocity Calculator**: Calculate reciprocity failure compensation
+- **Coming Soon**: Developer dilution calculator, Push/Pull calculator, film roll logging
 
+## Technology Stack
+
+- **Framework**: React Native with Expo SDK
+- **Language**: TypeScript
+- **Package Manager**: bun (or npm, but bun bundles the webpack much quicker)
+- **Runtime**: Node.js
+- **Architecture**: Expo Router (File-based routing)
+- **Styling**: NativeWind (Tailwind CSS for React Native) with Gluestack UI
+
+## Getting Started
+
+1. Install bun if you haven't already:
    ```bash
-   npm install
+   curl -fsSL https://bun.sh/install | bash
    ```
 
-2. Start the app
-
+2. Install dependencies:
    ```bash
-    npx expo start
+   bun install
    ```
 
-In the output, you'll find options to open the app in a
+3. Start the app:
+   ```bash
+   bun run dev
+   # or
+   bunx expo start
+   ```
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
+In the output, you'll find options to open the app in a:
+- [Development build](https://docs.expo.dev/develop/development-builds/introduction/)
 - [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- [Web browser](https://docs.expo.dev/workflow/web/)
+- [Expo Go](https://expo.dev/go)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Project Structure
 
-## Get a fresh project
+The project uses Expo Router with file-based routing:
 
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+app/
+  (tabs)/             # Tab navigation layout
+    _layout.tsx
+    index.tsx         # Home screen
+    border.tsx        # Print Border Calculator
+    resize.tsx        # Print Resizing Calculator
+    exposure.tsx      # Stop-Based Exposure Calculator
+    ...etc
+  components/         # Shared components
+  hooks/              # Custom hooks for calculator logic
+  _layout.tsx         # Root layout
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Available Scripts
 
-## Learn more
+- `bun run dev`: Start the development server
+- `bun run ios`: Start the app in iOS simulator
+- `bun run android`: Start the app in Android emulator
+- `bun run web`: Start the app in web browser
+- `bun run build`: Build the web version
+- `bun run deploy`: Deploy to Vercel
+- `bun test`: Run tests
 
-To learn more about developing your project with Expo, look at the following resources:
+## Learn More
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+To learn more about the technologies used in this project:
 
-## Join the community
+- [Expo Documentation](https://docs.expo.dev/)
+- [React Native Documentation](https://reactnative.dev/)
+- [Expo Router Documentation](https://docs.expo.dev/router/introduction/)
+- [NativeWind Documentation](https://www.nativewind.dev/)
+- [Gluestack UI Documentation](https://ui.gluestack.io/)
 
-Join our community of developers creating universal apps.
+## Project Status
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Dorkroom is in active development. Several calculators are complete, while others are in progress or planned. See the project-tracking directory for detailed status information.

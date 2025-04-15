@@ -104,7 +104,7 @@
     <li class="item-complete">[x] Calculate blade positions</li>
     <li class="item-incomplete">[ ] Save custom presets</li>
     <li class="item-incomplete">[ ] Offline functionality</li>
-    <li class ="item-incomplete"> [ ] Information & instructions </li>
+    <li class="item-incomplete">[ ] Information & instructions</li>
   </ul>
 </div>
 </details>
@@ -129,7 +129,7 @@
     <li class="item-complete">[x] Display in seconds and stops</li>
     <li class="item-incomplete">[ ] Save custom presets</li>
     <li class="item-incomplete">[ ] Offline functionality</li>
-    <li class ="item-incomplete"> [ ] Information & instructions </li>
+    <li class="item-incomplete">[ ] Information & instructions</li>
   </ul>
 </div>
 </details>
@@ -189,7 +189,7 @@
 <details>
 <summary><strong>Reciprocity Calculator</strong></summary>
 <div class="feature-card">
-  <span class="status-in-progress">In Progress</span>
+  <span class="status-progress">Completed</span>
   <p>Priority: <span class="priority-medium">Medium</span></p>
   <p>Description: Calculate reciprocity failure compensation</p>
   

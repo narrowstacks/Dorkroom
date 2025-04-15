@@ -297,21 +297,13 @@ export const useBorderCalculator = () => {
     const easelWidthDifference = currentEaselSize.width - paperWidth;
     const easelHeightDifference = currentEaselSize.height - paperHeight;
 
-    console.log(`Current easel size: ${currentEaselSize.width}x${currentEaselSize.height}`);
-
     // Return 0 if the difference is 0 or negative, otherwise return the difference
     const easelWidth = easelWidthDifference <= 0 ? 0 : easelWidthDifference;
     const easelHeight = easelHeightDifference <= 0 ? 0 : easelHeightDifference;
 
-    console.log(`Easel width difference: ${easelWidthDifference}`);
-    console.log(`Easel height difference: ${easelHeightDifference}`);
-
     // Get the offset and make sure it's positive
     const easelWidthOffset = Math.abs(easelWidthDifference);
     const easelHeightOffset = Math.abs(easelHeightDifference);
-
-    console.log(`Easel width offset: ${easelWidthOffset}`);
-    console.log(`Easel height offset: ${easelHeightOffset}`);
 
     // Calculate blade positions
     const bladeThickness = calculateBladeThickness(orientedPaperWidth, orientedPaperHeight);
@@ -466,9 +458,7 @@ export const useBorderCalculator = () => {
   };
 };
 
-function findNextBiggestEaselSize(paperWidth: number, paperHeight: number) {
-  console.log(`Finding easel size for paper: ${paperWidth}x${paperHeight}`);
-  
+function findNextBiggestEaselSize(paperWidth: number, paperHeight: number) {  
   // Find easel sizes that match either orientation of the paper
   const closestEaselSize = EASEL_SIZES.find((easel) => 
     // Normal orientation
@@ -476,13 +466,10 @@ function findNextBiggestEaselSize(paperWidth: number, paperHeight: number) {
     // Flipped orientation
     (easel.width >= paperHeight && easel.height >= paperWidth)
   );
-  
-  console.log(`Closest easel size found:`, closestEaselSize);
-  
+    
   // Check for exact match in either orientation
   if ((closestEaselSize?.width === paperWidth && closestEaselSize?.height === paperHeight) ||
       (closestEaselSize?.width === paperHeight && closestEaselSize?.height === paperWidth)) {
-    console.log(`Exact match found, returning zeros`);
     // For exact matches, return the actual paper dimensions
     return {
       width: paperWidth,
@@ -496,7 +483,6 @@ function findNextBiggestEaselSize(paperWidth: number, paperHeight: number) {
     height: closestEaselSize?.height ?? 0
   };
   
-  console.log(`Returning easel dimensions:`, result);
   return result;
 }
 

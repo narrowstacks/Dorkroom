@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { FILM_TYPES } from '@/constants/reciprocity';
 import { ReciprocityCalculation } from '@/types/reciprocity';
 
@@ -27,10 +27,13 @@ const formatTime = (seconds: number): string => {
 export const useReciprocityCalculator = () => {
   // Form state
   const [filmType, setFilmType] = useState(FILM_TYPES[0].value);
-  const [meteredTime, setMeteredTime] = useState('');
+  const [meteredTime, setMeteredTime] = useState('30s');
   const [customFactor, setCustomFactor] = useState('1.3');
   const [formattedTime, setFormattedTime] = useState<string | null>(null);
   const [timeFormatError, setTimeFormatError] = useState<string | null>(null);
+  
+  // Store the last valid calculation
+  const [lastValidCalculation, setLastValidCalculation] = useState<ReciprocityCalculation | null>(null);
 
   // Parse time input (accepts various formats: 1s, 1m30s, 1h15m, etc.)
   const parseTimeInput = (input: string): number | null => {
@@ -87,7 +90,7 @@ export const useReciprocityCalculator = () => {
   };
 
   // Calculate the reciprocity failure compensation
-  const calculation = useMemo<ReciprocityCalculation | null>(() => {
+  const currentCalculation = useMemo<ReciprocityCalculation | null>(() => {
     // Get the parsed original time
     const originalTime = parseTimeInput(meteredTime);
     if (!originalTime || originalTime <= 0) return null;
@@ -130,6 +133,21 @@ export const useReciprocityCalculator = () => {
       adjustedTimeBarWidth
     };
   }, [filmType, meteredTime, customFactor]);
+  
+  // Update last valid calculation whenever we have a valid one
+  useEffect(() => {
+    if (currentCalculation) {
+      setLastValidCalculation(currentCalculation);
+    }
+  }, [currentCalculation]);
+  
+  // Use the current calculation if valid, otherwise use the last valid one
+  const calculation = currentCalculation || lastValidCalculation;
+
+  // Initialize with default time value
+  useEffect(() => {
+    handleTimeChange(meteredTime);
+  }, []);
 
   return {
     filmType,
