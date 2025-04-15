@@ -1,20 +1,28 @@
 import { ScrollViewStyleReset } from 'expo-router/html';
+import { type PropsWithChildren } from 'react';
 
-// This file is web-specific and will be used by Expo Router on the web.
-export default function Root({ children }: { children: React.ReactNode }) {
+// This file is web-only and used to configure the root HTML for every
+// web page during static rendering.
+// The contents of this function only run in Node.js environments and
+// do not have access to the DOM or browser APIs.
+export default function Root({ children }: PropsWithChildren) {
   return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+        <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        
         <title>DorkroomReact</title>
         <meta name="description" content="Dorkroom React Native App" />
+
+        {/*
+          Disable body scrolling on web. This makes ScrollView components work closer to how they do on native.
+          However, body scrolling is often nice to have for mobile web. If you want to enable it, remove this line.
+        */}
         <ScrollViewStyleReset />
       </head>
-      <body>
-        {/* This ensures any routing events are properly handled on first load */}
-        <div id="root">{children}</div>
-      </body>
+      <body>{children}</body>
     </html>
   );
 } 

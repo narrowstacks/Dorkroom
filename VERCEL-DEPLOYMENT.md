@@ -1,6 +1,6 @@
 # Deploying DorkroomReact to Vercel
 
-This guide will help you deploy your React Native Expo app to Vercel for web hosting.
+This guide will help you deploy your React Native Expo app to Vercel for web hosting using the official static rendering approach from Expo Router.
 
 ## Prerequisites
 
@@ -11,13 +11,13 @@ This guide will help you deploy your React Native Expo app to Vercel for web hos
 
 ### 1. Building for Web
 
-The project is configured to build a web version using:
+The project is configured to build a static web version using:
 
 ```bash
 npm run vercel-build
 ```
 
-This command uses Expo's export functionality to create a static web build in the `dist` directory.
+This command uses Expo's export functionality to create a static web build in the `dist` directory, following the [official Expo Router static rendering documentation](https://docs.expo.dev/router/reference/static-rendering/).
 
 ### 2. Deploying to Vercel
 
@@ -42,22 +42,17 @@ npm run deploy
    - Output directory: `dist`
    - Install command: `npm install`
 
-## Client-Side Routing
+## Static Rendering Configuration
 
-The application uses Expo Router for navigation, which requires specific configuration to work properly on Vercel:
+The app uses Expo Router's static rendering for optimal web performance and SEO:
 
-1. The `vercel.json` file includes special routing rules to handle client-side navigation
-2. The `app/+html.tsx` file provides web-specific entry point support
-3. If you experience issues with navigation where only the home page loads:
-   - Verify that the `vercel.json` file has the correct rewrites and routes
-   - Try clearing your browser cache or using a private/incognito window
-   - Check the browser console for any routing errors
+1. **app.json** - Configured with `"web": { "bundler": "metro", "output": "static" }`
+2. **metro.config.js** - Properly configured to extend Expo's default Metro configuration
+3. **package.json** - Contains an override for `react-refresh` to ensure compatibility
+4. **app/+html.tsx** - Provides the HTML template for all statically rendered pages
+5. **vercel.json** - Configured to handle static builds and client-side routing
 
-## Configuration Files
-
-- `vercel.json`: Contains Vercel-specific deployment configuration
-- `app.json`: Contains Expo configuration including web settings
-- `app/+html.tsx`: Web-specific entry point for Expo Router
+For more details, refer to [STATIC-RENDERING.md](./STATIC-RENDERING.md).
 
 ## Troubleshooting
 
@@ -67,6 +62,12 @@ If you encounter build errors:
 2. Check that the web configuration in `app.json` is correct
 3. Review Vercel build logs for specific errors
 4. Try running `npm run vercel-build` locally to debug issues
+
+If you experience routing issues:
+1. Make sure the `vercel.json` file has the correct rewrites configuration
+2. Check that `app/+html.tsx` is properly configured
+3. Clear your browser cache or try a private/incognito window
+4. Verify your deployment is using the latest build
 
 ## Preview Deployments
 
@@ -78,4 +79,4 @@ To add environment variables to your Vercel deployment:
 
 1. Go to your project in the Vercel dashboard
 2. Navigate to Settings > Environment Variables
-3. Add your variables as needed 
+3. Add your variables as needed
