@@ -13,7 +13,7 @@
     "dev": "bun turbo run dev",
     "build": "bun turbo run build",
     "clean": "bun turbo run clean && rm -rf node_modules",
-    "vercel-build": "bunx expo export:web",
+    "vercel-build": "bunx expo export -p web",
     "deploy": "bunx vercel deploy"
   },
   "jest": {
