@@ -9,7 +9,12 @@
     "ios": "DARK_MODE=media expo start --ios",
     "web": "DARK_MODE=media expo start --web",
     "test": "jest --watchAll",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "vercel-build": "expo export -p web",
+    "deploy": "vercel deploy"
   },
   "jest": {
     "preset": "jest-expo"
@@ -82,7 +87,9 @@
     "jest-expo": "~52.0.6",
     "jscodeshift": "^0.15.2",
     "react-test-renderer": "18.3.1",
-    "typescript": "^5.3.3"
+    "turbo": "^2.5.0",
+    "typescript": "^5.3.3",
+    "vercel": "^41.6.0"
   },
   "private": true
 }
