@@ -1,3 +1,7 @@
+import "../app/styles/global.css";
+import "@/app/styles/global.css";
+import { GluestackUIProvider } from "@gluestack-ui/themed";
+import { config } from "@gluestack-ui/config";
 import {
   DarkTheme,
   DefaultTheme,
@@ -11,6 +15,7 @@ import { useEffect } from "react";
 import { useColorScheme } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "react-native-reanimated";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -38,14 +43,21 @@ function AppContent() {
   const theme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
 
   return (
-    <SafeAreaProvider>
-      <NavigationThemeProvider value={theme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-      </NavigationThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <GluestackUIProvider
+        config={config}
+        colorMode={colorScheme === "dark" ? "dark" : "light"}
+      >
+        <SafeAreaProvider>
+          <NavigationThemeProvider value={theme}>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+            <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+          </NavigationThemeProvider>
+        </SafeAreaProvider>
+      </GluestackUIProvider>
+    </GestureHandlerRootView>
   );
 }

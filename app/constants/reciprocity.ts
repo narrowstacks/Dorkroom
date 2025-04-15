@@ -70,4 +70,10 @@ export const EXPOSURE_PRESETS = [
 ];
 
 // Blade thickness in pixels for the visual representation
-export const BLADE_THICKNESS = 8; 
+export const BLADE_THICKNESS = 8;
+
+export default {
+  FILM_TYPES,
+  EXPOSURE_PRESETS,
+  BLADE_THICKNESS
+}; 

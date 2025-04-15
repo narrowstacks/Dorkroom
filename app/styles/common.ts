@@ -6,10 +6,10 @@ export const fonts = {
     primary: 'Roboto',
   },
   ios: {
-    primary: 'Menlo',
+    primary: 'San Francisco',
   },
   web: {
-    primary: 'Arial',
+    primary: 'Roboto',
   },
 };
 
@@ -36,4 +36,10 @@ export const commonStyles = {
   web: {
     // Web-specific styles
   },
+};
+
+export default {
+  fonts,
+  getPlatformFont,
+  commonStyles,
 };

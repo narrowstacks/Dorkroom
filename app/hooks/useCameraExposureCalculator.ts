@@ -1,4 +1,10 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import { 
+  parseShutterSpeed, 
+  formatShutterSpeed, 
+  calculateEV, 
+  findClosestValue 
+} from './commonFunctions';
 
 // Standard aperture values
 export const APERTURE_VALUES = [
@@ -32,24 +38,6 @@ export const useCameraExposureCalculator = () => {
   const [settingToChange, setSettingToChange] = useState<ExposureSetting>('aperture');
   const [newValue, setNewValue] = useState<string>('16'); // Set default to f16
 
-  // Helper function to convert shutter speed to decimal seconds
-  const parseShutterSpeed = useCallback((speed: string): number => {
-    if (speed.includes('/')) {
-      const [numerator, denominator] = speed.split('/').map(Number);
-      return numerator / denominator;
-    }
-    return Number(speed);
-  }, []);
-
-  // Helper function to format shutter speed from decimal to fractional if needed
-  const formatShutterSpeed = useCallback((seconds: number): string => {
-    if (seconds < 1) {
-      const fraction = Math.round(1 / seconds);
-      return `1/${fraction}`;
-    }
-    return seconds.toString();
-  }, []);
-
   // Find the closest standard shutter speed value to the calculated seconds
   const findClosestShutterSpeed = useCallback((seconds: number): string => {
     // Convert all standard shutter speeds to decimal seconds for comparison
@@ -66,12 +54,6 @@ export const useCameraExposureCalculator = () => {
     });
     
     return closest.original;
-  }, [parseShutterSpeed]);
-
-  // Calculate the exposure value (EV) for the current settings
-  const calculateEV = useCallback((apertureValue: number, isoValue: number, speedSeconds: number): number => {
-    // EV = log2(aperture²) + log2(1/seconds) - log2(ISO/100)
-    return Math.log2(Math.pow(apertureValue, 2)) + Math.log2(1 / speedSeconds) - Math.log2(isoValue / 100);
   }, []);
 
   // Calculate new settings based on the exposure value and the changed setting
@@ -128,11 +110,7 @@ export const useCameraExposureCalculator = () => {
         const newIso = iso;
         
         // Round to nearest standard aperture if close
-        const closestAperture = APERTURE_VALUES.reduce((prev, curr) => {
-          return Math.abs(parseFloat(curr) - newAperture) < Math.abs(parseFloat(prev) - newAperture) 
-            ? curr 
-            : prev;
-        });
+        const closestAperture = findClosestValue(newAperture, APERTURE_VALUES);
         
         return {
           aperture: parseFloat(closestAperture).toFixed(1).replace(/\.0$/, ''),
@@ -146,7 +124,7 @@ export const useCameraExposureCalculator = () => {
     }
     
     return null;
-  }, [aperture, iso, shutterSpeed, settingToChange, newValue, parseShutterSpeed, formatShutterSpeed, calculateEV, findClosestShutterSpeed]);
+  }, [aperture, iso, shutterSpeed, settingToChange, newValue, findClosestShutterSpeed]);
 
   return {
     aperture,
@@ -161,4 +139,6 @@ export const useCameraExposureCalculator = () => {
     setNewValue,
     equivalentExposure: calculateEquivalentExposure
   };
-}; 
+};
+
+export default useCameraExposureCalculator; 

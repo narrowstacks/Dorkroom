@@ -7,6 +7,7 @@
 - **Runtime**: Node.js
 - **Package Manager**: npm
 - **Architecture**: Expo Router (File-based routing)
+- **Styling**: NativeWind (Tailwind CSS for React Native) with Gluestack UI
 
 ## Development Environment
 
@@ -31,6 +32,12 @@
 - `expo-haptics`: Haptic feedback
 - `expo-symbols`: Symbol components
 
+### Styling Dependencies
+
+- `nativewind`: Tailwind CSS for React Native
+- `@gluestack-ui/themed`: Pre-built UI components
+- `prettier-plugin-tailwindcss`: Tailwind class sorting
+
 ### Navigation
 
 - `@react-navigation/native`: Core navigation
@@ -47,6 +54,7 @@
 
 ```
 assets/
+  fonts/
   images/
     icon.png
     adaptive-icon.png
@@ -63,17 +71,43 @@ app/
     reciprocity.tsx      # Reciprocity Calculator
   hooks/
     useBorderCalculator.ts
+    useResizeCalculator.ts
     useExposureCalculator.ts
     useCameraExposureCalculator.ts
     useReciprocityCalculator.ts
     useThemeColor.ts
     useWindowDimensions.ts
+    useColorScheme.ts
+    commonFunctions.ts
+  styles/
+  constants/
+    border.ts
+    Colors.ts
+    reciprocity.ts
+  types/
+  _layout.tsx
+  +not-found.tsx
   components/
-    ui/
-    ThemedText.tsx
-    ThemedView.tsx
-App.js
+components/
+  ui/
+  __tests__/
+  ThemedText.tsx
+  ThemedView.tsx
+  SelectList.tsx
+  Collapsible.tsx
+  NumberInput.tsx
+  ExternalLink.tsx
+  HapticTab.tsx
+  HelloWave.tsx
+  ParallaxScrollView.tsx
+scripts/
+dist/
+package.json
 app.json
+babel.config.js
+metro.config.js
+tsconfig.json
+tailwind.config.js
 ```
 
 ## Build and Deployment

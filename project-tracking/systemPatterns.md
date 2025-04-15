@@ -74,12 +74,35 @@
 
 ## Styling Patterns
 
-### StyleSheet
+### Tailwind/NativeWind
 
-- Centralized styles using `StyleSheet`
-- Platform-specific styles
-- Responsive design patterns
-- Theme-based styling
+- Utility-first CSS approach using Tailwind classes
+- Platform-specific styling using Tailwind modifiers
+- Dark mode support using Tailwind dark variants
+- Custom theme configuration in tailwind.config.js
+- Consistent class ordering enforced by prettier-plugin-tailwindcss
+- Dynamic styles using className prop with template literals
+- Type-safe className props with nativewind types
+
+### Gluestack UI Integration
+
+- Component-based styling using Gluestack UI
+- Consistent design system implementation
+- Accessible components out of the box
+- Theme customization through Gluestack theme provider
+- Custom component variants and extensions
+- Platform-specific component adaptations
+- Integration with NativeWind utilities
+
+### Style Organization
+
+- Component-specific styles using className prop
+- Responsive design using Tailwind breakpoint utilities
+- Custom utility classes for app-specific patterns
+- Shared theme tokens between NativeWind and Gluestack
+- Consistent spacing and typography scale
+- Reusable component patterns
+- Dark mode strategy using Tailwind dark: prefix
 
 ### Animation Patterns
 

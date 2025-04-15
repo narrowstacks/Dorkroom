@@ -143,4 +143,6 @@ export const useReciprocityCalculator = () => {
     calculation,
     formatTime
   };
-}; 
+};
+
+export default useReciprocityCalculator; 

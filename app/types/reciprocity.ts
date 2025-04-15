@@ -27,4 +27,11 @@ export interface ReciprocityCalculation {
   // For visual representation
   timeBarWidth: number;
   adjustedTimeBarWidth: number;
-} 
+}
+
+type ReciprocityTypes = {
+  FilmType: FilmType;
+  ReciprocityCalculation: ReciprocityCalculation;
+};
+
+export default {} as ReciprocityTypes; 

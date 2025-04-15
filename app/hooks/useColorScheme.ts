@@ -4,4 +4,6 @@ import { useColorScheme as _useColorScheme } from 'react-native';
 // type suggests that it can be null. This is not the case in this app.
 export function useColorScheme(): 'light' | 'dark' {
   return _useColorScheme() ?? 'light';
-} 
+}
+
+export default useColorScheme; 

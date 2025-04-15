@@ -9,13 +9,35 @@ import {
   Switch,
 } from "react-native";
 import Slider from "@react-native-community/slider";
-import { Picker } from "@react-native-picker/picker";
 import { useWindowDimensions } from "../hooks/useWindowDimensions";
 import { useBorderCalculator } from "../hooks/useBorderCalculator";
 import { BLADE_THICKNESS } from "../constants/border";
 import { ThemedView } from "../../components/ThemedView";
 import { ThemedText } from "../../components/ThemedText";
 import { useThemeColor } from "../hooks/useThemeColor";
+import { getPlatformFont } from '../styles/common';
+import {
+  Box,
+  Button,
+  ButtonText,
+  HStack,
+  Select,
+  SelectTrigger,
+  SelectInput,
+  SelectIcon,
+  Icon,
+  ChevronDownIcon,
+  SelectPortal,
+  SelectBackdrop,
+  SelectContent,
+  SelectDragIndicatorWrapper,
+  SelectDragIndicator,
+  SelectItem,
+  Alert,
+  AlertIcon,
+  AlertText,
+  InfoIcon,
+} from "@gluestack-ui/themed";
 
 // Common aspect ratios
 const ASPECT_RATIOS = [
@@ -96,46 +118,42 @@ export default function BorderCalculator() {
   const renderPicker = (
     value: string,
     onValueChange: (value: string) => void,
-    items: Array<{ label: string; value: string }>
+    items: Array<{ label: string; value: string }>,
+    placeholder: string = "Select an option"
   ) => {
-    if (Platform.OS === "ios") {
-      return (
-        <ThemedView style={[styles.pickerContainer, { borderColor }]}>
-          <Picker
-            selectedValue={value}
-            onValueChange={onValueChange}
-            itemStyle={{ color: textColor, height: 120 }}
-          >
+    // Find the label corresponding to the selected value
+    const selectedItem = items.find(item => item.value === value);
+    // Use the selected item's label if found, otherwise undefined (placeholder will show)
+    const displayValue = selectedItem ? selectedItem.label : undefined;
+
+    return (
+      <Select selectedValue={value} onValueChange={onValueChange}>
+        <SelectTrigger variant="outline" size="md">
+          {/* Explicitly set the value and make it non-editable */}
+          <SelectInput
+            placeholder={!displayValue ? placeholder : undefined} // Show placeholder only when no value
+            value={displayValue}
+            editable={false} // Make non-editable
+            style={{ pointerEvents: "none" }} // Use style prop for pointerEvents
+          />
+          <SelectIcon as={ChevronDownIcon} mr="$3" />
+        </SelectTrigger>
+        <SelectPortal>
+          <SelectBackdrop />
+          <SelectContent>
+            <SelectDragIndicatorWrapper>
+              <SelectDragIndicator />
+            </SelectDragIndicatorWrapper>
             {items.map((item) => (
-              <Picker.Item
+              <SelectItem
                 key={item.value}
                 label={item.label}
                 value={item.value}
               />
             ))}
-          </Picker>
-        </ThemedView>
-      );
-    }
-
-    return (
-      <Picker
-        selectedValue={value}
-        onValueChange={onValueChange}
-        style={[
-          styles.picker,
-          {
-            backgroundColor,
-            color: textColor,
-            borderColor,
-          },
-        ]}
-        dropdownIconColor={textColor}
-      >
-        {items.map((item) => (
-          <Picker.Item key={item.value} label={item.label} value={item.value} />
-        ))}
-      </Picker>
+          </SelectContent>
+        </SelectPortal>
+      </Select>
     );
   };
 
@@ -159,7 +177,7 @@ export default function BorderCalculator() {
             Platform.OS === "web" && isDesktop && styles.webMainContent,
           ]}
         >
-          {/* Preview and Results Section - Now shown first on mobile */}
+          {/* Preview and Results Section - Shown at top of screen on mobile */}
           {calculation && (
             <ThemedView
               style={[
@@ -184,6 +202,7 @@ export default function BorderCalculator() {
                       width: "100%",
                       height: "100%",
                       borderColor,
+                      backgroundColor: "white",
                     },
                   ]}
                 >
@@ -195,7 +214,7 @@ export default function BorderCalculator() {
                         height: `${calculation.printHeightPercent}%`,
                         left: `${calculation.leftBorderPercent}%`,
                         top: `${calculation.topBorderPercent}%`,
-                        backgroundColor: borderColor,
+                        backgroundColor: "grey",
                       },
                     ]}
                   />
@@ -262,32 +281,32 @@ export default function BorderCalculator() {
                 </ThemedView>
               </ThemedView>
 
-              <ThemedView style={styles.buttonContainer}>
-                <Pressable
-                  style={[styles.button, { backgroundColor: tintColor }]}
+              <HStack space="md">
+                <Button
                   onPress={() => setIsLandscape(!isLandscape)}
+                  variant="outline"
                 >
-                  <ThemedText style={styles.buttonText}>
-                    flip paper orientation
-                  </ThemedText>
-                </Pressable>
-                <Pressable
-                  style={[styles.button, { backgroundColor: tintColor }]}
+                  <ButtonText>
+                    Flip Paper Orientation
+                  </ButtonText>
+                </Button>
+                <Button
                   onPress={() => setIsRatioFlipped(!isRatioFlipped)}
+                  variant="outline"
                 >
-                  <ThemedText style={styles.buttonText}>
-                    flip aspect ratio
-                  </ThemedText>
-                </Pressable>
-              </ThemedView>
+                  <ButtonText>
+                    Flip Aspect Ratio
+                  </ButtonText>
+                </Button>
+              </HStack>
 
               <ThemedView style={styles.resultContainer}>
                 <ThemedText type="largeSemiBold" style={styles.subtitle}>
-                  result
+                  Result
                 </ThemedText>
                 <ThemedView style={styles.resultRow}>
                   <ThemedText style={styles.resultLabel}>
-                    image dimensions:
+                    Image Dimensions:
                   </ThemedText>
                   <ThemedText style={styles.resultValue}>
                     {calculation.printWidth.toFixed(2)} x{" "}
@@ -296,7 +315,7 @@ export default function BorderCalculator() {
                 </ThemedView>
                 <ThemedView style={styles.resultRow}>
                   <ThemedText style={styles.resultLabel}>
-                    left blade:
+                    Left Blade:
                   </ThemedText>
                   <ThemedText style={styles.resultValue}>
                     {calculation.leftBladePos.toFixed(2)} inches
@@ -304,26 +323,33 @@ export default function BorderCalculator() {
                 </ThemedView>
                 <ThemedView style={styles.resultRow}>
                   <ThemedText style={styles.resultLabel}>
-                    right blade:
+                    Right Blade:
                   </ThemedText>
                   <ThemedText style={styles.resultValue}>
                     {calculation.rightBladePos.toFixed(2)} inches
                   </ThemedText>
                 </ThemedView>
                 <ThemedView style={styles.resultRow}>
-                  <ThemedText style={styles.resultLabel}>top blade:</ThemedText>
+                  <ThemedText style={styles.resultLabel}>Top Blade:</ThemedText>
                   <ThemedText style={styles.resultValue}>
                     {calculation.topBladePos.toFixed(2)} inches
                   </ThemedText>
                 </ThemedView>
                 <ThemedView style={styles.resultRow}>
                   <ThemedText style={styles.resultLabel}>
-                    bottom blade:
+                    Bottom Blade:
                   </ThemedText>
                   <ThemedText style={styles.resultValue}>
                     {calculation.bottomBladePos.toFixed(2)} inches
                   </ThemedText>
                 </ThemedView>
+              {/* Reset Button */}
+              <Button
+                onPress={resetToDefaults}
+                action="negative"
+              >
+                <ButtonText>Reset to Defaults</ButtonText>
+              </Button>
                 {calculation.isNonStandardSize && (
                   <ThemedView
                     style={[
@@ -350,26 +376,20 @@ export default function BorderCalculator() {
                   </ThemedView>
                 )}
                 {bladeWarning && (
-                  <ThemedText style={styles.warningText}>
-                    {bladeWarning}
-                  </ThemedText>
+                  <Alert action="error" variant="outline" mt="$2">
+                    <AlertIcon as={InfoIcon} mr="$3" />
+                    <AlertText>{bladeWarning}</AlertText>
+                  </Alert>
                 )}
                 {minBorderWarning && (
-                  <ThemedText style={styles.warningText}>
-                    {minBorderWarning}
-                  </ThemedText>
+                  <Alert action="error" variant="outline" mt="$2">
+                    <AlertIcon as={InfoIcon} mr="$3" />
+                    <AlertText>{minBorderWarning}</AlertText>
+                  </Alert>
                 )}
               </ThemedView>
 
-              {/* Reset Button */}
-              <Pressable
-                style={[styles.resetButton, { backgroundColor: "#ff6b6b" }]}
-                onPress={resetToDefaults}
-              >
-                <ThemedText style={styles.buttonText}>
-                  reset to defaults
-                </ThemedText>
-              </Pressable>
+
             </ThemedView>
           )}
 
@@ -382,8 +402,13 @@ export default function BorderCalculator() {
           >
             {/* Aspect Ratio Selection */}
             <ThemedView style={styles.formGroup}>
-              <ThemedText style={styles.label}>aspect ratio:</ThemedText>
-              {renderPicker(aspectRatio, setAspectRatio, ASPECT_RATIOS)}
+              <ThemedText style={styles.label}>Aspect Ratio:</ThemedText>
+              {renderPicker(
+                aspectRatio,
+                setAspectRatio,
+                ASPECT_RATIOS,
+                "Select Aspect Ratio"
+              )}
             </ThemedView>
 
             {/* Custom Aspect Ratio Inputs */}
@@ -420,8 +445,13 @@ export default function BorderCalculator() {
 
             {/* Paper Size Selection */}
             <ThemedView style={styles.formGroup}>
-              <ThemedText style={styles.label}>paper size:</ThemedText>
-              {renderPicker(paperSize, setPaperSize, PAPER_SIZES)}
+              <ThemedText style={styles.label}>Paper Size:</ThemedText>
+              {renderPicker(
+                paperSize,
+                setPaperSize,
+                PAPER_SIZES,
+                "Select Paper Size"
+              )}
             </ThemedView>
 
             {/* Custom Paper Size Inputs */}
@@ -430,7 +460,7 @@ export default function BorderCalculator() {
                 <ThemedView style={styles.row}>
                   <ThemedView style={styles.inputGroup}>
                     <ThemedText style={styles.label}>
-                      width (inches):
+                      Width (inches):
                     </ThemedText>
                     <TextInput
                       style={[styles.input, { color: textColor, borderColor }]}
@@ -444,7 +474,7 @@ export default function BorderCalculator() {
                   </ThemedView>
                   <ThemedView style={styles.inputGroup}>
                     <ThemedText style={styles.label}>
-                      height (inches):
+                      Height (inches):
                     </ThemedText>
                     <TextInput
                       style={[styles.input, { color: textColor, borderColor }]}
@@ -463,7 +493,7 @@ export default function BorderCalculator() {
             {/* Minimum Border Input */}
             <ThemedView style={styles.formGroup}>
               <ThemedText style={styles.label}>
-                minimum border (inches):
+                Minimum Border (inches):
               </ThemedText>
 
               <ThemedView style={styles.row}>
@@ -496,14 +526,12 @@ export default function BorderCalculator() {
                   </ThemedView>
                 )}
 
-                <Pressable
-                  style={[styles.roundButton, { backgroundColor: tintColor }]}
+                <Button
                   onPress={calculateOptimalMinBorder}
+                  variant="outline"
                 >
-                  <ThemedText style={styles.buttonText}>
-                    round to 0.25"
-                  </ThemedText>
-                </Pressable>
+                  <ButtonText>Round to 0.25"</ButtonText>
+                </Button>
               </ThemedView>
 
               {(Platform.OS === "ios" ||
@@ -537,7 +565,7 @@ export default function BorderCalculator() {
               {/* Offset Toggle */}
               <ThemedView style={styles.toggleColumn}>
                 <ThemedView style={styles.row}>
-                  <ThemedText style={styles.label}>enable offsets:</ThemedText>
+                  <ThemedText style={styles.label}>Enable Offsets:</ThemedText>
                   <Switch
                     value={enableOffset}
                     onValueChange={setEnableOffset}
@@ -550,7 +578,7 @@ export default function BorderCalculator() {
               {/* Blade Toggle */}
               <ThemedView style={styles.toggleColumn}>
                 <ThemedView style={styles.row}>
-                  <ThemedText style={styles.label}>show blades:</ThemedText>
+                  <ThemedText style={styles.label}>Show Easel Blades:</ThemedText>
                   <Switch
                     value={showBlades}
                     onValueChange={setShowBlades}
@@ -665,9 +693,10 @@ export default function BorderCalculator() {
                     </ThemedView>
                   </ThemedView>
                   {offsetWarning && (
-                    <ThemedText style={styles.warningText}>
-                      {offsetWarning}
-                    </ThemedText>
+                    <Alert action="warning" variant="outline" mt="$2">
+                      <AlertIcon as={InfoIcon} mr="$3" />
+                      <AlertText>{offsetWarning}</AlertText>
+                    </Alert>
                   )}
                 </ThemedView>
               </>
@@ -683,7 +712,7 @@ export default function BorderCalculator() {
           ]}
         >
           <ThemedText type="largeSemiBold" style={styles.infoTitle}>
-            about this tool
+            About this Tool
           </ThemedText>
 
           <ThemedText style={styles.infoContentText}>
@@ -693,7 +722,7 @@ export default function BorderCalculator() {
           </ThemedText>
 
           <ThemedText type="defaultSemiBold" style={styles.infoSubtitle}>
-            how to use:
+            How to Use:
           </ThemedText>
           <ThemedText style={styles.infoContentText}>
             1. Select your desired aspect ratio (the ratio of your negative or
@@ -714,7 +743,7 @@ export default function BorderCalculator() {
           </ThemedText>
 
           <ThemedText type="defaultSemiBold" style={styles.infoSubtitle}>
-            blade measurements:
+            Blade Measurements:
           </ThemedText>
           <ThemedText style={styles.infoContentText}>
             The measurements shown are distances from the edge of your enlarger
@@ -724,7 +753,7 @@ export default function BorderCalculator() {
           </ThemedText>
 
           <ThemedText type="defaultSemiBold" style={styles.infoSubtitle}>
-            tips:
+            Tips:
           </ThemedText>
           <ThemedText style={styles.infoContentText}>
             • The "round to 0.25" button suggests a border size that results in
@@ -835,15 +864,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "center",
   },
-  button: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: "#000000",
-    fontSize: 16,
-  },
+
   resultContainer: {
     alignItems: "center",
     gap: 8,
@@ -859,21 +880,13 @@ const styles = StyleSheet.create({
   resultLabel: {
     fontSize: 16,
     textAlign: "right",
-    fontFamily: Platform.select({
-      ios: "Menlo",
-      android: "monospace",
-      web: "monospace",
-    }),
+    fontFamily: getPlatformFont(),
     flex: 1,
   },
   resultValue: {
     fontSize: 16,
     textAlign: "left",
-    fontFamily: Platform.select({
-      ios: "Menlo",
-      android: "monospace",
-      web: "monospace",
-    }),
+    fontFamily: getPlatformFont(),
     flex: 1,
   },
   header: {
@@ -909,12 +922,6 @@ const styles = StyleSheet.create({
   inputWarning: {
     borderColor: "#FFA500",
     borderWidth: 2,
-  },
-  warningText: {
-    color: "#FFA500",
-    fontSize: 14,
-    marginTop: 4,
-    textAlign: "center",
   },
   infoText: {
     fontSize: 14,
@@ -965,16 +972,6 @@ const styles = StyleSheet.create({
   easelInstructionText: {
     fontSize: 14,
     textAlign: "center",
-  },
-  roundButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginLeft: 8,
-    alignSelf: "center",
-    minWidth: Platform.OS === "web" ? 140 : 160,
-    justifyContent: "center",
-    alignItems: "center",
   },
   infoSection: {
     padding: 16,
@@ -1062,5 +1059,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,
+  },
+  roundButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginLeft: 8,
+    alignSelf: "center",
+    minWidth: Platform.OS === "web" ? 140 : 160,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
