@@ -20,12 +20,13 @@ const reactNativeExpoBestPractices = [
 
 const folderStructure = `
 assets/
-src/
-  components/
-  screens/
-  navigation/
-  hooks/
-  utils/
+app/
+  /(tabs)
+components/
+screens/
+navigation/
+hooks/
+utils/
 App.js
 app.json
 `;
