@@ -378,24 +378,18 @@ export const useBorderCalculator = () => {
   // Preview scaling
   const previewScale = useMemo(() => {
     if (!calculation) return 1;
-    const { width } = Dimensions.get("window");
-    const maxPreviewWidth = Math.min(width - 32, 400);
-    const selectedPaper = PAPER_SIZES.find((p) => p.value === paperSize);
-    
-    // Use the orientation to determine the width for scaling
-    let paperWidth;
-    if (paperSize === "custom") {
-      paperWidth = isLandscape
-        ? parseFloat(customPaperHeight) || 0
-        : parseFloat(customPaperWidth) || 0;
-    } else {
-      paperWidth = isLandscape
-        ? selectedPaper?.height ?? 0
-        : selectedPaper?.width ?? 0;
-    }
-    
-    return maxPreviewWidth / (paperWidth || 1);
-  }, [paperSize, customPaperWidth, customPaperHeight, isLandscape, calculation]);
+    const { width: windowWidth, height: windowHeight } = Dimensions.get("window");
+    // Maximum allowable preview dimensions
+    const maxWidth = Math.min(windowWidth - 32, 400);
+    const maxHeight = Math.min(windowHeight - 32, 400);
+    // Use calculated oriented paper dimensions
+    const { paperWidth, paperHeight } = calculation;
+    // Scale to fit within both maxWidth and maxHeight
+    return Math.min(
+      maxWidth / (paperWidth || 1),
+      maxHeight / (paperHeight || 1)
+    );
+  }, [calculation]);
 
   return {
     // State
