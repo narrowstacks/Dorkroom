@@ -151,6 +151,6 @@ Then the last valid minimum border value is used instead.
 
 For responsive UI display, dimensions are also expressed as percentages:
 
-- Print width percentage: $W_{print\%} = (W_{print} / W_p) \times 100$
-- Print height percentage: $H_{print\%} = (H_{print} / H_p) \times 100$
-- Border percentages: $B_{L\%} = (B_L / W_p) \times 100$, etc.
+- Print width percentage: $W_{print} = (W_{print} / W_p) \times 100$ %
+- Print height percentage: $H_{print} = (H_{print} / H_p) \times 100$ %
+- Border percentages: $B_{L} = (B_L / W_p) \times 100$ %, etc.
