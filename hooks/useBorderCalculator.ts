@@ -295,10 +295,14 @@ export const useBorderCalculator = () => {
   
     // Calculate blade positions
     const bladeThickness = calculateBladeThickness(orientedPaperWidth, orientedPaperHeight);
-    const leftBladePos = printWidth + leftBorder - rightBorder + easelInfo.offsetX;
-    const rightBladePos = printWidth - leftBorder + rightBorder - easelInfo.offsetX;
-    const topBladePos = printHeight + topBorder - bottomBorder + easelInfo.offsetY;
-    const bottomBladePos = printHeight - topBorder + bottomBorder - easelInfo.offsetY;
+    // Apply easel centering offsets *only* if the paper size is non-standard
+    const effectiveOffsetX = easelInfo.isNonStandard ? easelInfo.offsetX : 0;
+    const effectiveOffsetY = easelInfo.isNonStandard ? easelInfo.offsetY : 0;
+
+    const leftBladePos = printWidth + leftBorder - rightBorder + effectiveOffsetX;
+    const rightBladePos = printWidth - leftBorder + rightBorder - effectiveOffsetX;
+    const topBladePos = printHeight + topBorder - bottomBorder + effectiveOffsetY;
+    const bottomBladePos = printHeight - topBorder + bottomBorder - effectiveOffsetY;
 
     // Create warning message for blade positions
     let warningMessage = "";
@@ -458,39 +462,47 @@ function findCenteringOffsets(paperWidth: number, paperHeight: number, isLandsca
        if (bestFitEasel === null || areaDiff < minAreaDiff ) {
           bestFitEasel = easel;
           minAreaDiff = areaDiff;
-          // Since they are sorted, the first one we find is the smallest
+          // Since they are sorted, the first one we find is the smallest fitting
           break;
        }
     }
   }
 
 
-  // If no fitting easel found, or paper size is exact/larger than smallest easel
+  // If no fitting easel found (e.g., paper larger than any easel)
   if (!bestFitEasel) {
      return {
-       easelSize: { width: orientedPaperWidth, height: orientedPaperHeight },
+       easelSize: { width: orientedPaperWidth, height: orientedPaperHeight }, // Use paper dims as effective easel size
        offsetX: 0,
        offsetY: 0,
-       isNonStandard: false // Treat as standard if no larger easel needed
+       isNonStandard: true // Definitely non-standard if it doesn't fit any easel
      };
   }
 
-  // Check if the paper size is an exact match to the found easel size
-  const isExactMatch = bestFitEasel.width === orientedPaperWidth && bestFitEasel.height === orientedPaperHeight;
-
   // Calculate centering offsets based on the *oriented* paper dimensions and the chosen easel
-  // Offset is 0 if it's an exact match
-  const offsetX = isExactMatch ? 0 : (bestFitEasel.width - orientedPaperWidth) / 2;
-  const offsetY = isExactMatch ? 0 : (bestFitEasel.height - orientedPaperHeight) / 2;
+  const offsetX = (bestFitEasel.width - orientedPaperWidth) / 2;
+  const offsetY = (bestFitEasel.height - orientedPaperHeight) / 2;
 
-  // Paper is considered non-standard if there's a difference requiring offset > 0
-  const isNonStandard = offsetX > 0 || offsetY > 0;
+  // Determine if the *original* paper size is standard relative to easels.
+  // A paper size is "standard" for UI purposes if its original dimensions exactly match an easel size in either orientation.
+  let isOriginalPaperStandard = false;
+  for (const easel of EASEL_SIZES) {
+      if ((easel.width === paperWidth && easel.height === paperHeight) ||
+          (easel.width === paperHeight && easel.height === paperWidth)) {
+          isOriginalPaperStandard = true;
+          break;
+      }
+  }
+
+  // The paper *is* non-standard (for UI warning) if the original paper size doesn't match any easel size exactly.
+  const isPaperSizeNonStandard = !isOriginalPaperStandard;
+
 
   return {
-    easelSize: bestFitEasel, // Return the actual easel dimensions
-    offsetX: offsetX,
-    offsetY: offsetY,
-    isNonStandard: isNonStandard
+    easelSize: bestFitEasel, // Return the actual easel dimensions being used for calculations
+    offsetX: offsetX,       // Centering offset needed for the *oriented* paper in the chosen easel
+    offsetY: offsetY,       // Centering offset needed for the *oriented* paper in the chosen easel
+    isNonStandard: isPaperSizeNonStandard // Flag for UI: True if original paper dims don't match *any* standard easel size
   };
 }
 

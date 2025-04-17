@@ -64,24 +64,28 @@ $O_v = \max(-O_{v,max}, \min(O_{v,max}, O_v))$
 
 ### Blade Position Calculation
 
-Blade positions for the easel are calculated based on print dimensions, borders, and the centering offset required to fit the paper within the chosen easel size.
+Blade positions for the easel are calculated based on print dimensions, borders, and conditionally applied centering offsets.
 
 Given:
 - Oriented paper width: $W_{p,oriented}$ (paper width or height depending on landscape toggle)
 - Oriented paper height: $H_{p,oriented}$ (paper height or width depending on landscape toggle)
 - Chosen easel dimensions: $W_{easel} \times H_{easel}$ (smallest standard size fitting the oriented paper)
 
-Centering offsets:
+Centering offsets (calculated based on oriented paper in chosen easel):
 - Horizontal offset: $O_{easel,X} = (W_{easel} - W_{p,oriented}) / 2$
 - Vertical offset: $O_{easel,Y} = (H_{easel} - H_{p,oriented}) / 2$
 
-Blade positions:
-- Left blade position: $B_{L,pos} = W_{print} + B_L - B_R + O_{easel,X}$
-- Right blade position: $B_{R,pos} = W_{print} - B_L + B_R - O_{easel,X}$
-- Top blade position: $B_{T,pos} = H_{print} + B_T - B_B + O_{easel,Y}$
-- Bottom blade position: $B_{B,pos} = H_{print} - B_T + B_B - O_{easel,Y}$
+Effective offsets (applied only if paper is non-standard):
+- $O_{eff,X} = \text{isNonStandard} ? O_{easel,X} : 0$
+- $O_{eff,Y} = \text{isNonStandard} ? O_{easel,Y} : 0$
 
-Note: $O_{easel,X}$ and $O_{easel,Y}$ are zero if the paper dimensions exactly match the chosen easel size.
+Blade positions:
+- Left blade position: $B_{L,pos} = W_{print} + B_L - B_R + O_{eff,X}$
+- Right blade position: $B_{R,pos} = W_{print} - B_L + B_R - O_{eff,X}$
+- Top blade position: $B_{T,pos} = H_{print} + B_T - B_B + O_{eff,Y}$
+- Bottom blade position: $B_{B,pos} = H_{print} - B_T + B_B - O_{eff,Y}$
+
+Note: $O_{easel,X}$ and $O_{easel,Y}$ represent the space needed to center the oriented paper in the chosen easel. They are only applied to the blade calculation if the original paper dimensions do not match any standard easel size (`isNonStandard` is true).
 
 ### Blade Thickness Scaling
 
@@ -116,7 +120,7 @@ Preview dimensions are calculated for proper UI display:
 
 ### Easel Size Determination
 
-The algorithm finds the smallest standard easel size that can accommodate the paper *in its current orientation* and calculates the necessary centering offsets.
+The algorithm finds the smallest standard easel size that can accommodate the paper *in its current orientation*, calculates the necessary centering offsets for that easel, and determines if the *original* paper dimensions are considered non-standard.
 
 1. Determine the oriented paper dimensions based on the landscape setting:
    - $W_{p,oriented} = \text{isLandscape} ? H_p : W_p$
@@ -125,13 +129,11 @@ The algorithm finds the smallest standard easel size that can accommodate the pa
 2. Find the smallest standard easel (sorted by area) where:
    $W_{easel} \geq W_{p,oriented}$ AND $H_{easel} \geq H_{p,oriented}$
 
-3. Calculate the centering offsets:
+3. Calculate the centering offsets *for the chosen easel and oriented paper*:
    - $O_{easel,X} = (W_{easel} - W_{p,oriented}) / 2$
    - $O_{easel,Y} = (H_{easel} - H_{p,oriented}) / 2$
 
-   (Offsets are 0 if $W_{easel} = W_{p,oriented}$ and $H_{easel} = H_{p,oriented}$)
-
-4. The paper is considered "non-standard" if either $O_{easel,X} > 0$ or $O_{easel,Y} > 0$.
+4. Determine if the *original* paper dimensions ($W_p, H_p$) match any standard easel size in either orientation. The paper is considered non-standard (`isNonStandard = true`) if no exact match is found.
 
 ## Edge Cases and Warnings
 
