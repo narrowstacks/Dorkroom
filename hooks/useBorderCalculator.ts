@@ -291,26 +291,14 @@ export const useBorderCalculator = () => {
     
     // Find the appropriate easel size for the paper
     // Use oriented dimensions for easel size calculation
-    const currentEaselSize = findNextBiggestEaselSize(paperWidth, paperHeight);
+    const easelInfo = findCenteringOffsets(paperWidth, paperHeight, isLandscape);
   
-    // find the difference between the current easel size and the paper size
-    const easelWidthDifference = currentEaselSize.width - paperWidth;
-    const easelHeightDifference = currentEaselSize.height - paperHeight;
-
-    // Return 0 if the difference is 0 or negative, otherwise return the difference
-    const easelWidth = easelWidthDifference <= 0 ? 0 : easelWidthDifference;
-    const easelHeight = easelHeightDifference <= 0 ? 0 : easelHeightDifference;
-
-    // Get the offset and make sure it's positive
-    const easelWidthOffset = Math.abs(easelWidthDifference);
-    const easelHeightOffset = Math.abs(easelHeightDifference);
-
     // Calculate blade positions
     const bladeThickness = calculateBladeThickness(orientedPaperWidth, orientedPaperHeight);
-    const leftBladePos = printWidth + leftBorder - rightBorder + easelWidthOffset;
-    const rightBladePos = printWidth - leftBorder + rightBorder - easelWidthOffset;
-    const topBladePos = printHeight + topBorder - bottomBorder + easelHeightOffset;
-    const bottomBladePos = printHeight - topBorder + bottomBorder - easelHeightOffset;
+    const leftBladePos = printWidth + leftBorder - rightBorder + easelInfo.offsetX;
+    const rightBladePos = printWidth - leftBorder + rightBorder - easelInfo.offsetX;
+    const topBladePos = printHeight + topBorder - bottomBorder + easelInfo.offsetY;
+    const bottomBladePos = printHeight - topBorder + bottomBorder - easelInfo.offsetY;
 
     // Create warning message for blade positions
     let warningMessage = "";
@@ -353,11 +341,8 @@ export const useBorderCalculator = () => {
       bottomBladePos,
       bladeThickness,
       // Add easel information
-      isNonStandardSize: easelWidthDifference > 0 || easelHeightDifference > 0,
-      easelSize: {
-        width: currentEaselSize?.width ?? 0,
-        height: currentEaselSize?.height ?? 0
-      }
+      isNonStandardSize: easelInfo.isNonStandard,
+      easelSize: easelInfo.easelSize
     };
   }, [
     paperSize,
@@ -452,32 +437,61 @@ export const useBorderCalculator = () => {
   };
 };
 
-function findNextBiggestEaselSize(paperWidth: number, paperHeight: number) {  
-  // Find easel sizes that match either orientation of the paper
-  const closestEaselSize = EASEL_SIZES.find((easel) => 
-    // Normal orientation
-    (easel.width >= paperWidth && easel.height >= paperHeight) ||
-    // Flipped orientation
-    (easel.width >= paperHeight && easel.height >= paperWidth)
-  );
-    
-  // Check for exact match in either orientation
-  if ((closestEaselSize?.width === paperWidth && closestEaselSize?.height === paperHeight) ||
-      (closestEaselSize?.width === paperHeight && closestEaselSize?.height === paperWidth)) {
-    // For exact matches, return the actual paper dimensions
-    return {
-      width: paperWidth,
-      height: paperHeight
-    };
+// New function to calculate centering offsets within the easel
+function findCenteringOffsets(paperWidth: number, paperHeight: number, isLandscape: boolean) {
+  const orientedPaperWidth = isLandscape ? paperHeight : paperWidth;
+  const orientedPaperHeight = isLandscape ? paperWidth : paperHeight;
+
+  let bestFitEasel = null;
+  let minAreaDiff = Infinity;
+
+  // Sort easels by area to find the smallest fitting one first
+  const sortedEasels = [...EASEL_SIZES].sort((a, b) => (a.width * a.height) - (b.width * b.height));
+
+  // Find the smallest easel that fits the *oriented* paper
+  for (const easel of sortedEasels) {
+    // Check if easel fits the oriented paper
+    if (easel.width >= orientedPaperWidth && easel.height >= orientedPaperHeight) {
+       // Check if this easel is a better fit (smaller area) than the current best fit
+      const areaDiff = (easel.width * easel.height) - (orientedPaperWidth * orientedPaperHeight);
+       // Use this easel if it's the first fit found or a smaller fit
+       if (bestFitEasel === null || areaDiff < minAreaDiff ) {
+          bestFitEasel = easel;
+          minAreaDiff = areaDiff;
+          // Since they are sorted, the first one we find is the smallest
+          break;
+       }
+    }
   }
-  
-  // Otherwise return the easel dimensions
-  const result = {
-    width: closestEaselSize?.width ?? 0,
-    height: closestEaselSize?.height ?? 0
+
+
+  // If no fitting easel found, or paper size is exact/larger than smallest easel
+  if (!bestFitEasel) {
+     return {
+       easelSize: { width: orientedPaperWidth, height: orientedPaperHeight },
+       offsetX: 0,
+       offsetY: 0,
+       isNonStandard: false // Treat as standard if no larger easel needed
+     };
+  }
+
+  // Check if the paper size is an exact match to the found easel size
+  const isExactMatch = bestFitEasel.width === orientedPaperWidth && bestFitEasel.height === orientedPaperHeight;
+
+  // Calculate centering offsets based on the *oriented* paper dimensions and the chosen easel
+  // Offset is 0 if it's an exact match
+  const offsetX = isExactMatch ? 0 : (bestFitEasel.width - orientedPaperWidth) / 2;
+  const offsetY = isExactMatch ? 0 : (bestFitEasel.height - orientedPaperHeight) / 2;
+
+  // Paper is considered non-standard if there's a difference requiring offset > 0
+  const isNonStandard = offsetX > 0 || offsetY > 0;
+
+  return {
+    easelSize: bestFitEasel, // Return the actual easel dimensions
+    offsetX: offsetX,
+    offsetY: offsetY,
+    isNonStandard: isNonStandard
   };
-  
-  return result;
 }
 
 export default useBorderCalculator; 
