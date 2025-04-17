@@ -465,8 +465,11 @@ function findCenteringOffsets(paperWidth: number, paperHeight: number, isLandsca
 
   // Find the smallest easel that fits the *oriented* paper
   for (const easel of sortedEasels) {
-    // Check if easel fits the oriented paper
-    if (easel.width >= orientedPaperWidth && easel.height >= orientedPaperHeight) {
+    // Check if easel fits the oriented paper in either rotation
+    const fitsCurrentOrientation = easel.width >= orientedPaperWidth && easel.height >= orientedPaperHeight;
+    const fitsFlippedOrientation = easel.width >= orientedPaperHeight && easel.height >= orientedPaperWidth;
+
+    if (fitsCurrentOrientation || fitsFlippedOrientation) {
        // Check if this easel is a better fit (smaller area) than the current best fit
       const areaDiff = (easel.width * easel.height) - (orientedPaperWidth * orientedPaperHeight);
        // Use this easel if it's the first fit found or a smaller fit
