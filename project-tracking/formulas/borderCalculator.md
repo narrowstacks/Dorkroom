@@ -47,16 +47,16 @@ Where $O_h$ and $O_v$ are horizontal and vertical offsets.
 Horizontal and vertical offsets allow adjusting the print position. These values are clamped to maintain minimum borders:
 
 Maximum allowed horizontal offset:
-$O_{h,max} = \begin{cases}
+$$O_{h,max} = \begin{cases}
 \frac{W_p - W_{print}}{2} & \text{if ignoring minimum border} \\
 \min(\frac{W_p - W_{print}}{2} - B_{min}, \frac{W_p - W_{print}}{2}) & \text{otherwise}
-\end{cases}$
+\end{cases}$$
 
 Maximum allowed vertical offset:
-$O_{v,max} = \begin{cases}
+$$O_{v,max} = \begin{cases}
 \frac{H_p - H_{print}}{2} & \text{if ignoring minimum border} \\
 \min(\frac{H_p - H_{print}}{2} - B_{min}, \frac{H_p - H_{print}}{2}) & \text{otherwise}
-\end{cases}$
+\end{cases}$$
 
 The offsets are clamped to these ranges:
 $O_h = \max(-O_{h,max}, \min(O_{h,max}, O_h))$
