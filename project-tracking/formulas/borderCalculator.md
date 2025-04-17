@@ -64,14 +64,24 @@ $O_v = \max(-O_{v,max}, \min(O_{v,max}, O_v))$
 
 ### Blade Position Calculation
 
-Blade positions for the easel are calculated based on print dimensions, borders, and easel offsets:
+Blade positions for the easel are calculated based on print dimensions, borders, and the centering offset required to fit the paper within the chosen easel size.
 
-- Left blade position: $B_{L,pos} = W_{print} + B_L - B_R + O_{easel,W}$
-- Right blade position: $B_{R,pos} = W_{print} - B_L + B_R - O_{easel,W}$
-- Top blade position: $B_{T,pos} = H_{print} + B_T - B_B + O_{easel,H}$
-- Bottom blade position: $B_{B,pos} = H_{print} - B_T + B_B - O_{easel,H}$
+Given:
+- Oriented paper width: $W_{p,oriented}$ (paper width or height depending on landscape toggle)
+- Oriented paper height: $H_{p,oriented}$ (paper height or width depending on landscape toggle)
+- Chosen easel dimensions: $W_{easel} \times H_{easel}$ (smallest standard size fitting the oriented paper)
 
-Where $O_{easel,W}$ and $O_{easel,H}$ are the easel width and height offsets.
+Centering offsets:
+- Horizontal offset: $O_{easel,X} = (W_{easel} - W_{p,oriented}) / 2$
+- Vertical offset: $O_{easel,Y} = (H_{easel} - H_{p,oriented}) / 2$
+
+Blade positions:
+- Left blade position: $B_{L,pos} = W_{print} + B_L - B_R + O_{easel,X}$
+- Right blade position: $B_{R,pos} = W_{print} - B_L + B_R - O_{easel,X}$
+- Top blade position: $B_{T,pos} = H_{print} + B_T - B_B + O_{easel,Y}$
+- Bottom blade position: $B_{B,pos} = H_{print} - B_T + B_B - O_{easel,Y}$
+
+Note: $O_{easel,X}$ and $O_{easel,Y}$ are zero if the paper dimensions exactly match the chosen easel size.
 
 ### Blade Thickness Scaling
 
@@ -106,16 +116,22 @@ Preview dimensions are calculated for proper UI display:
 
 ### Easel Size Determination
 
-The algorithm finds the smallest standard easel size that can accommodate the paper:
+The algorithm finds the smallest standard easel size that can accommodate the paper *in its current orientation* and calculates the necessary centering offsets.
 
-1. Find the smallest easel where:
-   $W_{easel} \geq W_p$ AND $H_{easel} \geq H_p$
-   OR
-   $W_{easel} \geq H_p$ AND $H_{easel} \geq W_p$
+1. Determine the oriented paper dimensions based on the landscape setting:
+   - $W_{p,oriented} = \text{isLandscape} ? H_p : W_p$
+   - $H_{p,oriented} = \text{isLandscape} ? W_p : H_p$
 
-2. Calculate easel offsets:
-   - Width offset: $O_{easel,W} = \max(W_{easel} - W_p, 0)$
-   - Height offset: $O_{easel,H} = \max(H_{easel} - H_p, 0)$
+2. Find the smallest standard easel (sorted by area) where:
+   $W_{easel} \geq W_{p,oriented}$ AND $H_{easel} \geq H_{p,oriented}$
+
+3. Calculate the centering offsets:
+   - $O_{easel,X} = (W_{easel} - W_{p,oriented}) / 2$
+   - $O_{easel,Y} = (H_{easel} - H_{p,oriented}) / 2$
+
+   (Offsets are 0 if $W_{easel} = W_{p,oriented}$ and $H_{easel} = H_{p,oriented}$)
+
+4. The paper is considered "non-standard" if either $O_{easel,X} > 0$ or $O_{easel,Y} > 0$.
 
 ## Edge Cases and Warnings
 
