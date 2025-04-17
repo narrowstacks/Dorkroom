@@ -126,8 +126,11 @@ The algorithm finds the smallest standard easel size that can accommodate the pa
    - $W_{p,oriented} = \text{isLandscape} ? H_p : W_p$
    - $H_{p,oriented} = \text{isLandscape} ? W_p : H_p$
 
-2. Find the smallest standard easel (sorted by area) where:
-   $W_{easel} \geq W_{p,oriented}$ AND $H_{easel} \geq H_{p,oriented}$
+2. Find the smallest standard easel (sorted by area) that can fit the oriented paper in *either* alignment:
+   Condition: 
+   ($W_{easel} \geq W_{p,oriented}$ AND $H_{easel} \geq H_{p,oriented}$) 
+   OR
+   ($W_{easel} \geq H_{p,oriented}$ AND $H_{easel} \geq W_{p,oriented}$)
 
 3. Calculate the centering offsets *for the chosen easel and oriented paper*:
    - $O_{easel,X} = (W_{easel} - W_{p,oriented}) / 2$
