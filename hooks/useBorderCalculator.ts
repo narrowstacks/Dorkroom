@@ -299,10 +299,21 @@ export const useBorderCalculator = () => {
     const effectiveOffsetX = easelInfo.isNonStandard ? easelInfo.offsetX : 0;
     const effectiveOffsetY = easelInfo.isNonStandard ? easelInfo.offsetY : 0;
 
-    const leftBladePos = printWidth + leftBorder - rightBorder + effectiveOffsetX;
-    const rightBladePos = printWidth - leftBorder + rightBorder - effectiveOffsetX;
-    const topBladePos = printHeight + topBorder - bottomBorder + effectiveOffsetY;
-    const bottomBladePos = printHeight - topBorder + bottomBorder - effectiveOffsetY;
+    // Apply offsets correctly based on paper orientation
+    let horizontalBladeOffset = effectiveOffsetX;
+    let verticalBladeOffset = effectiveOffsetY;
+
+    if (isLandscape) {
+      // When paper is landscape, the easel's X offset affects vertical blades,
+      // and the easel's Y offset affects horizontal blades.
+      horizontalBladeOffset = effectiveOffsetY;
+      verticalBladeOffset = effectiveOffsetX;
+    }
+
+    const leftBladePos = printWidth + leftBorder - rightBorder + horizontalBladeOffset;
+    const rightBladePos = printWidth - leftBorder + rightBorder - horizontalBladeOffset;
+    const topBladePos = printHeight + topBorder - bottomBorder + verticalBladeOffset;
+    const bottomBladePos = printHeight - topBorder + bottomBorder - verticalBladeOffset;
 
     // Create warning message for blade positions
     let warningMessage = "";
