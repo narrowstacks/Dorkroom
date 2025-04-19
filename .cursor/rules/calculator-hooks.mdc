@@ -1,0 +1,24 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Calculator Hook Pattern
+
+The application utilizes specialized custom hooks located in `app/hooks/` to encapsulate complex darkroom calculations.
+
+**Pattern:**
+
+1.  **State Management:** Hooks manage their own input state (e.g., paper size, desired stop change).
+2.  **Calculation Logic:** They contain the core formulas and logic for a specific calculation (e.g., border sizing, exposure adjustment).
+3.  **Return Values:** They return the calculated results and potentially helper functions or flags.
+
+**Examples:**
+
+- `useBorderCalculator.ts`: [app/hooks/useBorderCalculator.ts](mdc:app/hooks/useBorderCalculator.ts)
+- `useResizeCalculator.ts`: [app/hooks/useResizeCalculator.ts](mdc:app/hooks/useResizeCalculator.ts)
+- `useExposureCalculator.ts`: [app/hooks/useExposureCalculator.ts](mdc:app/hooks/useExposureCalculator.ts)
+- `useCameraExposureCalculator.ts`: [app/hooks/useCameraExposureCalculator.ts](mdc:app/hooks/useCameraExposureCalculator.ts)
+- `useReciprocityCalculator.ts`: [app/hooks/useReciprocityCalculator.ts](mdc:app/hooks/useReciprocityCalculator.ts)
+
+Refer to these hooks when working on features involving darkroom printing calculations.
