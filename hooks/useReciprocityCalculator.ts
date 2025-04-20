@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { FILM_TYPES } from '@/constants/reciprocity';
 import { ReciprocityCalculation } from '@/types/reciprocity';
 
@@ -24,54 +24,61 @@ const formatTime = (seconds: number): string => {
   }
 };
 
+// Parse time input (accepts various formats: 1s, 1m30s, 1h15m, etc.)
+// Defined outside the hook as it doesn't depend on hook state/props
+const parseTimeInput = (input: string): number | null => {
+  // Clean up the input
+  const cleaned = input.toLowerCase().trim();
+  
+  // If input is just a number, assume it's seconds
+  if (/^\d+(\.\d+)?$/.test(cleaned)) {
+    return parseFloat(cleaned);
+  }
+  
+  // Try to parse complex time formats
+  let seconds = 0;
+  let valid = false;
+  
+  // Extract hours
+  const hourMatch = cleaned.match(/(\d+(\.\d+)?)\s*h/);
+  if (hourMatch) {
+    seconds += parseFloat(hourMatch[1]) * 3600;
+    valid = true;
+  }
+  
+  // Extract minutes
+  const minuteMatch = cleaned.match(/(\d+(\.\d+)?)\s*m(?!s)/);
+  if (minuteMatch) {
+    seconds += parseFloat(minuteMatch[1]) * 60;
+    valid = true;
+  }
+  
+  // Extract seconds
+  const secondMatch = cleaned.match(/(\d+(\.\d+)?)\s*s/);
+  if (secondMatch) {
+    seconds += parseFloat(secondMatch[1]);
+    valid = true;
+  }
+  
+  return valid ? seconds : null;
+};
+
 export const useReciprocityCalculator = () => {
+  const initialMeteredTime = '30s';
+
   // Form state
   const [filmType, setFilmType] = useState(FILM_TYPES[0].value);
-  const [meteredTime, setMeteredTime] = useState('30s');
+  const [meteredTime, setMeteredTime] = useState(initialMeteredTime);
   const [customFactor, setCustomFactor] = useState('1.3');
-  const [formattedTime, setFormattedTime] = useState<string | null>(null);
+  // Initialize formattedTime based on initialMeteredTime
+  const [formattedTime, setFormattedTime] = useState<string | null>(() => {
+      const initialSeconds = parseTimeInput(initialMeteredTime);
+      return initialSeconds !== null ? formatTime(initialSeconds) : null;
+  });
   const [timeFormatError, setTimeFormatError] = useState<string | null>(null);
   
   // Store the last valid calculation
   const [lastValidCalculation, setLastValidCalculation] = useState<ReciprocityCalculation | null>(null);
-
-  // Parse time input (accepts various formats: 1s, 1m30s, 1h15m, etc.)
-  const parseTimeInput = (input: string): number | null => {
-    // Clean up the input
-    const cleaned = input.toLowerCase().trim();
-    
-    // If input is just a number, assume it's seconds
-    if (/^\d+(\.\d+)?$/.test(cleaned)) {
-      return parseFloat(cleaned);
-    }
-    
-    // Try to parse complex time formats
-    let seconds = 0;
-    let valid = false;
-    
-    // Extract hours
-    const hourMatch = cleaned.match(/(\d+(\.\d+)?)\s*h/);
-    if (hourMatch) {
-      seconds += parseFloat(hourMatch[1]) * 3600;
-      valid = true;
-    }
-    
-    // Extract minutes
-    const minuteMatch = cleaned.match(/(\d+(\.\d+)?)\s*m(?!s)/);
-    if (minuteMatch) {
-      seconds += parseFloat(minuteMatch[1]) * 60;
-      valid = true;
-    }
-    
-    // Extract seconds
-    const secondMatch = cleaned.match(/(\d+(\.\d+)?)\s*s/);
-    if (secondMatch) {
-      seconds += parseFloat(secondMatch[1]);
-      valid = true;
-    }
-    
-    return valid ? seconds : null;
-  };
 
   // Format time input when it changes
   const handleTimeChange = (text: string) => {
@@ -143,11 +150,6 @@ export const useReciprocityCalculator = () => {
   
   // Use the current calculation if valid, otherwise use the last valid one
   const calculation = currentCalculation || lastValidCalculation;
-
-  // Initialize with default time value
-  useEffect(() => {
-    handleTimeChange(meteredTime);
-  }, []);
 
   return {
     filmType,

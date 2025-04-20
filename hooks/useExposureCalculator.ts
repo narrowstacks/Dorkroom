@@ -1,65 +1,69 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { calculateNewTime, roundStops } from './commonFunctions';
 
+// Helper function to calculate and format the new time
+const getCalculatedNewTime = (time: string, stopChange: string): string => {
+  const numericTime = parseFloat(time);
+  const numericStops = parseFloat(stopChange);
+
+  if (isNaN(numericTime) || numericTime <= 0 || isNaN(numericStops)) {
+    return '';
+  }
+
+  const calculatedTime = calculateNewTime(numericTime, numericStops);
+  return calculatedTime.toFixed(2);
+};
+
 export const useExposureCalculator = () => {
-  const [originalTime, setOriginalTime] = useState<string>('10');
-  const [newTime, setNewTime] = useState<string>('');
-  const [stops, setStops] = useState<string>('1');
+  const initialOriginalTime = '10';
+  const initialStops = '1';
 
-  const updateExposure = useCallback((time: string, stopChange: number) => {
-    const numericTime = parseFloat(time);
-    if (isNaN(numericTime) || numericTime <= 0) {
-      setNewTime('');
-      return;
-    }
+  const [originalTime, setOriginalTimeState] = useState<string>(initialOriginalTime);
+  const [stops, setStopsState] = useState<string>(initialStops);
+  // Initialize newTime based on initial values
+  const [newTime, setNewTime] = useState<string>(() => getCalculatedNewTime(initialOriginalTime, initialStops));
 
-    const calculatedTime = calculateNewTime(numericTime, stopChange);
-    setNewTime(calculatedTime.toFixed(2));
-    setStops(stopChange.toString());
-  }, []);
+  // Handler for original time changes
+  const handleOriginalTimeChange = useCallback((time: string) => {
+    setOriginalTimeState(time);
+    setNewTime(getCalculatedNewTime(time, stops)); // Recalculate newTime with current stops
+  }, [stops]); // Dependency: stops
 
-  // Initialize with default values
-  useEffect(() => {
-    const defaultTime = '10';
-    const defaultStops = 1;
-    updateExposure(defaultTime, defaultStops);
-  }, [updateExposure]);
-
-  // Recalculate exposure when originalTime changes
-  useEffect(() => {
-    if (originalTime) {
-      const numericStops = parseFloat(stops);
-      if (!isNaN(numericStops)) {
-        updateExposure(originalTime, numericStops);
-      }
-    }
-  }, [originalTime, stops, updateExposure]);
-
-  const adjustStops = useCallback((increment: number) => {
-    if (!originalTime) return;
-    const currentStops = parseFloat(stops);
-    const newStops = roundStops(currentStops + increment);
-    updateExposure(originalTime, newStops);
-  }, [originalTime, stops, updateExposure]);
-
+  // Handler for direct stop input changes
   const handleStopChange = useCallback((value: string) => {
-    setStops(value);
-    if (!originalTime) return;
+    setStopsState(value);
+    // Recalculate newTime only if the input is a valid number after parsing
     const numericStops = parseFloat(value);
     if (!isNaN(numericStops)) {
-      const roundedStops = roundStops(numericStops);
-      updateExposure(originalTime, roundedStops);
+        const roundedStops = roundStops(numericStops);
+        setStopsState(roundedStops.toString()); // Update state with rounded value
+        setNewTime(getCalculatedNewTime(originalTime, roundedStops.toString()));
+    } else {
+        // If input is not a valid number (e.g., empty string), clear newTime
+        setNewTime('');
     }
-  }, [originalTime, updateExposure]);
+  }, [originalTime]); // Dependency: originalTime
+
+  // Handler for adjusting stops incrementally
+  const adjustStops = useCallback((increment: number) => {
+    const currentStops = parseFloat(stops);
+     // Avoid calculation if currentStops is NaN (e.g., empty input)
+    if (isNaN(currentStops)) return;
+
+    const newStopsValue = roundStops(currentStops + increment);
+    const newStopsString = newStopsValue.toString();
+    setStopsState(newStopsString);
+    setNewTime(getCalculatedNewTime(originalTime, newStopsString)); // Recalculate newTime
+  }, [originalTime, stops]); // Dependencies: originalTime, stops
 
   return {
     originalTime,
-    setOriginalTime,
+    setOriginalTime: handleOriginalTimeChange,
     newTime,
     stops,
     setStops: handleStopChange,
     adjustStops,
-    updateExposure,
+    // updateExposure is removed as its logic is integrated
   };
 };
 

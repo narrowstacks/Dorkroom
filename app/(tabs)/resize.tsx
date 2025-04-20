@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Platform, Linking } from "react-native";
 import {
   ScrollView,
@@ -50,44 +50,11 @@ export default function ResizeScreen() {
     newTime,
     stopsDifference,
     isAspectRatioMatched,
-    calculateExposure,
     originalHeight,
     setOriginalHeight,
     newHeight,
     setNewHeight,
   } = useResizeCalculator();
-
-  // Add useEffect to trigger calculation when mode changes
-  useEffect(() => {
-    if (originalWidth && originalLength && originalTime) {
-      calculateExposure();
-    }
-  }, [isEnlargerHeightMode]);
-
-  // Add useEffect to dynamically recalculate when any input changes
-  useEffect(() => {
-    // In enlarger height mode, check for required height inputs
-    if (isEnlargerHeightMode) {
-      if (originalHeight && newHeight && originalTime) {
-        calculateExposure();
-      }
-    } 
-    // In print size mode, check for width and length inputs
-    else {
-      if (originalWidth && originalLength && newWidth && newLength && originalTime) {
-        calculateExposure();
-      }
-    }
-  }, [
-    originalWidth, 
-    originalLength, 
-    newWidth, 
-    newLength, 
-    originalTime, 
-    originalHeight, 
-    newHeight, 
-    isEnlargerHeightMode
-  ]);
 
   return (
     <ScrollView
