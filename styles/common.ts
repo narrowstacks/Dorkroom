@@ -9,7 +9,7 @@ export const fonts = {
     primary: 'San Francisco',
   },
   web: {
-    primary: 'Roboto',
+    primary: 'Arial',
   },
 };
 
