@@ -60,7 +60,7 @@ export default function SettingsScreen() {
         {/* Wrapper View for content centering/width restriction */}
         <View className="w-full max-w-[600px]">
           <Text className="mb-6 text-center text-2xl font-bold dark:text-white">Settings</Text>
-
+          <Text className="mb-6 text-center text-2x1 font-italic dark:text-white">Hello I am not functional yet!</Text>
           {/* Appearance Section */}
           {/* Use bg-white dark:bg-neutral-900 for themed section background */}
           <View className="mb-6 w-full p-4 rounded-lg bg-white dark:bg-neutral-900 shadow">

@@ -7,7 +7,6 @@ import {
   Switch,
 } from "react-native";
 import Slider from "@react-native-community/slider";
-import { Picker } from "@react-native-picker/picker";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { useBorderCalculator } from "@/hooks/useBorderCalculator";
 import { ThemedView } from "@/components/ThemedView";
@@ -15,6 +14,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { getPlatformFont } from '@/styles/common';
 import { ASPECT_RATIOS, PAPER_SIZES } from '@/constants/border';
+import { ThemedSelect } from "@/components/ThemedSelect";
 import {
   Box,
   Button,
@@ -82,59 +82,6 @@ export default function BorderCalculator() {
     paperSizeWarning,
     resetToDefaults,
   } = useBorderCalculator();
-
-  const renderPicker = (
-    value: string,
-    onValueChange: (value: string) => void,
-    items: Array<{ label: string; value: string }>,
-    placeholder: string = "Select an option"
-  ) => {
-    if (Platform.OS === "ios") {
-      return (
-        <ThemedView style={[styles.pickerContainer, { borderColor }]}>
-          <Picker
-            selectedValue={value}
-            onValueChange={onValueChange}
-            itemStyle={{ color: textColor, height: 120 }}
-          >
-            {items.map((item) => (
-              <Picker.Item
-                key={item.value}
-                label={item.label}
-                value={item.value}
-              />
-            ))}
-          </Picker>
-        </ThemedView>
-      );
-    }
-
-    // Non-iOS Picker (Android/Web)
-    return (
-      <ThemedView style={[styles.pickerContainer, { borderColor }]}>
-        <Picker
-          selectedValue={value}
-          onValueChange={onValueChange}
-          style={[
-            styles.picker,
-            {
-              backgroundColor,
-              color: textColor,
-            },
-          ]}
-          dropdownIconColor={textColor}
-        >
-          {items.map((item) => (
-            <Picker.Item
-              key={item.value}
-              label={item.label}
-              value={item.value}
-            />
-          ))}
-        </Picker>
-      </ThemedView>
-    );
-  };
 
   return (
     <ScrollView
@@ -383,16 +330,14 @@ export default function BorderCalculator() {
               Platform.OS === "web" && isDesktop && styles.webForm,
             ]}
           >
-            {/* Aspect Ratio Selection */}
-            <ThemedView style={styles.formGroup}>
-              <ThemedText style={styles.label}>Aspect Ratio:</ThemedText>
-              {renderPicker(
-                aspectRatio,
-                setAspectRatio,
-                ASPECT_RATIOS,
-                "Select Aspect Ratio"
-              )}
-            </ThemedView>
+            {/* Aspect Ratio Selection - Use ThemedSelect */}
+            <ThemedSelect
+              label="Aspect Ratio:"
+              selectedValue={aspectRatio}
+              onValueChange={setAspectRatio}
+              items={ASPECT_RATIOS}
+              placeholder="Select Aspect Ratio"
+            />
 
             {/* Custom Aspect Ratio Inputs */}
             {aspectRatio === "custom" && (
@@ -426,16 +371,14 @@ export default function BorderCalculator() {
               </ThemedView>
             )}
 
-            {/* Paper Size Selection */}
-            <ThemedView style={styles.formGroup}>
-              <ThemedText style={styles.label}>Paper Size:</ThemedText>
-              {renderPicker(
-                paperSize,
-                setPaperSize,
-                PAPER_SIZES,
-                "Select Paper Size"
-              )}
-            </ThemedView>
+            {/* Paper Size Selection - Use ThemedSelect */}
+            <ThemedSelect
+              label="Paper Size:"
+              selectedValue={paperSize}
+              onValueChange={setPaperSize}
+              items={PAPER_SIZES}
+              placeholder="Select Paper Size"
+            />
 
             {/* Custom Paper Size Inputs */}
             {paperSize === "custom" && (
@@ -849,7 +792,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     minWidth: Platform.OS === "web" ? 140 : 160,
     justifyContent: "center",
-    alignItems: "center",
   },
   resultRow: {
     flexDirection: "row",

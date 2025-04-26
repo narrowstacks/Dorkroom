@@ -7,7 +7,6 @@ import {
   Pressable,
   TextInput,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 import Slider from "@react-native-community/slider";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import {
@@ -18,6 +17,7 @@ import { APERTURE_VALUES, ISO_VALUES, SHUTTER_SPEED_VALUES } from "@/constants/e
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { ThemedSelect } from "@/components/ThemedSelect";
 
 export default function CameraExposureCalculator() {
   const { width } = useWindowDimensions();
@@ -45,101 +45,11 @@ export default function CameraExposureCalculator() {
     equivalentExposure,
   } = useCameraExposureCalculator();
 
-  const renderPicker = (
-    value: string,
-    onValueChange: (value: string) => void,
-    items: Array<string>,
-    testID?: string
-  ) => {
-    if (Platform.OS === "ios") {
-      return (
-        <ThemedView style={[styles.pickerContainer, { borderColor }]}>
-          <Picker
-            selectedValue={value}
-            onValueChange={onValueChange}
-            itemStyle={{ color: textColor, height: 120 }}
-            testID={testID}
-          >
-            {items.map((item) => (
-              <Picker.Item key={item} label={item} value={item} />
-            ))}
-          </Picker>
-        </ThemedView>
-      );
-    }
-
-    return (
-      <Picker
-        selectedValue={value}
-        onValueChange={onValueChange}
-        style={[
-          styles.picker,
-          {
-            backgroundColor,
-            color: textColor,
-            borderColor,
-          },
-        ]}
-        dropdownIconColor={textColor}
-        testID={testID}
-      >
-        {items.map((item) => (
-          <Picker.Item key={item} label={item} value={item} />
-        ))}
-      </Picker>
-    );
-  };
-
   const settingOptions = [
     { label: "Aperture", value: "aperture" as ExposureSetting },
     { label: "ISO", value: "iso" as ExposureSetting },
     { label: "Shutter Speed", value: "shutterSpeed" as ExposureSetting },
   ];
-
-  const renderSettingPicker = (
-    value: ExposureSetting,
-    onValueChange: (value: ExposureSetting) => void
-  ) => {
-    if (Platform.OS === "ios") {
-      return (
-        <ThemedView style={[styles.pickerContainer, { borderColor }]}>
-          <Picker
-            selectedValue={value}
-            onValueChange={onValueChange}
-            itemStyle={{ color: textColor, height: 120 }}
-          >
-            {settingOptions.map((item) => (
-              <Picker.Item
-                key={item.value}
-                label={item.label}
-                value={item.value}
-              />
-            ))}
-          </Picker>
-        </ThemedView>
-      );
-    }
-
-    return (
-      <Picker
-        selectedValue={value}
-        onValueChange={onValueChange}
-        style={[
-          styles.picker,
-          {
-            backgroundColor,
-            color: textColor,
-            borderColor,
-          },
-        ]}
-        dropdownIconColor={textColor}
-      >
-        {settingOptions.map((item) => (
-          <Picker.Item key={item.value} label={item.label} value={item.value} />
-        ))}
-      </Picker>
-    );
-  };
 
   const getNewValueOptions = () => {
     switch (settingToChange) {
@@ -239,33 +149,35 @@ export default function CameraExposureCalculator() {
                   current settings
                 </ThemedText>
 
-                {/* Aperture Input */}
-                <ThemedView style={styles.formGroup}>
-                  <ThemedText style={styles.label}>aperture:</ThemedText>
-                  {renderPicker(
-                    aperture,
-                    setAperture,
-                    APERTURE_VALUES,
-                    "aperture-picker"
-                  )}
-                </ThemedView>
+                {/* Aperture Input - Use ThemedSelect */}
+                <ThemedSelect
+                  label="aperture:"
+                  selectedValue={aperture}
+                  onValueChange={setAperture}
+                  items={APERTURE_VALUES}
+                  placeholder="Select Aperture"
+                  testID="aperture-picker"
+                />
 
-                {/* ISO Input */}
-                <ThemedView style={styles.formGroup}>
-                  <ThemedText style={styles.label}>iso:</ThemedText>
-                  {renderPicker(iso, setIso, ISO_VALUES, "iso-picker")}
-                </ThemedView>
+                {/* ISO Input - Use ThemedSelect */}
+                <ThemedSelect
+                  label="iso:"
+                  selectedValue={iso}
+                  onValueChange={setIso}
+                  items={ISO_VALUES}
+                  placeholder="Select ISO"
+                  testID="iso-picker"
+                />
 
-                {/* Shutter Speed Input */}
-                <ThemedView style={styles.formGroup}>
-                  <ThemedText style={styles.label}>shutter speed:</ThemedText>
-                  {renderPicker(
-                    shutterSpeed,
-                    setShutterSpeed,
-                    SHUTTER_SPEED_VALUES,
-                    "shutter-speed-picker"
-                  )}
-                </ThemedView>
+                {/* Shutter Speed Input - Use ThemedSelect */}
+                <ThemedSelect
+                  label="shutter speed:"
+                  selectedValue={shutterSpeed}
+                  onValueChange={setShutterSpeed}
+                  items={SHUTTER_SPEED_VALUES}
+                  placeholder="Select Shutter Speed"
+                  testID="shutter-speed-picker"
+                />
               </ThemedView>
 
               {/* Change Setting Column */}
@@ -276,24 +188,24 @@ export default function CameraExposureCalculator() {
                   change setting
                 </ThemedText>
 
-                {/* Setting to Change */}
-                <ThemedView style={styles.formGroup}>
-                  <ThemedText style={styles.label}>
-                    setting to change:
-                  </ThemedText>
-                  {renderSettingPicker(settingToChange, setSettingToChange)}
-                </ThemedView>
+                {/* Setting to Change - Use ThemedSelect */}
+                <ThemedSelect
+                  label="setting to change:"
+                  selectedValue={settingToChange}
+                  onValueChange={setSettingToChange as (value: string) => void} // Cast needed due to ExposureSetting type
+                  items={settingOptions}
+                  placeholder="Select Setting"
+                />
 
-                {/* New Value Input */}
-                <ThemedView style={styles.formGroup}>
-                  <ThemedText style={styles.label}>new value:</ThemedText>
-                  {renderPicker(
-                    newValue,
-                    setNewValue,
-                    getNewValueOptions(),
-                    "new-value-picker"
-                  )}
-                </ThemedView>
+                {/* New Value Input - Use ThemedSelect */}
+                <ThemedSelect
+                  label="new value:"
+                  selectedValue={newValue}
+                  onValueChange={setNewValue}
+                  items={getNewValueOptions()}
+                  placeholder="Select New Value"
+                  testID="new-value-picker"
+                />
               </ThemedView>
             </ThemedView>
           </ThemedView>
@@ -428,18 +340,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  picker: {
-    height: 40,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    width: "50%",
   },
   divider: {
     height: 1,

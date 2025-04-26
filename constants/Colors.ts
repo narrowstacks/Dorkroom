@@ -14,6 +14,7 @@ type ColorScheme = {
   tabIconDefault: string;
   tabIconSelected: string;
   listItemText: string;
+  selectedItemBackground: string;
 };
 
 export const Colors: {
@@ -30,6 +31,7 @@ export const Colors: {
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
     listItemText: '#000000',
+    selectedItemBackground: '#e0e0e0',
   },
   dark: {
     text: '#ECEDEE',
@@ -39,6 +41,7 @@ export const Colors: {
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
     listItemText: '#000000',
+    selectedItemBackground: '#444444',
   },
   darkroom: {
     background: '#000000',
@@ -48,6 +51,7 @@ export const Colors: {
     tabIconDefault: '#FF0000',
     tabIconSelected: '#FF0000',
     listItemText: '#000000',
+    selectedItemBackground: '#550000',
   },
   eInk: {
     background: '#FFFFFF',
@@ -57,6 +61,7 @@ export const Colors: {
     tabIconDefault: '#000000',
     tabIconSelected: '#000000',
     listItemText: '#000000',
+    selectedItemBackground: '#cccccc',
   },
 };
 
