@@ -7,6 +7,7 @@ import {
   Switch,
 } from "react-native";
 import Slider from "@react-native-community/slider";
+import { Picker } from "@react-native-picker/picker";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { useBorderCalculator } from "@/hooks/useBorderCalculator";
 import { ThemedView } from "@/components/ThemedView";
@@ -88,39 +89,50 @@ export default function BorderCalculator() {
     items: Array<{ label: string; value: string }>,
     placeholder: string = "Select an option"
   ) => {
-    // Find the label corresponding to the selected value
-    const selectedItem = items.find(item => item.value === value);
-    // Use the selected item's label if found, otherwise undefined (placeholder will show)
-    const displayValue = selectedItem ? selectedItem.label : undefined;
-
-    return (
-      <Select selectedValue={value} onValueChange={onValueChange}>
-        <SelectTrigger variant="outline" size="md">
-          {/* Explicitly set the value and make it non-editable */}
-          <SelectInput
-            placeholder={!displayValue ? placeholder : undefined} // Show placeholder only when no value
-            value={displayValue}
-            editable={false} // Make non-editable
-            style={{ pointerEvents: "none" }} // Use style prop for pointerEvents
-          />
-          <SelectIcon as={ChevronDownIcon} mr="$3" />
-        </SelectTrigger>
-        <SelectPortal>
-          <SelectBackdrop />
-          <SelectContent>
-            <SelectDragIndicatorWrapper>
-              <SelectDragIndicator />
-            </SelectDragIndicatorWrapper>
+    if (Platform.OS === "ios") {
+      return (
+        <ThemedView style={[styles.pickerContainer, { borderColor }]}>
+          <Picker
+            selectedValue={value}
+            onValueChange={onValueChange}
+            itemStyle={{ color: textColor, height: 120 }}
+          >
             {items.map((item) => (
-              <SelectItem
+              <Picker.Item
                 key={item.value}
                 label={item.label}
                 value={item.value}
               />
             ))}
-          </SelectContent>
-        </SelectPortal>
-      </Select>
+          </Picker>
+        </ThemedView>
+      );
+    }
+
+    // Non-iOS Picker (Android/Web)
+    return (
+      <ThemedView style={[styles.pickerContainer, { borderColor }]}>
+        <Picker
+          selectedValue={value}
+          onValueChange={onValueChange}
+          style={[
+            styles.picker,
+            {
+              backgroundColor,
+              color: textColor,
+            },
+          ]}
+          dropdownIconColor={textColor}
+        >
+          {items.map((item) => (
+            <Picker.Item
+              key={item.value}
+              label={item.label}
+              value={item.value}
+            />
+          ))}
+        </Picker>
+      </ThemedView>
     );
   };
 
@@ -335,9 +347,7 @@ export default function BorderCalculator() {
                     </ThemedText>
 
                     <ThemedText style={styles.easelInstructionText}>
-                      {" "}
-                      Position paper in the {calculation.easelSize.height}x
-                      {calculation.easelSize.width} slot all the way to the
+                      Position paper in the {calculation.easelSizeLabel} slot all the way to the
                       left.
                     </ThemedText>
                   </ThemedView>
@@ -836,6 +846,10 @@ const styles = StyleSheet.create({
     gap: 8,
     width: "100%",
     maxWidth: 400,
+    alignSelf: "center",
+    minWidth: Platform.OS === "web" ? 140 : 160,
+    justifyContent: "center",
+    alignItems: "center",
   },
   resultRow: {
     flexDirection: "row",
@@ -894,25 +908,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     lineHeight: 20,
   },
-  picker: {
-    width: "100%",
-    height: 48,
-    borderWidth: 1,
-    borderRadius: 8,
-    ...Platform.select({
-      android: {
-        marginVertical: 0,
-      },
-      web: {
-        marginVertical: 4,
-      },
-    }),
-  },
   pickerContainer: {
     borderWidth: 1,
     borderRadius: 8,
-    backgroundColor: "transparent",
-    overflow: "hidden",
+    overflow: 'hidden',
+  },
+  picker: {
+    height: 40,
   },
   togglesRow: {
     flexDirection: "row",

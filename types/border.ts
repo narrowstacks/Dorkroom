@@ -44,6 +44,7 @@ interface BorderCalculation {
   // Easel information
   isNonStandardPaperSize: boolean;
   easelSize: { width: number; height: number };
+  easelSizeLabel: string;
 }
 
 interface SelectListProps {

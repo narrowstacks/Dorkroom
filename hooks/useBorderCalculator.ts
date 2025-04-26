@@ -31,6 +31,10 @@ interface State {
   isCropping: boolean;
   cropOffset: { x: number; y: number };
   cropScale: number;
+  lastValidCustomAspectWidth: number;
+  lastValidCustomAspectHeight: number;
+  lastValidCustomPaperWidth: number;
+  lastValidCustomPaperHeight: number;
 }
 
 type Action =
@@ -41,21 +45,28 @@ type Action =
   | { type: 'SET_IMAGE_DIMENSIONS'; value: { width: number; height: number } }
   | { type: 'SET_CROP_OFFSET'; value: { x: number; y: number } }
   | { type: 'RESET' }
-  | { type: 'INTERNAL_UPDATE'; payload: Partial<Pick<State, 'offsetWarning' | 'bladeWarning' | 'minBorderWarning' | 'paperSizeWarning' | 'lastValidMinBorder'>> };
+  | { type: 'INTERNAL_UPDATE'; payload: Partial<Pick<State, 'offsetWarning' | 'bladeWarning' | 'minBorderWarning' | 'paperSizeWarning' | 'lastValidMinBorder'>> }
+  | { type: 'SET_IMAGE_CROP_DATA'; payload: Partial<Pick<State, 'selectedImageUri' | 'imageDimensions' | 'isCropping' | 'cropOffset' | 'cropScale'>> };
 
 const DEFAULT_MIN_BORDER = 0.5;
 const DEFAULT_CUSTOM_PAPER_WIDTH = 10; // Swapped default custom dims
 const DEFAULT_CUSTOM_PAPER_HEIGHT = 13;
+const DEFAULT_CUSTOM_ASPECT_WIDTH = 2; // Default valid custom aspect
+const DEFAULT_CUSTOM_ASPECT_HEIGHT = 3; // Default valid custom aspect
 // Find the maximum dimension among all standard easels
 const MAX_EASEL_DIMENSION = EASEL_SIZES.reduce((max, easel) => Math.max(max, easel.width, easel.height), 0);
 
 const initialState: State = {
   aspectRatio: ASPECT_RATIOS[0].value,
   paperSize: PAPER_SIZES[3].value,
-  customAspectWidth: 0,
-  customAspectHeight: 0,
+  customAspectWidth: DEFAULT_CUSTOM_ASPECT_WIDTH, // Initialize with default
+  customAspectHeight: DEFAULT_CUSTOM_ASPECT_HEIGHT, // Initialize with default
   customPaperWidth: DEFAULT_CUSTOM_PAPER_WIDTH,
   customPaperHeight: DEFAULT_CUSTOM_PAPER_HEIGHT,
+  lastValidCustomAspectWidth: DEFAULT_CUSTOM_ASPECT_WIDTH, // Add last valid state
+  lastValidCustomAspectHeight: DEFAULT_CUSTOM_ASPECT_HEIGHT, // Add last valid state
+  lastValidCustomPaperWidth: DEFAULT_CUSTOM_PAPER_WIDTH, // Add last valid state
+  lastValidCustomPaperHeight: DEFAULT_CUSTOM_PAPER_HEIGHT, // Add last valid state
   minBorder: DEFAULT_MIN_BORDER,
   enableOffset: false,
   ignoreMinBorder: false,
@@ -106,7 +117,15 @@ function reducer(state: State, action: Action): State {
     case 'SET_CROP_OFFSET':
       return { ...state, cropOffset: action.value };
     case 'RESET':
-      return initialState;
+      // Ensure lastValid fields are also reset
+      return {
+        ...initialState,
+        // Re-initialize lastValid fields explicitly on reset
+        lastValidCustomAspectWidth: DEFAULT_CUSTOM_ASPECT_WIDTH,
+        lastValidCustomAspectHeight: DEFAULT_CUSTOM_ASPECT_HEIGHT,
+        lastValidCustomPaperWidth: DEFAULT_CUSTOM_PAPER_WIDTH,
+        lastValidCustomPaperHeight: DEFAULT_CUSTOM_PAPER_HEIGHT,
+      };
     case 'INTERNAL_UPDATE':
       // Only update if the warning/value has actually changed
       let hasChanged = false;
@@ -117,6 +136,8 @@ function reducer(state: State, action: Action): State {
         }
       }
       return hasChanged ? { ...state, ...action.payload } : state;
+    case 'SET_IMAGE_CROP_DATA':
+      return { ...state, ...action.payload };
     default:
       return state;
   }
@@ -145,10 +166,10 @@ export const useBorderCalculator = () => {
     let ratioHeight: number;
     let paperSizeWarning: string | null = null;
 
-    // Get paper dimensions
+    // Get paper dimensions using last valid values for custom
     if (state.paperSize === "custom") {
-      paperWidth = state.customPaperWidth || 0;
-      paperHeight = state.customPaperHeight || 0;
+      paperWidth = state.lastValidCustomPaperWidth; // Use last valid
+      paperHeight = state.lastValidCustomPaperHeight; // Use last valid
       // Check if custom paper size exceeds max easel size
       if (paperWidth > MAX_EASEL_DIMENSION || paperHeight > MAX_EASEL_DIMENSION) {
         paperSizeWarning = `Custom paper size (${paperWidth}x${paperHeight}) exceeds largest standard easel (20x24"). Ensure paper is centered manually if using easel alignment marks.`;
@@ -159,10 +180,10 @@ export const useBorderCalculator = () => {
       paperHeight = selectedPaper?.height ?? 0;
     }
 
-    // Get aspect ratio dimensions
+    // Get aspect ratio dimensions using last valid values for custom
     if (state.aspectRatio === "custom") {
-      ratioWidth = state.customAspectWidth || 0;
-      ratioHeight = state.customAspectHeight || 0;
+      ratioWidth = state.lastValidCustomAspectWidth; // Use last valid
+      ratioHeight = state.lastValidCustomAspectHeight; // Use last valid
     } else {
       const selectedRatio = ASPECT_RATIOS.find((r) => r.value === state.aspectRatio);
       ratioWidth = selectedRatio?.width ?? 0;
@@ -216,11 +237,11 @@ export const useBorderCalculator = () => {
     };
   }, [
     state.paperSize,
-    state.customPaperWidth,
-    state.customPaperHeight,
+    state.lastValidCustomPaperWidth,
+    state.lastValidCustomPaperHeight,
     state.aspectRatio,
-    state.customAspectWidth,
-    state.customAspectHeight,
+    state.lastValidCustomAspectWidth,
+    state.lastValidCustomAspectHeight,
     state.minBorder,
     state.enableOffset,
     state.horizontalOffset,
@@ -245,6 +266,7 @@ export const useBorderCalculator = () => {
     previewScale: number;
     previewWidth: number;
     previewHeight: number;
+    easelSizeLabel: string;
   };
 
   const calculation = useMemo<CalculationResult>(() => {
@@ -327,6 +349,11 @@ export const useBorderCalculator = () => {
     const Ws_x = easelSize.width;
     const Ws_y = easelSize.height;
     if (__DEV__) console.log("Easel Info (Ws):", { Ws_x, Ws_y, isNonStandardPaperSize: originalIsNonStandard });
+
+    // Find the easel label
+    const matchingEasel = EASEL_SIZES.find(e => e.width === Ws_x && e.height === Ws_y);
+    const easelSizeLabel = matchingEasel ? matchingEasel.label : `${Ws_x}x${Ws_y}`;
+    if (__DEV__) console.log("Determined Easel Label:", easelSizeLabel);
 
     // Calculate paper shift (sp) - only if non-standard paper size
     const sp_x = originalIsNonStandard ? (orientedPaperWidth - Ws_x) / 2 : 0;
@@ -412,6 +439,7 @@ export const useBorderCalculator = () => {
       bladeThickness,
       isNonStandardPaperSize: originalIsNonStandard && !inputPaperSizeWarning,
       easelSize,
+      easelSizeLabel,
       // Pass internal state back
       offsetWarning,
       bladeWarning,
@@ -467,13 +495,34 @@ export const useBorderCalculator = () => {
 
    // --- Public API ---
 
-  // Helper to safely set numeric fields from strings
+  // Helper to safely set numeric string fields while tracking last valid number > 0
+  const setCustomDimensionField = (
+    key: keyof State,
+    lastValidKey: keyof State,
+    value: string
+  ) => {
+    // Always update the direct state field with the raw string value
+    dispatch({ type: 'SET_FIELD', key, value: value });
+
+    // Try parsing the number
+    const num = parseFloat(value);
+    if (!isNaN(num) && num > 0) {
+      // If it's a valid number greater than 0, update the last valid field
+      dispatch({ type: 'SET_FIELD', key: lastValidKey, value: num });
+    }
+    // If it's empty, 0, negative, or NaN, the lastValid field remains unchanged
+  };
+
+  // Helper for regular numeric fields (like minBorder, offsets)
   const setNumericField = (key: keyof State, value: string) => {
     const num = parseFloat(value);
+    // For these fields, we might just store the number or the string if needed
+    // Keeping the previous logic for non-custom dimensions for now
     if (!isNaN(num)) {
       dispatch({ type: 'SET_FIELD', key, value: num });
-    } else if (value === '' || value === '-') {
-      dispatch({ type: 'SET_FIELD', key, value }); // Allow empty or negative sign for typing
+    } else if (value === '' || value === '-' || value === '.') {
+      // Allow empty, negative sign, or decimal point for typing intermediate states
+      dispatch({ type: 'SET_FIELD', key, value: value });
     }
   };
 
@@ -536,6 +585,7 @@ export const useBorderCalculator = () => {
       bladeThickness: calculation.bladeThickness,
       isNonStandardPaperSize: calculation.isNonStandardPaperSize,
       easelSize: calculation.easelSize,
+      easelSizeLabel: calculation.easelSizeLabel,
       // Add preview fields from calculation result
       previewScale: calculation.previewScale,
       previewWidth: calculation.previewWidth,
@@ -545,10 +595,10 @@ export const useBorderCalculator = () => {
     // Dispatchers / Setters (provide functions to interact with state)
     setAspectRatio: (value: string) => dispatch({ type: 'SET_ASPECT_RATIO', value }),
     setPaperSize: (value: string) => dispatch({ type: 'SET_PAPER_SIZE', value }),
-    setCustomAspectWidth: (value: string) => setNumericField('customAspectWidth', value),
-    setCustomAspectHeight: (value: string) => setNumericField('customAspectHeight', value),
-    setCustomPaperWidth: (value: string) => setNumericField('customPaperWidth', value),
-    setCustomPaperHeight: (value: string) => setNumericField('customPaperHeight', value),
+    setCustomAspectWidth: (value: string) => setCustomDimensionField('customAspectWidth', 'lastValidCustomAspectWidth', value),
+    setCustomAspectHeight: (value: string) => setCustomDimensionField('customAspectHeight', 'lastValidCustomAspectHeight', value),
+    setCustomPaperWidth: (value: string) => setCustomDimensionField('customPaperWidth', 'lastValidCustomPaperWidth', value),
+    setCustomPaperHeight: (value: string) => setCustomDimensionField('customPaperHeight', 'lastValidCustomPaperHeight', value),
     setMinBorder: (value: string) => setNumericField('minBorder', value),
     setEnableOffset: (value: boolean) => dispatch({ type: 'SET_FIELD', key: 'enableOffset', value }),
     setIgnoreMinBorder: (value: boolean) => dispatch({ type: 'SET_FIELD', key: 'ignoreMinBorder', value }),
