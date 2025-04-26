@@ -370,8 +370,8 @@ export default function BorderCalculator() {
 
                     <ThemedText style={styles.easelInstructionText}>
                       {" "}
-                      Position paper in the {calculation.easelSize.width}x
-                      {calculation.easelSize.height} slot all the way to the
+                      Position paper in the {calculation.easelSize.height}x
+                      {calculation.easelSize.width} slot all the way to the
                       left.
                     </ThemedText>
                   </ThemedView>
