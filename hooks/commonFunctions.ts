@@ -1,139 +1,136 @@
 /**
- * Common functions shared between hooks
+ * Utility helpers – optimised & type-safe
+ * Author: narrowstacks
  */
 
-// Time and Exposure Calculations
-export const calculateNewTime = (time: number, stopChange: number): number => {
-  // Formula: newTime = originalTime * 2^stopChange
-  return time * Math.pow(2, stopChange);
-};
+///////////////////////
+// Constants & helpers
+///////////////////////
+
+const TOLERANCE = 0.01;            // 1 % tolerance for stop rounding
+const BASE_PAPER_AREA = 20 * 24;   // in²
+const BASE_BLADE_THICKNESS = 2;    // px (or whatever your UI unit is)
+
+const SHUTTER_RE = /^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/; // e.g. “1/250”
+const TIME_RE   = /(\d+(?:\.\d+)?)(h|m|s)/gi;                  // matches “1h”, “30m”, “45s”
+
+const plural = (n: number, word: string): string =>
+  `${n} ${word}${Math.abs(n) === 1 ? '' : 's'}`;
+
+/////////////////////////
+// Exposure calculations
+/////////////////////////
+
+export const calculateNewTime = (time: number, stopChange: number): number =>
+  time * (2 ** stopChange); // newTime = oldTime * 2^Δstops
 
 export const roundStops = (value: number): number => {
-  const tolerance = 0.01; // Threshold for rounding (1%)
-  
-  // Check if close to whole number
-  const nearestWhole = Math.round(value);
-  if (Math.abs(value - nearestWhole) <= tolerance) {
-    return nearestWhole;
-  }
-  
-  // Check if close to half stop
-  const halfStops = [0.5, 1.5, 2.5, -0.5, -1.5, -2.5]; // Common half stops
-  for (const halfStop of halfStops) {
-    if (Math.abs(value - halfStop) <= tolerance) {
-      return halfStop;
-    }
-  }
-  
-  return value; // Return original if not close to whole or half
+  const rounded = Math.round(value * 2) / 2; // nearest ½
+  return Math.abs(rounded - value) <= TOLERANCE ? rounded : value;
 };
 
-// Shutter Speed Parsing/Formatting
+//////////////////////////////
+// Shutter-speed parse/format
+//////////////////////////////
+
 export const parseShutterSpeed = (speed: string): number => {
-  if (speed.includes('/')) {
-    const [numerator, denominator] = speed.split('/').map(Number);
-    return numerator / denominator;
+  const trimmed = speed.trim();
+  const frac = SHUTTER_RE.exec(trimmed);
+  if (frac) {
+    const [, num, denom] = frac;
+    const n = Number(num), d = Number(denom);
+    if (d === 0) throw new RangeError('Denominator cannot be 0');
+    return n / d;
   }
-  return Number(speed);
+  const val = Number.parseFloat(trimmed);
+  if (Number.isFinite(val)) return val;
+  throw new TypeError(`Unrecognised shutter speed: “${speed}”`);
 };
 
 export const formatShutterSpeed = (seconds: number): string => {
-  if (seconds < 1) {
-    const fraction = Math.round(1 / seconds);
-    return `1/${fraction}`;
-  }
-  return seconds.toString();
+  if (seconds >= 1) return seconds.toFixed(seconds % 1 ? 2 : 0);
+  const reciprocal = Math.round(1 / seconds);
+  return `1/${reciprocal}`;
 };
 
-// EV Calculations
+////////////////////////
+// EV (Exposure Value)
+////////////////////////
+
 export const calculateEV = (
-  apertureValue: number, 
-  isoValue: number, 
-  speedSeconds: number
+  aperture: number,
+  iso: number,
+  speed: number,
 ): number => {
-  // EV = log2(aperture²) + log2(1/seconds) - log2(ISO/100)
-  return Math.log2(Math.pow(apertureValue, 2)) + Math.log2(1 / speedSeconds) - Math.log2(isoValue / 100);
+  const log2 = Math.log2;
+  return log2(aperture ** 2) + log2(1 / speed) - log2(iso / 100);
 };
 
-// Time formatting
-export const formatTime = (seconds: number): string => {
-  if (seconds < 60) {
-    return `${Math.round(seconds * 10) / 10} seconds`;
-  } else if (seconds < 3600) {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.round((seconds % 60) * 10) / 10;
-    return remainingSeconds === 0 
-      ? `${minutes} minutes` 
-      : `${minutes} minutes ${remainingSeconds} seconds`;
-  } else {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return minutes === 0 
-      ? `${hours} hours` 
-      : `${hours} hours ${minutes} minutes`;
+////////////////////////
+// Time formatting/parsing
+////////////////////////
+
+export const formatTime = (secondsTotal: number): string => {
+  if (secondsTotal < 60) {
+    return `${(Math.round(secondsTotal * 100) / 100).toLocaleString()} ${plural(secondsTotal, 'second')}`;
   }
+  const minutesTotal = Math.floor(secondsTotal / 60);
+  if (secondsTotal < 3600) {
+    const secs = Math.round(secondsTotal % 60);
+    return secs
+      ? `${plural(minutesTotal, 'minute')} ${plural(secs, 'second')}`
+      : plural(minutesTotal, 'minute');
+  }
+  const hours = Math.floor(secondsTotal / 3600);
+  const mins  = Math.round((secondsTotal % 3600) / 60);
+  return mins
+    ? `${plural(hours, 'hour')} ${plural(mins, 'minute')}`
+    : plural(hours, 'hour');
 };
 
 export const parseTimeInput = (input: string): number | null => {
-  // Clean up the input
-  const cleaned = input.toLowerCase().trim();
-  
-  // If input is just a number, assume it's seconds
-  if (/^\d+(\.\d+)?$/.test(cleaned)) {
-    return parseFloat(cleaned);
-  }
-  
-  // Try to parse complex time formats
   let seconds = 0;
-  let valid = false;
-  
-  // Extract hours
-  const hourMatch = cleaned.match(/(\d+(\.\d+)?)\s*h/);
-  if (hourMatch) {
-    seconds += parseFloat(hourMatch[1]) * 3600;
-    valid = true;
+  let match: RegExpExecArray | null;
+
+  TIME_RE.lastIndex = 0; // reset global regex state
+  while ((match = TIME_RE.exec(input.toLowerCase().replace(/\s+/g, '')))) {
+    const value = Number(match[1]);
+    switch (match[2]) {
+      case 'h': seconds += value * 3600; break;
+      case 'm': seconds += value * 60;   break;
+      case 's': seconds += value;        break;
+    }
   }
-  
-  // Extract minutes
-  const minuteMatch = cleaned.match(/(\d+(\.\d+)?)\s*m(?!s)/);
-  if (minuteMatch) {
-    seconds += parseFloat(minuteMatch[1]) * 60;
-    valid = true;
-  }
-  
-  // Extract seconds
-  const secondMatch = cleaned.match(/(\d+(\.\d+)?)\s*s/);
-  if (secondMatch) {
-    seconds += parseFloat(secondMatch[1]);
-    valid = true;
-  }
-  
-  return valid ? seconds : null;
+  return seconds || null;
 };
 
-// Generic helper to find the closest value in an array
+////////////////////////
+// Generic helpers
+////////////////////////
+
 export const findClosestValue = <T extends string | number>(
-  value: number, 
-  options: T[], 
-  valueConverter: (opt: T) => number = (opt) => typeof opt === 'number' ? opt : parseFloat(opt as string)
-): T => {
-  return options.reduce((prev, curr) => {
-    return Math.abs(valueConverter(curr) - value) < Math.abs(valueConverter(prev) - value) 
-      ? curr 
-      : prev;
-  });
-};
+  target: number,
+  options: T[],
+  toNumber: (t: T) => number = (t) =>
+    typeof t === 'number' ? t : Number.parseFloat(String(t)),
+): T =>
+  options.reduce((best, cur) =>
+    Math.abs(toNumber(cur) - target) < Math.abs(toNumber(best) - target)
+      ? cur
+      : best,
+  );
 
-// Border calculator helpers
+////////////////////////
+// Border calculator
+////////////////////////
+
 export const calculateBladeThickness = (
-  paperWidth: number, 
-  paperHeight: number, 
-  basePaperArea: number = 20 * 24, 
-  baseThickness: number = 2
+  paperWidth: number,
+  paperHeight: number,
+  baseArea: number = BASE_PAPER_AREA,
+  baseThickness: number = BASE_BLADE_THICKNESS,
 ): number => {
-  const paperArea = paperWidth * paperHeight;
-  const scaleFactor = basePaperArea / paperArea;
-  // Cap the maximum scale factor to avoid too thick blades
-  const cappedScale = Math.min(scaleFactor, 2);
-  return Math.round(baseThickness * cappedScale);
-}; 
+  const scale = baseArea / (paperWidth * paperHeight);
+  const capped = scale > 2 ? 2 : scale;
+  return Math.round(baseThickness * capped);
+};
