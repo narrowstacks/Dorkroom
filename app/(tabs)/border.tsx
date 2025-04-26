@@ -915,6 +915,7 @@ const styles = StyleSheet.create({
   },
   picker: {
     height: 40,
+    paddingHorizontal: 12,
   },
   togglesRow: {
     flexDirection: "row",
