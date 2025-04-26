@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { 
   parseShutterSpeed, 
-  formatShutterSpeed, 
   calculateEV, 
   findClosestValue 
 } from './commonFunctions';

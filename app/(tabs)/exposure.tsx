@@ -1,13 +1,11 @@
 import React from "react";
 import {
   StyleSheet,
-  View,
   ScrollView,
   Platform,
   Pressable,
   TextInput,
 } from "react-native";
-import Slider from "@react-native-community/slider";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { useExposureCalculator } from "@/hooks/useExposureCalculator";
 import { ThemedView } from "@/components/ThemedView";

@@ -2,7 +2,7 @@ import { useReducer, useMemo, useEffect, useRef } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { BorderCalculation } from '@/types/border';
 import { ASPECT_RATIOS, PAPER_SIZES, EASEL_SIZES } from '@/constants/border';
-import { calculateBladeThickness, findCenteringOffsets, calculateOptimalMinBorder } from '@/utils/borderCalculations';
+import { calculateBladeThickness, findCenteringOffsets } from '@/utils/borderCalculations';
 
 interface State {
   aspectRatio: string;
@@ -467,34 +467,13 @@ export const useBorderCalculator = () => {
 
    // --- Public API ---
 
-  // Function to handle setting numeric fields from text inputs
+  // Helper to safely set numeric fields from strings
   const setNumericField = (key: keyof State, value: string) => {
-    const numericValue = parseFloat(value);
-    // Allow empty string to clear, otherwise dispatch the number or 0 if parse fails
-    dispatch({ type: 'SET_FIELD', key, value: value === '' ? '' : (isNaN(numericValue) ? 0 : numericValue) });
-  };
-
-  // Function to calculate and set the optimal minimum border
-  const calculateAndSetOptimalMinBorder = () => {
-    if (!calculation) return;
-    const optimalBorder = calculateOptimalMinBorder(
-      calculation.paperWidth,
-      calculation.paperHeight,
-      // Need the *original* ratio, not the print dimensions which depend on the *current* minBorder
-      calculationInputs.orientedRatioWidth,
-      calculationInputs.orientedRatioHeight,
-      state.minBorder // Pass the current state's minBorder
-    );
-     // Check if the calculated optimal border is valid before setting it
-    const maxPossibleBorder = Math.min(calculation.paperWidth / 2, calculation.paperHeight / 2);
-    if (optimalBorder < maxPossibleBorder) {
-        dispatch({ type: 'SET_FIELD', key: 'minBorder', value: optimalBorder });
-    } else {
-        // Handle the case where even the optimal border is too large (e.g., very small paper)
-        // Maybe set a warning or revert to a default safe value?
-        // For now, let's just keep the current value if optimal is invalid.
-         if (__DEV__) console.warn("Calculated optimal border is too large, keeping current value.");
-          dispatch({ type: 'INTERNAL_UPDATE', payload: { minBorderWarning: `Calculated optimal border (${optimalBorder}) is too large for paper dimensions.` } });
+    const num = parseFloat(value);
+    if (!isNaN(num)) {
+      dispatch({ type: 'SET_FIELD', key, value: num });
+    } else if (value === '' || value === '-') {
+      dispatch({ type: 'SET_FIELD', key, value }); // Allow empty or negative sign for typing
     }
   };
 
@@ -589,7 +568,6 @@ export const useBorderCalculator = () => {
 
     // Actions
     resetToDefaults: () => dispatch({ type: 'RESET' }),
-    calculateOptimalMinBorder: calculateAndSetOptimalMinBorder, // Expose the optimized calculation function
   };
 };
 

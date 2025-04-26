@@ -1,17 +1,14 @@
 import React from "react";
 import {
   StyleSheet,
-  View,
   ScrollView,
   Platform,
-  Pressable,
   TextInput,
   Switch,
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { useBorderCalculator } from "@/hooks/useBorderCalculator";
-import { BLADE_THICKNESS } from "@/constants/border";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeColor } from "@/hooks/useThemeColor";
@@ -82,7 +79,6 @@ export default function BorderCalculator() {
     calculation,
     minBorderWarning,
     paperSizeWarning,
-    calculateOptimalMinBorder,
     resetToDefaults,
   } = useBorderCalculator();
 
@@ -502,13 +498,6 @@ export default function BorderCalculator() {
                     />
                   </ThemedView>
                 )}
-
-                <Button
-                  onPress={calculateOptimalMinBorder}
-                  variant="outline"
-                >
-                  <ButtonText>Round to 0.25"</ButtonText>
-                </Button>
               </ThemedView>
 
               {(Platform.OS === "ios" ||
