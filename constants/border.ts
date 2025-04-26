@@ -1,4 +1,4 @@
-import { AspectRatio, PaperSize } from '@/types/border';
+import { AspectRatio, PaperSize } from '@/types/borderTypes';
 
 // Define raw data without the derived 'value'
 const rawAspectRatiosData = [

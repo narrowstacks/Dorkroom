@@ -79,8 +79,8 @@ export const findCenteringOffsets = (paperWidth: number, paperHeight: number, is
   const isPaperSizeNonStandard = !isOriginalPaperStandard;
 
   return {
-    // Return the determined slot dimensions
-    easelSize: { width: Ws_x, height: Ws_y },
+    // Return the standard dimensions of the easel found
+    easelSize: { width: bestFitEasel.width, height: bestFitEasel.height },
     isNonStandardPaperSize: isPaperSizeNonStandard
   };
 }

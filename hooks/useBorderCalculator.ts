@@ -1,6 +1,6 @@
 import { useReducer, useMemo, useEffect, useRef } from 'react';
 import { useWindowDimensions } from 'react-native';
-import { BorderCalculation } from '@/types/border';
+import { BorderCalculation } from '@/types/borderTypes';
 import { ASPECT_RATIOS, PAPER_SIZES, EASEL_SIZES } from '@/constants/border';
 import { calculateBladeThickness, findCenteringOffsets } from '@/utils/borderCalculations';
 
@@ -49,8 +49,8 @@ type Action =
   | { type: 'SET_IMAGE_CROP_DATA'; payload: Partial<Pick<State, 'selectedImageUri' | 'imageDimensions' | 'isCropping' | 'cropOffset' | 'cropScale'>> };
 
 const DEFAULT_MIN_BORDER = 0.5;
-const DEFAULT_CUSTOM_PAPER_WIDTH = 10; // Swapped default custom dims
-const DEFAULT_CUSTOM_PAPER_HEIGHT = 13;
+const DEFAULT_CUSTOM_PAPER_WIDTH = 13; // Swapped default custom dims
+const DEFAULT_CUSTOM_PAPER_HEIGHT = 10;
 const DEFAULT_CUSTOM_ASPECT_WIDTH = 2; // Default valid custom aspect
 const DEFAULT_CUSTOM_ASPECT_HEIGHT = 3; // Default valid custom aspect
 // Find the maximum dimension among all standard easels
@@ -352,7 +352,7 @@ export const useBorderCalculator = () => {
 
     // Find the easel label
     const matchingEasel = EASEL_SIZES.find(e => e.width === Ws_x && e.height === Ws_y);
-    const easelSizeLabel = matchingEasel ? matchingEasel.label : `${Ws_x}x${Ws_y}`;
+    const easelSizeLabel = matchingEasel ? matchingEasel.label : `${easelSize.width}x${easelSize.height}`;
     if (__DEV__) console.log("Determined Easel Label:", easelSizeLabel);
 
     // Calculate paper shift (sp) - only if non-standard paper size
