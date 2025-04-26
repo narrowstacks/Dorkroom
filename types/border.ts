@@ -33,15 +33,16 @@ interface BorderCalculation {
   rightBorderPercent: number;
   bottomBorderPercent: number;
   
-  leftBladePos: number;
-  rightBladePos: number;
-  topBladePos: number;
-  bottomBladePos: number;
+  // NEW Blade Readings (based on Saunders-type scale from center)
+  leftBladeReading: number;
+  rightBladeReading: number;
+  topBladeReading: number;
+  bottomBladeReading: number;
   
   bladeThickness: number;
   
   // Easel information
-  isNonStandardSize: boolean;
+  isNonStandardPaperSize: boolean;
   easelSize: { width: number; height: number };
 }
 

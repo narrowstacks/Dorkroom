@@ -319,7 +319,7 @@ export default function BorderCalculator() {
                     Left Blade:
                   </ThemedText>
                   <ThemedText style={styles.resultValue}>
-                    {calculation.leftBladePos.toFixed(2)} inches
+                    {calculation.leftBladeReading.toFixed(2)} inches
                   </ThemedText>
                 </ThemedView>
                 <ThemedView style={styles.resultRow}>
@@ -327,13 +327,13 @@ export default function BorderCalculator() {
                     Right Blade:
                   </ThemedText>
                   <ThemedText style={styles.resultValue}>
-                    {calculation.rightBladePos.toFixed(2)} inches
+                    {calculation.rightBladeReading.toFixed(2)} inches
                   </ThemedText>
                 </ThemedView>
                 <ThemedView style={styles.resultRow}>
                   <ThemedText style={styles.resultLabel}>Top Blade:</ThemedText>
                   <ThemedText style={styles.resultValue}>
-                    {calculation.topBladePos.toFixed(2)} inches
+                    {calculation.topBladeReading.toFixed(2)} inches
                   </ThemedText>
                 </ThemedView>
                 <ThemedView style={styles.resultRow}>
@@ -341,7 +341,7 @@ export default function BorderCalculator() {
                     Bottom Blade:
                   </ThemedText>
                   <ThemedText style={styles.resultValue}>
-                    {calculation.bottomBladePos.toFixed(2)} inches
+                    {calculation.bottomBladeReading.toFixed(2)} inches
                   </ThemedText>
                 </ThemedView>
               {/* Reset Button */}
@@ -351,7 +351,7 @@ export default function BorderCalculator() {
               >
                 <ButtonText>Reset to Defaults</ButtonText>
               </Button>
-                {calculation.isNonStandardSize && (
+                {calculation.isNonStandardPaperSize && (
                   <ThemedView
                     style={[
                       styles.easelInstructionBox,

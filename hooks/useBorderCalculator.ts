@@ -144,8 +144,8 @@ export const useBorderCalculator = () => {
     setPaperSize(PAPER_SIZES[3].value);
     setCustomAspectWidth("");
     setCustomAspectHeight("");
-    setCustomPaperWidth("");
-    setCustomPaperHeight("");
+    setCustomPaperWidth("13");
+    setCustomPaperHeight("10");
     setMinBorder("0.5");
     setEnableOffset(false);
     setIgnoreMinBorder(false);
@@ -193,11 +193,10 @@ export const useBorderCalculator = () => {
      console.log("Parsed Ratio Dimensions:", { ratioWidth, ratioHeight });
 
     // Create oriented dimensions based on isLandscape state.
-    // The useEffect hook now sets the *initial* isLandscape state correctly for custom vs standard.
-    const orientedPaperWidth = isLandscape ? paperHeight : paperWidth;
-    const orientedPaperHeight = isLandscape ? paperWidth : paperHeight;
+    const orientedPaperWidth = isLandscape ? paperHeight : paperWidth; // Wp_x or Wp_y depending on isLandscape
+    const orientedPaperHeight = isLandscape ? paperWidth : paperHeight; // Wp_y or Wp_x depending on isLandscape
     console.log("Orientation State:", { isLandscape });
-    console.log("Oriented Paper Dimensions:", { orientedPaperWidth, orientedPaperHeight });
+    console.log("Oriented Paper Dimensions (Wp):", { orientedPaperWidth, orientedPaperHeight });
 
 
     // Apply ratio flip
@@ -215,14 +214,11 @@ export const useBorderCalculator = () => {
 
     // Validate minimum border value
     if (minBorderValue >= maxPossibleBorder) {
-      // Use last valid value and show warning
       setMinBorderWarning(
         `Minimum border value would result in zero/negative image size. Using ${lastValidMinBorder} instead.`
       );
-      // Use last valid value for calculations
       minBorderValue = parseFloat(lastValidMinBorder) || 0;
     } else {
-      // Update last valid value and clear warning
       setLastValidMinBorder(minBorder);
       setMinBorderWarning(null);
     }
@@ -233,12 +229,11 @@ export const useBorderCalculator = () => {
 
     const availableWidth = orientedPaperWidth - 2 * minBorderValue;
     const availableHeight = orientedPaperHeight - 2 * minBorderValue;
-    // Avoid division by zero if ratioHeight is 0
     const printRatio = orientedRatioHeight === 0 ? 0 : orientedRatioWidth / orientedRatioHeight;
 
 
-    let printWidth: number;
-    let printHeight: number;
+    let printWidth: number;  // I_x or I_y
+    let printHeight: number; // I_y or I_x
 
     // Handle case where printRatio is 0 or dimensions are invalid
     if (printRatio === 0 || availableWidth <= 0 || availableHeight <= 0) {
@@ -253,18 +248,16 @@ export const useBorderCalculator = () => {
       printWidth = availableWidth;
       printHeight = availableWidth / printRatio;
     }
-    console.log("Calculated Print Dimensions:", { printWidth, printHeight });
+    console.log("Calculated Print Dimensions (I):", { printWidth, printHeight });
 
     // Calculate maximum allowed offsets
-    // If ignoreMinBorder is true, we only consider paper edge restrictions
-    // Otherwise, we also enforce the minimum border value
-    const maxHorizontalOffset = ignoreMinBorder 
+    const maxHorizontalOffset = ignoreMinBorder
       ? (orientedPaperWidth - printWidth) / 2
       : Math.min(
           (orientedPaperWidth - printWidth) / 2 - minBorderValue,
           (orientedPaperWidth - printWidth) / 2
         );
-    
+
     const maxVerticalOffset = ignoreMinBorder
       ? (orientedPaperHeight - printHeight) / 2
       : Math.min(
@@ -295,7 +288,7 @@ export const useBorderCalculator = () => {
       originalVertical !== verticalOffsetValue
     ) {
       setOffsetWarning(
-        ignoreMinBorder 
+        ignoreMinBorder
           ? "Offset values have been adjusted to keep print within paper edges"
           : "Offset values have been adjusted to maintain minimum borders and stay within paper bounds"
       );
@@ -303,19 +296,16 @@ export const useBorderCalculator = () => {
       setOffsetWarning(null);
     }
 
-    // Calculate borders
-    const leftBorder = (orientedPaperWidth - printWidth) / 2 + horizontalOffsetValue;
-    const rightBorder = (orientedPaperWidth - printWidth) / 2 - horizontalOffsetValue;
-    const topBorder = (orientedPaperHeight - printHeight) / 2 + verticalOffsetValue;
-    const bottomBorder = (orientedPaperHeight - printHeight) / 2 - verticalOffsetValue;
-    console.log("Calculated Borders:", { leftBorder, rightBorder, topBorder, bottomBorder });
+    // Calculate borders (B1, B2)
+    const rightBorder = (orientedPaperWidth - printWidth) / 2 + horizontalOffsetValue; // B2_x (far) or B1_y (near)
+    const leftBorder = (orientedPaperWidth - printWidth) / 2 - horizontalOffsetValue;  // B1_x (near) or B2_y (far)
+    const topBorder = (orientedPaperHeight - printHeight) / 2 + verticalOffsetValue;   // B2_y (far) or B1_x (near)
+    const bottomBorder = (orientedPaperHeight - printHeight) / 2 - verticalOffsetValue;// B1_y (near) or B2_x (far)
+    console.log("Calculated Borders (B):", { leftBorder, rightBorder, topBorder, bottomBorder });
 
     // Calculate preview scaling
-    const { width: windowWidth } = Dimensions.get("window");
     const PREVIEW_HEIGHT = 300; // Fixed preview height in pixels
-    const previewScale = PREVIEW_HEIGHT / Math.max(orientedPaperWidth, orientedPaperHeight);
-    const previewWidth = PREVIEW_HEIGHT * (orientedPaperWidth / orientedPaperHeight);
-    
+
     // Calculate percentages for positioning elements
     const printWidthPercent = (printWidth / orientedPaperWidth) * 100;
     const printHeightPercent = (printHeight / orientedPaperHeight) * 100;
@@ -323,51 +313,63 @@ export const useBorderCalculator = () => {
     const topBorderPercent = (topBorder / orientedPaperHeight) * 100;
     const rightBorderPercent = (rightBorder / orientedPaperWidth) * 100;
     const bottomBorderPercent = (bottomBorder / orientedPaperHeight) * 100;
-    
-    // Find the appropriate easel size for the paper
-    // Use oriented dimensions for easel size calculation
+
+    // Get Easel Slot size (Ws) and non-standard flag
     const easelInfo = findCenteringOffsets(paperWidth, paperHeight, isLandscape);
-  
-    // Calculate blade positions
+    const { easelSize, isNonStandardPaperSize } = easelInfo;
+    const Ws_x = easelSize.width;
+    const Ws_y = easelSize.height;
+    console.log("Easel Info (Ws):", { Ws_x, Ws_y, isNonStandardPaperSize });
+
+    // Define variables based on the example formulas
+    const Wp_x = orientedPaperWidth;
+    const Wp_y = orientedPaperHeight;
+    const B1_x = leftBorder;    // Near horizontal
+    const B2_x = rightBorder;   // Far horizontal
+    const B1_y = bottomBorder;  // Near vertical
+    const B2_y = topBorder;     // Far vertical
+    const I_x = printWidth;
+    const I_y = printHeight;
+
+    // Calculate paper shift (sp)
+    const sp_x = isNonStandardPaperSize ? (Wp_x - Ws_x) / 2 : 0; // Paper shift only applied if non-standard
+    const sp_y = isNonStandardPaperSize ? (Wp_y - Ws_y) / 2 : 0; // Use consistent (Wp - Ws) / 2 formula
+    console.log("Calculated Paper Shift (sp):", { sp_x, sp_y });
+
+    // Calculate border-induced offset (sb)
+    const sb_x = (B2_x - B1_x) / 2; // (= horizontalOffsetValue)
+    const sb_y = (B2_y - B1_y) / 2; // (= verticalOffsetValue)
+    console.log("Calculated Border Shift (sb):", { sb_x, sb_y });
+
+    // Calculate total centre shift (s)
+    const s_x = sp_x + sb_x;
+    const s_y = sp_y + sb_y;
+    console.log("Calculated Total Shift (s):", { s_x, s_y });
+
+    // Calculate blade scale readings (R1, R2)
+    const leftBladeReading = I_x - 2 * s_x;   // R1_x
+    const rightBladeReading = I_x + 2 * s_x;  // R2_x
+    const topBladeReading = I_y - 2 * s_y; // R1_y
+    const bottomBladeReading = I_y + 2 * s_y;    // R2_y
+    console.log("Calculated Blade Readings (R):", { leftBladeReading, rightBladeReading, topBladeReading, bottomBladeReading });
+
+
+    // Calculate blade thickness for preview (visual only)
     const bladeThickness = calculateBladeThickness(orientedPaperWidth, orientedPaperHeight);
-    // Apply easel centering offsets *only* if the paper size is non-standard
-    const effectiveOffsetX = easelInfo.isNonStandard ? easelInfo.offsetX : 0;
-    const effectiveOffsetY = easelInfo.isNonStandard ? easelInfo.offsetY : 0;
 
-    // Apply offsets correctly based on paper orientation
-    let horizontalBladeOffset = effectiveOffsetX;
-    let verticalBladeOffset = effectiveOffsetY;
-
-    if (isLandscape) {
-      // When paper is landscape, the easel's X offset affects vertical blades,
-      // and the easel's Y offset affects horizontal blades.
-      horizontalBladeOffset = effectiveOffsetY;
-      verticalBladeOffset = effectiveOffsetX;
-    }
-
-    const leftBladePos = printWidth + leftBorder - rightBorder + horizontalBladeOffset;
-    const rightBladePos = printWidth - leftBorder + rightBorder - horizontalBladeOffset;
-    const topBladePos = printHeight + topBorder - bottomBorder + verticalBladeOffset;
-    const bottomBladePos = printHeight - topBorder + bottomBorder - verticalBladeOffset;
-
-    // Create warning message for blade positions
+    // Blade position warnings (based on readings)
     let warningMessage = "";
-        // Check if any blade position is under 2 inches
-    if (Math.abs(leftBladePos) < 3 || Math.abs(rightBladePos) < 3 || Math.abs(topBladePos) < 3 || Math.abs(bottomBladePos) < 3) {
+    const readings = [leftBladeReading, rightBladeReading, topBladeReading, bottomBladeReading];
+    if (readings.some(r => Math.abs(r) < 3)) {
       warningMessage = "Most easels don't have markings below 3 in!";
     }
-    // Check if any blade position is negative
-    if (leftBladePos < 0 || rightBladePos < 0 || topBladePos < 0 || bottomBladePos < 0) {
-      warningMessage = warningMessage + "\n" + "Negative blade position detected! \nFor negative values, set your blade to the markings of the opposite blade.";
+    if (readings.some(r => r < 0)) {
+      warningMessage = warningMessage + (warningMessage ? "\n" : "") + "Negative blade reading detected! Set blade to the positive value on the scale and use the opposite blade mechanism.";
     }
+    setBladeWarning(warningMessage || null);
 
-    if (warningMessage === "") {
-      setBladeWarning(null);
-    } else {
-      setBladeWarning(warningMessage);
-    }
-
-    const result = {
+    // Result object matching BorderCalculation type
+    const result: BorderCalculation = {
       leftBorder,
       rightBorder,
       topBorder,
@@ -376,23 +378,24 @@ export const useBorderCalculator = () => {
       printHeight,
       paperWidth: orientedPaperWidth,
       paperHeight: orientedPaperHeight,
-      previewScale,
+      previewScale: PREVIEW_HEIGHT / Math.max(orientedPaperWidth, orientedPaperHeight), // simplified scale calc
       previewHeight: PREVIEW_HEIGHT,
-      previewWidth,
+      previewWidth: PREVIEW_HEIGHT * (orientedPaperWidth / orientedPaperHeight),
       printWidthPercent,
       printHeightPercent,
       leftBorderPercent,
       topBorderPercent,
       rightBorderPercent,
       bottomBorderPercent,
-      leftBladePos,
-      rightBladePos,
-      topBladePos,
-      bottomBladePos,
+      // New Blade Readings
+      leftBladeReading,
+      rightBladeReading,
+      topBladeReading,
+      bottomBladeReading,
       bladeThickness,
-      // Add easel information
-      isNonStandardSize: easelInfo.isNonStandard,
-      easelSize: easelInfo.easelSize
+      // Easel information
+      isNonStandardPaperSize,
+      easelSize
     };
     console.log("Final Calculation Result:", result);
     console.log("--- Calculation End ---");
@@ -413,8 +416,6 @@ export const useBorderCalculator = () => {
     enableOffset,
     ignoreMinBorder,
     lastValidMinBorder,
-    clampedHorizontalOffset,
-    clampedVerticalOffset
   ]);
 
   // Preview scaling
@@ -501,64 +502,59 @@ function findCenteringOffsets(paperWidth: number, paperHeight: number, isLandsca
 
   let bestFitEasel = null;
   let minAreaDiff = Infinity;
+  let useFlippedEasel = false; // Track if the easel needs to be flipped relative to paper orientation
 
   // Sort easels by area to find the smallest fitting one first
   const sortedEasels = [...EASEL_SIZES].sort((a, b) => (a.width * a.height) - (b.width * b.height));
 
   // Find the smallest easel that fits the *oriented* paper
   for (const easel of sortedEasels) {
-    // Check if easel fits the oriented paper in either rotation
     const fitsCurrentOrientation = easel.width >= orientedPaperWidth && easel.height >= orientedPaperHeight;
     const fitsFlippedOrientation = easel.width >= orientedPaperHeight && easel.height >= orientedPaperWidth;
 
     if (fitsCurrentOrientation || fitsFlippedOrientation) {
-       // Check if this easel is a better fit (smaller area) than the current best fit
       const areaDiff = (easel.width * easel.height) - (orientedPaperWidth * orientedPaperHeight);
-       // Use this easel if it's the first fit found or a smaller fit
-       if (bestFitEasel === null || areaDiff < minAreaDiff ) {
-          bestFitEasel = easel;
-          minAreaDiff = areaDiff;
-          // Since they are sorted, the first one we find is the smallest fitting
-          break;
-       }
+      if (bestFitEasel === null || areaDiff < minAreaDiff) {
+        bestFitEasel = easel;
+        minAreaDiff = areaDiff;
+        // Determine if the fitted easel needs to be flipped relative to the paper's orientation
+        // If it fits the current orientation, no flip needed.
+        // If it only fits the flipped orientation, flip needed.
+        useFlippedEasel = !fitsCurrentOrientation && fitsFlippedOrientation;
+        // Since they are sorted, the first one we find is the smallest fitting
+        break;
+      }
     }
   }
 
-
-  // If no fitting easel found (e.g., paper larger than any easel)
+  // If no fitting easel found
   if (!bestFitEasel) {
-     return {
-       easelSize: { width: orientedPaperWidth, height: orientedPaperHeight }, // Use paper dims as effective easel size
-       offsetX: 0,
-       offsetY: 0,
-       isNonStandard: true // Definitely non-standard if it doesn't fit any easel
-     };
+    return {
+      // Use paper dims as effective easel size, oriented correctly
+      easelSize: { width: orientedPaperWidth, height: orientedPaperHeight },
+      isNonStandardPaperSize: true
+    };
   }
 
-  // Calculate centering offsets based on the *oriented* paper dimensions and the chosen easel
-  const offsetX = (bestFitEasel.width - orientedPaperWidth) / 2;
-  const offsetY = (bestFitEasel.height - orientedPaperHeight) / 2;
+  // Determine the effective slot dimensions (Ws_x, Ws_y) based on easel orientation
+  const Ws_x = useFlippedEasel ? bestFitEasel.height : bestFitEasel.width;
+  const Ws_y = useFlippedEasel ? bestFitEasel.width : bestFitEasel.height;
 
   // Determine if the *original* paper size is standard relative to easels.
-  // A paper size is "standard" for UI purposes if its original dimensions exactly match an easel size in either orientation.
   let isOriginalPaperStandard = false;
   for (const easel of EASEL_SIZES) {
-      if ((easel.width === paperWidth && easel.height === paperHeight) ||
-          (easel.width === paperHeight && easel.height === paperWidth)) {
-          isOriginalPaperStandard = true;
-          break;
-      }
+    if ((easel.width === paperWidth && easel.height === paperHeight) ||
+        (easel.width === paperHeight && easel.height === paperWidth)) {
+      isOriginalPaperStandard = true;
+      break;
+    }
   }
-
-  // The paper *is* non-standard (for UI warning) if the original paper size doesn't match any easel size exactly.
   const isPaperSizeNonStandard = !isOriginalPaperStandard;
 
-
   return {
-    easelSize: bestFitEasel, // Return the actual easel dimensions being used for calculations
-    offsetX: offsetX,       // Centering offset needed for the *oriented* paper in the chosen easel
-    offsetY: offsetY,       // Centering offset needed for the *oriented* paper in the chosen easel
-    isNonStandard: isPaperSizeNonStandard // Flag for UI: True if original paper dims don't match *any* standard easel size
+    // Return the *oriented* slot dimensions
+    easelSize: { width: Ws_x, height: Ws_y },
+    isNonStandardPaperSize: isPaperSizeNonStandard
   };
 }
 
