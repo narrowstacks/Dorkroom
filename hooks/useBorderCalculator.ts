@@ -367,7 +367,7 @@ export const useBorderCalculator = () => {
       bladeWarning += "Negative blade reading detected! Set blade to the positive value and use the opposite mechanism.";
     }
     if (readings.some(r => Math.abs(r) < 3 && r !== 0)) { // Allow exactly 0 reading
-       bladeWarning += (bladeWarning ? "\n" : "") + "Some easels lack markings below 3 inches.";
+       bladeWarning += (bladeWarning ? "\n" : "") + "Most easels lack markings below 2 or 3 inches.";
     }
     bladeWarning = bladeWarning || null; // Set to null if empty
 
