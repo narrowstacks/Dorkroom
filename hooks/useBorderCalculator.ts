@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Dimensions } from 'react-native';
 import { BorderCalculation } from '@/types/border';
 import { ASPECT_RATIOS, PAPER_SIZES, EASEL_SIZES, BLADE_THICKNESS } from '@/constants/border';
@@ -122,6 +122,22 @@ export const useBorderCalculator = () => {
   const [cropScale, setCropScale] = useState(1);
   const [imageLayout, setImageLayout] = useState({ width: 0, height: 0 });
 
+  // Effect to set initial orientation based on paper size type
+  useEffect(() => {
+    console.log(`Paper size changed to: ${paperSize}. Adjusting orientation.`);
+    if (paperSize === 'custom') {
+      // When switching to custom, default to portrait initially
+      console.log("Setting initial orientation for custom to portrait (isLandscape=false)");
+      setIsLandscape(false);
+    } else {
+      // When switching to a standard size, default to landscape
+      console.log("Setting initial orientation for standard size to landscape (isLandscape=true)");
+      setIsLandscape(true);
+    }
+    // Reset ratio flip when paper size changes, as orientation might reset
+    setIsRatioFlipped(false);
+  }, [paperSize]);
+
   // Function to reset all values to defaults
   const resetToDefaults = () => {
     setAspectRatio(ASPECT_RATIOS[0].value);
@@ -146,6 +162,9 @@ export const useBorderCalculator = () => {
 
   // Calculate dimensions and borders
   const calculation = useMemo<BorderCalculation>(() => {
+    console.log("--- Calculation Start ---");
+    console.log("Inputs:", { paperSize, customPaperWidth, customPaperHeight, aspectRatio, customAspectWidth, customAspectHeight, minBorder, isLandscape, isRatioFlipped, enableOffset, ignoreMinBorder, horizontalOffset, verticalOffset });
+
     let paperWidth: number;
     let paperHeight: number;
     let ratioWidth: number;
@@ -160,6 +179,7 @@ export const useBorderCalculator = () => {
       paperWidth = selectedPaper?.width ?? 0;
       paperHeight = selectedPaper?.height ?? 0;
     }
+    console.log("Parsed Paper Dimensions:", { paperWidth, paperHeight });
 
     // Get aspect ratio dimensions
     if (aspectRatio === "custom") {
@@ -170,14 +190,21 @@ export const useBorderCalculator = () => {
       ratioWidth = selectedRatio?.width ?? 0;
       ratioHeight = selectedRatio?.height ?? 0;
     }
+     console.log("Parsed Ratio Dimensions:", { ratioWidth, ratioHeight });
 
-    // Create oriented dimensions based on orientation setting instead of swapping original values
+    // Create oriented dimensions based on isLandscape state.
+    // The useEffect hook now sets the *initial* isLandscape state correctly for custom vs standard.
     const orientedPaperWidth = isLandscape ? paperHeight : paperWidth;
     const orientedPaperHeight = isLandscape ? paperWidth : paperHeight;
+    console.log("Orientation State:", { isLandscape });
+    console.log("Oriented Paper Dimensions:", { orientedPaperWidth, orientedPaperHeight });
+
 
     // Apply ratio flip
     const orientedRatioWidth = isRatioFlipped ? ratioHeight : ratioWidth;
     const orientedRatioHeight = isRatioFlipped ? ratioWidth : ratioHeight;
+    console.log("Ratio Flip State:", { isRatioFlipped });
+    console.log("Oriented Ratio Dimensions:", { orientedRatioWidth, orientedRatioHeight });
 
     // Calculate print size to fit within paper with minimum borders
     let minBorderValue = parseFloat(minBorder) || 0;
@@ -206,12 +233,18 @@ export const useBorderCalculator = () => {
 
     const availableWidth = orientedPaperWidth - 2 * minBorderValue;
     const availableHeight = orientedPaperHeight - 2 * minBorderValue;
-    const printRatio = orientedRatioWidth / orientedRatioHeight;
+    // Avoid division by zero if ratioHeight is 0
+    const printRatio = orientedRatioHeight === 0 ? 0 : orientedRatioWidth / orientedRatioHeight;
+
 
     let printWidth: number;
     let printHeight: number;
 
-    if (availableWidth / availableHeight > printRatio) {
+    // Handle case where printRatio is 0 or dimensions are invalid
+    if (printRatio === 0 || availableWidth <= 0 || availableHeight <= 0) {
+        printWidth = 0;
+        printHeight = 0;
+    } else if (availableWidth / availableHeight > printRatio) {
       // Height limited
       printHeight = availableHeight;
       printWidth = availableHeight * printRatio;
@@ -220,6 +253,7 @@ export const useBorderCalculator = () => {
       printWidth = availableWidth;
       printHeight = availableWidth / printRatio;
     }
+    console.log("Calculated Print Dimensions:", { printWidth, printHeight });
 
     // Calculate maximum allowed offsets
     // If ignoreMinBorder is true, we only consider paper edge restrictions
@@ -274,6 +308,7 @@ export const useBorderCalculator = () => {
     const rightBorder = (orientedPaperWidth - printWidth) / 2 - horizontalOffsetValue;
     const topBorder = (orientedPaperHeight - printHeight) / 2 + verticalOffsetValue;
     const bottomBorder = (orientedPaperHeight - printHeight) / 2 - verticalOffsetValue;
+    console.log("Calculated Borders:", { leftBorder, rightBorder, topBorder, bottomBorder });
 
     // Calculate preview scaling
     const { width: windowWidth } = Dimensions.get("window");
@@ -332,7 +367,7 @@ export const useBorderCalculator = () => {
       setBladeWarning(warningMessage);
     }
 
-    return {
+    const result = {
       leftBorder,
       rightBorder,
       topBorder,
@@ -359,6 +394,10 @@ export const useBorderCalculator = () => {
       isNonStandardSize: easelInfo.isNonStandard,
       easelSize: easelInfo.easelSize
     };
+    console.log("Final Calculation Result:", result);
+    console.log("--- Calculation End ---");
+
+    return result;
   }, [
     paperSize,
     customPaperWidth,
@@ -373,6 +412,9 @@ export const useBorderCalculator = () => {
     isRatioFlipped,
     enableOffset,
     ignoreMinBorder,
+    lastValidMinBorder,
+    clampedHorizontalOffset,
+    clampedVerticalOffset
   ]);
 
   // Preview scaling
