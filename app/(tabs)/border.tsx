@@ -110,7 +110,6 @@ export default function BorderCalculator() {
     offsetWarning,
     bladeWarning,
     calculation,
-    previewScale,
     minBorderWarning,
     calculateOptimalMinBorder,
     resetToDefaults,
@@ -190,8 +189,8 @@ export default function BorderCalculator() {
                 style={[
                   styles.previewContainer,
                   {
-                    height: calculation.paperHeight * previewScale,
-                    width: calculation.paperWidth * previewScale,
+                    height: calculation.previewHeight,
+                    width: calculation.previewWidth,
                     borderColor,
                   },
                 ]}

@@ -64,40 +64,63 @@ $O_v = \max(-O_{v,max}, \min(O_{v,max}, O_v))$
 
 ### Blade Position Calculation
 
-Blade positions for the easel are calculated based on print dimensions, borders, and conditionally applied centering offsets.
+Blade positions (readings) for the easel are calculated based on the print dimensions ($I_x, I_y$) and the total center shift ($s_x, s_y$) applied to the paper relative to the easel center.
 
 Given:
-- Oriented paper width: $W_{p,oriented}$ (paper width or height depending on landscape toggle)
-- Oriented paper height: $H_{p,oriented}$ (paper height or width depending on landscape toggle)
-- Chosen easel dimensions: $W_{easel} \times H_{easel}$ (smallest standard size fitting the oriented paper)
+- Oriented paper width: $W_{p,x}$ (corresponds to `orientedPaperWidth`)
+- Oriented paper height: $W_{p,y}$ (corresponds to `orientedPaperHeight`)
+- Oriented print width: $I_x$ (corresponds to `printWidth`)
+- Oriented print height: $I_y$ (corresponds to `printHeight`)
+- Oriented easel slot width: $W_{s,x}$ (from `findCenteringOffsets`)
+- Oriented easel slot height: $W_{s,y}$ (from `findCenteringOffsets`)
+- Left Border: $B_{1,x}$ (Near horizontal border, corresponds to `leftBorder`)
+- Right Border: $B_{2,x}$ (Far horizontal border, corresponds to `rightBorder`)
+- Bottom Border: $B_{1,y}$ (Near vertical border, corresponds to `bottomBorder`)
+- Top Border: $B_{2,y}$ (Far vertical border, corresponds to `topBorder`)
+- Horizontal Offset (clamped): $O_h$ (corresponds to `clampedHorizontalOffset`)
+- Vertical Offset (clamped): $O_v$ (corresponds to `clampedVerticalOffset`)
+- Is Paper Non-Standard: `isNonStandardPaperSize` (boolean flag from `findCenteringOffsets`)
 
-Centering offsets (calculated based on oriented paper in chosen easel):
-- Horizontal offset: $O_{easel,X} = (W_{easel} - W_{p,oriented}) / 2$
-- Vertical offset: $O_{easel,Y} = (H_{easel} - H_{p,oriented}) / 2$
+Calculate Shift Components:
 
-Effective offsets (applied only if paper is non-standard):
-- $O_{eff,X} = \text{isNonStandard} ? O_{easel,X} : 0$
-- $O_{eff,Y} = \text{isNonStandard} ? O_{easel,Y} : 0$
+1.  **Paper Shift ($sp$)**: This accounts for centering a non-standard paper size within the chosen easel slot. It's zero if the paper is a standard size.
+    - $sp_x = \\text{isNonStandardPaperSize} ? (W_{p,x} - W_{s,x}) / 2 : 0$
+    - $sp_y = \\text{isNonStandardPaperSize} ? (W_{p,y} - W_{s,y}) / 2 : 0$
 
-Blade positions:
-- Left blade position: $B_{L,pos} = W_{print} + B_L - B_R + O_{eff,X}$
-- Right blade position: $B_{R,pos} = W_{print} - B_L + B_R - O_{eff,X}$
-- Top blade position: $B_{T,pos} = H_{print} + B_T - B_B + O_{eff,Y}$
-- Bottom blade position: $B_{B,pos} = H_{print} - B_T + B_B - O_{eff,Y}$
+2.  **Border-Induced Shift ($sb$)**: This shift is caused by unequal borders due to user-applied offsets.
+    - $sb_x = (B_{2,x} - B_{1,x}) / 2 = -O_h$
+    - $sb_y = (B_{2,y} - B_{1,y}) / 2 = O_v$
 
-Note: $O_{easel,X}$ and $O_{easel,Y}$ represent the space needed to center the oriented paper in the chosen easel. They are only applied to the blade calculation if the original paper dimensions do not match any standard easel size (`isNonStandard` is true).
+Calculate Total Center Shift ($s$):
+
+- $s_x = sp_x + sb_x$
+- $s_y = sp_y + sb_y$
+
+Calculate Blade Readings ($R$):
+
+The readings represent the dimensions to set on the easel's scales.
+
+- Left Blade Reading ($R_{Left}$): $I_x - 2s_x$
+- Right Blade Reading ($R_{Right}$): $I_x + 2s_x$
+- Top Blade Reading ($R_{Top}$): $I_y - 2s_y$
+- Bottom Blade Reading ($R_{Bottom}$): $I_y + 2s_y$
+
+Note: The formulas $R = I \pm 2s$ effectively combine the print size and all necessary shifts (paper centering and user offset) into the final scale readings.
 
 ### Blade Thickness Scaling
 
-The blade thickness is scaled based on paper area to ensure proper measurements:
+The visual thickness of the blades in the preview is scaled based on the relative area of the paper compared to a base size (20x24 inches), with a maximum scaling factor to prevent excessively thick blades on small paper.
 
-$T_{blade} = T_{base} \times \sqrt{\frac{A_{paper}}{A_{base}}}$
+Given:
+- Base Blade Thickness: $T_{base}$ (constant `BLADE_THICKNESS`)
+- Base Paper Area: $A_{base} = 20 \\times 24 = 480$ sq inches
+- Current Oriented Paper Area: $A_{paper} = W_{p,x} \\times W_{p,y}$
 
-Where:
+Scaling Factor:
+$ScaleFactor = \\min( A_{base} / A_{paper}, 2 )$
 
-- $T_{base}$ is the base blade thickness (for 20×24 paper)
-- $A_{base}$ is the base paper area (20×24 = 480 square inches)
-- $A_{paper}$ is the current paper area
+Scaled Blade Thickness:
+$T_{blade} = T_{base} \\times ScaleFactor$
 
 ### Optimal Minimum Border Algorithm
 
@@ -120,23 +143,25 @@ Preview dimensions are calculated for proper UI display:
 
 ### Easel Size Determination
 
-The algorithm finds the smallest standard easel size that can accommodate the paper *in its current orientation*, calculates the necessary centering offsets for that easel, and determines if the *original* paper dimensions are considered non-standard.
+The algorithm identifies the appropriate standard easel slot dimensions ($W_{s,x}, W_{s,y}$) for the paper based on its *current orientation* and determines if the *original* paper dimensions are considered non-standard relative to any standard easel size.
 
-1. Determine the oriented paper dimensions based on the landscape setting:
-   - $W_{p,oriented} = \text{isLandscape} ? H_p : W_p$
-   - $H_{p,oriented} = \text{isLandscape} ? W_p : H_p$
+1.  Determine the oriented paper dimensions based on the landscape toggle:
+    - $W_{p,x} = \\text{isLandscape} ? H_p : W_p$
+    - $W_{p,y} = \\text{isLandscape} ? W_p : H_p$
 
-2. Find the smallest standard easel (sorted by area) that can fit the oriented paper in *either* alignment:
-   Condition: 
-   ($W_{easel} \geq W_{p,oriented}$ AND $H_{easel} \geq H_{p,oriented}$) 
-   OR
-   ($W_{easel} \geq H_{p,oriented}$ AND $H_{easel} \geq W_{p,oriented}$)
+2.  Find the *smallest* standard easel (from `EASEL_SIZES`, sorted by area) that can accommodate the oriented paper ($W_{p,x}, W_{p,y}$). The easel might need to be conceptually "flipped" relative to the paper's orientation to fit.
+    - Check if fits current: $W_{easel} \\geq W_{p,x}$ AND $H_{easel} \\geq W_{p,y}$
+    - Check if fits flipped: $W_{easel} \\geq W_{p,y}$ AND $H_{easel} \\geq W_{p,x}$
+    - Select the first (smallest area) easel satisfying either condition. Determine if flipping was required (`useFlippedEasel`).
 
-3. Calculate the centering offsets *for the chosen easel and oriented paper*:
-   - $O_{easel,X} = (W_{easel} - W_{p,oriented}) / 2$
-   - $O_{easel,Y} = (H_{easel} - H_{p,oriented}) / 2$
+3.  Determine the *oriented* easel slot dimensions ($W_{s,x}, W_{s,y}$) based on the chosen easel and whether it was flipped:
+    - $W_{s,x} = \\text{useFlippedEasel} ? H_{easel} : W_{easel}$
+    - $W_{s,y} = \\text{useFlippedEasel} ? W_{easel} : H_{easel}$
+    If no fitting easel is found, use the oriented paper dimensions as the effective slot size: $W_{s,x} = W_{p,x}$, $W_{s,y} = W_{p,y}$.
 
-4. Determine if the *original* paper dimensions ($W_p, H_p$) match any standard easel size in either orientation. The paper is considered non-standard (`isNonStandard = true`) if no exact match is found.
+4.  Determine if the *original* paper dimensions ($W_p, H_p$) match any standard easel size in either orientation. Set `isNonStandardPaperSize = true` if no exact match is found.
+
+5.  Return the oriented easel slot dimensions ($W_{s,x}, W_{s,y}$) and the `isNonStandardPaperSize` flag.
 
 ## Edge Cases and Warnings
 

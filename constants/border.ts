@@ -32,11 +32,11 @@ export const PAPER_SIZES: PaperSize[] = [
 ];
 
 export const EASEL_SIZES: PaperSize[] = [
-  { label: "5x7", value: "5x7", width: 5, height: 7 },
-  { label: "8x10", value: "8x10", width: 8, height: 10 },
-  { label: "11x14", value: "11x14", width: 11, height: 14 },
-  { label: "16x20", value: "16x20", width: 16, height: 20 },
-  { label: "20x24", value: "20x24", width: 20, height: 24 },
+  { label: "7x5", value: "7x5", width: 7, height: 5 },
+  { label: "10x8", value: "10x8", width: 10, height: 8 },
+  { label: "14x11", value: "14x11", width: 14, height: 11 },
+  { label: "20x16", value: "20x16", width: 20, height: 16 },
+  { label: "24x20", value: "24x20", width: 24, height: 20 },
 ];
 
 // UI Constants

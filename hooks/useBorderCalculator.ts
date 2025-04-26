@@ -1,375 +1,382 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Dimensions } from 'react-native';
+import { useReducer, useMemo, useEffect, useRef } from 'react';
+import { useWindowDimensions } from 'react-native';
 import { BorderCalculation } from '@/types/border';
-import { ASPECT_RATIOS, PAPER_SIZES, EASEL_SIZES, BLADE_THICKNESS } from '@/constants/border';
+import { ASPECT_RATIOS, PAPER_SIZES } from '@/constants/border';
+import { calculateBladeThickness, findCenteringOffsets, calculateOptimalMinBorder } from '@/utils/borderCalculations';
 
-// Base paper size for blade thickness calculation (20x24)
-const BASE_PAPER_AREA = 20 * 24;
+interface State {
+  aspectRatio: string;
+  paperSize: string;
+  customAspectWidth: number;
+  customAspectHeight: number;
+  customPaperWidth: number;
+  customPaperHeight: number;
+  minBorder: number;
+  enableOffset: boolean;
+  ignoreMinBorder: boolean;
+  horizontalOffset: number;
+  verticalOffset: number;
+  showBlades: boolean;
+  isLandscape: boolean;
+  isRatioFlipped: boolean;
+  // Internal / derived state related to warnings
+  offsetWarning: string | null;
+  bladeWarning: string | null;
+  minBorderWarning: string | null;
+  lastValidMinBorder: number;
+  // Image state (kept separate for now, could be integrated)
+  selectedImageUri: string | null;
+  imageDimensions: { width: number; height: number };
+  isCropping: boolean;
+  cropOffset: { x: number; y: number };
+  cropScale: number;
+}
 
-const calculateBladeThickness = (paperWidth: number, paperHeight: number): number => {
-  const paperArea = paperWidth * paperHeight;
-  const scaleFactor = BASE_PAPER_AREA / paperArea;
-  // Cap the maximum scale factor to avoid too thick blades
-  const cappedScale = Math.min(scaleFactor, 2);
-  return Math.round(BLADE_THICKNESS * cappedScale);
+type Action =
+  | { type: 'SET_FIELD'; key: keyof State; value: any } // Use 'any' for simplicity, refine if needed
+  | { type: 'SET_PAPER_SIZE'; value: string }
+  | { type: 'SET_ASPECT_RATIO'; value: string }
+  | { type: 'SET_IMAGE_FIELD'; key: Exclude<keyof State, 'imageDimensions' | 'cropOffset'>; value: any }
+  | { type: 'SET_IMAGE_DIMENSIONS'; value: { width: number; height: number } }
+  | { type: 'SET_CROP_OFFSET'; value: { x: number; y: number } }
+  | { type: 'RESET' }
+  | { type: 'INTERNAL_UPDATE'; payload: Partial<Pick<State, 'offsetWarning' | 'bladeWarning' | 'minBorderWarning' | 'lastValidMinBorder'>> };
+
+const DEFAULT_MIN_BORDER = 0.5;
+const DEFAULT_CUSTOM_PAPER_WIDTH = 10; // Swapped default custom dims
+const DEFAULT_CUSTOM_PAPER_HEIGHT = 13;
+
+const initialState: State = {
+  aspectRatio: ASPECT_RATIOS[0].value,
+  paperSize: PAPER_SIZES[3].value,
+  customAspectWidth: 0,
+  customAspectHeight: 0,
+  customPaperWidth: DEFAULT_CUSTOM_PAPER_WIDTH,
+  customPaperHeight: DEFAULT_CUSTOM_PAPER_HEIGHT,
+  minBorder: DEFAULT_MIN_BORDER,
+  enableOffset: false,
+  ignoreMinBorder: false,
+  horizontalOffset: 0,
+  verticalOffset: 0,
+  showBlades: false,
+  isLandscape: true, // Default standard paper to landscape
+  isRatioFlipped: false,
+  offsetWarning: null,
+  bladeWarning: null,
+  minBorderWarning: null,
+  lastValidMinBorder: DEFAULT_MIN_BORDER,
+  // Image State
+  selectedImageUri: null,
+  imageDimensions: { width: 0, height: 0 },
+  isCropping: false,
+  cropOffset: { x: 0, y: 0 },
+  cropScale: 1,
 };
 
-const calculateOptimalMinBorder = (
-  paperWidth: number,
-  paperHeight: number,
-  ratioWidth: number,
-  ratioHeight: number,
-  currentMinBorder: number
-): number => {
-  // Calculate the print size that would fit with the current minimum border
-  const availableWidth = paperWidth - 2 * currentMinBorder;
-  const availableHeight = paperHeight - 2 * currentMinBorder;
-  const printRatio = ratioWidth / ratioHeight;
-
-  let printWidth: number;
-  let printHeight: number;
-
-  if (availableWidth / availableHeight > printRatio) {
-    // Height limited
-    printHeight = availableHeight;
-    printWidth = availableHeight * printRatio;
-  } else {
-    // Width limited
-    printWidth = availableWidth;
-    printHeight = availableWidth / printRatio;
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case 'SET_FIELD':
+      return { ...state, [action.key]: action.value };
+    case 'SET_PAPER_SIZE':
+      // When switching paper size, reset orientation and flip state
+      // Default standard to landscape, custom to portrait
+      const isCustom = action.value === 'custom';
+      return {
+        ...state,
+        paperSize: action.value,
+        isLandscape: !isCustom, // Custom defaults to portrait (false), standard to landscape (true)
+        isRatioFlipped: false, // Reset flip
+      };
+    case 'SET_ASPECT_RATIO':
+       // Reset flip when aspect ratio changes
+      return {
+        ...state,
+        aspectRatio: action.value,
+        isRatioFlipped: false,
+      };
+    case 'SET_IMAGE_FIELD':
+      // Specific action for non-nested image fields
+      return { ...state, [action.key]: action.value };
+    case 'SET_IMAGE_DIMENSIONS':
+      return { ...state, imageDimensions: action.value };
+    case 'SET_CROP_OFFSET':
+      return { ...state, cropOffset: action.value };
+    case 'RESET':
+      return initialState;
+    case 'INTERNAL_UPDATE':
+      // Only update if the warning/value has actually changed
+      let hasChanged = false;
+      for (const key in action.payload) {
+        if (state[key as keyof State] !== action.payload[key as keyof typeof action.payload]) {
+          hasChanged = true;
+          break;
+        }
+      }
+      return hasChanged ? { ...state, ...action.payload } : state;
+    default:
+      return state;
   }
-
-  // Calculate the borders that would result in blade positions divisible by 0.25
-  const targetBladePositions = [
-    printWidth + (paperWidth - printWidth) / 2, // Left blade
-    printWidth - (paperWidth - printWidth) / 2, // Right blade
-    printHeight + (paperHeight - printHeight) / 2, // Top blade
-    printHeight - (paperHeight - printHeight) / 2, // Bottom blade
-  ];
-
-  // Find the minimum border that makes all blade positions divisible by 0.25
-  let optimalMinBorder = currentMinBorder;
-  let bestScore = Infinity;
-
-  // Try different minimum border values around the current value
-  for (let i = -0.5; i <= 0.5; i += 0.01) {
-    const testMinBorder = currentMinBorder + i;
-    if (testMinBorder <= 0) continue;
-
-    const testAvailableWidth = paperWidth - 2 * testMinBorder;
-    const testAvailableHeight = paperHeight - 2 * testMinBorder;
-
-    let testPrintWidth: number;
-    let testPrintHeight: number;
-
-    if (testAvailableWidth / testAvailableHeight > printRatio) {
-      testPrintHeight = testAvailableHeight;
-      testPrintWidth = testAvailableHeight * printRatio;
-    } else {
-      testPrintWidth = testAvailableWidth;
-      testPrintHeight = testAvailableWidth / printRatio;
-    }
-
-    const testBladePositions = [
-      testPrintWidth + (paperWidth - testPrintWidth) / 2,
-      testPrintWidth - (paperWidth - testPrintWidth) / 2,
-      testPrintHeight + (paperHeight - testPrintHeight) / 2,
-      testPrintHeight - (paperHeight - testPrintHeight) / 2,
-    ];
-
-    // Calculate how close each blade position is to being divisible by 0.25
-    const score = testBladePositions.reduce((sum, pos) => {
-      const remainder = pos % 0.25;
-      return sum + Math.min(remainder, 0.25 - remainder);
-    }, 0);
-
-    if (score < bestScore) {
-      bestScore = score;
-      optimalMinBorder = testMinBorder;
-    }
-  }
-
-  return Number(optimalMinBorder.toFixed(2));
-};
+}
 
 export const useBorderCalculator = () => {
-  // Form state
-  const [aspectRatio, setAspectRatio] = useState(ASPECT_RATIOS[0].value);
-  const [paperSize, setPaperSize] = useState(PAPER_SIZES[3].value);
-  const [customAspectWidth, setCustomAspectWidth] = useState("");
-  const [customAspectHeight, setCustomAspectHeight] = useState("");
-  const [customPaperWidth, setCustomPaperWidth] = useState("");
-  const [customPaperHeight, setCustomPaperHeight] = useState("");
-  const [minBorder, setMinBorder] = useState("0.5");
-  const [enableOffset, setEnableOffset] = useState(false);
-  const [ignoreMinBorder, setIgnoreMinBorder] = useState(false);
-  const [horizontalOffset, setHorizontalOffset] = useState("0");
-  const [verticalOffset, setVerticalOffset] = useState("0");
-  const [showBlades, setShowBlades] = useState(false);
-  const [isLandscape, setIsLandscape] = useState(true);
-  const [isRatioFlipped, setIsRatioFlipped] = useState(false);
-  const [offsetWarning, setOffsetWarning] = useState<string | null>(null);
-  const [bladeWarning, setBladeWarning] = useState<string | null>(null);
-  const [clampedHorizontalOffset, setClampedHorizontalOffset] = useState(0);
-  const [clampedVerticalOffset, setClampedVerticalOffset] = useState(0);
-  const [lastValidMinBorder, setLastValidMinBorder] = useState("0.5");
-  const [minBorderWarning, setMinBorderWarning] = useState<string | null>(null);
-  // Image state & functions
-  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
-  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
-  const [isCropping, setIsCropping] = useState(false);
-  const [cropOffset, setCropOffset] = useState({ x: 0, y: 0 });
-  const [cropScale, setCropScale] = useState(1);
-  const [imageLayout, setImageLayout] = useState({ width: 0, height: 0 });
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
 
-  // Effect to set initial orientation based on paper size type
-  useEffect(() => {
-    console.log(`Paper size changed to: ${paperSize}. Adjusting orientation.`);
-    if (paperSize === 'custom') {
-      // When switching to custom, default to portrait initially
-      console.log("Setting initial orientation for custom to portrait (isLandscape=false)");
-      setIsLandscape(false);
-    } else {
-      // When switching to a standard size, default to landscape
-      console.log("Setting initial orientation for standard size to landscape (isLandscape=true)");
-      setIsLandscape(true);
-    }
-    // Reset ratio flip when paper size changes, as orientation might reset
-    setIsRatioFlipped(false);
-  }, [paperSize]);
+  // Refs for state used only in event handlers to avoid re-renders
+  const imageLayoutRef = useRef({ width: 0, height: 0 });
 
-  // Function to reset all values to defaults
-  const resetToDefaults = () => {
-    setAspectRatio(ASPECT_RATIOS[0].value);
-    setPaperSize(PAPER_SIZES[3].value);
-    setCustomAspectWidth("");
-    setCustomAspectHeight("");
-    setCustomPaperWidth("13");
-    setCustomPaperHeight("10");
-    setMinBorder("0.5");
-    setEnableOffset(false);
-    setIgnoreMinBorder(false);
-    setHorizontalOffset("0");
-    setVerticalOffset("0");
-    setShowBlades(false);
-    setIsLandscape(true);
-    setIsRatioFlipped(false);
-    setLastValidMinBorder("0.5");
-    setOffsetWarning(null);
-    setBladeWarning(null);
-    setMinBorderWarning(null);
-  };
+  // Use refs to store previous warning values to prevent unnecessary state updates
+  const prevOffsetWarning = useRef<string | null>(null);
+  const prevBladeWarning = useRef<string | null>(null);
+  const prevMinBorderWarning = useRef<string | null>(null);
+  const prevLastValidMinBorder = useRef<number>(state.lastValidMinBorder);
 
-  // Calculate dimensions and borders
-  const calculation = useMemo<BorderCalculation>(() => {
-    console.log("--- Calculation Start ---");
-    console.log("Inputs:", { paperSize, customPaperWidth, customPaperHeight, aspectRatio, customAspectWidth, customAspectHeight, minBorder, isLandscape, isRatioFlipped, enableOffset, ignoreMinBorder, horizontalOffset, verticalOffset });
-
+  // --- Input Derivation ---
+  // Memoize the derived input values for the main calculation
+  const calculationInputs = useMemo(() => {
     let paperWidth: number;
     let paperHeight: number;
     let ratioWidth: number;
     let ratioHeight: number;
 
     // Get paper dimensions
-    if (paperSize === "custom") {
-      paperWidth = parseFloat(customPaperWidth) || 0;
-      paperHeight = parseFloat(customPaperHeight) || 0;
+    if (state.paperSize === "custom") {
+      paperWidth = state.customPaperWidth || 0;
+      paperHeight = state.customPaperHeight || 0;
     } else {
-      const selectedPaper = PAPER_SIZES.find((p) => p.value === paperSize);
+      const selectedPaper = PAPER_SIZES.find((p) => p.value === state.paperSize);
       paperWidth = selectedPaper?.width ?? 0;
       paperHeight = selectedPaper?.height ?? 0;
     }
-    console.log("Parsed Paper Dimensions:", { paperWidth, paperHeight });
 
     // Get aspect ratio dimensions
-    if (aspectRatio === "custom") {
-      ratioWidth = parseFloat(customAspectWidth) || 0;
-      ratioHeight = parseFloat(customAspectHeight) || 0;
+    if (state.aspectRatio === "custom") {
+      ratioWidth = state.customAspectWidth || 0;
+      ratioHeight = state.customAspectHeight || 0;
     } else {
-      const selectedRatio = ASPECT_RATIOS.find((r) => r.value === aspectRatio);
+      const selectedRatio = ASPECT_RATIOS.find((r) => r.value === state.aspectRatio);
       ratioWidth = selectedRatio?.width ?? 0;
       ratioHeight = selectedRatio?.height ?? 0;
     }
-     console.log("Parsed Ratio Dimensions:", { ratioWidth, ratioHeight });
 
-    // Create oriented dimensions based on isLandscape state.
-    const orientedPaperWidth = isLandscape ? paperHeight : paperWidth; // Wp_x or Wp_y depending on isLandscape
-    const orientedPaperHeight = isLandscape ? paperWidth : paperHeight; // Wp_y or Wp_x depending on isLandscape
-    console.log("Orientation State:", { isLandscape });
-    console.log("Oriented Paper Dimensions (Wp):", { orientedPaperWidth, orientedPaperHeight });
-
+    // Create oriented dimensions
+    const orientedPaperWidth = state.isLandscape ? paperHeight : paperWidth;
+    const orientedPaperHeight = state.isLandscape ? paperWidth : paperHeight;
 
     // Apply ratio flip
-    const orientedRatioWidth = isRatioFlipped ? ratioHeight : ratioWidth;
-    const orientedRatioHeight = isRatioFlipped ? ratioWidth : ratioHeight;
-    console.log("Ratio Flip State:", { isRatioFlipped });
-    console.log("Oriented Ratio Dimensions:", { orientedRatioWidth, orientedRatioHeight });
-
-    // Calculate print size to fit within paper with minimum borders
-    let minBorderValue = parseFloat(minBorder) || 0;
-    const maxPossibleBorder = Math.min(
-      orientedPaperWidth / 2,
-      orientedPaperHeight / 2
-    );
+    const orientedRatioWidth = state.isRatioFlipped ? ratioHeight : ratioWidth;
+    const orientedRatioHeight = state.isRatioFlipped ? ratioWidth : ratioHeight;
 
     // Validate minimum border value
-    if (minBorderValue >= maxPossibleBorder) {
-      setMinBorderWarning(
-        `Minimum border value would result in zero/negative image size. Using ${lastValidMinBorder} instead.`
-      );
-      minBorderValue = parseFloat(lastValidMinBorder) || 0;
+    const maxPossibleBorder = Math.min(orientedPaperWidth / 2, orientedPaperHeight / 2);
+    let minBorderValue = state.minBorder;
+    let minBorderWarning: string | null = null;
+    let lastValidMinBorder = state.lastValidMinBorder;
+
+    if (minBorderValue >= maxPossibleBorder && maxPossibleBorder > 0) {
+      minBorderWarning = `Minimum border makes image size zero or negative. Using last valid: ${state.lastValidMinBorder}.`;
+      minBorderValue = state.lastValidMinBorder;
+    } else if (minBorderValue < 0) {
+       minBorderWarning = `Minimum border cannot be negative. Using last valid: ${state.lastValidMinBorder}.`;
+       minBorderValue = state.lastValidMinBorder;
     } else {
-      setLastValidMinBorder(minBorder);
-      setMinBorderWarning(null);
+      lastValidMinBorder = minBorderValue; // Update last valid if current is ok
     }
 
-    // Apply user offsets if enabled
-    let horizontalOffsetValue = enableOffset ? parseFloat(horizontalOffset) || 0 : 0;
-    let verticalOffsetValue = enableOffset ? parseFloat(verticalOffset) || 0 : 0;
+     // Determine active offsets
+    const horizontalOffsetValue = state.enableOffset ? state.horizontalOffset : 0;
+    const verticalOffsetValue = state.enableOffset ? state.verticalOffset : 0;
 
+    return {
+      paperWidth, // Original paper dimensions needed for easel centering logic
+      paperHeight,
+      orientedPaperWidth,
+      orientedPaperHeight,
+      orientedRatioWidth,
+      orientedRatioHeight,
+      minBorderValue,
+      horizontalOffsetValue,
+      verticalOffsetValue,
+      ignoreMinBorder: state.ignoreMinBorder,
+      isLandscape: state.isLandscape,
+      // Pass down warning info to be set after calculation
+      minBorderWarning,
+      lastValidMinBorder,
+    };
+  }, [
+    state.paperSize,
+    state.customPaperWidth,
+    state.customPaperHeight,
+    state.aspectRatio,
+    state.customAspectWidth,
+    state.customAspectHeight,
+    state.minBorder,
+    state.enableOffset,
+    state.horizontalOffset,
+    state.verticalOffset,
+    state.isLandscape,
+    state.isRatioFlipped,
+    state.ignoreMinBorder,
+    state.lastValidMinBorder, // Include lastValidMinBorder as it affects the result
+  ]);
+
+  // --- Main Calculation ---
+  // Define an extended type for the calculation result including internal fields
+  type CalculationResult = BorderCalculation & {
+    offsetWarning: string | null;
+    bladeWarning: string | null;
+    minBorderWarning: string | null;
+    lastValidMinBorder: number;
+    clampedHorizontalOffset: number;
+    clampedVerticalOffset: number;
+    // Include preview fields derived from scale
+    previewScale: number;
+    previewWidth: number;
+    previewHeight: number;
+  };
+
+  const calculation = useMemo<CalculationResult>(() => {
+    if (__DEV__) console.log("--- Calculation Start ---");
+    const {
+      paperWidth, paperHeight, // Original dims for easel calc
+      orientedPaperWidth, orientedPaperHeight, orientedRatioWidth, orientedRatioHeight,
+      minBorderValue, horizontalOffsetValue: initialHorizontalOffset, verticalOffsetValue: initialVerticalOffset,
+      ignoreMinBorder, isLandscape,
+      // Warnings pre-calculated
+      minBorderWarning: inputMinBorderWarning,
+      lastValidMinBorder: inputLastValidMinBorder,
+    } = calculationInputs;
+
+    if (__DEV__) console.log("Inputs:", calculationInputs);
+
+    // Calculate print size
     const availableWidth = orientedPaperWidth - 2 * minBorderValue;
     const availableHeight = orientedPaperHeight - 2 * minBorderValue;
     const printRatio = orientedRatioHeight === 0 ? 0 : orientedRatioWidth / orientedRatioHeight;
 
+    let printWidth: number;
+    let printHeight: number;
 
-    let printWidth: number;  // I_x or I_y
-    let printHeight: number; // I_y or I_x
-
-    // Handle case where printRatio is 0 or dimensions are invalid
     if (printRatio === 0 || availableWidth <= 0 || availableHeight <= 0) {
         printWidth = 0;
         printHeight = 0;
     } else if (availableWidth / availableHeight > printRatio) {
-      // Height limited
       printHeight = availableHeight;
       printWidth = availableHeight * printRatio;
     } else {
-      // Width limited
       printWidth = availableWidth;
       printHeight = availableWidth / printRatio;
     }
-    console.log("Calculated Print Dimensions (I):", { printWidth, printHeight });
+    if (__DEV__) console.log("Calculated Print Dimensions (I):", { printWidth, printHeight });
 
     // Calculate maximum allowed offsets
+    const halfWidthGap = (orientedPaperWidth - printWidth) / 2;
+    const halfHeightGap = (orientedPaperHeight - printHeight) / 2;
+
     const maxHorizontalOffset = ignoreMinBorder
-      ? (orientedPaperWidth - printWidth) / 2
-      : Math.min(
-          (orientedPaperWidth - printWidth) / 2 - minBorderValue,
-          (orientedPaperWidth - printWidth) / 2
-        );
+      ? halfWidthGap
+      : Math.min(halfWidthGap - minBorderValue, halfWidthGap);
 
     const maxVerticalOffset = ignoreMinBorder
-      ? (orientedPaperHeight - printHeight) / 2
-      : Math.min(
-          (orientedPaperHeight - printHeight) / 2 - minBorderValue,
-          (orientedPaperHeight - printHeight) / 2
-        );
+      ? halfHeightGap
+      : Math.min(halfHeightGap - minBorderValue, halfHeightGap);
 
-    // Clamp offset values within allowed range
-    horizontalOffsetValue = Math.max(
+    // Clamp offset values
+    let horizontalOffset = Math.max(
       -maxHorizontalOffset,
-      Math.min(maxHorizontalOffset, horizontalOffsetValue)
+      Math.min(maxHorizontalOffset, initialHorizontalOffset)
     );
-    verticalOffsetValue = Math.max(
+    let verticalOffset = Math.max(
       -maxVerticalOffset,
-      Math.min(maxVerticalOffset, verticalOffsetValue)
+      Math.min(maxVerticalOffset, initialVerticalOffset)
     );
 
-    // Update clamped values in state
-    setClampedHorizontalOffset(horizontalOffsetValue);
-    setClampedVerticalOffset(verticalOffsetValue);
-
-    // Set warning message if offsets were clamped
-    const originalHorizontal = parseFloat(horizontalOffset) || 0;
-    const originalVertical = parseFloat(verticalOffset) || 0;
-
+    // Determine offset warning
+    let offsetWarning: string | null = null;
     if (
-      originalHorizontal !== horizontalOffsetValue ||
-      originalVertical !== verticalOffsetValue
+      (state.enableOffset && initialHorizontalOffset !== horizontalOffset) ||
+      (state.enableOffset && initialVerticalOffset !== verticalOffset)
     ) {
-      setOffsetWarning(
-        ignoreMinBorder
-          ? "Offset values have been adjusted to keep print within paper edges"
-          : "Offset values have been adjusted to maintain minimum borders and stay within paper bounds"
-      );
-    } else {
-      setOffsetWarning(null);
+      offsetWarning = ignoreMinBorder
+        ? "Offset values adjusted to keep print within paper edges."
+        : "Offset values adjusted to maintain minimum borders and stay within paper bounds.";
     }
 
-    // Calculate borders (B1, B2)
-    const rightBorder = (orientedPaperWidth - printWidth) / 2 + horizontalOffsetValue; // B2_x (far) or B1_y (near)
-    const leftBorder = (orientedPaperWidth - printWidth) / 2 - horizontalOffsetValue;  // B1_x (near) or B2_y (far)
-    const topBorder = (orientedPaperHeight - printHeight) / 2 + verticalOffsetValue;   // B2_y (far) or B1_x (near)
-    const bottomBorder = (orientedPaperHeight - printHeight) / 2 - verticalOffsetValue;// B1_y (near) or B2_x (far)
-    console.log("Calculated Borders (B):", { leftBorder, rightBorder, topBorder, bottomBorder });
+    // Calculate borders
+    const leftBorder = halfWidthGap - horizontalOffset;  // B1_x (near) or B2_y (far)
+    const rightBorder = halfWidthGap + horizontalOffset; // B2_x (far) or B1_y (near)
+    const bottomBorder = halfHeightGap - verticalOffset; // B1_y (near) or B2_x (far)
+    const topBorder = halfHeightGap + verticalOffset;   // B2_y (far) or B1_x (near)
+    if (__DEV__) console.log("Calculated Borders (B):", { leftBorder, rightBorder, topBorder, bottomBorder });
 
-    // Calculate preview scaling
-    const PREVIEW_HEIGHT = 300; // Fixed preview height in pixels
-
-    // Calculate percentages for positioning elements
-    const printWidthPercent = (printWidth / orientedPaperWidth) * 100;
-    const printHeightPercent = (printHeight / orientedPaperHeight) * 100;
-    const leftBorderPercent = (leftBorder / orientedPaperWidth) * 100;
-    const topBorderPercent = (topBorder / orientedPaperHeight) * 100;
-    const rightBorderPercent = (rightBorder / orientedPaperWidth) * 100;
-    const bottomBorderPercent = (bottomBorder / orientedPaperHeight) * 100;
-
-    // Get Easel Slot size (Ws) and non-standard flag
-    const easelInfo = findCenteringOffsets(paperWidth, paperHeight, isLandscape);
-    const { easelSize, isNonStandardPaperSize } = easelInfo;
+    // Get Easel Slot size (Ws) and non-standard flag using the *original* paper dimensions
+    const { easelSize, isNonStandardPaperSize } = findCenteringOffsets(paperWidth, paperHeight, isLandscape);
     const Ws_x = easelSize.width;
     const Ws_y = easelSize.height;
-    console.log("Easel Info (Ws):", { Ws_x, Ws_y, isNonStandardPaperSize });
+    if (__DEV__) console.log("Easel Info (Ws):", { Ws_x, Ws_y, isNonStandardPaperSize });
 
-    // Define variables based on the example formulas
-    const Wp_x = orientedPaperWidth;
-    const Wp_y = orientedPaperHeight;
-    const B1_x = leftBorder;    // Near horizontal
-    const B2_x = rightBorder;   // Far horizontal
-    const B1_y = bottomBorder;  // Near vertical
-    const B2_y = topBorder;     // Far vertical
-    const I_x = printWidth;
-    const I_y = printHeight;
+    // Calculate paper shift (sp) - only if non-standard paper size
+    const sp_x = isNonStandardPaperSize ? (orientedPaperWidth - Ws_x) / 2 : 0;
+    const sp_y = isNonStandardPaperSize ? (orientedPaperHeight - Ws_y) / 2 : 0;
+    if (__DEV__) console.log("Calculated Paper Shift (sp):", { sp_x, sp_y });
 
-    // Calculate paper shift (sp)
-    const sp_x = isNonStandardPaperSize ? (Wp_x - Ws_x) / 2 : 0; // Paper shift only applied if non-standard
-    const sp_y = isNonStandardPaperSize ? (Wp_y - Ws_y) / 2 : 0; // Use consistent (Wp - Ws) / 2 formula
-    console.log("Calculated Paper Shift (sp):", { sp_x, sp_y });
-
-    // Calculate border-induced offset (sb)
-    const sb_x = (B2_x - B1_x) / 2; // (= horizontalOffsetValue)
-    const sb_y = (B2_y - B1_y) / 2; // (= verticalOffsetValue)
-    console.log("Calculated Border Shift (sb):", { sb_x, sb_y });
+    // Calculate border-induced offset (sb) - This is simply the applied offset
+    const sb_x = horizontalOffset;
+    const sb_y = verticalOffset;
+    if (__DEV__) console.log("Calculated Border Shift (sb):", { sb_x, sb_y });
 
     // Calculate total centre shift (s)
     const s_x = sp_x + sb_x;
     const s_y = sp_y + sb_y;
-    console.log("Calculated Total Shift (s):", { s_x, s_y });
+    if (__DEV__) console.log("Calculated Total Shift (s):", { s_x, s_y });
 
     // Calculate blade scale readings (R1, R2)
-    const leftBladeReading = I_x - 2 * s_x;   // R1_x
-    const rightBladeReading = I_x + 2 * s_x;  // R2_x
-    const topBladeReading = I_y - 2 * s_y; // R1_y
-    const bottomBladeReading = I_y + 2 * s_y;    // R2_y
-    console.log("Calculated Blade Readings (R):", { leftBladeReading, rightBladeReading, topBladeReading, bottomBladeReading });
+    // Note: These were reversed in the original code comments vs calculation
+    // R1 = Near blade, R2 = Far blade
+    // Horizontal: Left = Near (R1_x), Right = Far (R2_x)
+    // Vertical: Bottom = Near (R1_y), Top = Far (R2_y)
+    // Formula: R = I ± 2s (positive for far blade, negative for near blade)
+    // Example: Right Blade (Far Horizontal, R2_x) = I_x + 2 * s_x
+    const leftBladeReading = printWidth - 2 * s_x;   // R1_x (Near)
+    const rightBladeReading = printWidth + 2 * s_x;  // R2_x (Far)
+    const bottomBladeReading = printHeight - 2 * s_y; // R1_y (Near)
+    const topBladeReading = printHeight + 2 * s_y;    // R2_y (Far)
 
+    if (__DEV__) console.log("Calculated Blade Readings (R):", { leftBladeReading, rightBladeReading, topBladeReading, bottomBladeReading });
 
-    // Calculate blade thickness for preview (visual only)
+    // Calculate blade thickness for preview
     const bladeThickness = calculateBladeThickness(orientedPaperWidth, orientedPaperHeight);
 
-    // Blade position warnings (based on readings)
-    let warningMessage = "";
+    // Blade position warnings
+    let bladeWarning: string | null = "";
     const readings = [leftBladeReading, rightBladeReading, topBladeReading, bottomBladeReading];
-    if (readings.some(r => Math.abs(r) < 3)) {
-      warningMessage = "Most easels don't have markings below 3 in!";
-    }
     if (readings.some(r => r < 0)) {
-      warningMessage = warningMessage + (warningMessage ? "\n" : "") + "Negative blade reading detected! Set blade to the positive value on the scale and use the opposite blade mechanism.";
+      bladeWarning += "Negative blade reading detected! Set blade to the positive value and use the opposite mechanism.";
     }
-    setBladeWarning(warningMessage || null);
+    if (readings.some(r => Math.abs(r) < 3 && r !== 0)) { // Allow exactly 0 reading
+       bladeWarning += (bladeWarning ? "\n" : "") + "Some easels lack markings below 3 inches.";
+    }
+    bladeWarning = bladeWarning || null; // Set to null if empty
 
-    // Result object matching BorderCalculation type
-    const result: BorderCalculation = {
+    // Calculate percentages for preview positioning
+    const printWidthPercent = orientedPaperWidth > 0 ? (printWidth / orientedPaperWidth) * 100 : 0;
+    const printHeightPercent = orientedPaperHeight > 0 ? (printHeight / orientedPaperHeight) * 100 : 0;
+    const leftBorderPercent = orientedPaperWidth > 0 ? (leftBorder / orientedPaperWidth) * 100 : 0;
+    const topBorderPercent = orientedPaperHeight > 0 ? (topBorder / orientedPaperHeight) * 100 : 0;
+    const rightBorderPercent = orientedPaperWidth > 0 ? (rightBorder / orientedPaperWidth) * 100 : 0;
+    const bottomBorderPercent = orientedPaperHeight > 0 ? (bottomBorder / orientedPaperHeight) * 100 : 0;
+
+    // Calculate preview scale based on window dimensions (moved here for inclusion in result)
+    const tempPreviewScale = (() => {
+      if (orientedPaperWidth === 0 || orientedPaperHeight === 0) return 1;
+      const maxWidth = Math.min(windowWidth * 0.9, 400);
+      const maxHeight = Math.min(windowHeight * 0.5, 400);
+      return Math.min(maxWidth / orientedPaperWidth, maxHeight / orientedPaperHeight);
+    })();
+    const tempPreviewWidth = orientedPaperWidth * tempPreviewScale;
+    const tempPreviewHeight = orientedPaperHeight * tempPreviewScale;
+
+    const result: CalculationResult = {
       leftBorder,
       rightBorder,
       topBorder,
@@ -378,185 +385,195 @@ export const useBorderCalculator = () => {
       printHeight,
       paperWidth: orientedPaperWidth,
       paperHeight: orientedPaperHeight,
-      previewScale: PREVIEW_HEIGHT / Math.max(orientedPaperWidth, orientedPaperHeight), // simplified scale calc
-      previewHeight: PREVIEW_HEIGHT,
-      previewWidth: PREVIEW_HEIGHT * (orientedPaperWidth / orientedPaperHeight),
+      // Preview scale calculated separately using window dimensions
       printWidthPercent,
       printHeightPercent,
       leftBorderPercent,
       topBorderPercent,
       rightBorderPercent,
       bottomBorderPercent,
-      // New Blade Readings
       leftBladeReading,
       rightBladeReading,
       topBladeReading,
       bottomBladeReading,
       bladeThickness,
-      // Easel information
       isNonStandardPaperSize,
-      easelSize
+      easelSize,
+      // Pass internal state back
+      offsetWarning,
+      bladeWarning,
+      minBorderWarning: inputMinBorderWarning, // Use warning from input derivation
+      lastValidMinBorder: inputLastValidMinBorder, // Use last valid from input derivation
+      clampedHorizontalOffset: horizontalOffset, // Pass clamped offsets back
+      clampedVerticalOffset: verticalOffset,
+      // Include preview calculations
+      previewScale: tempPreviewScale,
+      previewWidth: tempPreviewWidth,
+      previewHeight: tempPreviewHeight,
     };
-    console.log("Final Calculation Result:", result);
-    console.log("--- Calculation End ---");
+    if (__DEV__) console.log("Final Calculation Result:", result);
+    if (__DEV__) console.log("--- Calculation End ---");
 
     return result;
-  }, [
-    paperSize,
-    customPaperWidth,
-    customPaperHeight,
-    aspectRatio,
-    customAspectWidth,
-    customAspectHeight,
-    minBorder,
-    horizontalOffset,
-    verticalOffset,
-    isLandscape,
-    isRatioFlipped,
-    enableOffset,
-    ignoreMinBorder,
-    lastValidMinBorder,
-  ]);
+  }, [calculationInputs, state.enableOffset, windowWidth, windowHeight]); // Added window dimensions as dependencies
 
-  // Preview scaling
-  const previewScale = useMemo(() => {
-    if (!calculation) return 1;
-    const { width: windowWidth, height: windowHeight } = Dimensions.get("window");
-    // Maximum allowable preview dimensions
-    const maxWidth = Math.min(windowWidth - 32, 400);
-    const maxHeight = Math.min(windowHeight - 32, 400);
-    // Use calculated oriented paper dimensions
-    const { paperWidth, paperHeight } = calculation;
-    // Scale to fit within both maxWidth and maxHeight
-    return Math.min(
-      maxWidth / (paperWidth || 1),
-      maxHeight / (paperHeight || 1)
+  // Effect to dispatch internal updates for warnings and last valid border
+  useEffect(() => {
+    const updates: Partial<Pick<State, 'offsetWarning' | 'bladeWarning' | 'minBorderWarning' | 'lastValidMinBorder'>> = {};
+
+    if (calculation.offsetWarning !== prevOffsetWarning.current) {
+      updates.offsetWarning = calculation.offsetWarning;
+      prevOffsetWarning.current = calculation.offsetWarning;
+    }
+    if (calculation.bladeWarning !== prevBladeWarning.current) {
+      updates.bladeWarning = calculation.bladeWarning;
+      prevBladeWarning.current = calculation.bladeWarning;
+    }
+     if (calculation.minBorderWarning !== prevMinBorderWarning.current) {
+      updates.minBorderWarning = calculation.minBorderWarning;
+      prevMinBorderWarning.current = calculation.minBorderWarning;
+    }
+    if (calculation.lastValidMinBorder !== prevLastValidMinBorder.current) {
+      updates.lastValidMinBorder = calculation.lastValidMinBorder;
+      prevLastValidMinBorder.current = calculation.lastValidMinBorder;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      dispatch({ type: 'INTERNAL_UPDATE', payload: updates });
+    }
+  }, [calculation]); // Run only when calculation object changes
+
+  // --- Preview Scaling ---
+  // Preview scale is now part of the main calculation result
+  const previewScale = calculation.previewScale;
+
+   // --- Public API ---
+
+  // Function to handle setting numeric fields from text inputs
+  const setNumericField = (key: keyof State, value: string) => {
+    const numericValue = parseFloat(value);
+    // Allow empty string to clear, otherwise dispatch the number or 0 if parse fails
+    dispatch({ type: 'SET_FIELD', key, value: value === '' ? '' : (isNaN(numericValue) ? 0 : numericValue) });
+  };
+
+  // Function to calculate and set the optimal minimum border
+  const calculateAndSetOptimalMinBorder = () => {
+    if (!calculation) return;
+    const optimalBorder = calculateOptimalMinBorder(
+      calculation.paperWidth,
+      calculation.paperHeight,
+      // Need the *original* ratio, not the print dimensions which depend on the *current* minBorder
+      calculationInputs.orientedRatioWidth,
+      calculationInputs.orientedRatioHeight,
+      state.minBorder // Pass the current state's minBorder
     );
-  }, [calculation]);
+     // Check if the calculated optimal border is valid before setting it
+    const maxPossibleBorder = Math.min(calculation.paperWidth / 2, calculation.paperHeight / 2);
+    if (optimalBorder < maxPossibleBorder) {
+        dispatch({ type: 'SET_FIELD', key: 'minBorder', value: optimalBorder });
+    } else {
+        // Handle the case where even the optimal border is too large (e.g., very small paper)
+        // Maybe set a warning or revert to a default safe value?
+        // For now, let's just keep the current value if optimal is invalid.
+         if (__DEV__) console.warn("Calculated optimal border is too large, keeping current value.");
+          dispatch({ type: 'INTERNAL_UPDATE', payload: { minBorderWarning: `Calculated optimal border (${optimalBorder}) is too large for paper dimensions.` } });
+    }
+  };
+
+  // Image Layout setter (uses ref)
+  const setImageLayout = (layout: { width: number; height: number }) => {
+    imageLayoutRef.current = layout;
+  };
 
   return {
-    // State
-    aspectRatio,
-    setAspectRatio,
-    paperSize,
-    setPaperSize,
-    customAspectWidth,
-    setCustomAspectWidth,
-    customAspectHeight,
-    setCustomAspectHeight,
-    customPaperWidth,
-    setCustomPaperWidth,
-    customPaperHeight,
-    setCustomPaperHeight,
-    minBorder,
-    setMinBorder,
-    enableOffset,
-    setEnableOffset,
-    ignoreMinBorder,
-    setIgnoreMinBorder,
-    horizontalOffset,
-    setHorizontalOffset,
-    verticalOffset,
-    setVerticalOffset,
-    showBlades,
-    setShowBlades,
-    isLandscape,
-    setIsLandscape,
-    isRatioFlipped,
-    setIsRatioFlipped,
-    offsetWarning,
-    bladeWarning,
-    minBorderWarning,
-    clampedHorizontalOffset,
-    clampedVerticalOffset,
-    // Image state & functions
-    selectedImageUri,
-    imageDimensions,
-    isCropping,
-    cropOffset,
-    cropScale,
-    imageLayout,
-    // Calculations
-    calculation,
-    previewScale,
-    // Functions
-    calculateOptimalMinBorder: () => {
-      if (!calculation) return;
-      const optimalBorder = calculateOptimalMinBorder(
-        calculation.paperWidth,
-        calculation.paperHeight,
-        calculation.printWidth,
-        calculation.printHeight,
-        parseFloat(minBorder) || 0
-      );
-      setMinBorder(optimalBorder.toString());
-    },
-    resetToDefaults,
+    // State values (prefer primitives where possible)
+    aspectRatio: state.aspectRatio,
+    paperSize: state.paperSize,
+    customAspectWidth: state.customAspectWidth,
+    customAspectHeight: state.customAspectHeight,
+    customPaperWidth: state.customPaperWidth,
+    customPaperHeight: state.customPaperHeight,
+    minBorder: state.minBorder,
+    enableOffset: state.enableOffset,
+    ignoreMinBorder: state.ignoreMinBorder,
+    horizontalOffset: state.horizontalOffset,
+    verticalOffset: state.verticalOffset,
+    showBlades: state.showBlades,
+    isLandscape: state.isLandscape,
+    isRatioFlipped: state.isRatioFlipped,
+    offsetWarning: state.offsetWarning,
+    bladeWarning: state.bladeWarning,
+    minBorderWarning: state.minBorderWarning,
+    clampedHorizontalOffset: calculation.clampedHorizontalOffset, // Use clamped values from calculation result
+    clampedVerticalOffset: calculation.clampedVerticalOffset,
+
+    // Image state & values (consider grouping if complex)
+    selectedImageUri: state.selectedImageUri,
+    imageDimensions: state.imageDimensions,
+    isCropping: state.isCropping,
+    cropOffset: state.cropOffset,
+    cropScale: state.cropScale,
+    imageLayout: imageLayoutRef.current, // Provide current ref value
+
+    // Calculation results object (excluding internal/warning fields)
+    calculation: {
+      leftBorder: calculation.leftBorder,
+      rightBorder: calculation.rightBorder,
+      topBorder: calculation.topBorder,
+      bottomBorder: calculation.bottomBorder,
+      printWidth: calculation.printWidth,
+      printHeight: calculation.printHeight,
+      paperWidth: calculation.paperWidth,
+      paperHeight: calculation.paperHeight,
+      printWidthPercent: calculation.printWidthPercent,
+      printHeightPercent: calculation.printHeightPercent,
+      leftBorderPercent: calculation.leftBorderPercent,
+      topBorderPercent: calculation.topBorderPercent,
+      rightBorderPercent: calculation.rightBorderPercent,
+      bottomBorderPercent: calculation.bottomBorderPercent,
+      leftBladeReading: calculation.leftBladeReading,
+      rightBladeReading: calculation.rightBladeReading,
+      topBladeReading: calculation.topBladeReading,
+      bottomBladeReading: calculation.bottomBladeReading,
+      bladeThickness: calculation.bladeThickness,
+      isNonStandardPaperSize: calculation.isNonStandardPaperSize,
+      easelSize: calculation.easelSize,
+      // Add preview fields from calculation result
+      previewScale: calculation.previewScale,
+      previewWidth: calculation.previewWidth,
+      previewHeight: calculation.previewHeight,
+    } as BorderCalculation, // Assert type after removing internal fields
+
+    // Dispatchers / Setters (provide functions to interact with state)
+    setAspectRatio: (value: string) => dispatch({ type: 'SET_ASPECT_RATIO', value }),
+    setPaperSize: (value: string) => dispatch({ type: 'SET_PAPER_SIZE', value }),
+    setCustomAspectWidth: (value: string) => setNumericField('customAspectWidth', value),
+    setCustomAspectHeight: (value: string) => setNumericField('customAspectHeight', value),
+    setCustomPaperWidth: (value: string) => setNumericField('customPaperWidth', value),
+    setCustomPaperHeight: (value: string) => setNumericField('customPaperHeight', value),
+    setMinBorder: (value: string) => setNumericField('minBorder', value),
+    setEnableOffset: (value: boolean) => dispatch({ type: 'SET_FIELD', key: 'enableOffset', value }),
+    setIgnoreMinBorder: (value: boolean) => dispatch({ type: 'SET_FIELD', key: 'ignoreMinBorder', value }),
+    setHorizontalOffset: (value: string) => setNumericField('horizontalOffset', value),
+    setVerticalOffset: (value: string) => setNumericField('verticalOffset', value),
+    setShowBlades: (value: boolean) => dispatch({ type: 'SET_FIELD', key: 'showBlades', value }),
+    setIsLandscape: (value: boolean) => dispatch({ type: 'SET_FIELD', key: 'isLandscape', value }),
+    setIsRatioFlipped: (value: boolean) => dispatch({ type: 'SET_FIELD', key: 'isRatioFlipped', value }),
+
+    // Image setters
+    setSelectedImageUri: (value: string | null) => dispatch({ type: 'SET_IMAGE_FIELD', key: 'selectedImageUri', value }),
+    setImageDimensions: (value: { width: number; height: number }) => dispatch({ type: 'SET_IMAGE_DIMENSIONS', value }),
+    setIsCropping: (value: boolean) => dispatch({ type: 'SET_IMAGE_FIELD', key: 'isCropping', value }),
+    setCropOffset: (value: { x: number; y: number }) => dispatch({ type: 'SET_CROP_OFFSET', value }),
+    setCropScale: (value: number) => dispatch({ type: 'SET_IMAGE_FIELD', key: 'cropScale', value }),
+    setImageLayout, // Export ref setter
+
+    // Actions
+    resetToDefaults: () => dispatch({ type: 'RESET' }),
+    calculateOptimalMinBorder: calculateAndSetOptimalMinBorder, // Expose the optimized calculation function
   };
 };
 
-// New function to calculate centering offsets within the easel
-function findCenteringOffsets(paperWidth: number, paperHeight: number, isLandscape: boolean) {
-  const orientedPaperWidth = isLandscape ? paperHeight : paperWidth;
-  const orientedPaperHeight = isLandscape ? paperWidth : paperHeight;
-
-  let bestFitEasel = null;
-  let minAreaDiff = Infinity;
-  let useFlippedEasel = false; // Track if the easel needs to be flipped relative to paper orientation
-
-  // Sort easels by area to find the smallest fitting one first
-  const sortedEasels = [...EASEL_SIZES].sort((a, b) => (a.width * a.height) - (b.width * b.height));
-
-  // Find the smallest easel that fits the *oriented* paper
-  for (const easel of sortedEasels) {
-    const fitsCurrentOrientation = easel.width >= orientedPaperWidth && easel.height >= orientedPaperHeight;
-    const fitsFlippedOrientation = easel.width >= orientedPaperHeight && easel.height >= orientedPaperWidth;
-
-    if (fitsCurrentOrientation || fitsFlippedOrientation) {
-      const areaDiff = (easel.width * easel.height) - (orientedPaperWidth * orientedPaperHeight);
-      if (bestFitEasel === null || areaDiff < minAreaDiff) {
-        bestFitEasel = easel;
-        minAreaDiff = areaDiff;
-        // Determine if the fitted easel needs to be flipped relative to the paper's orientation
-        // If it fits the current orientation, no flip needed.
-        // If it only fits the flipped orientation, flip needed.
-        useFlippedEasel = !fitsCurrentOrientation && fitsFlippedOrientation;
-        // Since they are sorted, the first one we find is the smallest fitting
-        break;
-      }
-    }
-  }
-
-  // If no fitting easel found
-  if (!bestFitEasel) {
-    return {
-      // Use paper dims as effective easel size, oriented correctly
-      easelSize: { width: orientedPaperWidth, height: orientedPaperHeight },
-      isNonStandardPaperSize: true
-    };
-  }
-
-  // Determine the effective slot dimensions (Ws_x, Ws_y) based on easel orientation
-  const Ws_x = useFlippedEasel ? bestFitEasel.height : bestFitEasel.width;
-  const Ws_y = useFlippedEasel ? bestFitEasel.width : bestFitEasel.height;
-
-  // Determine if the *original* paper size is standard relative to easels.
-  let isOriginalPaperStandard = false;
-  for (const easel of EASEL_SIZES) {
-    if ((easel.width === paperWidth && easel.height === paperHeight) ||
-        (easel.width === paperHeight && easel.height === paperWidth)) {
-      isOriginalPaperStandard = true;
-      break;
-    }
-  }
-  const isPaperSizeNonStandard = !isOriginalPaperStandard;
-
-  return {
-    // Return the *oriented* slot dimensions
-    easelSize: { width: Ws_x, height: Ws_y },
-    isNonStandardPaperSize: isPaperSizeNonStandard
-  };
-}
-
+// Keep default export if needed by other parts of the app
 export default useBorderCalculator; 
 
