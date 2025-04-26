@@ -17,59 +17,69 @@ export const findCenteringOffsets = (paperWidth: number, paperHeight: number, is
   const orientedPaperWidth = isLandscape ? paperHeight : paperWidth;
   const orientedPaperHeight = isLandscape ? paperWidth : paperHeight;
 
-  let bestFitEasel = null;
+  let bestFitEasel: { width: number; height: number } | null = null;
   let minAreaDiff = Infinity;
-  let useFlippedEasel = false; // Track if the easel needs to be flipped relative to paper orientation
 
-  // Sort easels by area to find the smallest fitting one first
+  // Sort easels by area
   const sortedEasels = [...EASEL_SIZES].sort((a, b) => (a.width * a.height) - (b.width * b.height));
 
-  // Find the smallest easel that fits the *oriented* paper
+  // Find the smallest easel that fits the *oriented* paper in either orientation
   for (const easel of sortedEasels) {
-    const fitsCurrentOrientation = easel.width >= orientedPaperWidth && easel.height >= orientedPaperHeight;
-    const fitsFlippedOrientation = easel.width >= orientedPaperHeight && easel.height >= orientedPaperWidth;
+    const fitsStandard = easel.width >= orientedPaperWidth && easel.height >= orientedPaperHeight;
+    const fitsFlipped = easel.width >= orientedPaperHeight && easel.height >= orientedPaperWidth;
 
-    if (fitsCurrentOrientation || fitsFlippedOrientation) {
-      const areaDiff = (easel.width * easel.height) - (orientedPaperWidth * orientedPaperHeight);
-      if (bestFitEasel === null || areaDiff < minAreaDiff) {
-        bestFitEasel = easel;
-        minAreaDiff = areaDiff;
-        // Determine if the fitted easel needs to be flipped relative to the paper's orientation
-        // If it fits the current orientation, no flip needed.
-        // If it only fits the flipped orientation, flip needed.
-        useFlippedEasel = !fitsCurrentOrientation && fitsFlippedOrientation;
-        // Since they are sorted, the first one we find is the smallest fitting
-        break;
-      }
+    if (fitsStandard || fitsFlipped) {
+      bestFitEasel = easel;
+      break; // Found the smallest fitting easel
     }
   }
 
   // If no fitting easel found
   if (!bestFitEasel) {
+    // Determine if the original paper size is standard (matches any easel)
+    const isOriginalStandard = EASEL_SIZES.some(e =>
+      (e.width === paperWidth && e.height === paperHeight) ||
+      (e.width === paperHeight && e.height === paperWidth)
+    );
     return {
-      // Use paper dims as effective easel size, oriented correctly
       easelSize: { width: orientedPaperWidth, height: orientedPaperHeight },
-      isNonStandardPaperSize: true
+      isNonStandardPaperSize: !isOriginalStandard
     };
   }
 
-  // Determine the effective slot dimensions (Ws_x, Ws_y) based on easel orientation
-  const Ws_x = useFlippedEasel ? bestFitEasel.height : bestFitEasel.width;
-  const Ws_y = useFlippedEasel ? bestFitEasel.width : bestFitEasel.height;
+  // Determine the effective slot dimensions (Ws_x, Ws_y) the oriented paper fits into
+  let Ws_x: number;
+  let Ws_y: number;
 
-  // Determine if the *original* paper size is standard relative to easels.
-  let isOriginalPaperStandard = false;
-  for (const easel of EASEL_SIZES) {
-    if ((easel.width === paperWidth && easel.height === paperHeight) ||
-        (easel.width === paperHeight && easel.height === paperWidth)) {
-      isOriginalPaperStandard = true;
-      break;
-    }
+  // Check if oriented paper fits the easel's standard orientation slot
+  if (bestFitEasel.width >= orientedPaperWidth && bestFitEasel.height >= orientedPaperHeight) {
+    // Yes, the effective slot is the easel's standard WxH
+    Ws_x = bestFitEasel.width;
+    Ws_y = bestFitEasel.height;
+  } 
+  // Check if oriented paper fits the easel's flipped orientation slot (HxW)
+  else if (bestFitEasel.height >= orientedPaperWidth && bestFitEasel.width >= orientedPaperHeight) {
+     // Yes, the effective slot is the easel's flipped HxW
+     Ws_x = bestFitEasel.height; 
+     Ws_y = bestFitEasel.width;
+  } else {
+    // This case should theoretically not be reached if bestFitEasel was found,
+    // but as a fallback, return oriented paper dimensions.
+     console.warn("findCenteringOffsets: Inconsistent fit detected, falling back to paper dimensions.");
+     Ws_x = orientedPaperWidth;
+     Ws_y = orientedPaperHeight;
   }
+
+
+  // Determine if the *original* paper size is standard relative to any easel.
+  const isOriginalPaperStandard = EASEL_SIZES.some(e =>
+    (e.width === paperWidth && e.height === paperHeight) ||
+    (e.width === paperHeight && e.height === paperWidth)
+  );
   const isPaperSizeNonStandard = !isOriginalPaperStandard;
 
   return {
-    // Return the *oriented* slot dimensions
+    // Return the determined slot dimensions
     easelSize: { width: Ws_x, height: Ws_y },
     isNonStandardPaperSize: isPaperSizeNonStandard
   };

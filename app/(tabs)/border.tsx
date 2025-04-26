@@ -111,6 +111,7 @@ export default function BorderCalculator() {
     bladeWarning,
     calculation,
     minBorderWarning,
+    paperSizeWarning,
     calculateOptimalMinBorder,
     resetToDefaults,
   } = useBorderCalculator();
@@ -387,6 +388,12 @@ export default function BorderCalculator() {
                     <AlertText>{minBorderWarning}</AlertText>
                   </Alert>
                 )}
+                {paperSizeWarning && (
+                  <Alert action="warning" variant="outline" mt="$2">
+                    <AlertIcon as={InfoIcon} mr="$3" />
+                    <AlertText>{paperSizeWarning}</AlertText>
+                  </Alert>
+                )}
               </ThemedView>
 
 
@@ -419,7 +426,7 @@ export default function BorderCalculator() {
                     <ThemedText style={styles.label}>width:</ThemedText>
                     <TextInput
                       style={[styles.input, { color: textColor, borderColor }]}
-                      value={customAspectWidth}
+                      value={String(customAspectWidth)}
                       onChangeText={setCustomAspectWidth}
                       keyboardType="numeric"
                       placeholder="Width"
@@ -431,7 +438,7 @@ export default function BorderCalculator() {
                     <ThemedText style={styles.label}>height:</ThemedText>
                     <TextInput
                       style={[styles.input, { color: textColor, borderColor }]}
-                      value={customAspectHeight}
+                      value={String(customAspectHeight)}
                       onChangeText={setCustomAspectHeight}
                       keyboardType="numeric"
                       placeholder="Height"
@@ -464,7 +471,7 @@ export default function BorderCalculator() {
                     </ThemedText>
                     <TextInput
                       style={[styles.input, { color: textColor, borderColor }]}
-                      value={customPaperWidth}
+                      value={String(customPaperWidth)}
                       onChangeText={setCustomPaperWidth}
                       keyboardType="numeric"
                       placeholder="Width"
@@ -478,7 +485,7 @@ export default function BorderCalculator() {
                     </ThemedText>
                     <TextInput
                       style={[styles.input, { color: textColor, borderColor }]}
-                      value={customPaperHeight}
+                      value={String(customPaperHeight)}
                       onChangeText={setCustomPaperHeight}
                       keyboardType="numeric"
                       placeholder="Height"
@@ -503,7 +510,7 @@ export default function BorderCalculator() {
                     { color: textColor, borderColor },
                     Platform.OS === "web" && isDesktop && styles.minBorderInput,
                   ]}
-                  value={minBorder}
+                  value={String(minBorder)}
                   onChangeText={setMinBorder}
                   keyboardType="numeric"
                   placeholder="0.5"
@@ -517,7 +524,7 @@ export default function BorderCalculator() {
                       minimumValue={0}
                       maximumValue={6}
                       step={0.25}
-                      value={parseFloat(minBorder) || 0}
+                      value={parseFloat(String(minBorder)) || 0}
                       onValueChange={(value) => setMinBorder(value.toString())}
                       minimumTrackTintColor={tintColor}
                       maximumTrackTintColor={borderColor}
@@ -543,7 +550,7 @@ export default function BorderCalculator() {
                     minimumValue={0}
                     maximumValue={6}
                     step={0.25}
-                    value={parseFloat(minBorder) || 0}
+                    value={parseFloat(String(minBorder)) || 0}
                     onValueChange={(value) => setMinBorder(value.toString())}
                     minimumTrackTintColor={tintColor}
                     maximumTrackTintColor={borderColor}
@@ -623,7 +630,7 @@ export default function BorderCalculator() {
                           { color: textColor, borderColor },
                           offsetWarning && styles.inputWarning,
                         ]}
-                        value={horizontalOffset}
+                        value={String(horizontalOffset)}
                         onChangeText={setHorizontalOffset}
                         keyboardType="numeric"
                         placeholder="0"
@@ -634,7 +641,7 @@ export default function BorderCalculator() {
                         minimumValue={-3}
                         maximumValue={3}
                         step={0.25}
-                        value={parseFloat(horizontalOffset) || 0}
+                        value={parseFloat(String(horizontalOffset)) || 0}
                         onValueChange={(value) =>
                           setHorizontalOffset(value.toString())
                         }
@@ -662,7 +669,7 @@ export default function BorderCalculator() {
                           { color: textColor, borderColor },
                           offsetWarning && styles.inputWarning,
                         ]}
-                        value={verticalOffset}
+                        value={String(verticalOffset)}
                         onChangeText={setVerticalOffset}
                         keyboardType="numeric"
                         placeholder="0"
@@ -673,7 +680,7 @@ export default function BorderCalculator() {
                         minimumValue={-3}
                         maximumValue={3}
                         step={0.25}
-                        value={parseFloat(verticalOffset) || 0}
+                        value={parseFloat(String(verticalOffset)) || 0}
                         onValueChange={(value) =>
                           setVerticalOffset(value.toString())
                         }

@@ -1,7 +1,7 @@
 import { useReducer, useMemo, useEffect, useRef } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { BorderCalculation } from '@/types/border';
-import { ASPECT_RATIOS, PAPER_SIZES } from '@/constants/border';
+import { ASPECT_RATIOS, PAPER_SIZES, EASEL_SIZES } from '@/constants/border';
 import { calculateBladeThickness, findCenteringOffsets, calculateOptimalMinBorder } from '@/utils/borderCalculations';
 
 interface State {
@@ -23,6 +23,7 @@ interface State {
   offsetWarning: string | null;
   bladeWarning: string | null;
   minBorderWarning: string | null;
+  paperSizeWarning: string | null;
   lastValidMinBorder: number;
   // Image state (kept separate for now, could be integrated)
   selectedImageUri: string | null;
@@ -40,11 +41,13 @@ type Action =
   | { type: 'SET_IMAGE_DIMENSIONS'; value: { width: number; height: number } }
   | { type: 'SET_CROP_OFFSET'; value: { x: number; y: number } }
   | { type: 'RESET' }
-  | { type: 'INTERNAL_UPDATE'; payload: Partial<Pick<State, 'offsetWarning' | 'bladeWarning' | 'minBorderWarning' | 'lastValidMinBorder'>> };
+  | { type: 'INTERNAL_UPDATE'; payload: Partial<Pick<State, 'offsetWarning' | 'bladeWarning' | 'minBorderWarning' | 'paperSizeWarning' | 'lastValidMinBorder'>> };
 
 const DEFAULT_MIN_BORDER = 0.5;
 const DEFAULT_CUSTOM_PAPER_WIDTH = 10; // Swapped default custom dims
 const DEFAULT_CUSTOM_PAPER_HEIGHT = 13;
+// Find the maximum dimension among all standard easels
+const MAX_EASEL_DIMENSION = EASEL_SIZES.reduce((max, easel) => Math.max(max, easel.width, easel.height), 0);
 
 const initialState: State = {
   aspectRatio: ASPECT_RATIOS[0].value,
@@ -64,6 +67,7 @@ const initialState: State = {
   offsetWarning: null,
   bladeWarning: null,
   minBorderWarning: null,
+  paperSizeWarning: null,
   lastValidMinBorder: DEFAULT_MIN_BORDER,
   // Image State
   selectedImageUri: null,
@@ -129,6 +133,7 @@ export const useBorderCalculator = () => {
   const prevOffsetWarning = useRef<string | null>(null);
   const prevBladeWarning = useRef<string | null>(null);
   const prevMinBorderWarning = useRef<string | null>(null);
+  const prevPaperSizeWarning = useRef<string | null>(null);
   const prevLastValidMinBorder = useRef<number>(state.lastValidMinBorder);
 
   // --- Input Derivation ---
@@ -138,11 +143,16 @@ export const useBorderCalculator = () => {
     let paperHeight: number;
     let ratioWidth: number;
     let ratioHeight: number;
+    let paperSizeWarning: string | null = null;
 
     // Get paper dimensions
     if (state.paperSize === "custom") {
       paperWidth = state.customPaperWidth || 0;
       paperHeight = state.customPaperHeight || 0;
+      // Check if custom paper size exceeds max easel size
+      if (paperWidth > MAX_EASEL_DIMENSION || paperHeight > MAX_EASEL_DIMENSION) {
+        paperSizeWarning = `Custom paper size (${paperWidth}x${paperHeight}) exceeds largest standard easel (20x24"). Ensure paper is centered manually if using easel alignment marks.`;
+      }
     } else {
       const selectedPaper = PAPER_SIZES.find((p) => p.value === state.paperSize);
       paperWidth = selectedPaper?.width ?? 0;
@@ -202,6 +212,7 @@ export const useBorderCalculator = () => {
       // Pass down warning info to be set after calculation
       minBorderWarning,
       lastValidMinBorder,
+      paperSizeWarning,
     };
   }, [
     state.paperSize,
@@ -226,6 +237,7 @@ export const useBorderCalculator = () => {
     offsetWarning: string | null;
     bladeWarning: string | null;
     minBorderWarning: string | null;
+    paperSizeWarning: string | null;
     lastValidMinBorder: number;
     clampedHorizontalOffset: number;
     clampedVerticalOffset: number;
@@ -245,6 +257,7 @@ export const useBorderCalculator = () => {
       // Warnings pre-calculated
       minBorderWarning: inputMinBorderWarning,
       lastValidMinBorder: inputLastValidMinBorder,
+      paperSizeWarning: inputPaperSizeWarning,
     } = calculationInputs;
 
     if (__DEV__) console.log("Inputs:", calculationInputs);
@@ -310,14 +323,14 @@ export const useBorderCalculator = () => {
     if (__DEV__) console.log("Calculated Borders (B):", { leftBorder, rightBorder, topBorder, bottomBorder });
 
     // Get Easel Slot size (Ws) and non-standard flag using the *original* paper dimensions
-    const { easelSize, isNonStandardPaperSize } = findCenteringOffsets(paperWidth, paperHeight, isLandscape);
+    const { easelSize, isNonStandardPaperSize: originalIsNonStandard } = findCenteringOffsets(paperWidth, paperHeight, isLandscape);
     const Ws_x = easelSize.width;
     const Ws_y = easelSize.height;
-    if (__DEV__) console.log("Easel Info (Ws):", { Ws_x, Ws_y, isNonStandardPaperSize });
+    if (__DEV__) console.log("Easel Info (Ws):", { Ws_x, Ws_y, isNonStandardPaperSize: originalIsNonStandard });
 
     // Calculate paper shift (sp) - only if non-standard paper size
-    const sp_x = isNonStandardPaperSize ? (orientedPaperWidth - Ws_x) / 2 : 0;
-    const sp_y = isNonStandardPaperSize ? (orientedPaperHeight - Ws_y) / 2 : 0;
+    const sp_x = originalIsNonStandard ? (orientedPaperWidth - Ws_x) / 2 : 0;
+    const sp_y = originalIsNonStandard ? (orientedPaperHeight - Ws_y) / 2 : 0;
     if (__DEV__) console.log("Calculated Paper Shift (sp):", { sp_x, sp_y });
 
     // Calculate border-induced offset (sb) - This is simply the applied offset
@@ -397,7 +410,7 @@ export const useBorderCalculator = () => {
       topBladeReading,
       bottomBladeReading,
       bladeThickness,
-      isNonStandardPaperSize,
+      isNonStandardPaperSize: originalIsNonStandard && !inputPaperSizeWarning,
       easelSize,
       // Pass internal state back
       offsetWarning,
@@ -406,6 +419,7 @@ export const useBorderCalculator = () => {
       lastValidMinBorder: inputLastValidMinBorder, // Use last valid from input derivation
       clampedHorizontalOffset: horizontalOffset, // Pass clamped offsets back
       clampedVerticalOffset: verticalOffset,
+      paperSizeWarning: inputPaperSizeWarning,
       // Include preview calculations
       previewScale: tempPreviewScale,
       previewWidth: tempPreviewWidth,
@@ -419,7 +433,7 @@ export const useBorderCalculator = () => {
 
   // Effect to dispatch internal updates for warnings and last valid border
   useEffect(() => {
-    const updates: Partial<Pick<State, 'offsetWarning' | 'bladeWarning' | 'minBorderWarning' | 'lastValidMinBorder'>> = {};
+    const updates: Partial<Pick<State, 'offsetWarning' | 'bladeWarning' | 'minBorderWarning' | 'paperSizeWarning' | 'lastValidMinBorder'>> = {};
 
     if (calculation.offsetWarning !== prevOffsetWarning.current) {
       updates.offsetWarning = calculation.offsetWarning;
@@ -432,6 +446,10 @@ export const useBorderCalculator = () => {
      if (calculation.minBorderWarning !== prevMinBorderWarning.current) {
       updates.minBorderWarning = calculation.minBorderWarning;
       prevMinBorderWarning.current = calculation.minBorderWarning;
+    }
+    if (calculation.paperSizeWarning !== prevPaperSizeWarning.current) {
+      updates.paperSizeWarning = calculation.paperSizeWarning;
+      prevPaperSizeWarning.current = calculation.paperSizeWarning;
     }
     if (calculation.lastValidMinBorder !== prevLastValidMinBorder.current) {
       updates.lastValidMinBorder = calculation.lastValidMinBorder;
@@ -504,6 +522,7 @@ export const useBorderCalculator = () => {
     offsetWarning: state.offsetWarning,
     bladeWarning: state.bladeWarning,
     minBorderWarning: state.minBorderWarning,
+    paperSizeWarning: state.paperSizeWarning,
     clampedHorizontalOffset: calculation.clampedHorizontalOffset, // Use clamped values from calculation result
     clampedVerticalOffset: calculation.clampedVerticalOffset,
 
