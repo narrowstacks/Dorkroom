@@ -1,184 +1,236 @@
+/* ------------------------------------------------------------------ *\
+   Pure geometry helpers
+\* ------------------------------------------------------------------ */
+
 import { EASEL_SIZES, BLADE_THICKNESS } from '@/constants/border';
 
-// Base paper size for blade thickness calculation (20x24)
+export type Size = { width: number; height: number };
+
+/* ---------- constants ------------------------------------------- */
+
 const BASE_PAPER_AREA = 20 * 24;
+const STEP            = 0.01;
+const SEARCH_SPAN     = 0.5;
+const SNAP            = 0.25;
+const EPS             = 1e-9;
 
-export const calculateBladeThickness = (paperWidth: number, paperHeight: number): number => {
-  const paperArea = paperWidth * paperHeight;
-  // Avoid division by zero or negative areas
-  if (paperArea <= 0) return BLADE_THICKNESS;
-  const scaleFactor = BASE_PAPER_AREA / paperArea;
-  // Cap the maximum scale factor to avoid too thick blades
-  const cappedScale = Math.min(scaleFactor, 2);
-  return Math.round(BLADE_THICKNESS * cappedScale);
-};
+/* ---------- helpers --------------------------------------------- */
 
-export const findCenteringOffsets = (paperWidth: number, paperHeight: number, isLandscape: boolean): { easelSize: { width: number, height: number }, effectiveSlot: { width: number, height: number }, isNonStandardPaperSize: boolean } => {
-  const orientedPaperWidth = isLandscape ? paperHeight : paperWidth;
-  const orientedPaperHeight = isLandscape ? paperWidth : paperHeight;
+export const orient = (w: number, h: number, landscape: boolean): Size =>
+  landscape ? { width: h, height: w } : { width: w, height: h };
 
-  let bestFitEasel: { width: number; height: number } | null = null;
-  let minAreaDiff = Infinity;
+const isExactMatch = (paper: Size) =>
+  EASEL_SIZES.some(
+    e =>
+      (e.width === paper.width && e.height === paper.height) ||
+      (e.width === paper.height && e.height === paper.width),
+  );
 
-  // Sort easels by area
-  const sortedEasels = [...EASEL_SIZES].sort((a, b) => (a.width * a.height) - (b.width * b.height));
+/* ---------- memoised centring ----------------------------------- */
 
-  // Find the smallest easel that fits the *oriented* paper in either orientation
-  for (const easel of sortedEasels) {
-    const fitsStandard = easel.width >= orientedPaperWidth && easel.height >= orientedPaperHeight;
-    const fitsFlipped = easel.width >= orientedPaperHeight && easel.height >= orientedPaperWidth;
+const fitMemo = new Map<string, ReturnType<typeof computeFit>>();
 
-    if (fitsStandard || fitsFlipped) {
-      bestFitEasel = easel;
-      break; // Found the smallest fitting easel
-    }
-  }
+function computeFit(paperW: number, paperH: number, landscape: boolean) {
+  const paper = orient(paperW, paperH, landscape);
 
-  // If no fitting easel found
-  if (!bestFitEasel) {
-    // Determine if the original paper size is standard (matches any easel)
-    const isOriginalStandard = EASEL_SIZES.some(e =>
-      (e.width === paperWidth && e.height === paperHeight) ||
-      (e.width === paperHeight && e.height === paperWidth)
+  const best = [...EASEL_SIZES]
+    .sort((a, b) => a.width * a.height - b.width * b.height)
+    .find(
+      e =>
+        (e.width >= paper.width && e.height >= paper.height) ||
+        (e.height >= paper.width && e.width >= paper.height),
     );
+
+  if (!best) {
     return {
-      easelSize: { width: orientedPaperWidth, height: orientedPaperHeight },
-      effectiveSlot: { width: orientedPaperWidth, height: orientedPaperHeight }, // Paper itself is the slot
-      isNonStandardPaperSize: !isOriginalStandard
+      easelSize: paper,
+      effectiveSlot: paper,
+      isNonStandardPaperSize: !isExactMatch({ width: paperW, height: paperH }),
     };
   }
 
-  // Determine the effective slot dimensions (Ws_x, Ws_y) the oriented paper fits into
-  // within the bestFitEasel
-  let effectiveSlotWidth: number;
-  let effectiveSlotHeight: number;
-
-  // Check if oriented paper fits the easel's standard orientation slot
-  if (bestFitEasel.width >= orientedPaperWidth && bestFitEasel.height >= orientedPaperHeight) {
-    // Yes, the effective slot is the easel's standard WxH
-    effectiveSlotWidth = bestFitEasel.width;
-    effectiveSlotHeight = bestFitEasel.height;
-  }
-  // Check if oriented paper fits the easel's flipped orientation slot (HxW)
-  else if (bestFitEasel.height >= orientedPaperWidth && bestFitEasel.width >= orientedPaperHeight) {
-     // Yes, the effective slot is the easel's flipped HxW
-     effectiveSlotWidth = bestFitEasel.height;
-     effectiveSlotHeight = bestFitEasel.width;
-  } else {
-    // This case should theoretically not be reached if bestFitEasel was found,
-    // but as a fallback, use oriented paper dimensions.
-     console.warn("findCenteringOffsets: Inconsistent fit detected, falling back to paper dimensions for effective slot.");
-     effectiveSlotWidth = orientedPaperWidth;
-     effectiveSlotHeight = orientedPaperHeight;
-  }
-
-  // Determine if the *original* paper size is standard relative to any easel.
-  const isOriginalPaperStandard = EASEL_SIZES.some(e =>
-    (e.width === paperWidth && e.height === paperHeight) ||
-    (e.width === paperHeight && e.height === paperWidth)
-  );
-  const isPaperSizeNonStandard = !isOriginalPaperStandard;
+  const slot =
+    best.width >= paper.width && best.height >= paper.height
+      ? { width: best.width, height: best.height }
+      : { width: best.height, height: best.width };
 
   return {
-    // Return the standard dimensions of the easel found
-    easelSize: { width: bestFitEasel.width, height: bestFitEasel.height },
-    effectiveSlot: { width: effectiveSlotWidth, height: effectiveSlotHeight },
-    isNonStandardPaperSize: isPaperSizeNonStandard
+    easelSize: { width: best.width, height: best.height },
+    effectiveSlot: slot,
+    isNonStandardPaperSize: !isExactMatch({ width: paperW, height: paperH }),
   };
 }
 
-// TODO: Consider replacing the brute-force loop with a binary search for performance.
-export const calculateOptimalMinBorder = (
-  paperWidth: number,
-  paperHeight: number,
-  ratioWidth: number,
-  ratioHeight: number,
-  currentMinBorder: number
-): number => {
-  // Calculate the print size that would fit with the current minimum border
-  const availableWidth = paperWidth - 2 * currentMinBorder;
-  const availableHeight = paperHeight - 2 * currentMinBorder;
-  if (availableWidth <= 0 || availableHeight <= 0 || ratioHeight === 0) return currentMinBorder; // Avoid invalid calcs
-
-  const printRatio = ratioWidth / ratioHeight;
-
-  let printWidth: number;
-  let printHeight: number;
-
-  if (availableWidth / availableHeight > printRatio) {
-    // Height limited
-    printHeight = availableHeight;
-    printWidth = availableHeight * printRatio;
-  } else {
-    // Width limited
-    printWidth = availableWidth;
-    printHeight = availableWidth / printRatio;
+export const findCenteringOffsets = (
+  paperW: number,
+  paperH: number,
+  landscape: boolean,
+) => {
+  const key = `${paperW}×${paperH}:${landscape}`;
+  let v = fitMemo.get(key);
+  if (!v) {
+    v = computeFit(paperW, paperH, landscape);
+    fitMemo.set(key, v);
   }
+  return v;
+};
 
-  // Calculate the borders that would result in blade positions divisible by 0.25
-  // Note: The original calculation for targetBladePositions seemed complex and
-  // might not be the most direct way. The core idea is to adjust minBorder slightly
-  // and find the one that minimizes the remainder when blade positions are divided by 0.25.
-  // This loop directly tests minBorder values.
+/* ---------- blade thickness ------------------------------------- */
 
-  let optimalMinBorder = currentMinBorder;
+export const calculateBladeThickness = (paperW: number, paperH: number) => {
+  const area  = Math.max(paperW * paperH, EPS);
+  const scale = Math.min(BASE_PAPER_AREA / area, 2);
+  return Math.round(BLADE_THICKNESS * scale);
+};
+
+/* ---------- internal snap‑score helper -------------------------- */
+
+const snapScore = (b: number) => {
+  const r = b % SNAP;
+  return Math.min(r, SNAP - r);
+};
+
+/* ---------- minimum‑border optimiser ---------------------------- */
+
+const computeBorders = (
+  paperW: number,
+  paperH: number,
+  ratio: number,
+  mb: number,
+) => {
+  const availW = paperW - 2 * mb;
+  const availH = paperH - 2 * mb;
+  if (availW <= 0 || availH <= 0) return null;
+
+  const [printW, printH] =
+    availW / availH > ratio
+      ? [availH * ratio, availH]
+      : [availW, availW / ratio];
+
+  const bW = (paperW - printW) / 2;
+  const bH = (paperH - printH) / 2;
+
+  return [bW, bW, bH, bH] as const;
+};
+
+export const calculateOptimalMinBorder = (
+  paperW: number,
+  paperH: number,
+  ratioW: number,
+  ratioH: number,
+  start: number,
+) => {
+  if (ratioH === 0) return start;
+  const ratio = ratioW / ratioH;
+
+  let lo = Math.max(0.01, start - SEARCH_SPAN);
+  let hi = start + SEARCH_SPAN;
+
+  let best = start;
   let bestScore = Infinity;
 
-  // Try different minimum border values around the current value
-  // Loop from currentMinBorder - 0.5 to currentMinBorder + 0.5 in 0.01 steps
-  const startTest = Math.max(0.01, currentMinBorder - 0.5); // Ensure positive test border
-  const endTest = currentMinBorder + 0.5;
+  // cache scores at bounds
+  let scoreLo = Infinity;
+  let scoreHi = Infinity;
 
-  for (let testMinBorder = startTest; testMinBorder <= endTest; testMinBorder += 0.01) {
-    const testAvailableWidth = paperWidth - 2 * testMinBorder;
-    const testAvailableHeight = paperHeight - 2 * testMinBorder;
+  const scoreAt = (mb: number) => {
+    const b = computeBorders(paperW, paperH, ratio, mb);
+    if (!b) return Infinity;
+    return b.reduce((s, v) => s + snapScore(v), 0);
+  };
 
-    if (testAvailableWidth <= 0 || testAvailableHeight <= 0) continue; // Skip invalid sizes
+  while (hi - lo > STEP) {
+    const mid = (lo + hi) / 2;
 
-    let testPrintWidth: number;
-    let testPrintHeight: number;
+    const scoreMid = scoreAt(mid);
+    if (scoreMid < bestScore - EPS) {
+      bestScore = scoreMid;
+      best = mid;
+      if (bestScore === 0) break; // perfect snap
+    }
 
-    if (testAvailableWidth / testAvailableHeight > printRatio) {
-      testPrintHeight = testAvailableHeight;
-      testPrintWidth = testAvailableHeight * printRatio;
+    // lazy evaluate scores at bounds only when needed
+    if (scoreLo === Infinity) scoreLo = scoreAt(lo);
+    if (scoreHi === Infinity) scoreHi = scoreAt(hi);
+
+    if (scoreLo < scoreHi) {
+      hi = mid;
+      scoreHi = scoreMid;
     } else {
-      testPrintWidth = testAvailableWidth;
-      testPrintHeight = testAvailableWidth / printRatio;
-    }
-
-    // Calculate *border sizes* for this testMinBorder
-    const testLeftBorder = (paperWidth - testPrintWidth) / 2;
-    const testRightBorder = (paperWidth - testPrintWidth) / 2; // Centered initially
-    const testTopBorder = (paperHeight - testPrintHeight) / 2;
-    const testBottomBorder = (paperHeight - testPrintHeight) / 2; // Centered initially
-
-    // Calculate blade *positions* based on these borders
-    // We assume centering initially for optimizing the minBorder itself. Offsets are applied later.
-    // Blade Position = Border Size
-    const testBladePositions = [
-        testLeftBorder,
-        testRightBorder,
-        testTopBorder,
-        testBottomBorder
-    ];
-
-
-    // Calculate how close each blade position is to being divisible by 0.25
-    let score = 0;
-    for (let k = 0; k < testBladePositions.length; k++) {
-        const pos = testBladePositions[k];
-        const remainder = pos % 0.25;
-         // Penalize remainders further from 0 or 0.25
-        score += Math.min(remainder, 0.25 - remainder);
-    }
-
-
-    if (score < bestScore) {
-      bestScore = score;
-      optimalMinBorder = testMinBorder;
+      lo = mid;
+      scoreLo = scoreMid;
     }
   }
 
-  // Return the optimal border rounded to two decimal places
-  return Number(optimalMinBorder.toFixed(2));
-}; 
+  return +best.toFixed(2);
+};
+
+/* ---------- other helpers (unchanged) --------------------------- */
+
+export const computePrintSize = (
+  w: number,
+  h: number,
+  rw: number,
+  rh: number,
+  mb: number,
+) => {
+  const availW = w - 2 * mb;
+  const availH = h - 2 * mb;
+  if (availW <= 0 || availH <= 0 || rh === 0) return { printW: 0, printH: 0 };
+
+  const ratio = rw / rh;
+  return availW / availH > ratio
+    ? { printW: availH * ratio, printH: availH }
+    : { printW: availW, printH: availW / ratio };
+};
+
+export const clampOffsets = (
+  paperW: number,
+  paperH: number,
+  printW: number,
+  printH: number,
+  mb: number,
+  offH: number,
+  offV: number,
+  ignoreMB: boolean,
+) => {
+  const halfW = (paperW - printW) / 2;
+  const halfH = (paperH - printH) / 2;
+  const maxH = ignoreMB ? halfW : Math.min(halfW - mb, halfW);
+  const maxV = ignoreMB ? halfH : Math.min(halfH - mb, halfH);
+
+  const h = Math.max(-maxH, Math.min(maxH, offH));
+  const v = Math.max(-maxV, Math.min(maxV, offV));
+
+  let warning: string | null = null;
+  if (h !== offH || v !== offV)
+    warning = ignoreMB
+      ? 'Offset adjusted to keep print on paper.'
+      : 'Offset adjusted to honour min‑border.';
+
+  return { h, v, halfW, halfH, warning };
+};
+
+export const bordersFromGaps = (
+  halfW: number,
+  halfH: number,
+  h: number,
+  v: number,
+) => ({
+  left: halfW - h,
+  right: halfW + h,
+  bottom: halfH - v,
+  top: halfH + v,
+});
+
+export const bladeReadings = (
+  printW: number,
+  printH: number,
+  sX: number,
+  sY: number,
+) => ({
+  left: printW - 2 * sX,
+  right: printW + 2 * sX,
+  top: printH - 2 * sY,
+  bottom: printH + 2 * sY,
+});

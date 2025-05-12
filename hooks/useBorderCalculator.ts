@@ -1,10 +1,47 @@
-import { useReducer, useMemo, useEffect, useRef } from 'react';
+/* ------------------------------------------------------------------ *\
+   useBorderCalculator.ts
+   -------------------------------------------------------------
+   React Hook – UI state + calls into pure geometry helpers
+   -------------------------------------------------------------
+   Exports:
+     - useBorderCalculator (default)
+\* ------------------------------------------------------------------ */
+
+import {
+  useReducer,
+  useMemo,
+  useEffect,
+  useRef,
+  useCallback,
+} from 'react';
 import { useWindowDimensions } from 'react-native';
-import { BorderCalculation } from '@/types/borderTypes';
-import { ASPECT_RATIOS, PAPER_SIZES, EASEL_SIZES } from '@/constants/border';
-import { calculateBladeThickness, findCenteringOffsets } from '@/utils/borderCalculations';
+
+import type { BorderCalculation } from '@/types/borderTypes';
+import {
+  ASPECT_RATIOS,
+  PAPER_SIZES,
+  EASEL_SIZES,
+} from '@/constants/border';
+import {
+  calculateBladeThickness,
+  findCenteringOffsets,
+  computePrintSize,
+  clampOffsets,
+  bordersFromGaps,
+  bladeReadings,
+} from '@/utils/borderCalculations';
+
+/* ---------- util helpers ---------------------------------------- */
+
+const tryNumber = (v: string): number | null => {
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+/* ---------- types ----------------------------------------------- */
 
 interface State {
+  /* inputs */
   aspectRatio: string;
   paperSize: string;
   customAspectWidth: number;
@@ -19,68 +56,105 @@ interface State {
   showBlades: boolean;
   isLandscape: boolean;
   isRatioFlipped: boolean;
-  // Internal / derived state related to warnings
+
+  /* warnings & last‑valid tracking */
   offsetWarning: string | null;
   bladeWarning: string | null;
   minBorderWarning: string | null;
   paperSizeWarning: string | null;
   lastValidMinBorder: number;
-  // Image state (kept separate for now, could be integrated)
+
+  /* image‑related */
   selectedImageUri: string | null;
   imageDimensions: { width: number; height: number };
   isCropping: boolean;
   cropOffset: { x: number; y: number };
   cropScale: number;
+
+  /* “last valid” for custom free‑text inputs */
   lastValidCustomAspectWidth: number;
   lastValidCustomAspectHeight: number;
   lastValidCustomPaperWidth: number;
   lastValidCustomPaperHeight: number;
 }
 
+/* ---------- reducer actions ------------------------------------- */
+
+type SetFieldAction<K extends keyof State> = {
+  type: 'SET_FIELD';
+  key: K;
+  value: State[K];
+};
+
 type Action =
-  | { type: 'SET_FIELD'; key: keyof State; value: any } // Use 'any' for simplicity, refine if needed
+  | SetFieldAction<keyof State>
   | { type: 'SET_PAPER_SIZE'; value: string }
   | { type: 'SET_ASPECT_RATIO'; value: string }
   | { type: 'SET_IMAGE_FIELD'; key: Exclude<keyof State, 'imageDimensions' | 'cropOffset'>; value: any }
   | { type: 'SET_IMAGE_DIMENSIONS'; value: { width: number; height: number } }
   | { type: 'SET_CROP_OFFSET'; value: { x: number; y: number } }
   | { type: 'RESET' }
-  | { type: 'INTERNAL_UPDATE'; payload: Partial<Pick<State, 'offsetWarning' | 'bladeWarning' | 'minBorderWarning' | 'paperSizeWarning' | 'lastValidMinBorder'>> }
-  | { type: 'SET_IMAGE_CROP_DATA'; payload: Partial<Pick<State, 'selectedImageUri' | 'imageDimensions' | 'isCropping' | 'cropOffset' | 'cropScale'>> };
+  | {
+      type: 'INTERNAL_UPDATE';
+      payload: Partial<Pick<
+        State,
+        | 'offsetWarning'
+        | 'bladeWarning'
+        | 'minBorderWarning'
+        | 'paperSizeWarning'
+        | 'lastValidMinBorder'
+      >>;
+    }
+  | {
+      type: 'SET_IMAGE_CROP_DATA';
+      payload: Partial<Pick<
+        State,
+        'selectedImageUri' | 'imageDimensions' | 'isCropping' | 'cropOffset' | 'cropScale'
+      >>;
+    };
+
+/* ---------- constants ------------------------------------------- */
 
 const DEFAULT_MIN_BORDER = 0.5;
-const DEFAULT_CUSTOM_PAPER_WIDTH = 13; // Swapped default custom dims
+const DEFAULT_CUSTOM_PAPER_WIDTH  = 13;
 const DEFAULT_CUSTOM_PAPER_HEIGHT = 10;
-const DEFAULT_CUSTOM_ASPECT_WIDTH = 2; // Default valid custom aspect
-const DEFAULT_CUSTOM_ASPECT_HEIGHT = 3; // Default valid custom aspect
-// Find the maximum dimension among all standard easels
-const MAX_EASEL_DIMENSION = EASEL_SIZES.reduce((max, easel) => Math.max(max, easel.width, easel.height), 0);
+const DEFAULT_CUSTOM_ASPECT_WIDTH  = 2;
+const DEFAULT_CUSTOM_ASPECT_HEIGHT = 3;
+
+const MAX_EASEL_DIMENSION = EASEL_SIZES
+  .reduce((m, e) => Math.max(m, e.width, e.height), 0);
+
+/* ---------- initial state --------------------------------------- */
 
 const initialState: State = {
   aspectRatio: ASPECT_RATIOS[0].value,
-  paperSize: PAPER_SIZES[3].value,
-  customAspectWidth: DEFAULT_CUSTOM_ASPECT_WIDTH, // Initialize with default
-  customAspectHeight: DEFAULT_CUSTOM_ASPECT_HEIGHT, // Initialize with default
-  customPaperWidth: DEFAULT_CUSTOM_PAPER_WIDTH,
-  customPaperHeight: DEFAULT_CUSTOM_PAPER_HEIGHT,
-  lastValidCustomAspectWidth: DEFAULT_CUSTOM_ASPECT_WIDTH, // Add last valid state
-  lastValidCustomAspectHeight: DEFAULT_CUSTOM_ASPECT_HEIGHT, // Add last valid state
-  lastValidCustomPaperWidth: DEFAULT_CUSTOM_PAPER_WIDTH, // Add last valid state
-  lastValidCustomPaperHeight: DEFAULT_CUSTOM_PAPER_HEIGHT, // Add last valid state
+  paperSize:   PAPER_SIZES[3].value,
+
+  customAspectWidth:  DEFAULT_CUSTOM_ASPECT_WIDTH,
+  customAspectHeight: DEFAULT_CUSTOM_ASPECT_HEIGHT,
+  customPaperWidth:   DEFAULT_CUSTOM_PAPER_WIDTH,
+  customPaperHeight:  DEFAULT_CUSTOM_PAPER_HEIGHT,
+
+  lastValidCustomAspectWidth:  DEFAULT_CUSTOM_ASPECT_WIDTH,
+  lastValidCustomAspectHeight: DEFAULT_CUSTOM_ASPECT_HEIGHT,
+  lastValidCustomPaperWidth:   DEFAULT_CUSTOM_PAPER_WIDTH,
+  lastValidCustomPaperHeight:  DEFAULT_CUSTOM_PAPER_HEIGHT,
+
   minBorder: DEFAULT_MIN_BORDER,
   enableOffset: false,
   ignoreMinBorder: false,
   horizontalOffset: 0,
-  verticalOffset: 0,
+  verticalOffset:   0,
   showBlades: false,
-  isLandscape: true, // Default standard paper to landscape
+  isLandscape: true,
   isRatioFlipped: false,
+
   offsetWarning: null,
   bladeWarning: null,
   minBorderWarning: null,
   paperSizeWarning: null,
   lastValidMinBorder: DEFAULT_MIN_BORDER,
-  // Image State
+
   selectedImageUri: null,
   imageDimensions: { width: 0, height: 0 },
   isCropping: false,
@@ -88,151 +162,132 @@ const initialState: State = {
   cropScale: 1,
 };
 
+/* ---------- reducer --------------------------------------------- */
+
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'SET_FIELD':
       return { ...state, [action.key]: action.value };
-    case 'SET_PAPER_SIZE':
-      // When switching paper size, reset orientation and flip state
-      // Default standard to landscape, custom to portrait
+
+    case 'SET_PAPER_SIZE': {
       const isCustom = action.value === 'custom';
       return {
         ...state,
         paperSize: action.value,
-        isLandscape: !isCustom, // Custom defaults to portrait (false), standard to landscape (true)
-        isRatioFlipped: false, // Reset flip
-      };
-    case 'SET_ASPECT_RATIO':
-       // Reset flip when aspect ratio changes
-      return {
-        ...state,
-        aspectRatio: action.value,
+        isLandscape: !isCustom,
         isRatioFlipped: false,
       };
+    }
+
+    case 'SET_ASPECT_RATIO':
+      return { ...state, aspectRatio: action.value, isRatioFlipped: false };
+
     case 'SET_IMAGE_FIELD':
-      // Specific action for non-nested image fields
       return { ...state, [action.key]: action.value };
+
     case 'SET_IMAGE_DIMENSIONS':
       return { ...state, imageDimensions: action.value };
+
     case 'SET_CROP_OFFSET':
       return { ...state, cropOffset: action.value };
+
     case 'RESET':
-      // Ensure lastValid fields are also reset
-      return {
-        ...initialState,
-        // Re-initialize lastValid fields explicitly on reset
-        lastValidCustomAspectWidth: DEFAULT_CUSTOM_ASPECT_WIDTH,
-        lastValidCustomAspectHeight: DEFAULT_CUSTOM_ASPECT_HEIGHT,
-        lastValidCustomPaperWidth: DEFAULT_CUSTOM_PAPER_WIDTH,
-        lastValidCustomPaperHeight: DEFAULT_CUSTOM_PAPER_HEIGHT,
-      };
+      return { ...initialState };
+
     case 'INTERNAL_UPDATE':
-      // Only update if the warning/value has actually changed
-      let hasChanged = false;
-      for (const key in action.payload) {
-        if (state[key as keyof State] !== action.payload[key as keyof typeof action.payload]) {
-          hasChanged = true;
-          break;
-        }
-      }
-      return hasChanged ? { ...state, ...action.payload } : state;
+      return { ...state, ...action.payload };
+
     case 'SET_IMAGE_CROP_DATA':
       return { ...state, ...action.payload };
+
     default:
       return state;
   }
 }
 
+/* ------------------------------------------------------------------ *\
+   Hook
+\* ------------------------------------------------------------------ */
+
 export const useBorderCalculator = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const { width: winW, height: winH } = useWindowDimensions();
 
-  // Refs for state used only in event handlers to avoid re-renders
+  /* refs */
   const imageLayoutRef = useRef({ width: 0, height: 0 });
+  const prevWarnings   = useRef({
+    offset: null as string | null,
+    blade:  null as string | null,
+    minBorder: null as string | null,
+    paperSize: null as string | null,
+    lastValid: state.lastValidMinBorder,
+  });
 
-  // Use refs to store previous warning values to prevent unnecessary state updates
-  const prevOffsetWarning = useRef<string | null>(null);
-  const prevBladeWarning = useRef<string | null>(null);
-  const prevMinBorderWarning = useRef<string | null>(null);
-  const prevPaperSizeWarning = useRef<string | null>(null);
-  const prevLastValidMinBorder = useRef<number>(state.lastValidMinBorder);
+  /* -------- Step 1 : derive numeric inputs ---------------------- */
 
-  // --- Input Derivation ---
-  // Memoize the derived input values for the main calculation
-  const calculationInputs = useMemo(() => {
-    let paperWidth: number;
-    let paperHeight: number;
-    let ratioWidth: number;
-    let ratioHeight: number;
-    let paperSizeWarning: string | null = null;
+  const inputs = useMemo(() => {
+    /** paper dims */
+    const paperEntry =
+      state.paperSize === 'custom'
+        ? {
+            w: state.lastValidCustomPaperWidth,
+            h: state.lastValidCustomPaperHeight,
+            custom: true,
+          }
+        : (() => {
+            const p = PAPER_SIZES.find(x => x.value === state.paperSize)!;
+            return { w: p.width, h: p.height, custom: false };
+          })();
 
-    // Get paper dimensions using last valid values for custom
-    if (state.paperSize === "custom") {
-      paperWidth = state.lastValidCustomPaperWidth; // Use last valid
-      paperHeight = state.lastValidCustomPaperHeight; // Use last valid
-      // Check if custom paper size exceeds max easel size
-      if (paperWidth > MAX_EASEL_DIMENSION || paperHeight > MAX_EASEL_DIMENSION) {
-        paperSizeWarning = `Custom paper size (${paperWidth}x${paperHeight}) exceeds largest standard easel (20x24"). Ensure paper is centered manually if using easel alignment marks.`;
-      }
-    } else {
-      const selectedPaper = PAPER_SIZES.find((p) => p.value === state.paperSize);
-      paperWidth = selectedPaper?.width ?? 0;
-      paperHeight = selectedPaper?.height ?? 0;
-    }
+    const paperSizeWarning =
+      paperEntry.custom &&
+      (paperEntry.w > MAX_EASEL_DIMENSION || paperEntry.h > MAX_EASEL_DIMENSION)
+        ? `Custom paper (${paperEntry.w}×${paperEntry.h}) exceeds largest standard easel (20×24").`
+        : null;
 
-    // Get aspect ratio dimensions using last valid values for custom
-    if (state.aspectRatio === "custom") {
-      ratioWidth = state.lastValidCustomAspectWidth; // Use last valid
-      ratioHeight = state.lastValidCustomAspectHeight; // Use last valid
-    } else {
-      const selectedRatio = ASPECT_RATIOS.find((r) => r.value === state.aspectRatio);
-      ratioWidth = selectedRatio?.width ?? 0;
-      ratioHeight = selectedRatio?.height ?? 0;
-    }
+    /** aspect ratio */
+    const ratioEntry =
+      state.aspectRatio === 'custom'
+        ? {
+            w: state.lastValidCustomAspectWidth,
+            h: state.lastValidCustomAspectHeight,
+          }
+        : (() => {
+            const r = ASPECT_RATIOS.find(x => x.value === state.aspectRatio)!;
+            return { w: r.width, h: r.height };
+          })();
 
-    // Create oriented dimensions
-    const orientedPaperWidth = state.isLandscape ? paperHeight : paperWidth;
-    const orientedPaperHeight = state.isLandscape ? paperWidth : paperHeight;
+    /** orientation + flip */
+    const orientedPaper = state.isLandscape
+      ? { w: paperEntry.h, h: paperEntry.w }
+      : { w: paperEntry.w, h: paperEntry.h };
 
-    // Apply ratio flip
-    const orientedRatioWidth = state.isRatioFlipped ? ratioHeight : ratioWidth;
-    const orientedRatioHeight = state.isRatioFlipped ? ratioWidth : ratioHeight;
+    const orientedRatio = state.isRatioFlipped
+      ? { w: ratioEntry.h, h: ratioEntry.w }
+      : { w: ratioEntry.w, h: ratioEntry.h };
 
-    // Validate minimum border value
-    const maxPossibleBorder = Math.min(orientedPaperWidth / 2, orientedPaperHeight / 2);
-    let minBorderValue = state.minBorder;
+    /** min‑border validation */
+    const maxBorder = Math.min(orientedPaper.w, orientedPaper.h) / 2;
+    let minBorder   = state.minBorder;
     let minBorderWarning: string | null = null;
-    let lastValidMinBorder = state.lastValidMinBorder;
+    let lastValid   = state.lastValidMinBorder;
 
-    if (minBorderValue >= maxPossibleBorder && maxPossibleBorder > 0) {
-      minBorderWarning = `Minimum border makes image size zero or negative. Using last valid: ${state.lastValidMinBorder}.`;
-      minBorderValue = state.lastValidMinBorder;
-    } else if (minBorderValue < 0) {
-       minBorderWarning = `Minimum border cannot be negative. Using last valid: ${state.lastValidMinBorder}.`;
-       minBorderValue = state.lastValidMinBorder;
+    if (minBorder >= maxBorder && maxBorder > 0) {
+      minBorderWarning = `Minimum border too large; using ${state.lastValidMinBorder}.`;
+      minBorder        = state.lastValidMinBorder;
+    } else if (minBorder < 0) {
+      minBorderWarning = `Border cannot be negative; using ${state.lastValidMinBorder}.`;
+      minBorder        = state.lastValidMinBorder;
     } else {
-      lastValidMinBorder = minBorderValue; // Update last valid if current is ok
+      lastValid = minBorder;
     }
-
-     // Determine active offsets
-    const horizontalOffsetValue = state.enableOffset ? state.horizontalOffset : 0;
-    const verticalOffsetValue = state.enableOffset ? state.verticalOffset : 0;
 
     return {
-      paperWidth, // Original paper dimensions needed for easel centering logic
-      paperHeight,
-      orientedPaperWidth,
-      orientedPaperHeight,
-      orientedRatioWidth,
-      orientedRatioHeight,
-      minBorderValue,
-      horizontalOffsetValue,
-      verticalOffsetValue,
-      ignoreMinBorder: state.ignoreMinBorder,
-      isLandscape: state.isLandscape,
-      // Pass down warning info to be set after calculation
-      minBorderWarning,
-      lastValidMinBorder,
+      paperEntry,
+      orientedPaper,
+      orientedRatio,
+      minBorder,
+      lastValid,
       paperSizeWarning,
     };
   }, [
@@ -243,302 +298,228 @@ export const useBorderCalculator = () => {
     state.lastValidCustomAspectWidth,
     state.lastValidCustomAspectHeight,
     state.minBorder,
+    state.isLandscape,
+    state.isRatioFlipped,
+  ]);
+
+  /* -------- Step 2 : preview scale (depends only on size + win) -- */
+
+  const previewScale = useMemo(() => {
+    const { w, h } = inputs.orientedPaper;
+    if (!w || !h) return 1;
+    const maxW = Math.min(winW * 0.9, 400);
+    const maxH = Math.min(winH * 0.5, 400);
+    return Math.min(maxW / w, maxH / h);
+  }, [inputs.orientedPaper, winW, winH]);
+
+  /* -------- Step 3 : heavy geometry calculations ----------------- */
+
+  const calc = useMemo(() => {
+    const { orientedPaper, orientedRatio, minBorder } = inputs;
+
+    /* print size */
+    const { printW, printH } = computePrintSize(
+      orientedPaper.w,
+      orientedPaper.h,
+      orientedRatio.w,
+      orientedRatio.h,
+      minBorder,
+    );
+
+    /* offsets */
+    const { h: offH, v: offV, halfW, halfH, warning: offsetWarning } =
+      clampOffsets(
+        orientedPaper.w,
+        orientedPaper.h,
+        printW,
+        printH,
+        minBorder,
+        state.enableOffset ? state.horizontalOffset : 0,
+        state.enableOffset ? state.verticalOffset   : 0,
+        state.ignoreMinBorder,
+      );
+
+    /* borders */
+    const borders = bordersFromGaps(halfW, halfH, offH, offV);
+
+    /* easel + paper shift */
+    const {
+      easelSize,
+      effectiveSlot,
+      isNonStandardPaperSize,
+    } = findCenteringOffsets(
+      inputs.paperEntry.w,
+      inputs.paperEntry.h,
+      state.isLandscape,
+    );
+
+    const spX = isNonStandardPaperSize
+      ? (orientedPaper.w - effectiveSlot.width) / 2
+      : 0;
+    const spY = isNonStandardPaperSize
+      ? (orientedPaper.h - effectiveSlot.height) / 2
+      : 0;
+
+    /* blade readings */
+    const blades = bladeReadings(
+      printW,
+      printH,
+      spX + offH,
+      spY + offV,
+    );
+
+    let bladeWarning: string | null = null;
+    const values = Object.values(blades);
+    if (values.some(v => v < 0))
+      bladeWarning = 'Negative blade reading – use opposite side of scale.';
+    if (values.some(v => Math.abs(v) < 3 && v !== 0))
+      bladeWarning = (bladeWarning ? bladeWarning + '\n' : '') +
+        'Many easels have no markings below about 3 in.';
+
+    /* build result */
+    const res: BorderCalculation & {
+      offsetWarning: string | null;
+      bladeWarning: string | null;
+      minBorderWarning: string | null;
+      paperSizeWarning: string | null;
+      lastValidMinBorder: number;
+      clampedHorizontalOffset: number;
+      clampedVerticalOffset: number;
+      previewScale: number;
+      previewWidth: number;
+      previewHeight: number;
+      easelSizeLabel: string;
+    } = {
+      leftBorder: borders.left,
+      rightBorder: borders.right,
+      topBorder: borders.top,
+      bottomBorder: borders.bottom,
+
+      printWidth:  printW,
+      printHeight: printH,
+      paperWidth:  orientedPaper.w,
+      paperHeight: orientedPaper.h,
+
+      printWidthPercent:  orientedPaper.w ? (printW / orientedPaper.w) * 100 : 0,
+      printHeightPercent: orientedPaper.h ? (printH / orientedPaper.h) * 100 : 0,
+      leftBorderPercent:  orientedPaper.w ? (borders.left  / orientedPaper.w) * 100 : 0,
+      rightBorderPercent: orientedPaper.w ? (borders.right / orientedPaper.w) * 100 : 0,
+      topBorderPercent:   orientedPaper.h ? (borders.top   / orientedPaper.h) * 100 : 0,
+      bottomBorderPercent:orientedPaper.h ? (borders.bottom/ orientedPaper.h) * 100 : 0,
+
+      leftBladeReading:  blades.left,
+      rightBladeReading: blades.right,
+      topBladeReading:   blades.top,
+      bottomBladeReading:blades.bottom,
+      bladeThickness: calculateBladeThickness(orientedPaper.w, orientedPaper.h),
+
+      isNonStandardPaperSize:
+        isNonStandardPaperSize && !inputs.paperSizeWarning,
+
+      easelSize,
+      easelSizeLabel:
+        (EASEL_SIZES.find(e => e.width === easelSize.width &&
+                               e.height === easelSize.height)?.label) ??
+        `${easelSize.width}×${easelSize.height}`,
+
+      offsetWarning,
+      bladeWarning,
+      minBorderWarning: inputs.minBorder !== state.minBorder
+        ? inputs.minBorderWarning
+        : null,
+      paperSizeWarning: inputs.paperSizeWarning,
+      lastValidMinBorder: inputs.lastValid,
+      clampedHorizontalOffset: offH,
+      clampedVerticalOffset:   offV,
+
+      previewScale,
+      previewWidth:  orientedPaper.w * previewScale,
+      previewHeight: orientedPaper.h * previewScale,
+    };
+
+    return res;
+  }, [
+    inputs,
     state.enableOffset,
     state.horizontalOffset,
     state.verticalOffset,
-    state.isLandscape,
-    state.isRatioFlipped,
     state.ignoreMinBorder,
-    state.lastValidMinBorder, // Include lastValidMinBorder as it affects the result
+    state.isLandscape,
+    previewScale,
   ]);
 
-  // --- Main Calculation ---
-  // Define an extended type for the calculation result including internal fields
-  type CalculationResult = BorderCalculation & {
-    offsetWarning: string | null;
-    bladeWarning: string | null;
-    minBorderWarning: string | null;
-    paperSizeWarning: string | null;
-    lastValidMinBorder: number;
-    clampedHorizontalOffset: number;
-    clampedVerticalOffset: number;
-    // Include preview fields derived from scale
-    previewScale: number;
-    previewWidth: number;
-    previewHeight: number;
-    easelSizeLabel: string;
-  };
+  /* -------- Step 4 : push warnings back to state ---------------- */
 
-  const calculation = useMemo<CalculationResult>(() => {
-    if (__DEV__) console.log("--- Calculation Start ---");
-    const {
-      paperWidth, paperHeight, // Original dims for easel calc
-      orientedPaperWidth, orientedPaperHeight, orientedRatioWidth, orientedRatioHeight,
-      minBorderValue, horizontalOffsetValue: initialHorizontalOffset, verticalOffsetValue: initialVerticalOffset,
-      ignoreMinBorder, isLandscape,
-      // Warnings pre-calculated
-      minBorderWarning: inputMinBorderWarning,
-      lastValidMinBorder: inputLastValidMinBorder,
-      paperSizeWarning: inputPaperSizeWarning,
-    } = calculationInputs;
-
-    if (__DEV__) console.log("Inputs:", calculationInputs);
-
-    // Calculate print size
-    const availableWidth = orientedPaperWidth - 2 * minBorderValue;
-    const availableHeight = orientedPaperHeight - 2 * minBorderValue;
-    const printRatio = orientedRatioHeight === 0 ? 0 : orientedRatioWidth / orientedRatioHeight;
-
-    let printWidth: number;
-    let printHeight: number;
-
-    if (printRatio === 0 || availableWidth <= 0 || availableHeight <= 0) {
-        printWidth = 0;
-        printHeight = 0;
-    } else if (availableWidth / availableHeight > printRatio) {
-      printHeight = availableHeight;
-      printWidth = availableHeight * printRatio;
-    } else {
-      printWidth = availableWidth;
-      printHeight = availableWidth / printRatio;
-    }
-    if (__DEV__) console.log("Calculated Print Dimensions (I):", { printWidth, printHeight });
-
-    // Calculate maximum allowed offsets
-    const halfWidthGap = (orientedPaperWidth - printWidth) / 2;
-    const halfHeightGap = (orientedPaperHeight - printHeight) / 2;
-
-    const maxHorizontalOffset = ignoreMinBorder
-      ? halfWidthGap
-      : Math.min(halfWidthGap - minBorderValue, halfWidthGap);
-
-    const maxVerticalOffset = ignoreMinBorder
-      ? halfHeightGap
-      : Math.min(halfHeightGap - minBorderValue, halfHeightGap);
-
-    // Clamp offset values
-    let horizontalOffset = Math.max(
-      -maxHorizontalOffset,
-      Math.min(maxHorizontalOffset, initialHorizontalOffset)
-    );
-    let verticalOffset = Math.max(
-      -maxVerticalOffset,
-      Math.min(maxVerticalOffset, initialVerticalOffset)
-    );
-
-    // Determine offset warning
-    let offsetWarning: string | null = null;
-    if (
-      (state.enableOffset && initialHorizontalOffset !== horizontalOffset) ||
-      (state.enableOffset && initialVerticalOffset !== verticalOffset)
-    ) {
-      offsetWarning = ignoreMinBorder
-        ? "Offset values adjusted to keep print within paper edges."
-        : "Offset values adjusted to maintain minimum borders and stay within paper bounds.";
-    }
-
-    // Calculate borders
-    const leftBorder = halfWidthGap - horizontalOffset;  // B1_x (near) or B2_y (far)
-    const rightBorder = halfWidthGap + horizontalOffset; // B2_x (far) or B1_y (near)
-    const bottomBorder = halfHeightGap - verticalOffset; // B1_y (near) or B2_x (far)
-    const topBorder = halfHeightGap + verticalOffset;   // B2_y (far) or B1_x (near)
-    if (__DEV__) console.log("Calculated Borders (B):", { leftBorder, rightBorder, topBorder, bottomBorder });
-
-    // Get Easel Slot size (Ws) and non-standard flag using the *original* paper dimensions
-    const { easelSize, effectiveSlot, isNonStandardPaperSize: originalIsNonStandard } = findCenteringOffsets(paperWidth, paperHeight, isLandscape);
-    const Ws_x = effectiveSlot.width; // Use effective slot width for shift calculation
-    const Ws_y = effectiveSlot.height; // Use effective slot height for shift calculation
-    if (__DEV__) console.log("Easel Info (BestFitEasel, EffectiveSlot, Ws_for_shift_calc):", { nominalEaselSize: easelSize, effectiveSlot, Ws_x, Ws_y, isNonStandardPaperSize: originalIsNonStandard });
-
-    // Find the easel label (using the nominal dimensions of the best fit easel)
-    const matchingEasel = EASEL_SIZES.find(e => e.width === easelSize.width && e.height === easelSize.height);
-    const easelSizeLabel = matchingEasel ? matchingEasel.label : `${easelSize.width}x${easelSize.height}`;
-    if (__DEV__) console.log("Determined Easel Label (based on nominal easelSize):", easelSizeLabel);
-
-    // Calculate paper shift (sp) - only if non-standard paper size
-    const sp_x = originalIsNonStandard ? (orientedPaperWidth - Ws_x) / 2 : 0;
-    const sp_y = originalIsNonStandard ? (orientedPaperHeight - Ws_y) / 2 : 0;
-    if (__DEV__) console.log("Calculated Paper Shift (sp):", { sp_x, sp_y });
-
-    // Calculate border-induced offset (sb) - This is simply the applied offset
-    const sb_x = horizontalOffset;
-    const sb_y = verticalOffset;
-    if (__DEV__) console.log("Calculated Border Shift (sb):", { sb_x, sb_y });
-
-    // Calculate total centre shift (s)
-    const s_x = sp_x + sb_x;
-    const s_y = sp_y + sb_y;
-    if (__DEV__) console.log("Calculated Total Shift (s):", { s_x, s_y });
-
-    // Calculate blade scale readings (R1, R2)
-    // Note: These were reversed in the original code comments vs calculation
-    // R1 = Near blade, R2 = Far blade
-    // Horizontal: Left = Near (R1_x), Right = Far (R2_x)
-    // Vertical: Bottom = Near (R1_y), Top = Far (R2_y)
-    // Formula: R = I ± 2s (positive for far blade, negative for near blade)
-    // Example: Right Blade (Far Horizontal, R2_x) = I_x + 2 * s_x
-    const leftBladeReading = printWidth - 2 * s_x;   // R1_x (Near)
-    const rightBladeReading = printWidth + 2 * s_x;  // R2_x (Far)
-    const topBladeReading = printHeight - 2 * s_y; // R1_y (Near)
-    const bottomBladeReading = printHeight + 2 * s_y;    // R2_y (Far)
-
-    if (__DEV__) console.log("Calculated Blade Readings (R):", { leftBladeReading, rightBladeReading, topBladeReading, bottomBladeReading });
-
-    // Calculate blade thickness for preview
-    const bladeThickness = calculateBladeThickness(orientedPaperWidth, orientedPaperHeight);
-
-    // Blade position warnings
-    let bladeWarning: string | null = "";
-    const readings = [leftBladeReading, rightBladeReading, topBladeReading, bottomBladeReading];
-    if (readings.some(r => r < 0)) {
-      bladeWarning += "Negative blade reading detected! Set blade to the positive value and use the opposite mechanism.";
-    }
-    if (readings.some(r => Math.abs(r) < 3 && r !== 0)) { // Allow exactly 0 reading
-       bladeWarning += (bladeWarning ? "\n" : "") + "Most easels lack markings below 2 or 3 inches.";
-    }
-    bladeWarning = bladeWarning || null; // Set to null if empty
-
-    // Calculate percentages for preview positioning
-    const printWidthPercent = orientedPaperWidth > 0 ? (printWidth / orientedPaperWidth) * 100 : 0;
-    const printHeightPercent = orientedPaperHeight > 0 ? (printHeight / orientedPaperHeight) * 100 : 0;
-    const leftBorderPercent = orientedPaperWidth > 0 ? (leftBorder / orientedPaperWidth) * 100 : 0;
-    const topBorderPercent = orientedPaperHeight > 0 ? (topBorder / orientedPaperHeight) * 100 : 0;
-    const rightBorderPercent = orientedPaperWidth > 0 ? (rightBorder / orientedPaperWidth) * 100 : 0;
-    const bottomBorderPercent = orientedPaperHeight > 0 ? (bottomBorder / orientedPaperHeight) * 100 : 0;
-
-    // Calculate preview scale based on window dimensions (moved here for inclusion in result)
-    const tempPreviewScale = (() => {
-      if (orientedPaperWidth === 0 || orientedPaperHeight === 0) return 1;
-      const maxWidth = Math.min(windowWidth * 0.9, 400);
-      const maxHeight = Math.min(windowHeight * 0.5, 400);
-      return Math.min(maxWidth / orientedPaperWidth, maxHeight / orientedPaperHeight);
-    })();
-    const tempPreviewWidth = orientedPaperWidth * tempPreviewScale;
-    const tempPreviewHeight = orientedPaperHeight * tempPreviewScale;
-
-    const result: CalculationResult = {
-      leftBorder,
-      rightBorder,
-      topBorder,
-      bottomBorder,
-      printWidth,
-      printHeight,
-      paperWidth: orientedPaperWidth,
-      paperHeight: orientedPaperHeight,
-      // Preview scale calculated separately using window dimensions
-      printWidthPercent,
-      printHeightPercent,
-      leftBorderPercent,
-      topBorderPercent,
-      rightBorderPercent,
-      bottomBorderPercent,
-      leftBladeReading,
-      rightBladeReading,
-      topBladeReading,
-      bottomBladeReading,
-      bladeThickness,
-      isNonStandardPaperSize: originalIsNonStandard && !inputPaperSizeWarning,
-      easelSize,
-      easelSizeLabel,
-      // Pass internal state back
-      offsetWarning,
-      bladeWarning,
-      minBorderWarning: inputMinBorderWarning, // Use warning from input derivation
-      lastValidMinBorder: inputLastValidMinBorder, // Use last valid from input derivation
-      clampedHorizontalOffset: horizontalOffset, // Pass clamped offsets back
-      clampedVerticalOffset: verticalOffset,
-      paperSizeWarning: inputPaperSizeWarning,
-      // Include preview calculations
-      previewScale: tempPreviewScale,
-      previewWidth: tempPreviewWidth,
-      previewHeight: tempPreviewHeight,
-    };
-    if (__DEV__) console.log("Final Calculation Result:", result);
-    if (__DEV__) console.log("--- Calculation End ---");
-
-    return result;
-  }, [calculationInputs, state.enableOffset, windowWidth, windowHeight]); // Added window dimensions as dependencies
-
-  // Effect to dispatch internal updates for warnings and last valid border
   useEffect(() => {
-    const updates: Partial<Pick<State, 'offsetWarning' | 'bladeWarning' | 'minBorderWarning' | 'paperSizeWarning' | 'lastValidMinBorder'>> = {};
+    const delta: Partial<State> = {};
 
-    if (calculation.offsetWarning !== prevOffsetWarning.current) {
-      updates.offsetWarning = calculation.offsetWarning;
-      prevOffsetWarning.current = calculation.offsetWarning;
+    if (calc.offsetWarning !== prevWarnings.current.offset) {
+      delta.offsetWarning = calc.offsetWarning;
+      prevWarnings.current.offset = calc.offsetWarning;
     }
-    if (calculation.bladeWarning !== prevBladeWarning.current) {
-      updates.bladeWarning = calculation.bladeWarning;
-      prevBladeWarning.current = calculation.bladeWarning;
+    if (calc.bladeWarning !== prevWarnings.current.blade) {
+      delta.bladeWarning = calc.bladeWarning;
+      prevWarnings.current.blade = calc.bladeWarning;
     }
-     if (calculation.minBorderWarning !== prevMinBorderWarning.current) {
-      updates.minBorderWarning = calculation.minBorderWarning;
-      prevMinBorderWarning.current = calculation.minBorderWarning;
+    if (calc.minBorderWarning !== prevWarnings.current.minBorder) {
+      delta.minBorderWarning = calc.minBorderWarning;
+      prevWarnings.current.minBorder = calc.minBorderWarning;
     }
-    if (calculation.paperSizeWarning !== prevPaperSizeWarning.current) {
-      updates.paperSizeWarning = calculation.paperSizeWarning;
-      prevPaperSizeWarning.current = calculation.paperSizeWarning;
+    if (calc.paperSizeWarning !== prevWarnings.current.paperSize) {
+      delta.paperSizeWarning = calc.paperSizeWarning;
+      prevWarnings.current.paperSize = calc.paperSizeWarning;
     }
-    if (calculation.lastValidMinBorder !== prevLastValidMinBorder.current) {
-      updates.lastValidMinBorder = calculation.lastValidMinBorder;
-      prevLastValidMinBorder.current = calculation.lastValidMinBorder;
+    if (calc.lastValidMinBorder !== prevWarnings.current.lastValid) {
+      delta.lastValidMinBorder = calc.lastValidMinBorder;
+      prevWarnings.current.lastValid = calc.lastValidMinBorder;
     }
 
-    if (Object.keys(updates).length > 0) {
-      dispatch({ type: 'INTERNAL_UPDATE', payload: updates });
+    if (Object.keys(delta).length) {
+      dispatch({ type: 'INTERNAL_UPDATE', payload: delta });
     }
-  }, [calculation]); // Run only when calculation object changes
+  }, [calc]);
 
-  // --- Preview Scaling ---
-  // Preview scale is now part of the main calculation result
-  const previewScale = calculation.previewScale;
+  /* -------- stable setter callbacks ----------------------------- */
 
-   // --- Public API ---
-
-  // Helper to safely set numeric string fields while tracking last valid number > 0
-  const setCustomDimensionField = (
+  const setCustomDimensionField = useCallback((
     key: keyof State,
-    lastValidKey: keyof State,
-    value: string
+    lastKey: keyof State,
+    v: string,
   ) => {
-    // Always update the direct state field with the raw string value
-    dispatch({ type: 'SET_FIELD', key, value: value });
+    dispatch({ type: 'SET_FIELD', key, value: v });
+    const num = tryNumber(v);
+    if (num && num > 0)
+      dispatch({ type: 'SET_FIELD', key: lastKey, value: num });
+  }, []);
 
-    // Try parsing the number
-    const num = parseFloat(value);
-    if (!isNaN(num) && num > 0) {
-      // If it's a valid number greater than 0, update the last valid field
-      dispatch({ type: 'SET_FIELD', key: lastValidKey, value: num });
-    }
-    // If it's empty, 0, negative, or NaN, the lastValid field remains unchanged
-  };
-
-  // Helper for regular numeric fields (like minBorder, offsets)
-  const setNumericField = (key: keyof State, value: string) => {
-    const num = parseFloat(value);
-    // For these fields, we might just store the number or the string if needed
-    // Keeping the previous logic for non-custom dimensions for now
-    if (!isNaN(num)) {
+  const setNumericField = useCallback((
+    key: keyof State,
+    v: string,
+  ) => {
+    const num = tryNumber(v);
+    if (num !== null) {
       dispatch({ type: 'SET_FIELD', key, value: num });
-    } else if (value === '' || value === '-' || value === '.') {
-      // Allow empty, negative sign, or decimal point for typing intermediate states
-      dispatch({ type: 'SET_FIELD', key, value: value });
+    } else if (v === '' || v === '-' || v === '.') {
+      dispatch({ type: 'SET_FIELD', key, value: v });
     }
-  };
+  }, []);
 
-  // Image Layout setter (uses ref)
-  const setImageLayout = (layout: { width: number; height: number }) => {
-    imageLayoutRef.current = layout;
-  };
+  const setImageLayout = useCallback((
+    l: { width: number; height: number },
+  ) => { imageLayoutRef.current = l; }, []);
+
+  /* =============================================================== *
+     Public API
+  * =============================================================== */
 
   return {
-    // State values (prefer primitives where possible)
+    /* primitive state values */
     aspectRatio: state.aspectRatio,
-    paperSize: state.paperSize,
-    customAspectWidth: state.customAspectWidth,
+    paperSize:   state.paperSize,
+    customAspectWidth:  state.customAspectWidth,
     customAspectHeight: state.customAspectHeight,
-    customPaperWidth: state.customPaperWidth,
-    customPaperHeight: state.customPaperHeight,
+    customPaperWidth:   state.customPaperWidth,
+    customPaperHeight:  state.customPaperHeight,
     minBorder: state.minBorder,
     enableOffset: state.enableOffset,
     ignoreMinBorder: state.ignoreMinBorder,
@@ -547,80 +528,121 @@ export const useBorderCalculator = () => {
     showBlades: state.showBlades,
     isLandscape: state.isLandscape,
     isRatioFlipped: state.isRatioFlipped,
+
+    /* warnings */
     offsetWarning: state.offsetWarning,
-    bladeWarning: state.bladeWarning,
+    bladeWarning:  state.bladeWarning,
     minBorderWarning: state.minBorderWarning,
     paperSizeWarning: state.paperSizeWarning,
-    clampedHorizontalOffset: calculation.clampedHorizontalOffset, // Use clamped values from calculation result
-    clampedVerticalOffset: calculation.clampedVerticalOffset,
+    clampedHorizontalOffset: calc.clampedHorizontalOffset,
+    clampedVerticalOffset:   calc.clampedVerticalOffset,
 
-    // Image state & values (consider grouping if complex)
+    /* image‑related */
     selectedImageUri: state.selectedImageUri,
-    imageDimensions: state.imageDimensions,
-    isCropping: state.isCropping,
-    cropOffset: state.cropOffset,
-    cropScale: state.cropScale,
-    imageLayout: imageLayoutRef.current, // Provide current ref value
+    imageDimensions:  state.imageDimensions,
+    isCropping:       state.isCropping,
+    cropOffset:       state.cropOffset,
+    cropScale:        state.cropScale,
+    imageLayout:      imageLayoutRef.current,
 
-    // Calculation results object (excluding internal/warning fields)
+    /* geometry results */
     calculation: {
-      leftBorder: calculation.leftBorder,
-      rightBorder: calculation.rightBorder,
-      topBorder: calculation.topBorder,
-      bottomBorder: calculation.bottomBorder,
-      printWidth: calculation.printWidth,
-      printHeight: calculation.printHeight,
-      paperWidth: calculation.paperWidth,
-      paperHeight: calculation.paperHeight,
-      printWidthPercent: calculation.printWidthPercent,
-      printHeightPercent: calculation.printHeightPercent,
-      leftBorderPercent: calculation.leftBorderPercent,
-      topBorderPercent: calculation.topBorderPercent,
-      rightBorderPercent: calculation.rightBorderPercent,
-      bottomBorderPercent: calculation.bottomBorderPercent,
-      leftBladeReading: calculation.leftBladeReading,
-      rightBladeReading: calculation.rightBladeReading,
-      topBladeReading: calculation.topBladeReading,
-      bottomBladeReading: calculation.bottomBladeReading,
-      bladeThickness: calculation.bladeThickness,
-      isNonStandardPaperSize: calculation.isNonStandardPaperSize,
-      easelSize: calculation.easelSize,
-      easelSizeLabel: calculation.easelSizeLabel,
-      // Add preview fields from calculation result
-      previewScale: calculation.previewScale,
-      previewWidth: calculation.previewWidth,
-      previewHeight: calculation.previewHeight,
-    } as BorderCalculation, // Assert type after removing internal fields
+      leftBorder:   calc.leftBorder,
+      rightBorder:  calc.rightBorder,
+      topBorder:    calc.topBorder,
+      bottomBorder: calc.bottomBorder,
+      printWidth:   calc.printWidth,
+      printHeight:  calc.printHeight,
+      paperWidth:   calc.paperWidth,
+      paperHeight:  calc.paperHeight,
 
-    // Dispatchers / Setters (provide functions to interact with state)
-    setAspectRatio: (value: string) => dispatch({ type: 'SET_ASPECT_RATIO', value }),
-    setPaperSize: (value: string) => dispatch({ type: 'SET_PAPER_SIZE', value }),
-    setCustomAspectWidth: (value: string) => setCustomDimensionField('customAspectWidth', 'lastValidCustomAspectWidth', value),
-    setCustomAspectHeight: (value: string) => setCustomDimensionField('customAspectHeight', 'lastValidCustomAspectHeight', value),
-    setCustomPaperWidth: (value: string) => setCustomDimensionField('customPaperWidth', 'lastValidCustomPaperWidth', value),
-    setCustomPaperHeight: (value: string) => setCustomDimensionField('customPaperHeight', 'lastValidCustomPaperHeight', value),
-    setMinBorder: (value: string) => setNumericField('minBorder', value),
-    setEnableOffset: (value: boolean) => dispatch({ type: 'SET_FIELD', key: 'enableOffset', value }),
-    setIgnoreMinBorder: (value: boolean) => dispatch({ type: 'SET_FIELD', key: 'ignoreMinBorder', value }),
-    setHorizontalOffset: (value: string) => setNumericField('horizontalOffset', value),
-    setVerticalOffset: (value: string) => setNumericField('verticalOffset', value),
-    setShowBlades: (value: boolean) => dispatch({ type: 'SET_FIELD', key: 'showBlades', value }),
-    setIsLandscape: (value: boolean) => dispatch({ type: 'SET_FIELD', key: 'isLandscape', value }),
-    setIsRatioFlipped: (value: boolean) => dispatch({ type: 'SET_FIELD', key: 'isRatioFlipped', value }),
+      printWidthPercent:  calc.printWidthPercent,
+      printHeightPercent: calc.printHeightPercent,
+      leftBorderPercent:  calc.leftBorderPercent,
+      rightBorderPercent: calc.rightBorderPercent,
+      topBorderPercent:   calc.topBorderPercent,
+      bottomBorderPercent:calc.bottomBorderPercent,
 
-    // Image setters
-    setSelectedImageUri: (value: string | null) => dispatch({ type: 'SET_IMAGE_FIELD', key: 'selectedImageUri', value }),
-    setImageDimensions: (value: { width: number; height: number }) => dispatch({ type: 'SET_IMAGE_DIMENSIONS', value }),
-    setIsCropping: (value: boolean) => dispatch({ type: 'SET_IMAGE_FIELD', key: 'isCropping', value }),
-    setCropOffset: (value: { x: number; y: number }) => dispatch({ type: 'SET_CROP_OFFSET', value }),
-    setCropScale: (value: number) => dispatch({ type: 'SET_IMAGE_FIELD', key: 'cropScale', value }),
-    setImageLayout, // Export ref setter
+      leftBladeReading:  calc.leftBladeReading,
+      rightBladeReading: calc.rightBladeReading,
+      topBladeReading:   calc.topBladeReading,
+      bottomBladeReading:calc.bottomBladeReading,
+      bladeThickness:    calc.bladeThickness,
 
-    // Actions
-    resetToDefaults: () => dispatch({ type: 'RESET' }),
+      isNonStandardPaperSize: calc.isNonStandardPaperSize,
+      easelSize:              calc.easelSize,
+      easelSizeLabel:         calc.easelSizeLabel,
+
+      previewScale:  calc.previewScale,
+      previewWidth:  calc.previewWidth,
+      previewHeight: calc.previewHeight,
+    } as BorderCalculation,
+
+    /* setters (memoised with useCallback) */
+    setAspectRatio:  useCallback((v: string) =>
+      dispatch({ type: 'SET_ASPECT_RATIO', value: v }), []),
+
+    setPaperSize:    useCallback((v: string) =>
+      dispatch({ type: 'SET_PAPER_SIZE', value: v }), []),
+
+    setCustomAspectWidth:  useCallback((v: string) =>
+      setCustomDimensionField('customAspectWidth',  'lastValidCustomAspectWidth',  v), []),
+
+    setCustomAspectHeight: useCallback((v: string) =>
+      setCustomDimensionField('customAspectHeight', 'lastValidCustomAspectHeight', v), []),
+
+    setCustomPaperWidth:   useCallback((v: string) =>
+      setCustomDimensionField('customPaperWidth',   'lastValidCustomPaperWidth',   v), []),
+
+    setCustomPaperHeight:  useCallback((v: string) =>
+      setCustomDimensionField('customPaperHeight',  'lastValidCustomPaperHeight',  v), []),
+
+    setMinBorder:          useCallback((v: string) =>
+      setNumericField('minBorder', v), []),
+
+    setEnableOffset:       useCallback((v: boolean) =>
+      dispatch({ type: 'SET_FIELD', key: 'enableOffset', value: v }), []),
+
+    setIgnoreMinBorder:    useCallback((v: boolean) =>
+      dispatch({ type: 'SET_FIELD', key: 'ignoreMinBorder', value: v }), []),
+
+    setHorizontalOffset:   useCallback((v: string) =>
+      setNumericField('horizontalOffset', v), []),
+
+    setVerticalOffset:     useCallback((v: string) =>
+      setNumericField('verticalOffset', v), []),
+
+    setShowBlades:         useCallback((v: boolean) =>
+      dispatch({ type: 'SET_FIELD', key: 'showBlades', value: v }), []),
+
+    setIsLandscape:        useCallback((v: boolean) =>
+      dispatch({ type: 'SET_FIELD', key: 'isLandscape', value: v }), []),
+
+    setIsRatioFlipped:     useCallback((v: boolean) =>
+      dispatch({ type: 'SET_FIELD', key: 'isRatioFlipped', value: v }), []),
+
+    /* image setters */
+    setSelectedImageUri: useCallback((v: string | null) =>
+      dispatch({ type: 'SET_IMAGE_FIELD', key: 'selectedImageUri', value: v }), []),
+
+    setImageDimensions: useCallback((v: { width: number; height: number }) =>
+      dispatch({ type: 'SET_IMAGE_DIMENSIONS', value: v }), []),
+
+    setIsCropping: useCallback((v: boolean) =>
+      dispatch({ type: 'SET_IMAGE_FIELD', key: 'isCropping', value: v }), []),
+
+    setCropOffset: useCallback((v: { x: number; y: number }) =>
+      dispatch({ type: 'SET_CROP_OFFSET', value: v }), []),
+
+    setCropScale: useCallback((v: number) =>
+      dispatch({ type: 'SET_IMAGE_FIELD', key: 'cropScale', value: v }), []),
+
+    setImageLayout,
+
+    /* reset */
+    resetToDefaults: useCallback(() =>
+      dispatch({ type: 'RESET' }), []),
   };
 };
 
-// Keep default export if needed by other parts of the app
-export default useBorderCalculator; 
-
+export default useBorderCalculator;
