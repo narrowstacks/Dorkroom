@@ -345,15 +345,15 @@ export const useBorderCalculator = () => {
     if (__DEV__) console.log("Calculated Borders (B):", { leftBorder, rightBorder, topBorder, bottomBorder });
 
     // Get Easel Slot size (Ws) and non-standard flag using the *original* paper dimensions
-    const { easelSize, isNonStandardPaperSize: originalIsNonStandard } = findCenteringOffsets(paperWidth, paperHeight, isLandscape);
-    const Ws_x = easelSize.width;
-    const Ws_y = easelSize.height;
-    if (__DEV__) console.log("Easel Info (Ws):", { Ws_x, Ws_y, isNonStandardPaperSize: originalIsNonStandard });
+    const { easelSize, effectiveSlot, isNonStandardPaperSize: originalIsNonStandard } = findCenteringOffsets(paperWidth, paperHeight, isLandscape);
+    const Ws_x = effectiveSlot.width; // Use effective slot width for shift calculation
+    const Ws_y = effectiveSlot.height; // Use effective slot height for shift calculation
+    if (__DEV__) console.log("Easel Info (BestFitEasel, EffectiveSlot, Ws_for_shift_calc):", { nominalEaselSize: easelSize, effectiveSlot, Ws_x, Ws_y, isNonStandardPaperSize: originalIsNonStandard });
 
-    // Find the easel label
-    const matchingEasel = EASEL_SIZES.find(e => e.width === Ws_x && e.height === Ws_y);
+    // Find the easel label (using the nominal dimensions of the best fit easel)
+    const matchingEasel = EASEL_SIZES.find(e => e.width === easelSize.width && e.height === easelSize.height);
     const easelSizeLabel = matchingEasel ? matchingEasel.label : `${easelSize.width}x${easelSize.height}`;
-    if (__DEV__) console.log("Determined Easel Label:", easelSizeLabel);
+    if (__DEV__) console.log("Determined Easel Label (based on nominal easelSize):", easelSizeLabel);
 
     // Calculate paper shift (sp) - only if non-standard paper size
     const sp_x = originalIsNonStandard ? (orientedPaperWidth - Ws_x) / 2 : 0;
@@ -379,8 +379,8 @@ export const useBorderCalculator = () => {
     // Example: Right Blade (Far Horizontal, R2_x) = I_x + 2 * s_x
     const leftBladeReading = printWidth - 2 * s_x;   // R1_x (Near)
     const rightBladeReading = printWidth + 2 * s_x;  // R2_x (Far)
-    const bottomBladeReading = printHeight - 2 * s_y; // R1_y (Near)
-    const topBladeReading = printHeight + 2 * s_y;    // R2_y (Far)
+    const topBladeReading = printHeight - 2 * s_y; // R1_y (Near)
+    const bottomBladeReading = printHeight + 2 * s_y;    // R2_y (Far)
 
     if (__DEV__) console.log("Calculated Blade Readings (R):", { leftBladeReading, rightBladeReading, topBladeReading, bottomBladeReading });
 
