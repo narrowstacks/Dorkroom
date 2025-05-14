@@ -163,7 +163,7 @@ export default function HomeScreen() {
 
           <ThemedView style={styles.section}>
             <LinkButton
-              href="https://github.com/narrowstacks/Darkroom-Calculators"
+              href="https://github.com/narrowstacks/DorkroomReact"
               color="#24292e"
               title="contribute on github"
             >
