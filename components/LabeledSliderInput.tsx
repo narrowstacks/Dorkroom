@@ -1,7 +1,15 @@
 import React from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { StyleSheet } from 'react-native';
+// import Slider from '@react-native-community/slider';
+import {
+  Box,
+  Text,
+  Input,
+  InputField,
+} from '@gluestack-ui/themed';
+
+// Use the proven native slider for reliable visuals
 import Slider from '@react-native-community/slider';
-import { Box, Text } from '@gluestack-ui/themed';
 
 import { getPlatformFont } from '@/styles/common';
 import { COMMON_INPUT_HEIGHT, COMMON_BORDER_RADIUS } from '@/constants/borderCalc';
@@ -41,60 +49,72 @@ export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
   inputWidth,
   continuousUpdate = false,
 }) => {
-  const numericValue = parseFloat(String(value)) || 0;
+  // Convert the incoming value to a number for Slider compatibility
+  const numericValue = Number(value) || 0;
 
-  // Keep a local slider value to avoid re-rendering the whole parent tree on every tick
-  const [internalValue, setInternalValue] = React.useState<number>(numericValue);
-
-  // Sync internal value if external prop changes via text input or programmatically
-  React.useEffect(() => {
-    if (numericValue !== internalValue) {
-      setInternalValue(numericValue);
+  // Handlers -------------------------------------------------
+  const handleValueChange = (v: number) => {
+    if (continuousUpdate) {
+      onChange(v.toString());
     }
-  }, [numericValue]);
+  };
 
+  const handleSlidingComplete = (v: number) => {
+    if (!continuousUpdate) {
+      onChange(v.toString());
+    }
+  };
+
+  //----------------------------------------------------------
   return (
     <Box style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      {/* Label */}
+      <Text style={[styles.label, { color: textColor }]}>{label}</Text>
 
-      <TextInput
+      {/* Numeric input field */}
+      <Input
+        variant="outline"
+        size="md"
+        isDisabled={false}
+        isInvalid={warning}
+        isReadOnly={false}
         style={[
-          styles.input,
-          { color: textColor, borderColor, width: inputWidth },
+          styles.inputContainer,
+          { borderColor: warning ? '#FFA500' : borderColor, width: inputWidth },
           warning && styles.inputWarning,
         ]}
-        value={String(value)}
-        onChangeText={onChange}
-        keyboardType="numeric"
-        placeholder="0"
-        placeholderTextColor={borderColor}
-      />
+      >
+        <InputField
+          style={[styles.inputText, { color: textColor }]}
+          value={String(value)}
+          onChangeText={onChange}
+          keyboardType="numeric"
+          placeholder="0"
+          placeholderTextColor={borderColor}
+        />
+      </Input>
 
-      <Slider
-        style={styles.slider}
-        minimumValue={min}
-        maximumValue={max}
-        step={step}
-        value={internalValue}
-        // Update local value continuously; defer external state update unless opted-in
-        onValueChange={(v: number) => {
-          setInternalValue(v);
-          if (continuousUpdate) {
-            onChange(v.toString());
-          }
-        }}
-        onSlidingComplete={(v: number) => {
-          if (!continuousUpdate) onChange(v.toString());
-        }}
-        minimumTrackTintColor={tintColor}
-        maximumTrackTintColor={borderColor}
-        thumbTintColor={tintColor}
-      />
+      {/* Slider */}
+      <Box style={styles.sliderWrapper}>
+        <Slider
+          style={styles.slider}
+          value={numericValue}
+          minimumValue={min}
+          maximumValue={max}
+          step={step}
+          minimumTrackTintColor={tintColor}
+          maximumTrackTintColor={borderColor}
+          thumbTintColor={tintColor}
+          onValueChange={handleValueChange}
+          onSlidingComplete={handleSlidingComplete}
+        />
+      </Box>
 
+      {/* Optional labels beneath the slider */}
       {labels.length > 0 && (
         <Box style={styles.sliderLabels}>
           {labels.map((lbl) => (
-            <Text key={lbl} style={styles.sliderLabel}>
+            <Text key={lbl} style={[styles.sliderLabel, { color: textColor }]}> 
               {lbl}"{/* inches symbol */}
             </Text>
           ))}
@@ -107,22 +127,34 @@ export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
 const styles = StyleSheet.create({
   container: { flex: 1, gap: 4 },
   label: { fontSize: 16, fontFamily: getPlatformFont() },
-  input: {
+  inputContainer: { // Style for the Gluestack Input container
     height: COMMON_INPUT_HEIGHT,
-    borderWidth: 1,
-    borderRadius: COMMON_BORDER_RADIUS,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    marginBottom: 4,
+    borderRadius: COMMON_BORDER_RADIUS, // Gluestack Input typically handles its own border radius via variants
+    borderWidth: 1, // Gluestack Input handles its own border width
   },
-  inputWarning: { borderColor: '#FFA500', borderWidth: 2 },
-  slider: { width: '100%', height: 40, marginTop: 4 },
+  inputText: { // Style for the Gluestack InputField (the text part)
+    fontSize: 16,
+    // paddingHorizontal: 12, // Gluestack InputField has its own padding
+    // marginBottom: 4, // Spacing handled by container gap or Gluestack Slider mt
+  },
+  inputWarning: {
+    borderColor: '#FFA500', // This will be overridden by Input's isInvalid prop or sx prop
+    borderWidth: 2,         // This might need specific handling if Gluestack Input variant doesn't allow direct borderWidth override easily
+  },
+  sliderWrapper: {
+    width: '100%',
+    marginTop: 8,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
   sliderLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    marginTop: 4,
+    marginTop: 8, // Increased margin for better spacing
   },
   sliderLabel: { fontSize: 12, textAlign: 'center', fontFamily: getPlatformFont() },
 }); 

@@ -10,7 +10,9 @@
       "tailwind.config": [
         "./tailwind.config.js"
       ]
-    }
+    },
+    "jsx": "react-jsx",
+    "esModuleInterop": true
   },
   "include": [
     "**/*.ts",
