@@ -7,7 +7,7 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { Colors } from "@/constants/Colors";
 
 import { HapticTab } from "@/components/HapticTab";
-import { IconSymbol } from "@/components/ui/IconSymbol";
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import TabBarBackground from "@/components/ui/TabBarBackground";
 
 // Navigation items configuration
@@ -15,17 +15,17 @@ const navigationItems = [
   {
     name: "index",
     title: "Home",
-    icon: "house.fill",
+    icon: "home",
   },
   {
     name: "border",
     title: "Border",
-    icon: "square.fill",
+    icon: "crop-square",
   },
   {
     name: "resize",
     title: "Resize",
-    icon: "arrow.up.left.and.arrow.down.right",
+    icon: "open-with",
   },
   {
     name: "exposure",
@@ -35,17 +35,17 @@ const navigationItems = [
   {
     name: "cameraExposure",
     title: "Exposure",
-    icon: "camera.fill",
+    icon: "camera-alt",
   },
   {
     name: "reciprocity",
     title: "Reciprocity",
-    icon: "clock.fill",
+    icon: "schedule",
   },
   {
     name: "settings",
     title: "Settings",
-    icon: "gearshape.fill",
+    icon: "settings",
   },
 ];
 
@@ -77,7 +77,7 @@ function TopNavigation() {
                   }
                 }}
               >
-                <IconSymbol
+                <MaterialIcons
                   size={20}
                   name={item.icon as any}
                   color={isActive ? "#4CAF50" : colors.icon}
@@ -152,7 +152,7 @@ function MobileWebNavigation() {
         <View style={styles.sidebarHeader}>
           <Text style={styles.sidebarTitle}>Navigation</Text>
           <TouchableOpacity onPress={toggleSidebar} style={styles.closeButton}>
-            <IconSymbol size={24} name="xmark" color={colors.icon} />
+            <MaterialIcons size={24} name="close" color={colors.icon} />
           </TouchableOpacity>
         </View>
         <View style={styles.sidebarContent}>
@@ -164,7 +164,7 @@ function MobileWebNavigation() {
                 style={[styles.sidebarItem, isActive && styles.activeSidebarItem]}
                 onPress={() => navigateTo(item)}
               >
-                <IconSymbol
+                <MaterialIcons
                   size={24}
                   name={item.icon as any}
                   color={isActive ? "#4CAF50" : colors.icon}
@@ -274,7 +274,7 @@ export default function TabLayout() {
           options={{
             title: "Home",
             tabBarIcon: ({ color }) => (
-              <IconSymbol size={28} name="house.fill" color={color} />
+              <MaterialIcons size={28} name="home" color={color} />
             ),
           }}
         />
@@ -283,7 +283,7 @@ export default function TabLayout() {
           options={{
             title: "Border",
             tabBarIcon: ({ color }) => (
-              <IconSymbol size={28} name="square.fill" color={color} />
+              <MaterialIcons size={28} name="crop-square" color={color} />
             ),
           }}
         />
@@ -292,9 +292,9 @@ export default function TabLayout() {
           options={{
             title: "Resize",
             tabBarIcon: ({ color }) => (
-              <IconSymbol
+              <MaterialIcons
                 size={28}
-                name="arrow.up.left.and.arrow.down.right"
+                name="open-with"
                 color={color}
               />
             ),
@@ -305,7 +305,7 @@ export default function TabLayout() {
           options={{
             title: "Stops",
             tabBarIcon: ({ color }) => (
-              <IconSymbol size={28} name="timer" color={color} />
+              <MaterialIcons size={28} name="timer" color={color} />
             ),
           }}
         />
@@ -314,7 +314,7 @@ export default function TabLayout() {
           options={{
             title: "Exposure",
             tabBarIcon: ({ color }) => (
-              <IconSymbol size={28} name="camera.fill" color={color} />
+              <MaterialIcons size={28} name="camera-alt" color={color} />
             ),
           }}
         />
@@ -323,7 +323,7 @@ export default function TabLayout() {
           options={{
             title: "Reciprocity",
             tabBarIcon: ({ color }) => (
-              <IconSymbol size={28} name="clock.fill" color={color} />
+              <MaterialIcons size={28} name="schedule" color={color} />
             ),
           }}
         />
@@ -332,7 +332,7 @@ export default function TabLayout() {
           options={{
             title: "Settings",
             tabBarIcon: ({ color }) => (
-              <IconSymbol size={28} name="gearshape.fill" color={color} />
+              <MaterialIcons size={28} name="settings" color={color} />
             ),
           }}
         />
