@@ -15,6 +15,17 @@ type ColorScheme = {
   tabIconSelected: string;
   listItemText: string;
   selectedItemBackground: string;
+  // Additional colors for enhanced theming
+  cardBackground: string;
+  inputBackground: string;
+  borderColor: string;
+  shadowColor: string;
+  textSecondary: string;
+  textMuted: string;
+  errorColor: string;
+  successColor: string;
+  surfaceVariant: string;
+  outline: string;
 };
 
 export const Colors: {
@@ -32,6 +43,17 @@ export const Colors: {
     tabIconSelected: tintColorLight,
     listItemText: '#000000',
     selectedItemBackground: '#e0e0e0',
+    // Additional colors for enhanced theming
+    cardBackground: '#ffffff',
+    inputBackground: 'rgba(255,255,255,0.8)',
+    borderColor: 'rgba(0,0,0,0.1)',
+    shadowColor: '#000000',
+    textSecondary: 'rgba(0,0,0,0.7)',
+    textMuted: 'rgba(0,0,0,0.6)',
+    errorColor: '#FF6B6B',
+    successColor: '#4ECDC4',
+    surfaceVariant: 'rgba(255,255,255,0.6)',
+    outline: 'rgba(0,0,0,0.05)',
   },
   dark: {
     text: '#ECEDEE',
@@ -42,6 +64,17 @@ export const Colors: {
     tabIconSelected: tintColorDark,
     listItemText: '#000000',
     selectedItemBackground: '#444444',
+    // Additional colors for enhanced theming
+    cardBackground: '#1e1e1e',
+    inputBackground: 'rgba(30,30,30,0.8)',
+    borderColor: 'rgba(255,255,255,0.1)',
+    shadowColor: '#000000',
+    textSecondary: 'rgba(255,255,255,0.7)',
+    textMuted: 'rgba(255,255,255,0.6)',
+    errorColor: '#FF6B6B',
+    successColor: '#4ECDC4',
+    surfaceVariant: 'rgba(30,30,30,0.6)',
+    outline: 'rgba(255,255,255,0.05)',
   },
   darkroom: {
     background: '#000000',
@@ -52,6 +85,17 @@ export const Colors: {
     tabIconSelected: '#FF0000',
     listItemText: '#000000',
     selectedItemBackground: '#550000',
+    // Additional colors for enhanced theming
+    cardBackground: '#000000',
+    inputBackground: 'rgba(0,0,0,0.8)',
+    borderColor: 'rgba(255,0,0,0.3)',
+    shadowColor: '#000000',
+    textSecondary: 'rgba(255,0,0,0.7)',
+    textMuted: 'rgba(255,0,0,0.6)',
+    errorColor: '#FF0000',
+    successColor: '#FF0000',
+    surfaceVariant: 'rgba(0,0,0,0.6)',
+    outline: 'rgba(255,0,0,0.1)',
   },
   eInk: {
     background: '#FFFFFF',
@@ -62,6 +106,17 @@ export const Colors: {
     tabIconSelected: '#000000',
     listItemText: '#000000',
     selectedItemBackground: '#cccccc',
+    // Additional colors for enhanced theming
+    cardBackground: '#ffffff',
+    inputBackground: 'rgba(255,255,255,0.8)',
+    borderColor: 'rgba(0,0,0,0.3)',
+    shadowColor: '#000000',
+    textSecondary: 'rgba(0,0,0,0.7)',
+    textMuted: 'rgba(0,0,0,0.6)',
+    errorColor: '#000000',
+    successColor: '#000000',
+    surfaceVariant: 'rgba(255,255,255,0.6)',
+    outline: 'rgba(0,0,0,0.2)',
   },
 };
 
