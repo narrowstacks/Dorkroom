@@ -12,7 +12,10 @@
       "Bash(bun expo lint:*)",
       "Bash(bun test)",
       "Bash(git checkout:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(wc:*)",
+      "Bash(bunx expo lint:*)",
+      "Bash(bunx tsc:*)"
     ]
   },
   "enableAllProjectMcpServers": false
