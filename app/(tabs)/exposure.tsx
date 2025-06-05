@@ -36,10 +36,10 @@ export default function ExposureCalculator() {
   const renderStopButton = (label: string, increment: number) => (
     <Button
       onPress={() => adjustStops(increment)}
-      variant="solid"
+      variant="outline"
       size="sm"
       className="py-2 px-2 rounded-lg justify-center items-center"
-      style={{ backgroundColor: tintColor }}
+      style={{ backgroundColor: tintColor, borderColor: borderColor }}
     >
       <ButtonText className={`text-black text-base ${Platform.OS === "web" ? "select-none" : ""}`}>
         {label}
@@ -49,12 +49,14 @@ export default function ExposureCalculator() {
 
   return (
     <ScrollView
-      className="flex-1"
+      className="flex-1 mx-auto align-center"
       style={{ backgroundColor }}
       contentContainerStyle={{
         flexGrow: 1,
         paddingBottom: Platform.OS === "ios" || Platform.OS === "android" ? 100 : 80,
+        alignItems: 'center',
       }}
+      width="50%"
     >
       <Box className={`flex-1 p-4 ${Platform.OS === "web" ? "max-w-4xl mx-auto w-full p-6" : ""}`}>
         <Center className="mb-4">

@@ -123,3 +123,7 @@ Key calculators:
 - Responsive design adapts to different screen sizes
 - Platform-specific components where needed (TabBarBackground.ios.tsx)
 - Consistent user experience across iOS, Android, and web
+
+### Rules
+- Assume the expo server is already running-- don't try to run `bun run dev`.
+- We should aim for consistency in styling, including libraries used.
