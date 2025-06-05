@@ -7,7 +7,12 @@
       "Bash(rg:*)",
       "Bash(pkill:*)",
       "Bash(true)",
-      "Bash(npx playwright screenshot:*)"
+      "Bash(npx playwright screenshot:*)",
+      "Bash(expo lint:*)",
+      "Bash(bun expo lint:*)",
+      "Bash(bun test)",
+      "Bash(git checkout:*)",
+      "Bash(grep:*)"
     ]
   },
   "enableAllProjectMcpServers": false

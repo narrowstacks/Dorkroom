@@ -3,15 +3,25 @@ import {
   StyleSheet,
   ScrollView,
   Platform,
-  Pressable,
-  TextInput,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+import {
+  Select,
+  SelectTrigger,
+  SelectInput,
+  SelectIcon,
+  SelectPortal,
+  SelectBackdrop,
+  SelectContent,
+  SelectItem,
+  SelectScrollView,
+} from "@/components/ui/select";
+import { Textarea, TextareaInput } from "@/components/ui/textarea";
+import { Button, ButtonText } from "@/components/ui/button";
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { useReciprocityCalculator } from "@/hooks/useReciprocityCalculator";
 import { FILM_TYPES, EXPOSURE_PRESETS } from "@/constants/reciprocity";
-import { ThemedView } from "@/components/ThemedView";
-import { ThemedText } from "@/components/ThemedText";
+import { Box, Text } from "@gluestack-ui/themed";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { fonts } from "@/styles/common";
 
@@ -47,51 +57,54 @@ export default function ReciprocityCalculator() {
   const renderPicker = (
     value: string,
     onValueChange: (value: string) => void,
-    items: Array<{ label: string; value: string }>
+    items: { label: string; value: string }[]
   ) => {
-    if (Platform.OS === "ios") {
-      return (
-        <ThemedView
-          style={[
-            styles.pickerContainer,
-            { borderColor, backgroundColor: inputBackground },
-          ]}
-        >
-          <Picker
-            selectedValue={value}
-            onValueChange={onValueChange}
-            itemStyle={{ color: textColor, height: 120 }}
-          >
-            {items.map((item) => (
-              <Picker.Item
-                key={item.value}
-                label={item.label}
-                value={item.value}
-              />
-            ))}
-          </Picker>
-        </ThemedView>
-      );
-    }
-
+    const selectedItem = items.find(item => item.value === value);
+    
     return (
-      <Picker
+      <Select
         selectedValue={value}
         onValueChange={onValueChange}
-        style={[
-          styles.picker,
-          {
-            backgroundColor: inputBackground,
-            color: textColor,
-            borderColor,
-          },
-        ]}
-        dropdownIconColor={textColor}
+        className={`w-full border rounded-xl`}
+        style={{
+          backgroundColor: inputBackground,
+          borderColor,
+        }}
       >
-        {items.map((item) => (
-          <Picker.Item key={item.value} label={item.label} value={item.value} />
-        ))}
-      </Picker>
+        <SelectTrigger
+          className={`h-12 flex-row items-center justify-between px-4`}
+          style={{
+            backgroundColor: inputBackground,
+            borderColor,
+          }}
+        >
+          <SelectInput
+            placeholder="Select an option"
+            value={selectedItem?.label || ""}
+            editable={false}
+            className={`flex-1 text-base`}
+            style={{ color: textColor }}
+          />
+          <SelectIcon className={`ml-2`}>
+            <MaterialIcons name="keyboard-arrow-down" size={20} color={textColor} />
+          </SelectIcon>
+        </SelectTrigger>
+        <SelectPortal>
+          <SelectBackdrop />
+          <SelectContent className={`bg-background rounded-t-xl`}>
+            <SelectScrollView>
+              {items.map((item) => (
+                <SelectItem
+                  key={item.value}
+                  label={item.label}
+                  value={item.value}
+                  className={`py-4 px-6 border-b border-outline-200`}
+                />
+              ))}
+            </SelectScrollView>
+          </SelectContent>
+        </SelectPortal>
+      </Select>
     );
   };
 
@@ -100,16 +113,18 @@ export default function ReciprocityCalculator() {
       style={[styles.container, { backgroundColor }]}
       contentContainerStyle={styles.scrollContent}
     >
-      <ThemedView
+      <Box
+        className="flex-1 p-4 web:max-w-5xl web:mx-auto web:w-full web:p-6"
         style={[styles.content, Platform.OS === "web" && styles.webContent]}
       >
-        <ThemedView style={[styles.header, { borderBottomColor: outline }]}>
-          <ThemedText type="large" style={styles.title}>
+        <Box className="flex-row justify-center items-center w-full mb-6 pb-4 border-b" style={[styles.header, { borderBottomColor: outline }]}>
+          <Text className="text-3xl text-center font-semibold" style={styles.title}>
             reciprocity calculator
-          </ThemedText>
-        </ThemedView>
+          </Text>
+        </Box>
 
-        <ThemedView
+        <Box
+          className="w-full web:flex-row web:gap-10 web:items-start"
           style={[
             styles.mainContent,
             Platform.OS === "web" && isDesktop && styles.webMainContent,
@@ -117,17 +132,19 @@ export default function ReciprocityCalculator() {
         >
           {/* Results Section */}
           {calculation && (
-            <ThemedView
+            <Box
+              className="gap-5 items-center w-full mb-8 web:flex-1 web:self-stretch web:mb-0"
               style={[
                 styles.resultsSection,
                 Platform.OS === "web" && isDesktop && styles.webResultsSection,
               ]}
             >
-              <ThemedText type="largeSemiBold" style={styles.subtitle}>
+              <Text className="text-2xl mb-4 text-center font-semibold" style={styles.subtitle}>
                 result
-              </ThemedText>
+              </Text>
 
-              <ThemedView
+              <Box
+                className="items-center gap-4 w-full max-w-lg p-6 rounded-2xl shadow-lg"
                 style={[
                   styles.resultContainer,
                   {
@@ -136,31 +153,34 @@ export default function ReciprocityCalculator() {
                   },
                 ]}
               >
-                <ThemedView
+                <Box
+                  className="flex-row w-full justify-between rounded-2xl gap-4 py-2 border-b"
                   style={[styles.resultRow, { borderBottomColor: outline }]}
                 >
-                  <ThemedText style={[styles.resultLabel, { color: textSecondary }]}>film:</ThemedText>
-                  <ThemedText style={styles.resultValue}>
+                  <Text className="text-base text-right flex-1 font-medium" style={[styles.resultLabel, { color: textSecondary }]}>film:</Text>
+                  <Text className="text-base text-left flex-1 font-semibold" style={styles.resultValue}>
                     {calculation.filmName}
-                  </ThemedText>
-                </ThemedView>
+                  </Text>
+                </Box>
 
-                <ThemedView
+                <Box
+                  className="flex-row w-full justify-between rounded-2xl gap-4 py-2 border-b"
                   style={[styles.resultRow, { borderBottomColor: outline }]}
                 >
-                  <ThemedText style={[styles.resultLabel, { color: textSecondary }]}>increase:</ThemedText>
-                  <ThemedText style={styles.resultValue}>
+                  <Text className="text-base text-right flex-1 font-medium" style={[styles.resultLabel, { color: textSecondary }]}>increase:</Text>
+                  <Text className="text-base text-left flex-1 font-semibold" style={styles.resultValue}>
                     {Math.round(calculation.percentageIncrease)}%
-                  </ThemedText>
-                </ThemedView>
+                  </Text>
+                </Box>
 
-                <ThemedView
+                <Box
+                  className="flex-row w-full justify-between rounded-2xl gap-4 py-2 border-b"
                   style={[styles.resultRow, { borderBottomColor: outline }]}
                 >
-                  <ThemedText style={[styles.resultLabel, { color: textSecondary }]}>formula:</ThemedText>
-                  <ThemedText style={styles.resultValue}>
+                  <Text className="text-base text-right flex-1 font-medium" style={[styles.resultLabel, { color: textSecondary }]}>formula:</Text>
+                  <Text className="text-base text-left flex-1 font-semibold" style={styles.resultValue}>
                     {calculation.originalTime}
-                    <ThemedText style={[
+                    <Text className="text-xs leading-6 relative px-1 py-0.5 rounded border" style={[
                       styles.subscript, 
                       { 
                         backgroundColor: 'transparent',
@@ -169,44 +189,46 @@ export default function ReciprocityCalculator() {
                       }
                     ]}>
                       {calculation.factor.toFixed(2)}
-                    </ThemedText>
+                    </Text>
                     {" = "}
                     {Math.round(calculation.adjustedTime * 10) / 10}
-                  </ThemedText>
-                </ThemedView>
+                  </Text>
+                </Box>
 
-                <ThemedView style={styles.resultRow}>
-                  <ThemedText style={[styles.resultLabel, { color: textSecondary }]}>
+                <Box className="flex-row w-full justify-between rounded-2xl gap-4 py-2" style={styles.resultRow}>
+                  <Text className="text-base text-right flex-1 font-medium" style={[styles.resultLabel, { color: textSecondary }]}>
                     metered time:
-                  </ThemedText>
-                  <ThemedText style={styles.resultValue}>
+                  </Text>
+                  <Text className="text-base text-left flex-1 font-semibold" style={styles.resultValue}>
                     {formatTime(calculation.originalTime)}
-                  </ThemedText>
-                </ThemedView>
+                  </Text>
+                </Box>
 
-                <ThemedView style={styles.resultRow}>
-                  <ThemedText style={[styles.resultLabel, { color: textSecondary }]}>
+                <Box className="flex-row w-full justify-between rounded-2xl gap-4 py-2" style={styles.resultRow}>
+                  <Text className="text-base text-right flex-1 font-medium" style={[styles.resultLabel, { color: textSecondary }]}>
                     adjusted time:
-                  </ThemedText>
-                  <ThemedText type="defaultSemiBold" style={styles.resultValue}>
+                  </Text>
+                  <Text className="text-base text-left flex-1 font-semibold" style={styles.resultValue}>
                     {formatTime(calculation.adjustedTime)}
-                  </ThemedText>
-                </ThemedView>
+                  </Text>
+                </Box>
 
                 {/* Visual Time Comparison */}
-                <ThemedView style={styles.timeComparisonContainer}>
-                  <ThemedText style={styles.timeComparisonTitle}>
+                <Box className="w-full mt-4 gap-3" style={styles.timeComparisonContainer}>
+                  <Text className="text-base mb-2 font-semibold text-center" style={styles.timeComparisonTitle}>
                     Time Comparison
-                  </ThemedText>
-                  <ThemedView style={[styles.timeBarContainer, { backgroundColor: `${textSecondary}20` }]}>
-                    <ThemedView
+                  </Text>
+                  <Box className="w-full h-5 rounded-lg overflow-hidden relative" style={[styles.timeBarContainer, { backgroundColor: `${textSecondary}20` }]}>
+                    <Box
+                      className="absolute left-0 top-0 h-full rounded-lg z-10 w-3/10"
                       style={[
                         styles.timeBar,
                         styles.meteredTimeBar,
                         { backgroundColor: tintColor },
                       ]}
                     />
-                    <ThemedView
+                    <Box
+                      className="absolute left-0 top-0 h-full rounded-lg z-20"
                       style={[
                         styles.timeBar,
                         styles.adjustedTimeBar,
@@ -219,117 +241,130 @@ export default function ReciprocityCalculator() {
                         },
                       ]}
                     />
-                  </ThemedView>
-                  <ThemedView style={styles.timeBarLabels}>
-                    <ThemedText style={[styles.timeBarLabel, { color: textSecondary }]}>
+                  </Box>
+                  <Box className="flex-row justify-between w-full mt-2" style={styles.timeBarLabels}>
+                    <Text className="text-xs" style={[styles.timeBarLabel, { color: textSecondary }]}>
                       Metered: {formatTime(calculation.originalTime)}
-                    </ThemedText>
-                    <ThemedText style={[styles.timeBarLabel, { color: textSecondary }]}>
+                    </Text>
+                    <Text className="text-xs" style={[styles.timeBarLabel, { color: textSecondary }]}>
                       Adjusted: {formatTime(calculation.adjustedTime)}
-                    </ThemedText>
-                  </ThemedView>
-                </ThemedView>
-              </ThemedView>
-            </ThemedView>
+                    </Text>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
           )}
 
           {/* Form Section */}
-          <ThemedView
+          <Box
+            className="gap-5 w-full web:flex-1 web:max-w-lg"
             style={[
               styles.form,
               Platform.OS === "web" && isDesktop && styles.webForm,
             ]}
           >
             {/* Film Type Selection */}
-            <ThemedView style={styles.formGroup}>
-              <ThemedText style={styles.label}>film type:</ThemedText>
+            <Box className="gap-3" style={styles.formGroup}>
+              <Text className="text-base font-medium mb-1" style={styles.label}>film type:</Text>
               {renderPicker(filmType, setFilmType, FILM_TYPES)}
-            </ThemedView>
+            </Box>
 
             {/* Custom Factor Input */}
             {filmType === "custom" && (
-              <ThemedView style={styles.formGroup}>
-                <ThemedText style={styles.label}>
+              <Box className="gap-3" style={styles.formGroup}>
+                <Text className="text-base font-medium mb-1" style={styles.label}>
                   reciprocity factor:
-                </ThemedText>
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      color: textColor,
-                      borderColor,
-                      backgroundColor: inputBackground,
-                    },
-                  ]}
-                  value={customFactor}
-                  onChangeText={setCustomFactor}
-                  keyboardType="numeric"
-                  placeholder="1.3"
-                  placeholderTextColor={textMuted}
-                />
-                <ThemedText style={[styles.infoText, { color: textMuted }]}>
+                </Text>
+                <Textarea
+                  className={`w-full border rounded-xl`}
+                  style={{
+                    backgroundColor: inputBackground,
+                    borderColor,
+                    height: 48,
+                  }}
+                >
+                  <TextareaInput
+                    value={customFactor}
+                    onChangeText={setCustomFactor}
+                    keyboardType="numeric"
+                    placeholder="1.3"
+                    placeholderTextColor={textMuted}
+                    multiline={false}
+                    className={`text-base px-4 py-3`}
+                    style={{ color: textColor }}
+                  />
+                </Textarea>
+                <Text className="text-xs italic mt-1.5" style={[styles.infoText, { color: textMuted }]}>
                   Higher values mean more compensation needed
-                </ThemedText>
-              </ThemedView>
+                </Text>
+              </Box>
             )}
 
             {/* Metered Time Input */}
-            <ThemedView style={styles.formGroup}>
-              <ThemedText style={styles.label}>
+            <Box className="gap-3" style={styles.formGroup}>
+              <Text className="text-base font-medium mb-1" style={styles.label}>
                 metered exposure time:
-              </ThemedText>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    color: textColor,
-                    borderColor: timeFormatError ? errorColor : borderColor,
-                    backgroundColor: inputBackground,
-                  },
-                ]}
-                value={meteredTime}
-                onChangeText={setMeteredTime}
-                placeholder="e.g. 30s, 1m30s, 2h"
-                placeholderTextColor={textMuted}
-              />
+              </Text>
+              <Textarea
+                className={`w-full border rounded-xl`}
+                style={{
+                  backgroundColor: inputBackground,
+                  borderColor: timeFormatError ? errorColor : borderColor,
+                  height: 48,
+                }}
+              >
+                <TextareaInput
+                  value={meteredTime}
+                  onChangeText={setMeteredTime}
+                  placeholder="e.g. 30s, 1m30s, 2h"
+                  placeholderTextColor={textMuted}
+                  multiline={false}
+                  className={`text-base px-4 py-3`}
+                  style={{ color: textColor }}
+                />
+              </Textarea>
               {formattedTime && (
-                <ThemedText style={[styles.helpText, { color: textMuted }]}>
+                <Text className="text-xs italic mt-1.5" style={[styles.helpText, { color: textMuted }]}>
                   Parsed as: {formattedTime}
-                </ThemedText>
+                </Text>
               )}
               {timeFormatError && (
-                <ThemedText style={[styles.errorText, { color: errorColor }]}>
+                <Text className="text-xs mt-1.5 font-medium" style={[styles.errorText, { color: errorColor }]}>
                   {timeFormatError}
-                </ThemedText>
+                </Text>
               )}
-            </ThemedView>
+            </Box>
 
             {/* Common Exposure Presets */}
-            <ThemedView style={styles.formGroup}>
-              <ThemedText style={styles.label}>common presets:</ThemedText>
-              <ThemedView style={styles.presetsContainer}>
+            <Box className="gap-3" style={styles.formGroup}>
+              <Text className="text-base font-medium mb-1" style={styles.label}>common presets:</Text>
+              <Box className="flex-row flex-wrap gap-3 mt-2" style={styles.presetsContainer}>
                 {EXPOSURE_PRESETS.map((seconds: number) => (
-                  <Pressable
+                  <Button
                     key={seconds}
-                    style={[
-                      styles.presetButton,
-                      {
-                        borderColor,
-                        backgroundColor: surfaceVariant,
-                      },
-                    ]}
+                    variant="outline"
+                    action="default"
+                    size="sm"
+                    className={`min-w-20 rounded-xl border`}
+                    style={{
+                      borderColor,
+                      backgroundColor: surfaceVariant,
+                    }}
                     onPress={() => setMeteredTime(seconds.toString() + "s")}
                   >
-                    <ThemedText style={styles.presetButtonText}>
+                    <ButtonText
+                      className={`text-sm font-medium`}
+                      style={{ color: textColor }}
+                    >
                       {formatTime(seconds)}
-                    </ThemedText>
-                  </Pressable>
+                    </ButtonText>
+                  </Button>
                 ))}
-              </ThemedView>
-            </ThemedView>
+              </Box>
+            </Box>
 
             {/* Explanation Section */}
-            <ThemedView style={[
+            <Box className="p-5 rounded-2xl mt-6 border shadow-sm" style={[
               styles.explanationBox,
               {
                 borderColor: outline,
@@ -337,22 +372,22 @@ export default function ReciprocityCalculator() {
                 shadowColor,
               },
             ]}>
-              <ThemedText
+              <Text
+                className="text-lg mb-3 font-semibold"
                 style={styles.explanationTitle}
-                type="defaultSemiBold"
               >
                 What is reciprocity failure?
-              </ThemedText>
-              <ThemedText style={[styles.explanationText, { color: textSecondary }]}>
+              </Text>
+              <Text className="text-base leading-6" style={[styles.explanationText, { color: textSecondary }]}>
                 Film becomes less sensitive to light during long exposures,
                 requiring additional exposure time beyond what your light meter
                 indicates. Different films have different characteristics,
                 represented by the reciprocity factor.
-              </ThemedText>
-            </ThemedView>
-          </ThemedView>
-        </ThemedView>
-      </ThemedView>
+              </Text>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
     </ScrollView>
   );
 }
@@ -506,6 +541,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     width: "100%",
     justifyContent: "space-between",
+    // backgroundColor: "#282828",
     borderRadius: 16,
     gap: 16,
     paddingVertical: 8,

@@ -123,10 +123,10 @@ export default function HomeScreen() {
             <Heading size="3xl" className="text-center font-bold">
               dorkroom.art
             </Heading>
-            <Text size="lg" className="text-center text-typography-600 italic">
+            <Heading size="lg" className="text-center text-typography-600 italic">
               darkroom and photography calculators
-            </Text>
-            <Text size="sm" className="text-center text-typography-500">
+            </Heading>
+            <Heading size="sm" className="text-center text-typography-500">
               by{" "}
               <Text 
                 className="text-primary-600 underline"
@@ -134,7 +134,7 @@ export default function HomeScreen() {
               >
                 aaron f.a.
               </Text>
-            </Text>
+            </Heading>
           </VStack>
 
           {/* All Buttons Centered */}
