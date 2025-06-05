@@ -63,22 +63,40 @@ const ModernLinkButton = ({
   };
 
   const buttonStyle = {
-    width: 280,
+    width: 400,
     backgroundColor: disabled ? "#9CA3AF" : color,
     borderRadius: 12,
     paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingLeft: 20,
+    paddingRight: 20,
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    justifyContent: "center" as const,
-    gap: 8,
+    position: "relative" as const,
     opacity: disabled ? 0.7 : 1,
+  };
+
+  const iconStyle = {
+    position: "absolute" as const,
+    left: 20,
+    zIndex: 1,
+  };
+
+  const textContainerStyle = {
+    flex: 1,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   };
 
   const ButtonContent = (
     <>
-      {IconComponent && <IconComponent size={20} color="white" />}
-      <Text className="text-white font-semibold text-base">{children}</Text>
+      {IconComponent && (
+        <Box style={iconStyle}>
+          <IconComponent size={20} color="white" />
+        </Box>
+      )}
+      <Box style={textContainerStyle}>
+        <Text className="text-white font-semibold text-base">{children}</Text>
+      </Box>
     </>
   );
 
