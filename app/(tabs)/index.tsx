@@ -1,18 +1,28 @@
-import {
-  StyleSheet,
-  Platform,
-  Image,
-  Linking,
-  Pressable,
-  Dimensions,
-  ScrollView,
-} from "react-native";
+import { Platform, Linking, Dimensions, Pressable } from "react-native";
 import { Link } from "expo-router";
 import { ReactNode, useEffect, useState } from "react";
-
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { ExternalLink } from "@/components/ExternalLink";
+import {
+  Box,
+  VStack,
+  HStack,
+  Text,
+  Heading,
+  ScrollView,
+  Card,
+  Center,
+} from "@gluestack-ui/themed";
+import { 
+  CropIcon,
+  MoveIcon,
+  TimerIcon,
+  CameraIcon,
+  ClockIcon,
+  GitBranchIcon,
+  HeartIcon,
+  CalculatorIcon,
+  FlaskConicalIcon,
+  ZapIcon,
+} from "lucide-react-native";
 
 // Add window dimension hook
 const useWindowDimensions = () => {
@@ -29,43 +39,61 @@ const useWindowDimensions = () => {
   return dimensions;
 };
 
-interface LinkButtonProps {
+interface ModernLinkButtonProps {
   href: string;
   title: string;
   color: string;
   disabled?: boolean;
+  icon?: React.ComponentType<any>;
   children: ReactNode;
 }
 
-const LinkButton = ({
+const ModernLinkButton = ({
   href,
   title,
   color,
   disabled = false,
+  icon: IconComponent,
   children,
-}: LinkButtonProps) => {
-  const buttonStyle = {
-    ...styles.linkButton,
-    backgroundColor: color,
-    ...(disabled ? styles.linkButtonDisabled : {}),
+}: ModernLinkButtonProps) => {
+  const handlePress = () => {
+    if (href.startsWith("http")) {
+      Linking.openURL(href);
+    }
   };
 
-  const ButtonContent = () => (
-    <ThemedText style={styles.linkButtonText}>{children}</ThemedText>
+  const buttonStyle = {
+    width: 280,
+    backgroundColor: disabled ? "#9CA3AF" : color,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    gap: 8,
+    opacity: disabled ? 0.7 : 1,
+  };
+
+  const ButtonContent = (
+    <>
+      {IconComponent && <IconComponent size={20} color="white" />}
+      <Text className="text-white font-semibold text-base">{children}</Text>
+    </>
   );
 
   if (disabled) {
     return (
-      <ThemedView style={buttonStyle}>
-        <ButtonContent />
-      </ThemedView>
+      <Box style={buttonStyle}>
+        {ButtonContent}
+      </Box>
     );
   }
 
   if (href.startsWith("http")) {
     return (
-      <Pressable style={buttonStyle} onPress={() => Linking.openURL(href)}>
-        <ButtonContent />
+      <Pressable style={buttonStyle} onPress={handlePress}>
+        {ButtonContent}
       </Pressable>
     );
   }
@@ -73,7 +101,7 @@ const LinkButton = ({
   return (
     <Link href={href as any} asChild>
       <Pressable style={buttonStyle}>
-        <ButtonContent />
+        {ButtonContent}
       </Pressable>
     </Link>
   );
@@ -83,160 +111,114 @@ export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
 
-  const containerStyle = {
-    ...styles.container,
-    ...(isDesktop && styles.containerDesktop),
-  };
-
   return (
-    <ScrollView>
-      <ThemedView style={containerStyle}>
-        <ThemedView style={styles.content}>
-          <ThemedText type="large" style={styles.mainTitle}>
-            dorkroom.art
-          </ThemedText>
-          <ThemedText type="large" style={styles.subtitle}>
-            darkroom and photography calculators
-          </ThemedText>
-          <ThemedText style={styles.byline}>
-            by{" "}
-            <ThemedText
-              style={styles.link}
-              onPress={() => Linking.openURL("https://www.affords.art")}
-            >
-              aaron f.a.
-            </ThemedText>
-          </ThemedText>
+    <ScrollView className="flex-1">
+      <Box className="flex-1 items-center px-4 py-6 w-full">
+        <VStack 
+          space="2xl" 
+          className="items-center"
+        >
+          {/* Header Section */}
+          <VStack space="sm" className="items-center">
+            <Heading size="3xl" className="text-center font-bold">
+              dorkroom.art
+            </Heading>
+            <Text size="lg" className="text-center text-typography-600 italic">
+              darkroom and photography calculators
+            </Text>
+            <Text size="sm" className="text-center text-typography-500">
+              by{" "}
+              <Text 
+                className="text-primary-600 underline"
+                onPress={() => Linking.openURL("https://www.affords.art")}
+              >
+                aaron f.a.
+              </Text>
+            </Text>
+          </VStack>
 
-          <ThemedView style={styles.section}>
-            <ThemedText type="large" style={styles.sectionTitle}>
-              darkroom printing
-            </ThemedText>
-            <LinkButton
+          {/* All Buttons Centered */}
+          <Center>
+            <VStack space="sm" className="items-center">
+            <ModernLinkButton
               href="/border"
               color="#4CAF50"
+              icon={CropIcon}
               title="border calculator"
             >
               border calculator
-            </LinkButton>
-            <LinkButton
+            </ModernLinkButton>
+            <ModernLinkButton
               href="/exposure"
               color="#9C27B0"
+              icon={TimerIcon}
               title="stop-based exposure calculator"
             >
               stop-based exposure calculator
-            </LinkButton>
-            <LinkButton
+            </ModernLinkButton>
+            <ModernLinkButton
               href="/resize"
               color="#2196F3"
+              icon={MoveIcon}
               title="print resize calculator"
             >
               print resize calculator
-            </LinkButton>
-          </ThemedView>
-
-          <ThemedView style={styles.section}>
-            <ThemedText type="large" style={styles.sectionTitle}>
-              film shooting and developing
-            </ThemedText>
-            <LinkButton
+            </ModernLinkButton>
+            <ModernLinkButton
               href="/cameraExposure"
               color="#3F51B5"
+              icon={CameraIcon}
               title="exposure calculator"
             >
               exposure calculator
-            </LinkButton>
-            <LinkButton href="#" color="#666" disabled title="coming soon!">
+            </ModernLinkButton>
+            <ModernLinkButton 
+              href="#" 
+              color="#666"
+              disabled 
+              icon={FlaskConicalIcon}
+              title="coming soon!"
+            >
               developer dilution calculator
-            </LinkButton>
-            <LinkButton href="#" color="#666" disabled title="coming soon!">
+            </ModernLinkButton>
+            <ModernLinkButton 
+              href="#" 
+              color="#666"
+              disabled 
+              icon={ZapIcon}
+              title="coming soon!"
+            >
               push/pull calculator
-            </LinkButton>
-            <LinkButton
+            </ModernLinkButton>
+            <ModernLinkButton
               href="/reciprocity"
               color="#FF9800"
+              icon={ClockIcon}
               title="reciprocity calculator"
             >
               reciprocity calculator
-            </LinkButton>
-          </ThemedView>
-
-          <ThemedView style={styles.section}>
-            <LinkButton
+            </ModernLinkButton>
+            <ModernLinkButton
               href="https://github.com/narrowstacks/DorkroomReact"
               color="#24292e"
+              icon={GitBranchIcon}
               title="contribute on github"
             >
               contribute on github
-            </LinkButton>
-            <LinkButton
+            </ModernLinkButton>
+            <ModernLinkButton
               href="https://ko-fi.com/affords"
               color="#FF5E5B"
+              icon={HeartIcon}
               title="support this site!"
             >
               support this site!
-            </LinkButton>
-          </ThemedView>
-        </ThemedView>
-      </ThemedView>
+            </ModernLinkButton>
+            </VStack>
+          </Center>
+        </VStack>
+      </Box>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    alignItems: "center",
-  },
-  containerDesktop: {
-    paddingHorizontal: 0,
-  },
-  content: {
-    width: Platform.OS === "web" ? 480 : "100%",
-    maxWidth: 480,
-    alignItems: "center",
-  },
-  mainTitle: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 18,
-    marginBottom: 4,
-    fontStyle: "italic",
-  },
-  byline: {
-    marginBottom: 24,
-    fontStyle: "italic",
-  },
-  link: {
-    color: "#2196F3",
-    textDecorationLine: "underline",
-  },
-  section: {
-    width: "100%",
-    marginBottom: 24,
-    gap: 12,
-    alignItems: "center",
-  },
-  sectionTitle: {
-    fontSize: 18,
-  },
-  linkButton: {
-    width: "100%",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  linkButtonDisabled: {
-    backgroundColor: "#666",
-    opacity: 0.7,
-  },
-  linkButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "500",
-  },
-});
