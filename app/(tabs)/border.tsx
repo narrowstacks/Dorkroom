@@ -204,14 +204,17 @@ export default function BorderCalculator() {
               </ThemedView>
 
               {/* orientation controls */}
-              <HStack space="md">
+              <Box style={[
+                styles.flipButtons,
+                Platform.OS === 'web' && !isDesktop && styles.flipButtonsNarrow,
+              ]}>
                 <Button onPress={() => setIsLandscape(!isLandscape)} variant="outline">
                   <ButtonText>Flip Paper Orientation</ButtonText>
                 </Button>
                 <Button onPress={() => setIsRatioFlipped(!isRatioFlipped)} variant="outline">
                   <ButtonText>Flip Aspect Ratio</ButtonText>
                 </Button>
-              </HStack>
+              </Box>
 
               {/* result read-out */}
               <ThemedView style={styles.resultContainer}>
@@ -621,4 +624,6 @@ const styles = StyleSheet.create({
   sliderContainer: { flex: 1, marginHorizontal: 8 },
   mobileSliderContainer: { marginTop: 16, width: '100%' },
   offsetRow: { alignItems: 'flex-start', gap: 24 },
+  flipButtons: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
+  flipButtonsNarrow: { flexDirection: 'column' },
 });
