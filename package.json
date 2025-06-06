@@ -99,7 +99,7 @@
     "react-test-renderer": "18.3.1",
     "turbo": "^2.5.0",
     "typescript": "~5.8.3",
-    "vercel": "^41.6.0"
+    "vercel": "^32.0.1"
   },
   "private": true
 }
