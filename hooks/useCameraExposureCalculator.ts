@@ -27,8 +27,8 @@ export const useCameraExposureCalculator = () => {
   const findClosestShutterSpeed = useCallback((seconds: number): string => {
     // Convert all standard shutter speeds to decimal seconds for comparison
     const decimalShutterSpeeds = SHUTTER_SPEED_VALUES.map(speed => ({
-      original: speed,
-      decimal: parseShutterSpeed(speed)
+      original: speed.value,
+      decimal: parseShutterSpeed(speed.value)
     }));
     
     // Find the closest value
@@ -95,7 +95,8 @@ export const useCameraExposureCalculator = () => {
         const newIso = iso;
         
         // Round to nearest standard aperture if close
-        const closestAperture = findClosestValue(newAperture, APERTURE_VALUES);
+        const apertureValues = APERTURE_VALUES.map(item => item.value);
+        const closestAperture = findClosestValue(newAperture, apertureValues);
         
         return {
           aperture: parseFloat(closestAperture).toFixed(1).replace(/\.0$/, ''),

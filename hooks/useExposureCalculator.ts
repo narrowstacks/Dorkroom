@@ -31,18 +31,25 @@ export const useExposureCalculator = () => {
 
   // Handler for direct stop input changes
   const handleStopChange = useCallback((value: string) => {
-    setStopsState(value);
-    // Recalculate newTime only if the input is a valid number after parsing
+    // Allow typing of incomplete numbers
+    if (value === "" || value === "-" || value.endsWith(".")) {
+      setStopsState(value);
+      setNewTime("");
+      return;
+    }
+
     const numericStops = parseFloat(value);
     if (!isNaN(numericStops)) {
-        const roundedStops = roundStops(numericStops);
-        setStopsState(roundedStops.toString()); // Update state with rounded value
-        setNewTime(getCalculatedNewTime(originalTime, roundedStops.toString()));
+      // Truncate to two decimal places
+      const truncatedStops = (Math.floor(numericStops * 100) / 100).toString();
+      setStopsState(truncatedStops);
+      setNewTime(getCalculatedNewTime(originalTime, truncatedStops));
     } else {
-        // If input is not a valid number (e.g., empty string), clear newTime
-        setNewTime('');
+      // Handle non-numeric input
+      setStopsState(value);
+      setNewTime("");
     }
-  }, [originalTime]); // Dependency: originalTime
+  }, [originalTime]);
 
   // Handler for adjusting stops incrementally
   const adjustStops = useCallback((increment: number) => {
@@ -51,10 +58,11 @@ export const useExposureCalculator = () => {
     if (isNaN(currentStops)) return;
 
     const newStopsValue = roundStops(currentStops + increment);
-    const newStopsString = newStopsValue.toString();
-    setStopsState(newStopsString);
-    setNewTime(getCalculatedNewTime(originalTime, newStopsString)); // Recalculate newTime
-  }, [originalTime, stops]); // Dependencies: originalTime, stops
+    // Truncate to two decimal places for display and calculation
+    const truncatedStops = (Math.floor(newStopsValue * 100) / 100).toString();
+    setStopsState(truncatedStops);
+    setNewTime(getCalculatedNewTime(originalTime, truncatedStops)); // Recalculate newTime
+  }, [originalTime, stops]);
 
   return {
     originalTime,

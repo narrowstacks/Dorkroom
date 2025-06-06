@@ -8,19 +8,19 @@ const MAX_BAR_WIDTH = 300;
 // Helper function to convert time to a readable format (s, m, h)
 const formatTime = (seconds: number): string => {
   if (seconds < 60) {
-    return `${Math.round(seconds * 10) / 10} seconds`;
+    return `${Math.round(seconds * 10) / 10}s`;
   } else if (seconds < 3600) {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.round((seconds % 60) * 10) / 10;
     return remainingSeconds === 0 
-      ? `${minutes} minutes` 
-      : `${minutes} minutes ${remainingSeconds} seconds`;
+      ? `${minutes}m` 
+      : `${minutes}m ${remainingSeconds}s`;
   } else {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     return minutes === 0 
-      ? `${hours} hours` 
-      : `${hours} hours ${minutes} minutes`;
+      ? `${hours}h` 
+      : `${hours}h ${minutes}m`;
   }
 };
 

@@ -72,20 +72,20 @@ export const calculateEV = (
 
 export const formatTime = (secondsTotal: number): string => {
   if (secondsTotal < 60) {
-    return `${(Math.round(secondsTotal * 100) / 100).toLocaleString()} ${plural(secondsTotal, 'second')}`;
+    return `${(Math.round(secondsTotal * 100) / 100).toLocaleString()}s`;
   }
   const minutesTotal = Math.floor(secondsTotal / 60);
   if (secondsTotal < 3600) {
     const secs = Math.round(secondsTotal % 60);
     return secs
-      ? `${plural(minutesTotal, 'minute')} ${plural(secs, 'second')}`
-      : plural(minutesTotal, 'minute');
+      ? `${minutesTotal}m ${secs}s`
+      : `${minutesTotal}m`;
   }
   const hours = Math.floor(secondsTotal / 3600);
   const mins  = Math.round((secondsTotal % 3600) / 60);
   return mins
-    ? `${plural(hours, 'hour')} ${plural(mins, 'minute')}`
-    : plural(hours, 'hour');
+    ? `${hours}h ${mins}m`
+    : `${hours}h`;
 };
 
 export const parseTimeInput = (input: string): number | null => {
