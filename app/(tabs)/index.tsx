@@ -1,4 +1,4 @@
-import { Platform, Linking, Dimensions, Pressable } from "react-native";
+import { Platform, Linking, Dimensions, Pressable, useColorScheme } from "react-native";
 import { Link } from "expo-router";
 import { ReactNode, useEffect, useState } from "react";
 import {
@@ -23,6 +23,8 @@ import {
   FlaskConicalIcon,
   ZapIcon,
 } from "lucide-react-native";
+import { Colors } from "@/constants/Colors";
+
 
 // Add window dimension hook
 const useWindowDimensions = () => {
@@ -128,6 +130,8 @@ const ModernLinkButton = ({
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
 
   return (
     <ScrollView className="flex-1">
@@ -160,7 +164,7 @@ export default function HomeScreen() {
             <VStack space="sm" className="items-center">
             <ModernLinkButton
               href="/border"
-              color="#4CAF50"
+              color={colors.borderCalcTint}
               icon={CropIcon}
               title="border calculator"
             >
@@ -168,7 +172,7 @@ export default function HomeScreen() {
             </ModernLinkButton>
             <ModernLinkButton
               href="/exposure"
-              color="#9C27B0"
+              color={colors.stopCalcTint}
               icon={TimerIcon}
               title="stop-based exposure calculator"
             >
@@ -176,7 +180,7 @@ export default function HomeScreen() {
             </ModernLinkButton>
             <ModernLinkButton
               href="/resize"
-              color="#2196F3"
+              color={colors.resizeCalcTint}
               icon={MoveIcon}
               title="print resize calculator"
             >
@@ -184,7 +188,7 @@ export default function HomeScreen() {
             </ModernLinkButton>
             <ModernLinkButton
               href="/cameraExposure"
-              color="#3F51B5"
+              color={colors.cameraExposureCalcTint}
               icon={CameraIcon}
               title="exposure calculator"
             >
@@ -210,7 +214,7 @@ export default function HomeScreen() {
             </ModernLinkButton>
             <ModernLinkButton
               href="/reciprocity"
-              color="#FF9800"
+              color={colors.reciprocityCalcTint}
               icon={ClockIcon}
               title="reciprocity calculator"
             >

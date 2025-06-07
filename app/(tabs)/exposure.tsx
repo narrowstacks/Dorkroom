@@ -167,5 +167,3 @@ export default function ExposureCalculator() {
     </CalculatorLayout>
   );
 }
-
-// No styles needed - using shared components

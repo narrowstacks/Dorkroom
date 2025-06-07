@@ -49,6 +49,26 @@ const navigationItems = [
   },
 ];
 
+// Function to get the tint color for each page
+const getPageTintColor = (routeName: string, colors: typeof Colors.light) => {
+  switch (routeName) {
+    case "border":
+      return colors.borderCalcTint;
+    case "resize":
+      return colors.resizeCalcTint;
+    case "exposure":
+      return colors.stopCalcTint;
+    case "cameraExposure":
+      return colors.cameraExposureCalcTint;
+    case "reciprocity":
+      return colors.reciprocityCalcTint;
+    case "index":
+    case "settings":
+    default:
+      return colors.tint;
+  }
+};
+
 function TopNavigation() {
   const router = useRouter();
   const segments = useSegments();
@@ -65,10 +85,14 @@ function TopNavigation() {
         <View style={styles.navItems}>
           {navigationItems.map((item) => {
             const isActive = currentRoute === item.name;
+            const tintColor = getPageTintColor(item.name, colors);
             return (
               <TouchableOpacity
                 key={item.name}
-                style={[styles.navItem, isActive && styles.activeNavItem]}
+                style={[
+                  styles.navItem, 
+                  isActive && { ...styles.activeNavItem, backgroundColor: tintColor }
+                ]}
                 onPress={() => {
                   if (item.name === "index") {
                     router.push("/(tabs)" as any);
@@ -80,9 +104,12 @@ function TopNavigation() {
                 <MaterialIcons
                   size={20}
                   name={item.icon as any}
-                  color={isActive ? "#4CAF50" : colors.icon}
+                  color={isActive ? colors.background : colors.icon}
                 />
-                <Text style={[styles.navItemText, isActive && styles.activeNavItemText]}>
+                <Text style={[
+                  styles.navItemText, 
+                  isActive && { color: colors.background }
+                ]}>
                   {item.title}
                 </Text>
               </TouchableOpacity>
@@ -158,18 +185,29 @@ function MobileWebNavigation() {
         <View style={styles.sidebarContent}>
           {navigationItems.map((item) => {
             const isActive = currentRoute === item.name;
+            const tintColor = getPageTintColor(item.name, colors);
             return (
               <TouchableOpacity
                 key={item.name}
-                style={[styles.sidebarItem, isActive && styles.activeSidebarItem]}
+                style={[
+                  styles.sidebarItem, 
+                  isActive && { 
+                    ...styles.activeSidebarItem, 
+                    backgroundColor: tintColor,
+                    borderRightColor: tintColor 
+                  }
+                ]}
                 onPress={() => navigateTo(item)}
               >
                 <MaterialIcons
                   size={24}
                   name={item.icon as any}
-                  color={isActive ? "#4CAF50" : colors.icon}
+                  color={isActive ? colors.background : colors.icon}
                 />
-                <Text style={[styles.sidebarItemText, isActive && styles.activeSidebarItemText]}>
+                <Text style={[
+                  styles.sidebarItemText, 
+                  isActive && { color: colors.background }
+                ]}>
                   {item.title}
                 </Text>
               </TouchableOpacity>
@@ -183,6 +221,8 @@ function MobileWebNavigation() {
 
 export default function TabLayout() {
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme];
 
   useEffect(() => {
     const onChange = (result: { window: any }) => {
@@ -254,7 +294,7 @@ export default function TabLayout() {
     <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: "#4CAF50",
+          tabBarActiveTintColor: colors.tint, // This will be dynamically set per tab
           headerShown: false,
           tabBarButton: HapticTab,
           tabBarBackground: TabBarBackground,
@@ -273,6 +313,7 @@ export default function TabLayout() {
           name="index"
           options={{
             title: "Home",
+            tabBarActiveTintColor: getPageTintColor("index", colors),
             tabBarIcon: ({ color }) => (
               <MaterialIcons size={28} name="home" color={color} />
             ),
@@ -282,6 +323,7 @@ export default function TabLayout() {
           name="border"
           options={{
             title: "Border",
+            tabBarActiveTintColor: getPageTintColor("border", colors),
             tabBarIcon: ({ color }) => (
               <MaterialIcons size={28} name="crop-square" color={color} />
             ),
@@ -291,6 +333,7 @@ export default function TabLayout() {
           name="resize"
           options={{
             title: "Resize",
+            tabBarActiveTintColor: getPageTintColor("resize", colors),
             tabBarIcon: ({ color }) => (
               <MaterialIcons
                 size={28}
@@ -304,6 +347,7 @@ export default function TabLayout() {
           name="exposure"
           options={{
             title: "Stops",
+            tabBarActiveTintColor: getPageTintColor("exposure", colors),
             tabBarIcon: ({ color }) => (
               <MaterialIcons size={28} name="timer" color={color} />
             ),
@@ -313,6 +357,7 @@ export default function TabLayout() {
           name="cameraExposure"
           options={{
             title: "Exposure",
+            tabBarActiveTintColor: getPageTintColor("cameraExposure", colors),
             tabBarIcon: ({ color }) => (
               <MaterialIcons size={28} name="camera-alt" color={color} />
             ),
@@ -322,6 +367,7 @@ export default function TabLayout() {
           name="reciprocity"
           options={{
             title: "Reciprocity",
+            tabBarActiveTintColor: getPageTintColor("reciprocity", colors),
             tabBarIcon: ({ color }) => (
               <MaterialIcons size={28} name="schedule" color={color} />
             ),
@@ -331,6 +377,7 @@ export default function TabLayout() {
           name="settings"
           options={{
             title: "Settings",
+            tabBarActiveTintColor: getPageTintColor("settings", colors),
             tabBarIcon: ({ color }) => (
               <MaterialIcons size={28} name="settings" color={color} />
             ),
@@ -378,7 +425,7 @@ const createDynamicStyles = (colors: typeof Colors.light) => StyleSheet.create({
     gap: 6,
   },
   activeNavItem: {
-    backgroundColor: colors.selectedItemBackground,
+    // backgroundColor will be set dynamically to tint color
   },
   navItemText: {
     fontSize: 14,
@@ -478,9 +525,9 @@ const createDynamicStyles = (colors: typeof Colors.light) => StyleSheet.create({
     gap: 12,
   },
   activeSidebarItem: {
-    backgroundColor: colors.selectedItemBackground,
+    // backgroundColor will be set dynamically to tint color
     borderRightWidth: 3,
-    borderRightColor: "#4CAF50",
+    borderRightColor: "transparent", // Will be overridden by tint color
   },
   sidebarItemText: {
     fontSize: 16,

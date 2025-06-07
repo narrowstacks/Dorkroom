@@ -7,6 +7,7 @@ const tintColorLight = '#0a7ea4';
 const tintColorDark = '#fff';
 
 type ColorScheme = {
+  // general colors
   text: string;
   background: string;
   tint: string;
@@ -15,6 +16,7 @@ type ColorScheme = {
   tabIconSelected: string;
   listItemText: string;
   selectedItemBackground: string;
+
   // results box colors
   cardBackground: string;
   resultRowBackground: string;
@@ -22,6 +24,7 @@ type ColorScheme = {
   borderColor: string;
   shadowColor: string;
   outline: string;
+
   // text colors
   textSecondary: string;
   textMuted: string;
@@ -42,8 +45,6 @@ type ColorScheme = {
 
   // reciprocity calculator
   reciprocityCalcTint: string;
-
-
 
   // border calculator
   borderCalcTint: string;
@@ -223,6 +224,7 @@ export const Colors: {
     reciprocityCalcTint: "#000000",
 
     // border calculator
+    borderCalcTint: '#000000',
     bladeColor: '#000000',
     bladeShadowColor: '#ffffff',
     paperColor: '#ffffff',
