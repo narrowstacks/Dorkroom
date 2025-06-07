@@ -89,16 +89,16 @@ export default function ExposureCalculator() {
   return (
     <CalculatorLayout title="Exposure Calculator" infoSection={infoSection}>
       <ResultsSection show={!!newTime}>
+        <ResultRow 
+          label="Original Time" 
+          value={`${originalTime} seconds`} 
+        />
         {originalTime && newTime && (
           <ResultRow 
             label={parseFloat(newTime) > parseFloat(originalTime) ? "Add" : "Remove"}
             value={`${Math.abs(parseFloat(newTime) - parseFloat(originalTime)).toFixed(2)} seconds`} 
           />
         )}
-        <ResultRow 
-          label="Original Time" 
-          value={`${originalTime} seconds`} 
-        />
         <ResultRow 
           label="New Time" 
           value={`${newTime} seconds`} 

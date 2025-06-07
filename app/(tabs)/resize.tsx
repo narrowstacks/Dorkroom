@@ -54,7 +54,7 @@ export default function ResizeScreen() {
         time when enlarging or reducing the size of your darkroom prints.
       </InfoText>
 
-      <InfoSubtitle>how to use:</InfoSubtitle>
+      <InfoSubtitle>How to Use:</InfoSubtitle>
       <InfoText>
         1. Choose your calculation method: Print Size or Enlarger Height
       </InfoText>
@@ -87,7 +87,7 @@ export default function ResizeScreen() {
         {isEnlargerHeightMode ? "5" : "6"}. The new exposure time will be calculated automatically
       </InfoText>
 
-      <InfoSubtitle>how it works:</InfoSubtitle>
+      <InfoSubtitle>How It Works:</InfoSubtitle>
       <InfoText>
         When you change the size of a print, the light is spread across a
         different area, affecting the exposure needed. This is caused by the{" "}

@@ -49,11 +49,11 @@ export function ResultsSection({ title = "Result", children, show = true }: Resu
     <Box
       className="gap-5 items-center w-full mb-8 web:flex-1 web:self-stretch web:mb-0"
       style={[
-        styles.resultsSection,
+        // styles.resultsSection,
         Platform.OS === "web" && isDesktop && styles.webResultsSection,
       ]}
     >
-      <Text className="text-2xl mb-4 text-center font-semibold" style={styles.subtitle}>
+      <Text className="text-2xl mb-2 text-center font-semibold" style={styles.subtitle}>
         {title}
       </Text>
 
@@ -74,12 +74,6 @@ export function ResultsSection({ title = "Result", children, show = true }: Resu
 }
 
 const styles = StyleSheet.create({
-  resultsSection: {
-    gap: 20,
-    alignItems: "center",
-    width: "100%",
-    marginBottom: 32,
-  },
   webResultsSection: {
     flex: 1,
     alignSelf: "stretch",
