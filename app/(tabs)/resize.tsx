@@ -48,7 +48,7 @@ export default function ResizeScreen() {
   } = useResizeCalculator();
 
   const infoSection = (
-    <InfoSection title="about this tool">
+    <InfoSection title="About This Tool">
       <InfoText>
         The print resize calculator helps you determine the correct exposure
         time when enlarging or reducing the size of your darkroom prints.
@@ -109,7 +109,7 @@ export default function ResizeScreen() {
         </Text>
       )}
 
-      <InfoSubtitle>tips:</InfoSubtitle>
+      <InfoSubtitle>Tips:</InfoSubtitle>
       <InfoText>
         • The results should only be treated as a best-guess estimate
       </InfoText>
@@ -134,23 +134,23 @@ export default function ResizeScreen() {
   );
 
   return (
-    <CalculatorLayout title="print resize calculator" infoSection={infoSection}>
+    <CalculatorLayout title="Print Resize Calculator" infoSection={infoSection}>
       <ResultsSection show={!!newTime}>
         <ResultRow 
-          label="new time" 
+          label="New Time" 
           value={`${newTime} seconds`} 
         />
         <ResultRow 
-          label="difference" 
+          label="Difference" 
           value={`${stopsDifference} stops`} 
           isLast
         />
       </ResultsSection>
 
       <FormSection>
-        <FormGroup label="calculation method">
+        <FormGroup label="Calculation Method">
           <FormControl>
-            <HStack space="md" alignItems="center" justifyContent="center" paddingTop={10}>
+            <HStack space="md" alignItems="center" justifyContent="left" paddingTop={10}>
               <FormControlLabel>
                 <FormControlLabelText>Print Size</FormControlLabelText>
               </FormControlLabel>
@@ -169,7 +169,7 @@ export default function ResizeScreen() {
 
         {!isEnlargerHeightMode ? (
           <>
-            <FormGroup label="initial image size">
+            <FormGroup label="Initial Image Size">
               <HStack space="sm">
                 <HStack alignItems="center" space="sm">
                   <Text w="$16" textAlign="right">Width:</Text>
@@ -192,7 +192,7 @@ export default function ResizeScreen() {
               </HStack>
             </FormGroup>
 
-            <FormGroup label="new image size">
+            <FormGroup label="New Image Size">
               <HStack space="sm">
                 <HStack alignItems="center" space="sm">
                   <Text w="$16" textAlign="right">Width:</Text>
@@ -216,7 +216,7 @@ export default function ResizeScreen() {
             </FormGroup>
           </>
         ) : (
-          <FormGroup label="enlarger heights">
+          <FormGroup label="Enlarger Heights">
             <HStack space="sm">
               <HStack alignItems="center" space="sm">
                 <Text w="$20" textAlign="right">Original:</Text>
@@ -249,7 +249,7 @@ export default function ResizeScreen() {
           </Alert>
         )}
 
-        <FormGroup label="original exposure time">
+        <FormGroup label="Original Exposure Time">
           <HStack alignItems="center" space="sm">
             <NumberInput
               value={originalTime}
@@ -263,5 +263,3 @@ export default function ResizeScreen() {
     </CalculatorLayout>
   );
 }
-
-// No styles needed - using shared components

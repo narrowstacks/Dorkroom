@@ -17,6 +17,7 @@ type ColorScheme = {
   selectedItemBackground: string;
   // Additional colors for enhanced theming
   cardBackground: string;
+  resultRowBackground: string;
   inputBackground: string;
   borderColor: string;
   shadowColor: string;
@@ -45,6 +46,7 @@ export const Colors: {
     selectedItemBackground: '#e0e0e0',
     // Additional colors for enhanced theming
     cardBackground: '#ffffff',
+    resultRowBackground: '#ececec',
     inputBackground: 'rgba(255,255,255,0.8)',
     borderColor: 'rgba(0,0,0,0.1)',
     shadowColor: '#000000',
@@ -66,6 +68,7 @@ export const Colors: {
     selectedItemBackground: '#444444',
     // Additional colors for enhanced theming
     cardBackground: '#1e1e1e',
+    resultRowBackground: '#2e2e2e',
     inputBackground: 'rgba(30,30,30,0.8)',
     borderColor: 'rgba(255,255,255,0.1)',
     shadowColor: '#000000',
@@ -87,6 +90,7 @@ export const Colors: {
     selectedItemBackground: '#550000',
     // Additional colors for enhanced theming
     cardBackground: '#000000',
+    resultRowBackground: '#000000',
     inputBackground: 'rgba(0,0,0,0.8)',
     borderColor: 'rgba(255,0,0,0.3)',
     shadowColor: '#000000',
@@ -108,6 +112,7 @@ export const Colors: {
     selectedItemBackground: '#cccccc',
     // Additional colors for enhanced theming
     cardBackground: '#ffffff',
+    resultRowBackground: '#ffffff',
     inputBackground: 'rgba(255,255,255,0.8)',
     borderColor: 'rgba(0,0,0,0.3)',
     shadowColor: '#000000',

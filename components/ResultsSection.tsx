@@ -19,11 +19,12 @@ interface ResultsSectionProps {
 export function ResultRow({ label, value, isLast = false }: ResultRowProps) {
   const textSecondary = useThemeColor({}, "textSecondary");
   const outline = useThemeColor({}, "outline");
+  const resultRowBackground = useThemeColor({}, "resultRowBackground"); 
 
   return (
     <Box
       className={`flex-row w-full justify-between rounded-2xl gap-4 py-2 ${!isLast ? "border-b" : ""}`}
-      style={[styles.resultRow, !isLast && { borderBottomColor: outline }]}
+      style={[styles.resultRow, !isLast && { borderBottomColor: outline }, { backgroundColor: resultRowBackground }]}
     >
       <Text className="text-base text-right flex-1 font-medium" style={[styles.resultLabel, { color: textSecondary }]}>
         {label}:
@@ -35,11 +36,12 @@ export function ResultRow({ label, value, isLast = false }: ResultRowProps) {
   );
 }
 
-export function ResultsSection({ title = "result", children, show = true }: ResultsSectionProps) {
+export function ResultsSection({ title = "Result", children, show = true }: ResultsSectionProps) {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
   const cardBackground = useThemeColor({}, "cardBackground");
   const shadowColor = useThemeColor({}, "shadowColor");
+  const resultRowBackground = useThemeColor({}, "resultRowBackground");
 
   if (!show) return null;
 

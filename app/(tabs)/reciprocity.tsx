@@ -49,18 +49,18 @@ export default function ReciprocityCalculator() {
   );
 
   return (
-    <CalculatorLayout title="reciprocity calculator" infoSection={infoSection}>
+    <CalculatorLayout title="Reciprocity Calculator" infoSection={infoSection}>
       <ResultsSection show={!!calculation}>
         <ResultRow 
-          label="film" 
+          label="Film" 
           value={calculation?.filmName || ""} 
         />
         <ResultRow 
-          label="increase" 
+          label="Increase" 
           value={`${Math.round(calculation?.percentageIncrease || 0)}%`} 
         />
         <ResultRow 
-          label="formula" 
+          label="Formula" 
           value={
             <Text>
               {calculation?.originalTime}
@@ -80,11 +80,11 @@ export default function ReciprocityCalculator() {
           } 
         />
         <ResultRow 
-          label="metered time" 
+          label="Metered Time" 
           value={formatTime(calculation?.originalTime || 0)} 
         />
         <ResultRow 
-          label="adjusted time" 
+          label="Adjusted Time" 
           value={formatTime(calculation?.adjustedTime || 0)} 
           isLast
         />
@@ -132,7 +132,7 @@ export default function ReciprocityCalculator() {
       </ResultsSection>
 
       <FormSection>
-        <FormGroup label="film type">
+        <FormGroup label="Film Type">
           <StyledSelect 
             value={filmType}
             onValueChange={setFilmType}
@@ -141,7 +141,7 @@ export default function ReciprocityCalculator() {
         </FormGroup>
 
         {filmType === "custom" && (
-          <FormGroup label="reciprocity factor">
+          <FormGroup label="Reciprocity Factor">
             <Textarea
               className={`w-full border rounded-xl`}
               style={{
@@ -167,7 +167,7 @@ export default function ReciprocityCalculator() {
           </FormGroup>
         )}
 
-        <FormGroup label="metered exposure time">
+        <FormGroup label="Metered Exposure Time">
           <Textarea
             className={`w-full border rounded-xl`}
             style={{
@@ -198,7 +198,7 @@ export default function ReciprocityCalculator() {
           )}
         </FormGroup>
 
-        <FormGroup label="common presets">
+        <FormGroup label="Common Presets">
           <Box className="flex-row flex-wrap gap-3 mt-2" style={styles.presetsContainer}>
             {EXPOSURE_PRESETS.map((seconds: number) => (
               <Button

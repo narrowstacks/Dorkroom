@@ -50,7 +50,7 @@ export default function ExposureCalculator() {
   );
 
   const infoSection = (
-    <InfoSection title="about this tool">
+    <InfoSection title="About This Tool">
       <InfoText>
         The exposure calculator helps you adjust your exposure time by
         stops. Each stop represents a doubling or halving of the light
@@ -58,7 +58,7 @@ export default function ExposureCalculator() {
         aperture or doing f-stop printing when darkroom printing.
       </InfoText>
 
-      <InfoSubtitle>how to use:</InfoSubtitle>
+      <InfoSubtitle>How to Use:</InfoSubtitle>
       <InfoText>
         1. Enter your original exposure time in seconds
       </InfoText>
@@ -69,7 +69,7 @@ export default function ExposureCalculator() {
         3. The new exposure time will be calculated automatically
       </InfoText>
 
-      <InfoSubtitle>tips:</InfoSubtitle>
+      <InfoSubtitle>Tips:</InfoSubtitle>
       <InfoText>
         • Each stop doubles or halves the exposure time
       </InfoText>
@@ -87,27 +87,27 @@ export default function ExposureCalculator() {
   );
 
   return (
-    <CalculatorLayout title="exposure calculator" infoSection={infoSection}>
+    <CalculatorLayout title="Exposure Calculator" infoSection={infoSection}>
       <ResultsSection show={!!newTime}>
         {originalTime && newTime && (
           <ResultRow 
-            label={parseFloat(newTime) > parseFloat(originalTime) ? "add" : "remove"}
+            label={parseFloat(newTime) > parseFloat(originalTime) ? "Add" : "Remove"}
             value={`${Math.abs(parseFloat(newTime) - parseFloat(originalTime)).toFixed(2)} seconds`} 
           />
         )}
         <ResultRow 
-          label="original time" 
+          label="Original Time" 
           value={`${originalTime} seconds`} 
         />
         <ResultRow 
-          label="new time" 
+          label="New Time" 
           value={`${newTime} seconds`} 
           isLast
         />
       </ResultsSection>
 
       <FormSection>
-        <FormGroup label="original exposure time (seconds)">
+        <FormGroup label="Original Exposure Time (seconds)">
           <Input
             variant="outline"
             size="md"
@@ -129,7 +129,7 @@ export default function ExposureCalculator() {
           </Input>
         </FormGroup>
 
-        <FormGroup label="stop adjustment">
+          <FormGroup label="Stop Adjustment">
           <HStack space="sm" className="items-center justify-center gap-2 my-2" alignItems="center" justifyContent="center">
             <HStack space="xs" className="items-center gap-1">
               {renderStopButton("-1", -1)}

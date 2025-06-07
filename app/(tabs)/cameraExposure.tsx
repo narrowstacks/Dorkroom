@@ -50,7 +50,7 @@ export default function CameraExposureCalculator() {
   };
 
   const infoSection = (
-    <InfoSection title="about this tool">
+    <InfoSection title="About This Tool">
       <InfoText>
         The camera exposure calculator helps you find equivalent exposures
         when you want to change one aspect of your exposure triangle
@@ -58,7 +58,7 @@ export default function CameraExposureCalculator() {
         exposure.
       </InfoText>
 
-      <InfoSubtitle>how to use:</InfoSubtitle>
+      <InfoSubtitle>How to Use:</InfoSubtitle>
       <InfoText>
         1. Enter your current camera settings (aperture, ISO, and shutter
         speed)
@@ -74,7 +74,7 @@ export default function CameraExposureCalculator() {
         same exposure
       </InfoText>
 
-      <InfoSubtitle>the exposure triangle:</InfoSubtitle>
+      <InfoSubtitle>The Exposure Triangle:</InfoSubtitle>
       <InfoText>
         • Aperture: Controls depth of field. Lower number = larger opening =
         more light
@@ -88,7 +88,7 @@ export default function CameraExposureCalculator() {
         blur = less light
       </InfoText>
 
-      <InfoSubtitle>notes:</InfoSubtitle>
+      <InfoSubtitle>Notes:</InfoSubtitle>
       <InfoText>
         • Calculated shutter speeds are automatically rounded to the nearest
         standard camera value (e.g., 1/125, 1/60, 1/30, etc.)
@@ -105,22 +105,22 @@ export default function CameraExposureCalculator() {
   );
 
   return (
-    <CalculatorLayout title="camera exposure calculator" infoSection={infoSection}>
-      <ResultsSection title="equivalent exposure" show={!!equivalentExposure}>
+    <CalculatorLayout title="Camera Exposure Calculator" infoSection={infoSection}>
+      <ResultsSection title="Equivalent Exposure" show={!!equivalentExposure}>
         <ResultRow 
-          label="aperture" 
+          label="Aperture" 
           value={`f/${equivalentExposure?.aperture}`} 
         />
         <ResultRow 
-          label="iso" 
+          label="ISO" 
           value={equivalentExposure?.iso || ""} 
         />
         <ResultRow 
-          label="shutter speed" 
+          label="Shutter Speed" 
           value={`${equivalentExposure?.shutterSpeed}s`} 
         />
         <ResultRow 
-          label="exposure value" 
+          label="Exposure Value" 
           value={`EV ${equivalentExposure?.ev}`} 
           isLast
         />
@@ -130,10 +130,10 @@ export default function CameraExposureCalculator() {
         <Box style={[isMobile ? styles.mobileFormColumns : {}]}>
           <Box style={[isMobile ? styles.mobileFormColumn : styles.fullWidth]}>
             <Text className="text-lg mb-4 font-semibold" style={styles.sectionTitle}>
-              current settings
+              Current Settings
             </Text>
 
-            <FormGroup label="aperture">
+            <FormGroup label="Aperture">
               <StyledSelect
                 value={aperture}
                 onValueChange={setAperture}
@@ -141,7 +141,7 @@ export default function CameraExposureCalculator() {
               />
             </FormGroup>
 
-            <FormGroup label="iso">
+            <FormGroup label="ISO">
               <StyledSelect
                 value={iso}
                 onValueChange={setIso}
@@ -149,7 +149,7 @@ export default function CameraExposureCalculator() {
               />
             </FormGroup>
 
-            <FormGroup label="shutter speed">
+            <FormGroup label="Shutter Speed">
               <StyledSelect
                 value={shutterSpeed}
                 onValueChange={setShutterSpeed}
@@ -160,10 +160,10 @@ export default function CameraExposureCalculator() {
 
           <Box style={[isMobile ? styles.mobileFormColumn : styles.fullWidth]}>
             <Text className="text-lg mb-4 font-semibold" style={styles.sectionTitle}>
-              change setting
+              Change Setting
             </Text>
 
-            <FormGroup label="setting to change">
+            <FormGroup label="Setting to Change">
               <StyledSelect
                 value={settingToChange}
                 onValueChange={setSettingToChange as (value: string) => void}
@@ -171,7 +171,7 @@ export default function CameraExposureCalculator() {
               />
             </FormGroup>
 
-            <FormGroup label="new value">
+            <FormGroup label="New Value">
               <StyledSelect
                 value={newValue}
                 onValueChange={setNewValue}
