@@ -74,6 +74,7 @@ app/
 - `bun run deploy`: Deploy to Vercel
 - `bun test`: Run tests
 
+
 ## Learn More
 
 To learn more about the technologies used in this project:
