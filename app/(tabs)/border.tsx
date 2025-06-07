@@ -5,7 +5,7 @@ import {
   TextInput,   // ← still used only for the print-preview sliders; feel free to migrate later
   Switch,      // ← same here
 } from 'react-native';
-
+// why is the vercel build failing?
 // Shared slider/input component & constants
 import { LabeledSliderInput } from '@/components/LabeledSliderInput';
 import {
