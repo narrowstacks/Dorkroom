@@ -1,7 +1,7 @@
 {
-  "buildCommand": "bunx expo export -p web",
+  "buildCommand": "npx expo export -p web",
   "outputDirectory": "dist",
-  "devCommand": "bun run dev",
+  "devCommand": "npm run dev",
   "cleanUrls": true,
   "framework": null,
   "rewrites": [
