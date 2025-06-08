@@ -7,7 +7,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 interface SelectListProps {
   value: string;
   onValueChange: (value: string) => void;
-  items: Array<{ label: string; value: string }>;
+  items: { label: string; value: string }[];
   placeholder?: string;
 }
 

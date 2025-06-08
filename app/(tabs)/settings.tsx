@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ScrollView, View, Text, Pressable, Platform, Dimensions } from 'react-native';
-import { Picker } from '@react-native-picker/picker'; // Assuming this is installed
+import { Picker } from '@react-native-picker/picker';
 
 // Add window dimension hook
 const useWindowDimensions = () => {
@@ -25,23 +25,20 @@ export default function SettingsScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width > 768;
 
-  // Placeholder functions for settings changes (updated to use setters)
+  // Placeholder functions for settings changes
   const handleThemeChange = (value: string) => {
     console.log('Theme changed to:', value);
     setSelectedTheme(value);
-    // Logic to change theme will go here
   };
 
   const handleLengthUnitChange = (value: string) => {
     console.log('Length unit changed to:', value);
     setSelectedLengthUnit(value);
-    // Logic to change length unit will go here
   };
 
   const handleVolumeUnitChange = (value: string) => {
     console.log('Volume unit changed to:', value);
     setSelectedVolumeUnit(value);
-    // Logic to change volume unit will go here
   };
 
   // Theme options
@@ -53,89 +50,155 @@ export default function SettingsScreen() {
     { label: 'Darkroom', value: 'darkroom' },
   ];
 
+  const SettingsRow = ({ children, isLast = false }: { children: React.ReactNode, isLast?: boolean }) => (
+    <View className={`${!isLast ? 'border-b border-gray-200 dark:border-gray-700' : ''}`}>
+      {children}
+    </View>
+  );
+
+  const SectionHeader = ({ title }: { title: string }) => (
+    <Text className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+      {title}
+    </Text>
+  );
+
+  const SectionFooter = ({ text }: { text: string }) => (
+    <Text className="px-4 py-2 text-xs text-gray-600 dark:text-gray-400">
+      {text}
+    </Text>
+  );
+
   return (
-    <ScrollView>
-      {/* Use bg-neutral-50 dark:bg-black for themed background */}
-      <View className="flex-1 p-4 items-center bg-neutral-50 dark:bg-black">
-        {/* Wrapper View for content centering/width restriction */}
-        <View className="w-full max-w-[600px]">
-          <Text className="mb-6 text-center text-2xl font-bold dark:text-white">Settings</Text>
-          <Text className="mb-6 text-center text-2x1 font-italic dark:text-white">Hello I am not functional yet!</Text>
-          {/* Appearance Section */}
-          {/* Use bg-white dark:bg-neutral-900 for themed section background */}
-          <View className="mb-6 w-full p-4 rounded-lg bg-white dark:bg-neutral-900 shadow">
-            <Text className="text-lg font-bold mb-3 dark:text-white">Appearance</Text>
-            <Text className="text-base mb-2 dark:text-neutral-300">Theme</Text>
-            {/* Apply theme-aware border and background colors */}
-            <View className="border border-neutral-300 dark:border-neutral-700 rounded-lg mb-4 bg-white dark:bg-neutral-800">
-              <Picker
-                selectedValue={selectedTheme}
-                onValueChange={(itemValue) => handleThemeChange(itemValue)}
-                // Picker styles might need platform-specific handling or custom components for better NativeWind integration
-                // Basic height to ensure visibility
-                style={{ height: 50, width: '100%' }}
-                // Add itemStyle for potential text color control (might not work consistently across platforms)
-                itemStyle={{ color: Platform.OS === 'ios' ? 'black' : undefined }} // Example for iOS text color
-                // Consider adding dropdownIconColor prop if needed
-              >
-                {themeOptions.map((option) => (
-                  <Picker.Item key={option.value} label={option.label} value={option.value} />
-                ))}
-              </Picker>
-            </View>
-          </View>
-
-          {/* Units Section */}
-          {/* Use bg-white dark:bg-neutral-900 for themed section background */}
-          <View className="mb-6 w-full p-4 rounded-lg bg-white dark:bg-neutral-900 shadow">
-            <Text className="text-lg font-bold mb-3 dark:text-white">Units</Text>
-
-            <Text className="text-base mb-2 dark:text-neutral-300">Length</Text>
-            {/* Apply theme-aware border colors */}
-            <View className="flex-row w-full border border-green-600 dark:border-green-500 rounded-lg overflow-hidden mb-4">
-              <Pressable
-                className={`flex-1 py-2.5 items-center justify-center ${selectedLengthUnit === 'inches' ? 'bg-green-600 dark:bg-green-500' : ''}`}
-                onPress={() => handleLengthUnitChange('inches')}
-              >
-                <Text className={`text-sm ${selectedLengthUnit === 'inches' ? 'text-white font-bold' : 'text-green-600 dark:text-green-500'}`}>
-                  Inches
-                </Text>
-              </Pressable>
-              <Pressable
-                className={`flex-1 py-2.5 items-center justify-center ${selectedLengthUnit === 'mm' ? 'bg-green-600 dark:bg-green-500' : ''}`}
-                onPress={() => handleLengthUnitChange('mm')}
-              >
-                <Text className={`text-sm ${selectedLengthUnit === 'mm' ? 'text-white font-bold' : 'text-green-600 dark:text-green-500'}`}>
-                  Millimeters
-                </Text>
-              </Pressable>
-            </View>
-
-            <Text className="text-base mb-2 dark:text-neutral-300">Volume</Text>
-            {/* Apply theme-aware border colors */}
-            <View className="flex-row w-full border border-green-600 dark:border-green-500 rounded-lg overflow-hidden mb-4">
-              <Pressable
-                className={`flex-1 py-2.5 items-center justify-center ${selectedVolumeUnit === 'floz' ? 'bg-green-600 dark:bg-green-500' : ''}`}
-                onPress={() => handleVolumeUnitChange('floz')}
-              >
-                <Text className={`text-sm ${selectedVolumeUnit === 'floz' ? 'text-white font-bold' : 'text-green-600 dark:text-green-500'}`}>
-                  Fl. Oz / Gallons
-                </Text>
-              </Pressable>
-              <Pressable
-                className={`flex-1 py-2.5 items-center justify-center ${selectedVolumeUnit === 'ml' ? 'bg-green-600 dark:bg-green-500' : ''}`}
-                onPress={() => handleVolumeUnitChange('ml')}
-              >
-                <Text className={`text-sm ${selectedVolumeUnit === 'ml' ? 'text-white font-bold' : 'text-green-600 dark:text-green-500'}`}>
-                  Milliliters / Liters
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-
-          {/* TODO: Add other potential settings sections */}
+    <View className="flex-1 bg-gray-100 dark:bg-black">
+      <ScrollView className="flex-1">
+        {/* Header */}
+        <View className="pt-4 pb-6">
+          <Text className="text-center text-2xl font-bold text-black dark:text-white">Settings</Text>
         </View>
-      </View>
-    </ScrollView>
+
+        {/* Appearance Section */}
+        <View className="mb-8">
+          <SectionHeader title="Appearance" />
+          <View className="bg-white dark:bg-gray-900 mx-4 rounded-lg overflow-hidden">
+            <SettingsRow>
+              <View className="px-4 py-3">
+                <Text className="text-base font-medium text-black dark:text-white mb-2">Theme</Text>
+                <View className="bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                  <Picker
+                    selectedValue={selectedTheme}
+                    onValueChange={handleThemeChange}
+                    style={{ 
+                      height: Platform.OS === 'ios' ? 120 : 50,
+                      width: '100%',
+                    }}
+                    itemStyle={Platform.OS === 'ios' ? {
+                      height: 120,
+                      fontSize: 16,
+                      color: undefined // Let the system handle the color
+                    } : undefined}
+                  >
+                    {themeOptions.map((option) => (
+                      <Picker.Item key={option.value} label={option.label} value={option.value} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+            </SettingsRow>
+          </View>
+        </View>
+
+        {/* Units Section */}
+        <View className="mb-8">
+          <SectionHeader title="Units" />
+          <View className="bg-white dark:bg-gray-900 mx-4 rounded-lg overflow-hidden">
+            {/* Length Unit */}
+            <SettingsRow>
+              <View className="px-4 py-4">
+                <Text className="text-base font-medium text-black dark:text-white mb-3">Length</Text>
+                <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                  <Pressable
+                    className={`flex-1 py-2 px-4 rounded-md ${
+                      selectedLengthUnit === 'inches' 
+                        ? 'bg-blue-500 dark:bg-blue-600' 
+                        : 'bg-transparent'
+                    }`}
+                    onPress={() => handleLengthUnitChange('inches')}
+                  >
+                    <Text className={`text-center text-sm font-medium ${
+                      selectedLengthUnit === 'inches'
+                        ? 'text-white'
+                        : 'text-gray-700 dark:text-gray-300'
+                    }`}>
+                      Inches
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    className={`flex-1 py-2 px-4 rounded-md ${
+                      selectedLengthUnit === 'mm' 
+                        ? 'bg-blue-500 dark:bg-blue-600' 
+                        : 'bg-transparent'
+                    }`}
+                    onPress={() => handleLengthUnitChange('mm')}
+                  >
+                    <Text className={`text-center text-sm font-medium ${
+                      selectedLengthUnit === 'mm'
+                        ? 'text-white'
+                        : 'text-gray-700 dark:text-gray-300'
+                    }`}>
+                      Millimeters
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            </SettingsRow>
+
+            {/* Volume Unit */}
+            <SettingsRow isLast>
+              <View className="px-4 py-4">
+                <Text className="text-base font-medium text-black dark:text-white mb-3">Volume</Text>
+                <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                  <Pressable
+                    className={`flex-1 py-2 px-4 rounded-md ${
+                      selectedVolumeUnit === 'floz' 
+                        ? 'bg-blue-500 dark:bg-blue-600' 
+                        : 'bg-transparent'
+                    }`}
+                    onPress={() => handleVolumeUnitChange('floz')}
+                  >
+                    <Text className={`text-center text-sm font-medium ${
+                      selectedVolumeUnit === 'floz'
+                        ? 'text-white'
+                        : 'text-gray-700 dark:text-gray-300'
+                    }`}>
+                      Fl. Oz / Gallons
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    className={`flex-1 py-2 px-4 rounded-md ${
+                      selectedVolumeUnit === 'ml' 
+                        ? 'bg-blue-500 dark:bg-blue-600' 
+                        : 'bg-transparent'
+                    }`}
+                    onPress={() => handleVolumeUnitChange('ml')}
+                  >
+                    <Text className={`text-center text-sm font-medium ${
+                      selectedVolumeUnit === 'ml'
+                        ? 'text-white'
+                        : 'text-gray-700 dark:text-gray-300'
+                    }`}>
+                      Milliliters / Liters
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            </SettingsRow>
+          </View>
+          <SectionFooter text="Choose your preferred measurement units for the app." />
+        </View>
+
+        {/* Bottom spacing */}
+        <View className="h-8" />
+      </ScrollView>
+    </View>
   );
 } 

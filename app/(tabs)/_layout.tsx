@@ -1,10 +1,10 @@
-import { Tabs } from "expo-router";
+import { Tabs , useRouter, useSegments } from "expo-router";
 import React, { useState, useEffect } from "react";
 import { Platform, View, TouchableOpacity, Text, StyleSheet, Dimensions, Modal, Animated } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useSegments } from "expo-router";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Colors } from "@/constants/Colors";
+import * as Haptics from 'expo-haptics';
 
 import { HapticTab } from "@/components/HapticTab";
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -124,7 +124,8 @@ function TopNavigation() {
 
 
 export default function TabLayout() {
-  const [screenData, setScreenData] = useState(Dimensions.get('window'));
+  // Initialize with safe default values to avoid useInsertionEffect warning
+  const [screenData, setScreenData] = useState({ width: 0, height: 0 });
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
   const [modalScale] = useState(new Animated.Value(0));
   const [modalOpacity] = useState(new Animated.Value(0));
@@ -135,6 +136,9 @@ export default function TabLayout() {
   const currentRoute = segments[segments.length - 1] || "index";
 
   useEffect(() => {
+    // Get initial dimensions after mount
+    setScreenData(Dimensions.get('window'));
+    
     const onChange = (result: { window: any }) => {
       setScreenData(result.window);
     };
@@ -149,6 +153,9 @@ export default function TabLayout() {
   const isNativeMobile = !isWeb;
 
   const showModal = () => {
+    // Add haptic feedback for hamburger menu tap
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
     setMobileMenuVisible(true);
     
     // Reset to starting position
@@ -189,6 +196,9 @@ export default function TabLayout() {
   };
 
   const navigateToPage = (item: typeof navigationItems[0]) => {
+    // Add haptic feedback for navigation item selection
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
     if (item.name === "index") {
       router.push("/(tabs)" as any);
     } else {

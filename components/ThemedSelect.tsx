@@ -46,6 +46,16 @@ export function ThemedSelect({
   const textColor = useThemeColor({}, "text");
   const borderColor = useThemeColor({}, "icon"); // Using icon color for border as per original styles
   const selectedItemBackground = useThemeColor({}, "selectedItemBackground"); // Get the new color
+  
+  // Specific colors for the dropdown content to ensure good contrast
+  const dropdownBackgroundColor = useThemeColor(
+    { light: "#f5f5f5", dark: "#2c2c2c" }, 
+    "background"
+  );
+  const dropdownTextColor = useThemeColor(
+    { light: "#000000", dark: "#ffffff" }, 
+    "text"
+  );
 
   // Normalize items to { label: string, value: string } format
   const normalizedItems: Item[] = items.map((item) =>
@@ -85,7 +95,7 @@ export function ThemedSelect({
         </SelectTrigger>
         <SelectPortal>
           <SelectBackdrop />
-          <SelectContent bg={backgroundColor}>
+          <SelectContent bg={dropdownBackgroundColor}>
             <SelectDragIndicatorWrapper>
               <SelectDragIndicator />
             </SelectDragIndicatorWrapper>
@@ -101,8 +111,8 @@ export function ThemedSelect({
                   // Apply specific background if selected, otherwise let it be default
                   bg={isSelected ? selectedItemBackground : undefined}
                 >
-                  {/* Use standard text color, contrast is handled by the new background */}
-                  <Text color={textColor}>{item.label}</Text>
+                  {/* Use dropdown-specific text color for better contrast */}
+                  <Text color={dropdownTextColor}>{item.label}</Text>
                 </SelectItem>
               );
             })}
