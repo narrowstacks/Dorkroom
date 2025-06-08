@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   StyleSheet,
   Platform,
   TextInput,   // ← still used only for the print-preview sliders; feel free to migrate later
   Switch,      // ← same here
+  Animated,    // ← Added for animations
 } from 'react-native';
 // why is the vercel build failing?
 // Shared slider/input component & constants
@@ -40,6 +41,206 @@ import {
   AlertText,
   InfoIcon,
 } from '@gluestack-ui/themed';
+
+// Animated Preview Component
+const AnimatedPreview = ({ calculation, showBlades, borderColor }: {
+  calculation: any;
+  showBlades: boolean;
+  borderColor: string;
+}) => {
+  const animatedValues = useRef({
+    previewWidth: new Animated.Value(calculation?.previewWidth || 0),
+    previewHeight: new Animated.Value(calculation?.previewHeight || 0),
+    printLeft: new Animated.Value(calculation?.leftBorderPercent || 0),
+    printTop: new Animated.Value(calculation?.topBorderPercent || 0),
+    printWidth: new Animated.Value(calculation?.printWidthPercent || 0),
+    printHeight: new Animated.Value(calculation?.printHeightPercent || 0),
+    bladeOpacity: new Animated.Value(showBlades ? 1 : 0),
+    leftBladePosition: new Animated.Value(calculation?.leftBorderPercent || 0),
+    rightBladePosition: new Animated.Value(calculation?.rightBorderPercent || 0),
+    topBladePosition: new Animated.Value(calculation?.topBorderPercent || 0),
+    bottomBladePosition: new Animated.Value(calculation?.bottomBorderPercent || 0),
+  }).current;
+
+  useEffect(() => {
+    if (!calculation) return;
+
+    const animationConfig = {
+      duration: 300,
+      useNativeDriver: false,
+    };
+
+    Animated.parallel([
+      // Animate container dimensions
+      Animated.timing(animatedValues.previewWidth, {
+        toValue: calculation.previewWidth,
+        ...animationConfig,
+      }),
+      Animated.timing(animatedValues.previewHeight, {
+        toValue: calculation.previewHeight,
+        ...animationConfig,
+      }),
+      // Animate print area position and size
+      Animated.timing(animatedValues.printLeft, {
+        toValue: calculation.leftBorderPercent,
+        ...animationConfig,
+      }),
+      Animated.timing(animatedValues.printTop, {
+        toValue: calculation.topBorderPercent,
+        ...animationConfig,
+      }),
+      Animated.timing(animatedValues.printWidth, {
+        toValue: calculation.printWidthPercent,
+        ...animationConfig,
+      }),
+      Animated.timing(animatedValues.printHeight, {
+        toValue: calculation.printHeightPercent,
+        ...animationConfig,
+      }),
+      // Animate blade positions
+      Animated.timing(animatedValues.leftBladePosition, {
+        toValue: calculation.leftBorderPercent,
+        ...animationConfig,
+      }),
+      Animated.timing(animatedValues.rightBladePosition, {
+        toValue: calculation.rightBorderPercent,
+        ...animationConfig,
+      }),
+      Animated.timing(animatedValues.topBladePosition, {
+        toValue: calculation.topBorderPercent,
+        ...animationConfig,
+      }),
+      Animated.timing(animatedValues.bottomBladePosition, {
+        toValue: calculation.bottomBorderPercent,
+        ...animationConfig,
+      }),
+    ]).start();
+  }, [calculation]);
+
+  useEffect(() => {
+    Animated.timing(animatedValues.bladeOpacity, {
+      toValue: showBlades ? 1 : 0,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  }, [showBlades]);
+
+  if (!calculation) return null;
+
+  return (
+    <Animated.View
+      style={[
+        styles.previewContainer,
+        {
+          width: animatedValues.previewWidth,
+          height: animatedValues.previewHeight,
+          borderColor,
+        },
+      ]}
+    >
+      <Animated.View
+        style={[
+          styles.paperPreview,
+          {
+            width: '100%',
+            height: '100%',
+            borderColor,
+            backgroundColor: 'white',
+          },
+        ]}
+      >
+        <Animated.View
+          style={[
+            styles.printPreview,
+            {
+              backgroundColor: 'grey',
+              left: animatedValues.printLeft.interpolate({
+                inputRange: [0, 100],
+                outputRange: ['0%', '100%'],
+              }),
+              top: animatedValues.printTop.interpolate({
+                inputRange: [0, 100],
+                outputRange: ['0%', '100%'],
+              }),
+              width: animatedValues.printWidth.interpolate({
+                inputRange: [0, 100],
+                outputRange: ['0%', '100%'],
+              }),
+              height: animatedValues.printHeight.interpolate({
+                inputRange: [0, 100],
+                outputRange: ['0%', '100%'],
+              }),
+            },
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.blade,
+            styles.bladeVertical,
+            {
+              opacity: animatedValues.bladeOpacity,
+              left: animatedValues.leftBladePosition.interpolate({
+                inputRange: [0, 100],
+                outputRange: ['0%', '100%'],
+              }),
+              transform: [{ translateX: -calculation.bladeThickness }],
+              backgroundColor: borderColor,
+              width: calculation.bladeThickness,
+            },
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.blade,
+            styles.bladeVertical,
+            {
+              opacity: animatedValues.bladeOpacity,
+              right: animatedValues.rightBladePosition.interpolate({
+                inputRange: [0, 100],
+                outputRange: ['0%', '100%'],
+              }),
+              transform: [{ translateX: calculation.bladeThickness }],
+              backgroundColor: borderColor,
+              width: calculation.bladeThickness,
+            },
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.blade,
+            styles.bladeHorizontal,
+            {
+              opacity: animatedValues.bladeOpacity,
+              top: animatedValues.topBladePosition.interpolate({
+                inputRange: [0, 100],
+                outputRange: ['0%', '100%'],
+              }),
+              transform: [{ translateY: -calculation.bladeThickness }],
+              backgroundColor: borderColor,
+              height: calculation.bladeThickness,
+            },
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.blade,
+            styles.bladeHorizontal,
+            {
+              opacity: animatedValues.bladeOpacity,
+              bottom: animatedValues.bottomBladePosition.interpolate({
+                inputRange: [0, 100],
+                outputRange: ['0%', '100%'],
+              }),
+              transform: [{ translateY: calculation.bladeThickness }],
+              backgroundColor: borderColor,
+              height: calculation.bladeThickness,
+            },
+          ]}
+        />
+      </Animated.View>
+    </Animated.View>
+  );
+};
 
 export default function BorderCalculator() {
   const { width } = useWindowDimensions();
@@ -106,7 +307,7 @@ export default function BorderCalculator() {
             Platform.OS === 'web' && isDesktop && styles.webMainContent,
           ]}
         >
-          {/* ---------- PRINT-PREVIEW & RESULTS (kept as-is) ---------- */}
+          {/* ---------- ANIMATED PREVIEW & RESULTS ---------- */}
           {calculation && (
             <ThemedView
               style={[
@@ -114,94 +315,12 @@ export default function BorderCalculator() {
                 Platform.OS === 'web' && isDesktop && styles.webPreviewSection,
               ]}
             >
-              {/* -- PREVIEW CANVAS (unchanged) -- */}
-              <ThemedView
-                style={[
-                  styles.previewContainer,
-                  {
-                    height: calculation.previewHeight,
-                    width : calculation.previewWidth,
-                    borderColor,
-                  },
-                ]}
-              >
-                <ThemedView
-                  style={[
-                    styles.paperPreview,
-                    {
-                      width : '100%',
-                      height: '100%',
-                      borderColor,
-                      backgroundColor: 'white',
-                    },
-                  ]}
-                >
-                  <ThemedView
-                    style={[
-                      styles.printPreview,
-                      {
-                        width : `${calculation.printWidthPercent}%`,
-                        height: `${calculation.printHeightPercent}%`,
-                        left  : `${calculation.leftBorderPercent}%`,
-                        top   : `${calculation.topBorderPercent}%`,
-                        backgroundColor: 'grey',
-                      },
-                    ]}
-                  />
-                  {showBlades && (
-                    <>
-                      <ThemedView
-                        style={[
-                          styles.blade,
-                          styles.bladeVertical,
-                          {
-                            left: `${calculation.leftBorderPercent}%`,
-                            transform: [{ translateX: -calculation.bladeThickness }],
-                            backgroundColor: borderColor,
-                            width: calculation.bladeThickness,
-                          },
-                        ]}
-                      />
-                      <ThemedView
-                        style={[
-                          styles.blade,
-                          styles.bladeVertical,
-                          {
-                            right: `${calculation.rightBorderPercent}%`,
-                            transform: [{ translateX: calculation.bladeThickness }],
-                            backgroundColor: borderColor,
-                            width: calculation.bladeThickness,
-                          },
-                        ]}
-                      />
-                      <ThemedView
-                        style={[
-                          styles.blade,
-                          styles.bladeHorizontal,
-                          {
-                            top: `${calculation.topBorderPercent}%`,
-                            transform: [{ translateY: -calculation.bladeThickness }],
-                            backgroundColor: borderColor,
-                            height: calculation.bladeThickness,
-                          },
-                        ]}
-                      />
-                      <ThemedView
-                        style={[
-                          styles.blade,
-                          styles.bladeHorizontal,
-                          {
-                            bottom: `${calculation.bottomBorderPercent}%`,
-                            transform: [{ translateY: calculation.bladeThickness }],
-                            backgroundColor: borderColor,
-                            height: calculation.bladeThickness,
-                          },
-                        ]}
-                      />
-                    </>
-                  )}
-                </ThemedView>
-              </ThemedView>
+              {/* -- ANIMATED PREVIEW CANVAS -- */}
+              <AnimatedPreview 
+                calculation={calculation}
+                showBlades={showBlades}
+                borderColor={borderColor}
+              />
 
               {/* orientation controls */}
               <Box style={[
