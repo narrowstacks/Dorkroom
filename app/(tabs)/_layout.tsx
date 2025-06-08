@@ -121,108 +121,18 @@ function TopNavigation() {
   );
 }
 
-function MobileWebNavigation() {
-  const [sidebarVisible, setSidebarVisible] = useState(false);
-  const [sidebarAnim] = useState(new Animated.Value(-250));
-  const router = useRouter();
-  const segments = useSegments();
-  const currentRoute = segments[segments.length - 1] || "index";
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme];
 
-  const styles = createDynamicStyles(colors);
-
-  const toggleSidebar = () => {
-    const toValue = sidebarVisible ? -250 : 0;
-    setSidebarVisible(!sidebarVisible);
-    
-    Animated.timing(sidebarAnim, {
-      toValue,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  };
-
-  const navigateTo = (item: typeof navigationItems[0]) => {
-    if (item.name === "index") {
-      router.push("/(tabs)" as any);
-    } else {
-      router.push(`/(tabs)/${item.name}` as any);
-    }
-    toggleSidebar();
-  };
-
-  return (
-    <>
-      {/* Header with hamburger menu */}
-      <View style={styles.mobileHeader}>
-        <TouchableOpacity onPress={toggleSidebar} style={styles.hamburgerButton}>
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.text }]} />
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.text }]} />
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.text }]} />
-        </TouchableOpacity>
-        <Text style={styles.mobileAppTitle}>Dorkroom</Text>
-        <View style={styles.headerSpacer} />
-      </View>
-
-      {/* Overlay */}
-      {sidebarVisible && (
-        <TouchableOpacity 
-          style={styles.overlay} 
-          onPress={toggleSidebar}
-          activeOpacity={1}
-        />
-      )}
-
-      {/* Sidebar */}
-      <Animated.View style={[styles.sidebar, { left: sidebarAnim }]}>
-        <View style={styles.sidebarHeader}>
-          <Text style={styles.sidebarTitle}>Navigation</Text>
-          <TouchableOpacity onPress={toggleSidebar} style={styles.closeButton}>
-            <MaterialIcons size={24} name="close" color={colors.icon} />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.sidebarContent}>
-          {navigationItems.map((item) => {
-            const isActive = currentRoute === item.name;
-            const tintColor = getPageTintColor(item.name, colors);
-            return (
-              <TouchableOpacity
-                key={item.name}
-                style={[
-                  styles.sidebarItem, 
-                  isActive && { 
-                    ...styles.activeSidebarItem, 
-                    backgroundColor: tintColor,
-                    borderRightColor: tintColor 
-                  }
-                ]}
-                onPress={() => navigateTo(item)}
-              >
-                <MaterialIcons
-                  size={24}
-                  name={item.icon as any}
-                  color={isActive ? colors.background : colors.icon}
-                />
-                <Text style={[
-                  styles.sidebarItemText, 
-                  isActive && { color: colors.background }
-                ]}>
-                  {item.title}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </Animated.View>
-    </>
-  );
-}
 
 export default function TabLayout() {
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
+  const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
+  const [modalScale] = useState(new Animated.Value(0));
+  const [modalOpacity] = useState(new Animated.Value(0));
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const router = useRouter();
+  const segments = useSegments();
+  const currentRoute = segments[segments.length - 1] || "index";
 
   useEffect(() => {
     const onChange = (result: { window: any }) => {
@@ -236,11 +146,182 @@ export default function TabLayout() {
   const isWeb = Platform.OS === "web";
   const isMobileWeb = isWeb && screenData.width <= 768; // Mobile breakpoint
   const isDesktopWeb = isWeb && screenData.width > 768;
+  const isNativeMobile = !isWeb;
+
+  const showModal = () => {
+    setMobileMenuVisible(true);
+    
+    // Reset to starting position
+    modalScale.setValue(0.1);
+    modalOpacity.setValue(0);
+    
+    Animated.parallel([
+      Animated.spring(modalScale, {
+        toValue: 1,
+        tension: 80,  // Higher tension for less bounce
+        friction: 10, // Higher friction for less oscillation
+        useNativeDriver: true,
+      }),
+      Animated.timing(modalOpacity, {
+        toValue: 1,
+        duration: 250,  // Slightly shorter duration
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const hideModal = () => {
+    Animated.parallel([
+      Animated.spring(modalScale, {
+        toValue: 0.1,  // Shrink to small size like dock icon
+        tension: 120,  // Faster collapse
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      Animated.timing(modalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setMobileMenuVisible(false);
+    });
+  };
+
+  const navigateToPage = (item: typeof navigationItems[0]) => {
+    if (item.name === "index") {
+      router.push("/(tabs)" as any);
+    } else {
+      router.push(`/(tabs)/${item.name}` as any);
+    }
+    hideModal();
+  };
+
+  const styles = createDynamicStyles(colors);
+
+  // Native mobile layout with floating hamburger menu
+  if (isNativeMobile) {
+    return (
+      <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
+        <View style={{ flex: 1 }}>
+          <Tabs
+            screenOptions={{
+              headerShown: false,
+              tabBarStyle: { display: "none" }, // Hide the tab bar completely
+            }}
+          >
+            {navigationItems.map((item) => (
+              <Tabs.Screen
+                key={item.name}
+                name={item.name}
+                options={{
+                  title: item.title,
+                }}
+              />
+            ))}
+          </Tabs>
+        </View>
+
+        {/* Floating Hamburger Button */}
+        <TouchableOpacity
+          style={styles.floatingMenuButton}
+          onPress={showModal}
+        >
+          <MaterialIcons
+            size={24}
+            name="menu"
+            color={colors.background}
+          />
+        </TouchableOpacity>
+
+        {/* Animated Navigation Modal */}
+        {mobileMenuVisible && (
+          <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
+            <TouchableOpacity 
+              style={styles.modalBackdrop} 
+              onPress={hideModal}
+              activeOpacity={1}
+            />
+            <Animated.View 
+              style={[
+                styles.modalContent,
+                {
+                  transform: [
+                    { scale: modalScale },
+                    { 
+                      translateX: modalScale.interpolate({
+                        inputRange: [0.1, 1],
+                        outputRange: [120, 0], // Start from hamburger button position
+                        extrapolate: 'clamp',
+                      })
+                    },
+                    { 
+                      translateY: modalScale.interpolate({
+                        inputRange: [0.1, 1],
+                        outputRange: [180, 0], // Start from hamburger button position
+                        extrapolate: 'clamp',
+                      })
+                    },
+                    {
+                      scaleX: modalScale.interpolate({
+                        inputRange: [0.1, 0.5, 1],
+                        outputRange: [0.3, 1.05, 1], // Subtle horizontal stretch
+                        extrapolate: 'clamp',
+                      })
+                    },
+                    {
+                      scaleY: modalScale.interpolate({
+                        inputRange: [0.1, 0.5, 1],
+                        outputRange: [0.3, 0.95, 1], // Subtle vertical compression
+                        extrapolate: 'clamp',
+                      })
+                    }
+                  ],
+                  opacity: modalOpacity,
+                }
+              ]}
+            >
+              <View style={styles.modalNavItems}>
+                {navigationItems.map((item) => {
+                  const isActive = currentRoute === item.name;
+                  const tintColor = getPageTintColor(item.name, colors);
+                  return (
+                    <TouchableOpacity
+                      key={item.name}
+                      style={[
+                        styles.modalNavItem,
+                        isActive && { 
+                          ...styles.activeModalNavItem,
+                          backgroundColor: tintColor 
+                        }
+                      ]}
+                      onPress={() => navigateToPage(item)}
+                    >
+                      <MaterialIcons
+                        size={24}
+                        name={item.icon as any}
+                        color={isActive ? colors.background : colors.icon}
+                      />
+                      <Text style={[
+                        styles.modalNavItemText,
+                        isActive && { color: colors.background }
+                      ]}>
+                        {item.title}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </Animated.View>
+          </Animated.View>
+        )}
+      </SafeAreaView>
+    );
+  }
 
   if (isMobileWeb) {
     return (
       <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-        <MobileWebNavigation />
         <View style={{ flex: 1 }}>
           <Tabs
             screenOptions={{
@@ -259,6 +340,62 @@ export default function TabLayout() {
             ))}
           </Tabs>
         </View>
+
+        {/* Floating Hamburger Button */}
+        <TouchableOpacity
+          style={styles.floatingMenuButton}
+          onPress={showModal}
+        >
+          <MaterialIcons
+            size={24}
+            name="menu"
+            color={colors.background}
+          />
+        </TouchableOpacity>
+
+        {/* Animated Navigation Modal */}
+        {mobileMenuVisible && (
+          <View style={styles.webModalOverlay}>
+            <TouchableOpacity 
+              style={styles.modalBackdrop} 
+              onPress={hideModal}
+              activeOpacity={1}
+            />
+            <View style={styles.webModalContent}>
+              <View style={styles.modalNavItems}>
+                {navigationItems.map((item) => {
+                  const isActive = currentRoute === item.name;
+                  const tintColor = getPageTintColor(item.name, colors);
+                  return (
+                    <TouchableOpacity
+                      key={item.name}
+                      style={[
+                        styles.modalNavItem,
+                        isActive && { 
+                          ...styles.activeModalNavItem,
+                          backgroundColor: tintColor 
+                        }
+                      ]}
+                      onPress={() => navigateToPage(item)}
+                    >
+                      <MaterialIcons
+                        size={24}
+                        name={item.icon as any}
+                        color={isActive ? colors.background : colors.icon}
+                      />
+                      <Text style={[
+                        styles.modalNavItemText,
+                        isActive && { color: colors.background }
+                      ]}>
+                        {item.title}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          </View>
+        )}
       </SafeAreaView>
     );
   }
@@ -436,105 +573,129 @@ const createDynamicStyles = (colors: typeof Colors.light) => StyleSheet.create({
     color: "#4CAF50",
   },
 
-  // Mobile web navigation styles
-  mobileHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.tabIconDefault,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+
+
+  // Native mobile floating menu styles
+  floatingMenuButton: {
+    position: "absolute",
+    bottom: 32,
+    right: 24,
+    width: 56,
     height: 56,
-  },
-  hamburgerButton: {
-    padding: 8,
-    width: 40,
-    height: 40,
+    borderRadius: 28,
+    backgroundColor: colors.tint,
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 100,
   },
-  hamburgerLine: {
-    width: 20,
-    height: 2,
-    marginVertical: 2,
-  },
-  mobileAppTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: colors.text,
+
+  // Modal styles
+  modalOverlay: {
     flex: 1,
-    textAlign: "center",
-    marginRight: 40, // Compensate for hamburger button width
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
   },
-  headerSpacer: {
-    width: 40,
-  },
-  overlay: {
+  modalBackdrop: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    zIndex: 999,
   },
-  sidebar: {
-    position: "absolute",
-    top: 0,
-    left: -250,
-    width: 250,
-    height: "100%",
+  modalContent: {
     backgroundColor: colors.background,
-    zIndex: 1000,
+    borderRadius: 12,
+    marginRight: 24,
+    marginBottom: 100, // Position above the hamburger button
+    maxWidth: 200,
+    width: 280,
+    maxHeight: "70%",
     shadowColor: "#000",
     shadowOffset: {
-      width: 2,
-      height: 0,
+      width: 0,
+      height: 4,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
-  sidebarHeader: {
+  modalHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.tabIconDefault,
-    paddingTop: 48, // Account for status bar
+    justifyContent: "flex-end",
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
-  sidebarTitle: {
-    fontSize: 18,
+  modalTitle: {
+    fontSize: 20,
     fontWeight: "bold",
     color: colors.text,
   },
-  closeButton: {
+  modalCloseButton: {
     padding: 4,
   },
-  sidebarContent: {
-    flex: 1,
-    paddingTop: 8,
+  modalNavItems: {
+    paddingVertical: 16,
   },
-  sidebarItem: {
+  modalNavItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 16,
   },
-  activeSidebarItem: {
+  activeModalNavItem: {
     // backgroundColor will be set dynamically to tint color
-    borderRightWidth: 3,
-    borderRightColor: "transparent", // Will be overridden by tint color
   },
-  sidebarItemText: {
+  modalNavItemText: {
     fontSize: 16,
     fontWeight: "500",
     color: colors.icon,
   },
-  activeSidebarItemText: {
-    color: "#4CAF50",
+
+  // Web modal styles (simpler version without animations)
+  webModalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+  },
+  webModalContent: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    marginRight: 24,
+    marginBottom: 100, // Position above the hamburger button
+    maxWidth: 200,
+    width: 280,
+    maxHeight: "70%",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
 });
