@@ -1,6 +1,5 @@
-import React, { useMemo, useCallback, useRef } from 'react';
+import React, { useMemo, useCallback, useRef, useEffect } from 'react';
 import { StyleSheet } from 'react-native';
-// import Slider from '@react-native-community/slider';
 import {
   Box,
   Text,
@@ -14,42 +13,7 @@ import * as Haptics from 'expo-haptics';
 
 import { getPlatformFont } from '@/styles/common';
 import { COMMON_INPUT_HEIGHT, COMMON_BORDER_RADIUS } from '@/constants/borderCalc';
-
-// Throttle helper function
-const throttle = <T extends (...args: any[]) => any>(
-  func: T,
-  delay: number,
-  options: { leading?: boolean; trailing?: boolean } = {}
-): T => {
-  const { leading = true, trailing = true } = options;
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  let lastCallTime = 0;
-  let lastArgs: Parameters<T> | null = null;
-
-  const throttled = (...args: Parameters<T>) => {
-    const now = Date.now();
-    lastArgs = args;
-
-    const execute = () => {
-      lastCallTime = now;
-      func(...args);
-    };
-
-    if (leading && now - lastCallTime >= delay) {
-      execute();
-    } else if (trailing) {
-      if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        if (lastArgs) {
-          func(...lastArgs);
-          lastCallTime = Date.now();
-        }
-      }, delay - (now - lastCallTime));
-    }
-  };
-
-  return throttled as T;
-};
+import { throttle } from '@/utils/throttle';
 
 interface LabeledSliderInputProps {
   label: string;
@@ -102,15 +66,32 @@ export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
     throttle(onChange, SLIDER_THROTTLE_MS, { leading: true, trailing: true })
   , [onChange]);
 
+  // Throttled haptic feedback to prevent overwhelming the Taptic Engine
+  const lastHapticValue = useRef<number>(0);
+  const hapticThrottled = useMemo(() =>
+    throttle(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), 100)
+  , []);
+
+  // Cleanup throttled functions on unmount
+  useEffect(() => {
+    return () => {
+      onChangeThrottled.cancel();
+      hapticThrottled.cancel();
+    };
+  }, [onChangeThrottled, hapticThrottled]);
+
   // Handlers -------------------------------------------------
   const handleValueChange = useCallback((v: number) => {
-    // Trigger light haptic feedback for every increment
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Trigger haptic feedback only on step increments and throttled
+    if (Math.abs(v - lastHapticValue.current) >= step) {
+      lastHapticValue.current = v;
+      hapticThrottled();
+    }
     
     if (continuousUpdate) {
       onChangeThrottled(v.toString());
     }
-  }, [continuousUpdate, onChangeThrottled]);
+  }, [continuousUpdate, onChangeThrottled, step, hapticThrottled]);
 
   const handleSlidingComplete = useCallback((v: number) => {
     if (!continuousUpdate) {
@@ -121,8 +102,8 @@ export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
     }
   }, [continuousUpdate, onChange]);
 
-  // Memoized input field component
-  const renderInputField = useCallback(() => (
+  // Memoized components for better performance
+  const inputField = useMemo(() => (
     <Input
       variant="outline"
       size="md"
@@ -147,8 +128,7 @@ export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
     </Input>
   ), [warning, borderColor, inputWidth, sliderOnTop, textColor, value, onChange]);
 
-  // Memoized slider component
-  const renderSlider = useCallback(() => (
+  const slider = useMemo(() => (
     <Box style={styles.sliderWrapper}>
       <Slider
         style={styles.slider}
@@ -165,9 +145,8 @@ export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
     </Box>
   ), [numericValue, min, max, step, tintColor, borderColor, handleValueChange, handleSlidingComplete]);
 
-  // Memoized slider labels component
-  const renderSliderLabels = useCallback(() => (
-    labels.length > 0 && (
+  const sliderLabels = useMemo(() => (
+    labels.length > 0 ? (
       <Box style={styles.sliderLabels}>
         {labels.map((lbl) => (
           <Text key={lbl} style={[styles.sliderLabel, { color: textColor }]}> 
@@ -175,7 +154,7 @@ export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
           </Text>
         ))}
       </Box>
-    )
+    ) : null
   ), [labels, textColor]);
 
   //----------------------------------------------------------
@@ -187,16 +166,16 @@ export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
       {sliderOnTop ? (
         <>
           {/* Slider first, then input */}
-          {renderSlider()}
-          {renderSliderLabels()}
-          {renderInputField()}
+          {slider}
+          {sliderLabels}
+          {inputField}
         </>
       ) : (
         <>
           {/* Input first, then slider (default) */}
-          {renderInputField()}
-          {renderSlider()}
-          {renderSliderLabels()}
+          {inputField}
+          {slider}
+          {sliderLabels}
         </>
       )}
     </Box>

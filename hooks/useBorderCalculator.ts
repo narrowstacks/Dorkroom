@@ -21,6 +21,9 @@ import {
   ASPECT_RATIOS,
   PAPER_SIZES,
   EASEL_SIZES,
+  PAPER_SIZE_MAP,
+  ASPECT_RATIO_MAP,
+  EASEL_SIZE_MAP,
 } from '@/constants/border';
 import {
   calculateBladeThickness,
@@ -225,39 +228,50 @@ export const useBorderCalculator = () => {
 
   /* -------- Step 1 : derive numeric inputs ---------------------- */
 
-  const inputs = useMemo(() => {
-    /** paper dims */
-    const paperEntry =
-      state.paperSize === 'custom'
-        ? {
-            w: state.lastValidCustomPaperWidth,
-            h: state.lastValidCustomPaperHeight,
-            custom: true,
-          }
-        : (() => {
-            const p = PAPER_SIZES.find(x => x.value === state.paperSize)!;
-            return { w: p.width, h: p.height, custom: false };
-          })();
+  // Split into smaller memos for better performance
+  const paperEntry = useMemo(() => {
+    if (state.paperSize === 'custom') {
+      return {
+        w: state.lastValidCustomPaperWidth,
+        h: state.lastValidCustomPaperHeight,
+        custom: true,
+      };
+    }
+    
+    // Use O(1) lookup instead of linear search
+    const p = PAPER_SIZE_MAP[state.paperSize];
+    if (!p) {
+      console.warn(`Unknown paper size: ${state.paperSize}`);
+      return { w: 8, h: 10, custom: false }; // fallback to 8x10
+    }
+    return { w: p.width, h: p.height, custom: false };
+  }, [state.paperSize, state.lastValidCustomPaperWidth, state.lastValidCustomPaperHeight]);
 
-    const paperSizeWarning =
-      paperEntry.custom &&
+  const paperSizeWarning = useMemo(() => {
+    return paperEntry.custom &&
       (paperEntry.w > MAX_EASEL_DIMENSION || paperEntry.h > MAX_EASEL_DIMENSION)
         ? `Custom paper (${paperEntry.w}×${paperEntry.h}) exceeds largest standard easel (20×24").`
         : null;
+  }, [paperEntry]);
 
-    /** aspect ratio */
-    const ratioEntry =
-      state.aspectRatio === 'custom'
-        ? {
-            w: state.lastValidCustomAspectWidth,
-            h: state.lastValidCustomAspectHeight,
-          }
-        : (() => {
-            const r = ASPECT_RATIOS.find(x => x.value === state.aspectRatio)!;
-            return { w: r.width, h: r.height };
-          })();
+  const ratioEntry = useMemo(() => {
+    if (state.aspectRatio === 'custom') {
+      return {
+        w: state.lastValidCustomAspectWidth,
+        h: state.lastValidCustomAspectHeight,
+      };
+    }
+    
+    // Use O(1) lookup instead of linear search
+    const r = ASPECT_RATIO_MAP[state.aspectRatio];
+    if (!r) {
+      console.warn(`Unknown aspect ratio: ${state.aspectRatio}`);
+      return { w: 3, h: 2 }; // fallback to 3:2
+    }
+    return { w: r.width || 1, h: r.height || 1 };
+  }, [state.aspectRatio, state.lastValidCustomAspectWidth, state.lastValidCustomAspectHeight]);
 
-    /** orientation + flip */
+  const orientedDimensions = useMemo(() => {
     const orientedPaper = state.isLandscape
       ? { w: paperEntry.h, h: paperEntry.w }
       : { w: paperEntry.w, h: paperEntry.h };
@@ -266,56 +280,44 @@ export const useBorderCalculator = () => {
       ? { w: ratioEntry.h, h: ratioEntry.w }
       : { w: ratioEntry.w, h: ratioEntry.h };
 
-    /** min‑border validation */
+    return { orientedPaper, orientedRatio };
+  }, [paperEntry, ratioEntry, state.isLandscape, state.isRatioFlipped]);
+
+  const minBorderData = useMemo(() => {
+    const { orientedPaper } = orientedDimensions;
     const maxBorder = Math.min(orientedPaper.w, orientedPaper.h) / 2;
-    let minBorder   = state.minBorder;
+    let minBorder = state.minBorder;
     let minBorderWarning: string | null = null;
-    let lastValid   = state.lastValidMinBorder;
+    let lastValid = state.lastValidMinBorder;
 
     if (minBorder >= maxBorder && maxBorder > 0) {
       minBorderWarning = `Minimum border too large; using ${state.lastValidMinBorder}.`;
-      minBorder        = state.lastValidMinBorder;
+      minBorder = state.lastValidMinBorder;
     } else if (minBorder < 0) {
       minBorderWarning = `Border cannot be negative; using ${state.lastValidMinBorder}.`;
-      minBorder        = state.lastValidMinBorder;
+      minBorder = state.lastValidMinBorder;
     } else {
       lastValid = minBorder;
     }
 
-    return {
-      paperEntry,
-      orientedPaper,
-      orientedRatio,
-      minBorder,
-      lastValid,
-      paperSizeWarning,
-    };
-  }, [
-    state.paperSize,
-    state.lastValidCustomPaperWidth,
-    state.lastValidCustomPaperHeight,
-    state.aspectRatio,
-    state.lastValidCustomAspectWidth,
-    state.lastValidCustomAspectHeight,
-    state.minBorder,
-    state.isLandscape,
-    state.isRatioFlipped,
-  ]);
+    return { minBorder, minBorderWarning, lastValid };
+  }, [orientedDimensions, state.minBorder, state.lastValidMinBorder]);
 
   /* -------- Step 2 : preview scale (depends only on size + win) -- */
 
   const previewScale = useMemo(() => {
-    const { w, h } = inputs.orientedPaper;
+    const { w, h } = orientedDimensions.orientedPaper;
     if (!w || !h) return 1;
     const maxW = Math.min(winW * 0.9, 400);
     const maxH = Math.min(winH * 0.5, 400);
     return Math.min(maxW / w, maxH / h);
-  }, [inputs.orientedPaper, winW, winH]);
+  }, [orientedDimensions.orientedPaper, winW, winH]);
 
   /* -------- Step 3 : heavy geometry calculations ----------------- */
 
   const calc = useMemo(() => {
-    const { orientedPaper, orientedRatio, minBorder } = inputs;
+    const { orientedPaper, orientedRatio } = orientedDimensions;
+    const { minBorder } = minBorderData;
 
     /* print size */
     const { printW, printH } = computePrintSize(
@@ -348,8 +350,8 @@ export const useBorderCalculator = () => {
       effectiveSlot,
       isNonStandardPaperSize,
     } = findCenteringOffsets(
-      inputs.paperEntry.w,
-      inputs.paperEntry.h,
+      paperEntry.w,
+      paperEntry.h,
       state.isLandscape,
     );
 
@@ -414,21 +416,20 @@ export const useBorderCalculator = () => {
       bladeThickness: calculateBladeThickness(orientedPaper.w, orientedPaper.h),
 
       isNonStandardPaperSize:
-        isNonStandardPaperSize && !inputs.paperSizeWarning,
+        isNonStandardPaperSize && !paperSizeWarning,
 
       easelSize,
       easelSizeLabel:
-        (EASEL_SIZES.find(e => e.width === easelSize.width &&
-                               e.height === easelSize.height)?.label) ??
+        (EASEL_SIZE_MAP[`${easelSize.width}×${easelSize.height}`]?.label) ??
         `${easelSize.width}×${easelSize.height}`,
 
       offsetWarning,
       bladeWarning,
-      minBorderWarning: inputs.minBorder !== state.minBorder
-        ? inputs.minBorderWarning
+      minBorderWarning: minBorderData.minBorder !== state.minBorder
+        ? minBorderData.minBorderWarning
         : null,
-      paperSizeWarning: inputs.paperSizeWarning,
-      lastValidMinBorder: inputs.lastValid,
+      paperSizeWarning: paperSizeWarning,
+      lastValidMinBorder: minBorderData.lastValid,
       clampedHorizontalOffset: offH,
       clampedVerticalOffset:   offV,
 
@@ -439,7 +440,10 @@ export const useBorderCalculator = () => {
 
     return res;
   }, [
-    inputs,
+    orientedDimensions,
+    minBorderData,
+    paperEntry,
+    paperSizeWarning,
     state.enableOffset,
     state.horizontalOffset,
     state.verticalOffset,
@@ -490,7 +494,7 @@ export const useBorderCalculator = () => {
     const num = tryNumber(v);
     if (num && num > 0)
       dispatch({ type: 'SET_FIELD', key: lastKey, value: num });
-  }, []);
+  }, [dispatch]);
 
   const setNumericField = useCallback((
     key: keyof State,
@@ -502,7 +506,7 @@ export const useBorderCalculator = () => {
     } else if (v === '' || v === '-' || v === '.') {
       dispatch({ type: 'SET_FIELD', key, value: v });
     }
-  }, []);
+  }, [dispatch]);
 
   const setImageLayout = useCallback((
     l: { width: number; height: number },
@@ -580,68 +584,68 @@ export const useBorderCalculator = () => {
 
     /* setters (memoised with useCallback) */
     setAspectRatio:  useCallback((v: string) =>
-      dispatch({ type: 'SET_ASPECT_RATIO', value: v }), []),
+      dispatch({ type: 'SET_ASPECT_RATIO', value: v }), [dispatch]),
 
     setPaperSize:    useCallback((v: string) =>
-      dispatch({ type: 'SET_PAPER_SIZE', value: v }), []),
+      dispatch({ type: 'SET_PAPER_SIZE', value: v }), [dispatch]),
 
     setCustomAspectWidth:  useCallback((v: string) =>
-      setCustomDimensionField('customAspectWidth',  'lastValidCustomAspectWidth',  v), []),
+      setCustomDimensionField('customAspectWidth',  'lastValidCustomAspectWidth',  v), [setCustomDimensionField]),
 
     setCustomAspectHeight: useCallback((v: string) =>
-      setCustomDimensionField('customAspectHeight', 'lastValidCustomAspectHeight', v), []),
+      setCustomDimensionField('customAspectHeight', 'lastValidCustomAspectHeight', v), [setCustomDimensionField]),
 
     setCustomPaperWidth:   useCallback((v: string) =>
-      setCustomDimensionField('customPaperWidth',   'lastValidCustomPaperWidth',   v), []),
+      setCustomDimensionField('customPaperWidth',   'lastValidCustomPaperWidth',   v), [setCustomDimensionField]),
 
     setCustomPaperHeight:  useCallback((v: string) =>
-      setCustomDimensionField('customPaperHeight',  'lastValidCustomPaperHeight',  v), []),
+      setCustomDimensionField('customPaperHeight',  'lastValidCustomPaperHeight',  v), [setCustomDimensionField]),
 
     setMinBorder:          useCallback((v: string) =>
-      setNumericField('minBorder', v), []),
+      setNumericField('minBorder', v), [setNumericField]),
 
     setEnableOffset:       useCallback((v: boolean) =>
-      dispatch({ type: 'SET_FIELD', key: 'enableOffset', value: v }), []),
+      dispatch({ type: 'SET_FIELD', key: 'enableOffset', value: v }), [dispatch]),
 
     setIgnoreMinBorder:    useCallback((v: boolean) =>
-      dispatch({ type: 'SET_FIELD', key: 'ignoreMinBorder', value: v }), []),
+      dispatch({ type: 'SET_FIELD', key: 'ignoreMinBorder', value: v }), [dispatch]),
 
     setHorizontalOffset:   useCallback((v: string) =>
-      setNumericField('horizontalOffset', v), []),
+      setNumericField('horizontalOffset', v), [setNumericField]),
 
     setVerticalOffset:     useCallback((v: string) =>
-      setNumericField('verticalOffset', v), []),
+      setNumericField('verticalOffset', v), [setNumericField]),
 
     setShowBlades:         useCallback((v: boolean) =>
-      dispatch({ type: 'SET_FIELD', key: 'showBlades', value: v }), []),
+      dispatch({ type: 'SET_FIELD', key: 'showBlades', value: v }), [dispatch]),
 
     setIsLandscape:        useCallback((v: boolean) =>
-      dispatch({ type: 'SET_FIELD', key: 'isLandscape', value: v }), []),
+      dispatch({ type: 'SET_FIELD', key: 'isLandscape', value: v }), [dispatch]),
 
     setIsRatioFlipped:     useCallback((v: boolean) =>
-      dispatch({ type: 'SET_FIELD', key: 'isRatioFlipped', value: v }), []),
+      dispatch({ type: 'SET_FIELD', key: 'isRatioFlipped', value: v }), [dispatch]),
 
     /* image setters */
     setSelectedImageUri: useCallback((v: string | null) =>
-      dispatch({ type: 'SET_IMAGE_FIELD', key: 'selectedImageUri', value: v }), []),
+      dispatch({ type: 'SET_IMAGE_FIELD', key: 'selectedImageUri', value: v }), [dispatch]),
 
     setImageDimensions: useCallback((v: { width: number; height: number }) =>
-      dispatch({ type: 'SET_IMAGE_DIMENSIONS', value: v }), []),
+      dispatch({ type: 'SET_IMAGE_DIMENSIONS', value: v }), [dispatch]),
 
     setIsCropping: useCallback((v: boolean) =>
-      dispatch({ type: 'SET_IMAGE_FIELD', key: 'isCropping', value: v }), []),
+      dispatch({ type: 'SET_IMAGE_FIELD', key: 'isCropping', value: v }), [dispatch]),
 
     setCropOffset: useCallback((v: { x: number; y: number }) =>
-      dispatch({ type: 'SET_CROP_OFFSET', value: v }), []),
+      dispatch({ type: 'SET_CROP_OFFSET', value: v }), [dispatch]),
 
     setCropScale: useCallback((v: number) =>
-      dispatch({ type: 'SET_IMAGE_FIELD', key: 'cropScale', value: v }), []),
+      dispatch({ type: 'SET_IMAGE_FIELD', key: 'cropScale', value: v }), [dispatch]),
 
     setImageLayout,
 
     /* reset */
     resetToDefaults: useCallback(() =>
-      dispatch({ type: 'RESET' }), []),
+      dispatch({ type: 'RESET' }), [dispatch]),
   };
 };
 

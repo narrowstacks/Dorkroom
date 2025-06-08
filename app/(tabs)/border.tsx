@@ -513,6 +513,7 @@ export default function BorderCalculator() {
                 borderColor={borderColor}
                 tintColor={tintColor}
                 inputWidth={Platform.OS === 'web' && isDesktop ? 80 : undefined}
+                continuousUpdate={true}
               />
             </Box>
 
@@ -579,6 +580,7 @@ export default function BorderCalculator() {
                         borderColor={borderColor}
                         tintColor={tintColor}
                         warning={!!offsetWarning}
+                        continuousUpdate={true}
                       />
                     </Box>
 
@@ -596,6 +598,7 @@ export default function BorderCalculator() {
                         borderColor={borderColor}
                         tintColor={tintColor}
                         warning={!!offsetWarning}
+                        continuousUpdate={true}
                       />
                     </Box>
                   </Box>

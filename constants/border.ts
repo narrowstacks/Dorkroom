@@ -27,41 +27,52 @@ const rawPaperSizesData = [
   { label: "20x24", width: 20, height: 24 },
 ];
 
-const rawEaselSizesData: PaperSize[] = [
-  { label: "5x7", value: "7x5", width: 7, height: 5 },
-  { label: "8x10", value: "10x8", width: 10, height: 8 },
-  { label: "11x14", value: "14x11", width: 14, height: 11 },
-  { label: "16x20", value: "20x16", width: 20, height: 16 },
-  { label: "20x24", value: "24x20", width: 24, height: 20 },
+const rawEaselSizesData = [
+  { label: "5x7", width: 7, height: 5 },
+  { label: "8x10", width: 10, height: 8 },
+  { label: "11x14", width: 14, height: 11 },
+  { label: "16x20", width: 20, height: 16 },
+  { label: "20x24", width: 24, height: 20 },
 ];
 
-
 // Map raw data to include the derived 'value', keeping numbers defined once
-export const ASPECT_RATIOS: AspectRatio[] = [
+export const ASPECT_RATIOS: readonly AspectRatio[] = Object.freeze([
   ...rawAspectRatiosData.map(item => ({
     ...item,
     value: `${item.width}/${item.height}`,
   })),
   // Add the custom entry separately
   { label: "Custom Ratio", value: "custom", width: 0, height: 0 },
-];
+]);
 
-export const PAPER_SIZES: PaperSize[] = [
+export const PAPER_SIZES: readonly PaperSize[] = Object.freeze([
   ...rawPaperSizesData.map(item => ({
     ...item,
     value: `${item.width}x${item.height}`,
   })),
   // Add the custom entry separately
   { label: "Custom Paper Size", value: "custom", width: 0, height: 0 },
-];
+]);
 
-export const EASEL_SIZES: PaperSize[] = [
-  ...rawPaperSizesData.map(item => ({
+export const EASEL_SIZES: readonly PaperSize[] = Object.freeze([
+  ...rawEaselSizesData.map(item => ({
     ...item,
     value: `${item.width}x${item.height}`,
   }))
-];
+]);
 
+// Create lookup maps for O(1) access
+export const PAPER_SIZE_MAP = Object.freeze(
+  Object.fromEntries(PAPER_SIZES.map(p => [p.value, p]))
+);
+
+export const ASPECT_RATIO_MAP = Object.freeze(
+  Object.fromEntries(ASPECT_RATIOS.map(r => [r.value, r]))
+);
+
+export const EASEL_SIZE_MAP = Object.freeze(
+  Object.fromEntries(EASEL_SIZES.map(e => [`${e.width}×${e.height}`, e]))
+);
 
 // UI Constants
 export const BLADE_THICKNESS = 15;
@@ -71,5 +82,8 @@ export default {
   ASPECT_RATIOS,
   PAPER_SIZES,
   EASEL_SIZES,
+  PAPER_SIZE_MAP,
+  ASPECT_RATIO_MAP,
+  EASEL_SIZE_MAP,
   BLADE_THICKNESS,
 }; 
