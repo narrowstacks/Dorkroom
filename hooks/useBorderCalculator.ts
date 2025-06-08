@@ -36,7 +36,18 @@ import {
 
 /* ---------- util helpers ---------------------------------------- */
 
+// Enhanced numeric parser: returns a number only when the string represents a
+// *complete* numeric literal (i.e. digits on both sides of the decimal if a
+// decimal point is present). This avoids prematurely treating inputs like
+// "0." as the number 0, which would otherwise drop the trailing dot and stop
+// the user from continuing to type the decimal part on iOS.
 const tryNumber = (v: string): number | null => {
+  // Matches optional leading minus, digits, optional fractional part with at
+  // least one digit after the dot.
+  const completeNumberRegex = /^-?\d+(?:\.\d+)?$/;
+
+  if (!completeNumberRegex.test(v)) return null;
+
   const n = parseFloat(v);
   return Number.isFinite(n) ? n : null;
 };
@@ -501,9 +512,16 @@ export const useBorderCalculator = () => {
     v: string,
   ) => {
     const num = tryNumber(v);
+
     if (num !== null) {
+      // The user has entered a complete number – store it as a number.
       dispatch({ type: 'SET_FIELD', key, value: num });
-    } else if (v === '' || v === '-' || v === '.') {
+      return;
+    }
+
+    // Allow "in-progress" numeric strings such as "", "-", ".", "0.", "-."
+    // so the user can keep typing without the input being overridden.
+    if (/^-?\d*\.?$/.test(v)) {
       dispatch({ type: 'SET_FIELD', key, value: v });
     }
   }, [dispatch]);

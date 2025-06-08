@@ -153,7 +153,7 @@ export default function ReciprocityCalculator() {
               <TextareaInput
                 value={customFactor}
                 onChangeText={setCustomFactor}
-                keyboardType="numeric"
+                keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
                 placeholder="1.3"
                 placeholderTextColor={textMuted}
                 multiline={false}

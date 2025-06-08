@@ -436,7 +436,7 @@ export default function BorderCalculator() {
                       style={[styles.input, { color: textColor, borderColor }]}
                       value={String(customAspectWidth)}
                       onChangeText={setCustomAspectWidth}
-                      keyboardType="numeric"
+                      keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
                       placeholder="Width"
                       defaultValue="2"
                       placeholderTextColor={borderColor}
@@ -448,7 +448,7 @@ export default function BorderCalculator() {
                       style={[styles.input, { color: textColor, borderColor }]}
                       value={String(customAspectHeight)}
                       onChangeText={setCustomAspectHeight}
-                      keyboardType="numeric"
+                      keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
                       placeholder="Height"
                       defaultValue="3"
                       placeholderTextColor={borderColor}
@@ -477,7 +477,7 @@ export default function BorderCalculator() {
                       style={[styles.input, { color: textColor, borderColor }]}
                       value={String(customPaperWidth)}
                       onChangeText={setCustomPaperWidth}
-                      keyboardType="numeric"
+                      keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
                       placeholder="Width"
                       defaultValue="8"
                       placeholderTextColor={borderColor}
@@ -489,7 +489,7 @@ export default function BorderCalculator() {
                       style={[styles.input, { color: textColor, borderColor }]}
                       value={String(customPaperHeight)}
                       onChangeText={setCustomPaperHeight}
-                      keyboardType="numeric"
+                      keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
                       placeholder="Height"
                       defaultValue="10"
                       placeholderTextColor={borderColor}

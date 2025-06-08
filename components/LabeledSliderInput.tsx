@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useRef, useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import {
   Box,
   Text,
@@ -121,7 +121,7 @@ export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
         style={[styles.inputText, { color: textColor }]}
         value={String(value)}
         onChangeText={onChange}
-        keyboardType="numeric"
+        keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
         placeholder="0"
         placeholderTextColor={borderColor}
       />

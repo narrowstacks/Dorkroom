@@ -120,7 +120,7 @@ export default function ExposureCalculator() {
             <InputField
               value={originalTime}
               onChangeText={setOriginalTime}
-              keyboardType="numeric"
+              keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
               placeholder="Enter time"
               maxLength={6}
               className="text-base px-4 py-3"
@@ -150,7 +150,7 @@ export default function ExposureCalculator() {
               <InputField
                 value={stops}
                 onChangeText={setStops}
-                keyboardType="numeric"
+                keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
                 placeholder="1"
                 className="text-center"
               />
