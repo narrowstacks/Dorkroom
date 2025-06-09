@@ -52,10 +52,32 @@ const tryNumber = (v: string): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
+// Debounce utility for input processing
+const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): ((...args: Parameters<T>) => void) => {
+  let timeout: NodeJS.Timeout | null = null;
+  
+  return (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
+
+// RequestIdleCallback polyfill for React Native
+const requestIdleCallback = (callback: IdleRequestCallback, options?: IdleRequestOptions) => {
+  if (typeof window !== 'undefined' && window.requestIdleCallback) {
+    return window.requestIdleCallback(callback, options);
+  }
+  // Fallback for React Native
+  return setTimeout(callback, 1);
+};
+
 /* ---------- types ----------------------------------------------- */
 
 interface State {
-  /* inputs */
+  /* inputs */
   aspectRatio: string;
   paperSize: string;
   customAspectWidth: number;
@@ -78,14 +100,14 @@ interface State {
   paperSizeWarning: string | null;
   lastValidMinBorder: number;
 
-  /* image‑related */
+  /* image‑related */
   selectedImageUri: string | null;
   imageDimensions: { width: number; height: number };
   isCropping: boolean;
   cropOffset: { x: number; y: number };
   cropScale: number;
 
-  /* “last valid” for custom free‑text inputs */
+  /* "last valid" for custom free‑text inputs */
   lastValidCustomAspectWidth: number;
   lastValidCustomAspectHeight: number;
   lastValidCustomPaperWidth: number;
@@ -125,6 +147,10 @@ type Action =
         State,
         'selectedImageUri' | 'imageDimensions' | 'isCropping' | 'cropOffset' | 'cropScale'
       >>;
+    }
+  | {
+      type: 'BATCH_UPDATE';
+      payload: Partial<State>;
     };
 
 /* ---------- constants ------------------------------------------- */
@@ -214,6 +240,9 @@ function reducer(state: State, action: Action): State {
     case 'SET_IMAGE_CROP_DATA':
       return { ...state, ...action.payload };
 
+    case 'BATCH_UPDATE':
+      return { ...state, ...action.payload };
+
     default:
       return state;
   }
@@ -229,15 +258,19 @@ export const useBorderCalculator = () => {
 
   /* refs */
   const imageLayoutRef = useRef({ width: 0, height: 0 });
-  const prevWarnings   = useRef({
-    offset: null as string | null,
-    blade:  null as string | null,
-    minBorder: null as string | null,
-    paperSize: null as string | null,
-    lastValid: state.lastValidMinBorder,
+  const warningTimeouts = useRef<{
+    offset: NodeJS.Timeout | null;
+    blade: NodeJS.Timeout | null;
+    minBorder: NodeJS.Timeout | null;
+    paperSize: NodeJS.Timeout | null;
+  }>({
+    offset: null,
+    blade: null,
+    minBorder: null,
+    paperSize: null,
   });
 
-  /* -------- Step 1 : derive numeric inputs ---------------------- */
+  /* -------- Step 1 : derive numeric inputs ---------------------- */
 
   // Split into smaller memos for better performance
   const paperEntry = useMemo(() => {
@@ -314,7 +347,7 @@ export const useBorderCalculator = () => {
     return { minBorder, minBorderWarning, lastValid };
   }, [orientedDimensions, state.minBorder, state.lastValidMinBorder]);
 
-  /* -------- Step 2 : preview scale (depends only on size + win) -- */
+  /* -------- Step 2 : preview scale (depends only on size + win) -- */
 
   const previewScale = useMemo(() => {
     const { w, h } = orientedDimensions.orientedPaper;
@@ -324,47 +357,59 @@ export const useBorderCalculator = () => {
     return Math.min(maxW / w, maxH / h);
   }, [orientedDimensions.orientedPaper, winW, winH]);
 
-  /* -------- Step 3 : heavy geometry calculations ----------------- */
+  /* -------- Step 3 : split heavy geometry calculations ----------- */
 
-  const calc = useMemo(() => {
+  // Step 3a: Print size calculation
+  const printSize = useMemo(() => {
     const { orientedPaper, orientedRatio } = orientedDimensions;
     const { minBorder } = minBorderData;
 
-    /* print size */
-    const { printW, printH } = computePrintSize(
+    return computePrintSize(
       orientedPaper.w,
       orientedPaper.h,
       orientedRatio.w,
       orientedRatio.h,
       minBorder,
     );
+  }, [orientedDimensions, minBorderData]);
 
-    /* offsets */
-    const { h: offH, v: offV, halfW, halfH, warning: offsetWarning } =
-      clampOffsets(
-        orientedPaper.w,
-        orientedPaper.h,
-        printW,
-        printH,
-        minBorder,
-        state.enableOffset ? state.horizontalOffset : 0,
-        state.enableOffset ? state.verticalOffset   : 0,
-        state.ignoreMinBorder,
-      );
+  // Step 3b: Offset calculations
+  const offsetData = useMemo(() => {
+    const { orientedPaper } = orientedDimensions;
+    const { minBorder } = minBorderData;
+    const { printW, printH } = printSize;
 
-    /* borders */
-    const borders = bordersFromGaps(halfW, halfH, offH, offV);
+    return clampOffsets(
+      orientedPaper.w,
+      orientedPaper.h,
+      printW,
+      printH,
+      minBorder,
+      state.enableOffset ? state.horizontalOffset : 0,
+      state.enableOffset ? state.verticalOffset   : 0,
+      state.ignoreMinBorder,
+    );
+  }, [orientedDimensions, minBorderData, printSize, state.enableOffset, state.horizontalOffset, state.verticalOffset, state.ignoreMinBorder]);
 
-    /* easel + paper shift */
-    const {
-      easelSize,
-      effectiveSlot,
-      isNonStandardPaperSize,
-    } = findCenteringOffsets(
+  // Step 3c: Border calculations
+  const borders = useMemo(() => {
+    const { halfW, halfH, h: offH, v: offV } = offsetData;
+    return bordersFromGaps(halfW, halfH, offH, offV);
+  }, [offsetData]);
+
+  // Step 3d: Easel fitting calculations
+  const easelData = useMemo(() => {
+    return findCenteringOffsets(
       paperEntry.w,
       paperEntry.h,
       state.isLandscape,
     );
+  }, [paperEntry, state.isLandscape]);
+
+  // Step 3e: Paper shift calculations
+  const paperShift = useMemo(() => {
+    const { orientedPaper } = orientedDimensions;
+    const { effectiveSlot, isNonStandardPaperSize } = easelData;
 
     const spX = isNonStandardPaperSize
       ? (orientedPaper.w - effectiveSlot.width) / 2
@@ -373,7 +418,15 @@ export const useBorderCalculator = () => {
       ? (orientedPaper.h - effectiveSlot.height) / 2
       : 0;
 
-    /* blade readings */
+    return { spX, spY };
+  }, [orientedDimensions, easelData]);
+
+  // Step 3f: Blade readings and warnings
+  const bladeData = useMemo(() => {
+    const { printW, printH } = printSize;
+    const { h: offH, v: offV } = offsetData;
+    const { spX, spY } = paperShift;
+
     const blades = bladeReadings(
       printW,
       printH,
@@ -387,9 +440,19 @@ export const useBorderCalculator = () => {
       bladeWarning = 'Negative blade reading – use opposite side of scale.';
     if (values.some(v => Math.abs(v) < 3 && v !== 0))
       bladeWarning = (bladeWarning ? bladeWarning + '\n' : '') +
-        'Many easels have no markings below about 3 in.';
+        'Many easels have no markings below about 3 in.';
 
-    /* build result */
+    return { blades, bladeWarning };
+  }, [printSize, offsetData, paperShift]);
+
+  // Step 3g: Final calculation assembly
+  const calc = useMemo(() => {
+    const { orientedPaper } = orientedDimensions;
+    const { printW, printH } = printSize;
+    const { h: offH, v: offV, warning: offsetWarning } = offsetData;
+    const { easelSize, isNonStandardPaperSize } = easelData;
+    const { blades, bladeWarning } = bladeData;
+
     const res: BorderCalculation & {
       offsetWarning: string | null;
       bladeWarning: string | null;
@@ -450,51 +513,56 @@ export const useBorderCalculator = () => {
     };
 
     return res;
-  }, [
-    orientedDimensions,
-    minBorderData,
-    paperEntry,
-    paperSizeWarning,
-    state.enableOffset,
-    state.horizontalOffset,
-    state.verticalOffset,
-    state.ignoreMinBorder,
-    state.isLandscape,
-    previewScale,
-  ]);
+  }, [orientedDimensions, printSize, offsetData, easelData, bladeData, borders, minBorderData, paperSizeWarning, previewScale]);
 
-  /* -------- Step 4 : push warnings back to state ---------------- */
+  /* -------- Step 4 : debounced warning updates to prevent flashing ---- */
+
+  const debouncedWarningUpdate = useCallback((
+    warningType: keyof typeof warningTimeouts.current,
+    newValue: string | null,
+    currentValue: string | null,
+    stateKey: keyof State
+  ) => {
+    // Clear existing timeout
+    if (warningTimeouts.current[warningType]) {
+      clearTimeout(warningTimeouts.current[warningType]!);
+    }
+
+    // If warning is being cleared (newValue is null), update immediately
+    if (newValue === null && currentValue !== null) {
+      dispatch({ type: 'SET_FIELD', key: stateKey, value: null });
+      return;
+    }
+
+    // If warning is appearing or changing, debounce it
+    if (newValue !== currentValue) {
+      warningTimeouts.current[warningType] = setTimeout(() => {
+        dispatch({ type: 'SET_FIELD', key: stateKey, value: newValue });
+      }, 250); // 250ms debounce for warning appearance
+    }
+  }, []);
 
   useEffect(() => {
-    const delta: Partial<State> = {};
+    // Handle each warning type with debouncing
+    debouncedWarningUpdate('offset', calc.offsetWarning, state.offsetWarning, 'offsetWarning');
+    debouncedWarningUpdate('blade', calc.bladeWarning, state.bladeWarning, 'bladeWarning');
+    debouncedWarningUpdate('minBorder', calc.minBorderWarning, state.minBorderWarning, 'minBorderWarning');
+    debouncedWarningUpdate('paperSize', calc.paperSizeWarning, state.paperSizeWarning, 'paperSizeWarning');
 
-    if (calc.offsetWarning !== prevWarnings.current.offset) {
-      delta.offsetWarning = calc.offsetWarning;
-      prevWarnings.current.offset = calc.offsetWarning;
-    }
-    if (calc.bladeWarning !== prevWarnings.current.blade) {
-      delta.bladeWarning = calc.bladeWarning;
-      prevWarnings.current.blade = calc.bladeWarning;
-    }
-    if (calc.minBorderWarning !== prevWarnings.current.minBorder) {
-      delta.minBorderWarning = calc.minBorderWarning;
-      prevWarnings.current.minBorder = calc.minBorderWarning;
-    }
-    if (calc.paperSizeWarning !== prevWarnings.current.paperSize) {
-      delta.paperSizeWarning = calc.paperSizeWarning;
-      prevWarnings.current.paperSize = calc.paperSizeWarning;
-    }
-    if (calc.lastValidMinBorder !== prevWarnings.current.lastValid) {
-      delta.lastValidMinBorder = calc.lastValidMinBorder;
-      prevWarnings.current.lastValid = calc.lastValidMinBorder;
+    // Update lastValidMinBorder immediately (not a UI warning)
+    if (calc.lastValidMinBorder !== state.lastValidMinBorder) {
+      dispatch({ type: 'SET_FIELD', key: 'lastValidMinBorder', value: calc.lastValidMinBorder });
     }
 
-    if (Object.keys(delta).length) {
-      dispatch({ type: 'INTERNAL_UPDATE', payload: delta });
-    }
-  }, [calc]);
+    // Cleanup timeouts on unmount
+    return () => {
+      Object.values(warningTimeouts.current).forEach(timeout => {
+        if (timeout) clearTimeout(timeout);
+      });
+    };
+  }, [calc, state.offsetWarning, state.bladeWarning, state.minBorderWarning, state.paperSizeWarning, state.lastValidMinBorder, debouncedWarningUpdate]);
 
-  /* -------- stable setter callbacks ----------------------------- */
+  /* -------- optimized setter callbacks with debouncing ----------- */
 
   const setCustomDimensionField = useCallback((
     key: keyof State,
@@ -505,26 +573,41 @@ export const useBorderCalculator = () => {
     const num = tryNumber(v);
     if (num && num > 0)
       dispatch({ type: 'SET_FIELD', key: lastKey, value: num });
-  }, [dispatch]);
+  }, []);
+
+  // Debounced numeric field setter for better performance
+  const debouncedNumericFieldSetter = useCallback(
+    debounce((key: keyof State, v: string) => {
+      const num = tryNumber(v);
+
+      if (num !== null) {
+        // The user has entered a complete number – store it as a number.
+        dispatch({ type: 'SET_FIELD', key, value: num });
+        return;
+      }
+
+      // Allow "in-progress" numeric strings such as "", "-", ".", "0.", "-."
+      // so the user can keep typing without the input being overridden.
+      if (/^-?\d*\.?$/.test(v)) {
+        dispatch({ type: 'SET_FIELD', key, value: v });
+      }
+    }, 150), // 150ms debounce for better responsiveness
+    []
+  );
 
   const setNumericField = useCallback((
     key: keyof State,
     v: string,
   ) => {
-    const num = tryNumber(v);
-
-    if (num !== null) {
-      // The user has entered a complete number – store it as a number.
-      dispatch({ type: 'SET_FIELD', key, value: num });
-      return;
-    }
-
-    // Allow "in-progress" numeric strings such as "", "-", ".", "0.", "-."
-    // so the user can keep typing without the input being overridden.
-    if (/^-?\d*\.?$/.test(v)) {
+    // For immediate UI feedback, allow the input to update immediately
+    // but debounce the actual number parsing and validation
+    if (/^-?\d*\.?\d*$/.test(v) || v === '') {
       dispatch({ type: 'SET_FIELD', key, value: v });
     }
-  }, [dispatch]);
+    
+    // Debounce the heavy number validation
+    debouncedNumericFieldSetter(key, v);
+  }, [debouncedNumericFieldSetter]);
 
   const setImageLayout = useCallback((
     l: { width: number; height: number },
@@ -602,10 +685,10 @@ export const useBorderCalculator = () => {
 
     /* setters (memoised with useCallback) */
     setAspectRatio:  useCallback((v: string) =>
-      dispatch({ type: 'SET_ASPECT_RATIO', value: v }), [dispatch]),
+      dispatch({ type: 'SET_ASPECT_RATIO', value: v }), []),
 
     setPaperSize:    useCallback((v: string) =>
-      dispatch({ type: 'SET_PAPER_SIZE', value: v }), [dispatch]),
+      dispatch({ type: 'SET_PAPER_SIZE', value: v }), []),
 
     setCustomAspectWidth:  useCallback((v: string) =>
       setCustomDimensionField('customAspectWidth',  'lastValidCustomAspectWidth',  v), [setCustomDimensionField]),
@@ -623,10 +706,10 @@ export const useBorderCalculator = () => {
       setNumericField('minBorder', v), [setNumericField]),
 
     setEnableOffset:       useCallback((v: boolean) =>
-      dispatch({ type: 'SET_FIELD', key: 'enableOffset', value: v }), [dispatch]),
+      dispatch({ type: 'SET_FIELD', key: 'enableOffset', value: v }), []),
 
     setIgnoreMinBorder:    useCallback((v: boolean) =>
-      dispatch({ type: 'SET_FIELD', key: 'ignoreMinBorder', value: v }), [dispatch]),
+      dispatch({ type: 'SET_FIELD', key: 'ignoreMinBorder', value: v }), []),
 
     setHorizontalOffset:   useCallback((v: string) =>
       setNumericField('horizontalOffset', v), [setNumericField]),
@@ -635,35 +718,35 @@ export const useBorderCalculator = () => {
       setNumericField('verticalOffset', v), [setNumericField]),
 
     setShowBlades:         useCallback((v: boolean) =>
-      dispatch({ type: 'SET_FIELD', key: 'showBlades', value: v }), [dispatch]),
+      dispatch({ type: 'SET_FIELD', key: 'showBlades', value: v }), []),
 
     setIsLandscape:        useCallback((v: boolean) =>
-      dispatch({ type: 'SET_FIELD', key: 'isLandscape', value: v }), [dispatch]),
+      dispatch({ type: 'SET_FIELD', key: 'isLandscape', value: v }), []),
 
     setIsRatioFlipped:     useCallback((v: boolean) =>
-      dispatch({ type: 'SET_FIELD', key: 'isRatioFlipped', value: v }), [dispatch]),
+      dispatch({ type: 'SET_FIELD', key: 'isRatioFlipped', value: v }), []),
 
     /* image setters */
     setSelectedImageUri: useCallback((v: string | null) =>
-      dispatch({ type: 'SET_IMAGE_FIELD', key: 'selectedImageUri', value: v }), [dispatch]),
+      dispatch({ type: 'SET_IMAGE_FIELD', key: 'selectedImageUri', value: v }), []),
 
     setImageDimensions: useCallback((v: { width: number; height: number }) =>
-      dispatch({ type: 'SET_IMAGE_DIMENSIONS', value: v }), [dispatch]),
+      dispatch({ type: 'SET_IMAGE_DIMENSIONS', value: v }), []),
 
     setIsCropping: useCallback((v: boolean) =>
-      dispatch({ type: 'SET_IMAGE_FIELD', key: 'isCropping', value: v }), [dispatch]),
+      dispatch({ type: 'SET_IMAGE_FIELD', key: 'isCropping', value: v }), []),
 
     setCropOffset: useCallback((v: { x: number; y: number }) =>
-      dispatch({ type: 'SET_CROP_OFFSET', value: v }), [dispatch]),
+      dispatch({ type: 'SET_CROP_OFFSET', value: v }), []),
 
     setCropScale: useCallback((v: number) =>
-      dispatch({ type: 'SET_IMAGE_FIELD', key: 'cropScale', value: v }), [dispatch]),
+      dispatch({ type: 'SET_IMAGE_FIELD', key: 'cropScale', value: v }), []),
 
     setImageLayout,
 
     /* reset */
     resetToDefaults: useCallback(() =>
-      dispatch({ type: 'RESET' }), [dispatch]),
+      dispatch({ type: 'RESET' }), []),
   };
 };
 

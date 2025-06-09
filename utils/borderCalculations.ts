@@ -28,18 +28,22 @@ const isExactMatch = (paper: Size) =>
 
 /* ---------- memoised centring ----------------------------------- */
 
+// Pre-sort EASEL_SIZES by area for optimal performance
+const SORTED_EASEL_SIZES = [...EASEL_SIZES]
+  .sort((a, b) => a.width * a.height - b.width * b.height);
+
+// Memoization with size limit for better memory management
+const MAX_MEMO_SIZE = 100;
 const fitMemo = new Map<string, ReturnType<typeof computeFit>>();
 
 function computeFit(paperW: number, paperH: number, landscape: boolean) {
   const paper = orient(paperW, paperH, landscape);
 
-  const best = [...EASEL_SIZES]
-    .sort((a, b) => a.width * a.height - b.width * b.height)
-    .find(
-      e =>
-        (e.width >= paper.width && e.height >= paper.height) ||
-        (e.height >= paper.width && e.width >= paper.height),
-    );
+  const best = SORTED_EASEL_SIZES.find(
+    e =>
+      (e.width >= paper.width && e.height >= paper.height) ||
+      (e.height >= paper.width && e.width >= paper.height),
+  );
 
   if (!best) {
     return {
@@ -70,6 +74,15 @@ export const findCenteringOffsets = (
   let v = fitMemo.get(key);
   if (!v) {
     v = computeFit(paperW, paperH, landscape);
+    
+    // Clear oldest entries if memo gets too large
+    if (fitMemo.size >= MAX_MEMO_SIZE) {
+      const firstKey = fitMemo.keys().next().value;
+      if (firstKey) {
+        fitMemo.delete(firstKey);
+      }
+    }
+    
     fitMemo.set(key, v);
   }
   return v;
