@@ -422,7 +422,7 @@ export default function BorderCalculator() {
               label="Aspect Ratio:"
               selectedValue={aspectRatio}
               onValueChange={setAspectRatio}
-              items={ASPECT_RATIOS}
+              items={ASPECT_RATIOS as any}
               placeholder="Select Aspect Ratio"
             />
 
@@ -463,7 +463,7 @@ export default function BorderCalculator() {
               label="Paper Size:"
               selectedValue={paperSize}
               onValueChange={setPaperSize}
-              items={PAPER_SIZES}
+              items={PAPER_SIZES as any}
               placeholder="Select Paper Size"
             />
 
