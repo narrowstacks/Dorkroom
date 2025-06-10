@@ -91,8 +91,10 @@ export const findCenteringOffsets = (
 /* ---------- blade thickness ------------------------------------- */
 
 export const calculateBladeThickness = (paperW: number, paperH: number) => {
-  const area  = Math.max(paperW * paperH, EPS);
-  const scale = Math.min(BASE_PAPER_AREA / area, 2);
+  if (paperW <= 0 || paperH <= 0) return BLADE_THICKNESS;
+
+  const area  = paperW * paperH;
+  const scale = Math.min(BASE_PAPER_AREA / Math.max(area, EPS), 2);
   return Math.round(BLADE_THICKNESS * scale);
 };
 
@@ -136,42 +138,20 @@ export const calculateOptimalMinBorder = (
   if (ratioH === 0) return start;
   const ratio = ratioW / ratioH;
 
-  let lo = Math.max(0.01, start - SEARCH_SPAN);
-  let hi = start + SEARCH_SPAN;
+  const lo = Math.max(0.01, start - SEARCH_SPAN);
+  const hi = start + SEARCH_SPAN;
 
   let best = start;
   let bestScore = Infinity;
 
-  // cache scores at bounds
-  let scoreLo = Infinity;
-  let scoreHi = Infinity;
-
-  const scoreAt = (mb: number) => {
+  for (let mb = lo; mb <= hi; mb += STEP) {
     const b = computeBorders(paperW, paperH, ratio, mb);
-    if (!b) return Infinity;
-    return b.reduce((s, v) => s + snapScore(v), 0);
-  };
-
-  while (hi - lo > STEP) {
-    const mid = (lo + hi) / 2;
-
-    const scoreMid = scoreAt(mid);
-    if (scoreMid < bestScore - EPS) {
-      bestScore = scoreMid;
-      best = mid;
+    if (!b) continue;
+    const score = b.reduce((s, v) => s + snapScore(v), 0);
+    if (score < bestScore - EPS) {
+      bestScore = score;
+      best = mb;
       if (bestScore === 0) break; // perfect snap
-    }
-
-    // lazy evaluate scores at bounds only when needed
-    if (scoreLo === Infinity) scoreLo = scoreAt(lo);
-    if (scoreHi === Infinity) scoreHi = scoreAt(hi);
-
-    if (scoreLo < scoreHi) {
-      hi = mid;
-      scoreHi = scoreMid;
-    } else {
-      lo = mid;
-      scoreLo = scoreMid;
     }
   }
 
