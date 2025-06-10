@@ -28,6 +28,8 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { getPlatformFont } from '@/styles/common';
 import { ASPECT_RATIOS, PAPER_SIZES } from '@/constants/border';
 import { ThemedSelect } from '@/components/ThemedSelect';
+import { DEFAULT_BORDER_PRESETS } from '@/constants/borderPresets';
+import { useBorderPresets } from '@/hooks/useBorderPresets';
 
 import {
   Box,
@@ -286,7 +288,64 @@ export default function BorderCalculator() {
     minBorderWarning,
     paperSizeWarning,
     resetToDefaults,
+    applyPreset,
   } = useBorderCalculator();
+
+  const { presets, addPreset, updatePreset, removePreset } = useBorderPresets();
+  const [selectedPresetId, setSelectedPresetId] = React.useState('');
+  const [presetName, setPresetName] = React.useState('');
+
+  const currentSettings = {
+    aspectRatio,
+    paperSize,
+    customAspectWidth,
+    customAspectHeight,
+    customPaperWidth,
+    customPaperHeight,
+    minBorder,
+    enableOffset,
+    ignoreMinBorder,
+    horizontalOffset,
+    verticalOffset,
+    showBlades,
+    isLandscape,
+    isRatioFlipped,
+  };
+
+  const presetItems = [
+    ...presets.map(p => ({ label: p.name, value: p.id })),
+    { label: '────────', value: '__divider__' },
+    ...DEFAULT_BORDER_PRESETS.map(p => ({ label: p.name, value: p.id })),
+  ];
+
+  const handleSelectPreset = (id: string) => {
+    if (id === '__divider__') return;
+    setSelectedPresetId(id);
+    const preset = presets.find(p => p.id === id) ||
+      DEFAULT_BORDER_PRESETS.find(p => p.id === id);
+    if (preset) {
+      applyPreset(preset.settings);
+      setPresetName(preset.name);
+    }
+  };
+
+  const savePreset = () => {
+    if (!presetName.trim()) return;
+    addPreset({ id: 'user-' + Date.now(), name: presetName.trim(), settings: currentSettings });
+    setSelectedPresetId('');
+  };
+
+  const updatePresetHandler = () => {
+    if (!selectedPresetId) return;
+    updatePreset(selectedPresetId, { name: presetName.trim(), settings: currentSettings });
+  };
+
+  const deletePresetHandler = () => {
+    if (!selectedPresetId) return;
+    removePreset(selectedPresetId);
+    setSelectedPresetId('');
+    setPresetName('');
+  };
 
   return (
     <ScrollView
@@ -412,15 +471,43 @@ export default function BorderCalculator() {
 
           {/* ---------- FORM SECTION ---------- */}
           <Box
-            style={[
-              styles.form,
-              Platform.OS === 'web' && isDesktop && styles.webForm,
-            ]}
-          >
-            {/* Aspect ratio */}
+          style={[
+            styles.form,
+            Platform.OS === 'web' && isDesktop && styles.webForm,
+          ]}
+        >
+          <Box style={styles.formGroup}>
             <ThemedSelect
-              label="Aspect Ratio:"
-              selectedValue={aspectRatio}
+              label="Presets:"
+              selectedValue={selectedPresetId}
+              onValueChange={handleSelectPreset}
+              items={presetItems as any}
+              placeholder="Select Preset"
+            />
+            <TextInput
+              style={[styles.input, { color: textColor, borderColor }]}
+              value={presetName}
+              onChangeText={setPresetName}
+              placeholder="Preset Name"
+              placeholderTextColor={borderColor}
+            />
+            <HStack style={{ gap: 8, justifyContent: 'space-between' }}>
+              <Button onPress={savePreset} variant="outline">
+                <ButtonText>Save</ButtonText>
+              </Button>
+              <Button onPress={updatePresetHandler} variant="outline" isDisabled={!selectedPresetId}>
+                <ButtonText>Update</ButtonText>
+              </Button>
+              <Button onPress={deletePresetHandler} variant="outline" action="negative" isDisabled={!selectedPresetId}>
+                <ButtonText>Delete</ButtonText>
+              </Button>
+            </HStack>
+          </Box>
+
+          {/* Aspect ratio */}
+          <ThemedSelect
+            label="Aspect Ratio:"
+            selectedValue={aspectRatio}
               onValueChange={setAspectRatio}
               items={ASPECT_RATIOS as any}
               placeholder="Select Aspect Ratio"

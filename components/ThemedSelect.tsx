@@ -15,6 +15,7 @@ import {
   SelectItem,
   Text, // Using Gluestack Text for label
   Box, // Using Gluestack Box for layout
+  Divider,
 } from "@gluestack-ui/themed";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
@@ -100,7 +101,10 @@ export function ThemedSelect({
               <SelectDragIndicator />
             </SelectDragIndicatorWrapper>
             {normalizedItems.map((item) => {
-              // Check if the current item is the selected one
+              if (item.value === '__divider__') {
+                return <Divider my="$1" key="divider" />;
+              }
+
               const isSelected = item.value === selectedValue;
 
               return (
@@ -108,10 +112,8 @@ export function ThemedSelect({
                   key={item.value}
                   label={item.label}
                   value={item.value}
-                  // Apply specific background if selected, otherwise let it be default
                   bg={isSelected ? selectedItemBackground : undefined}
                 >
-                  {/* Use dropdown-specific text color for better contrast */}
                   <Text color={dropdownTextColor}>{item.label}</Text>
                 </SelectItem>
               );

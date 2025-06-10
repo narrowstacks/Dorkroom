@@ -744,6 +744,9 @@ export const useBorderCalculator = () => {
 
     setImageLayout,
 
+    applyPreset: useCallback((p: Partial<State>) =>
+      dispatch({ type: 'BATCH_UPDATE', payload: p }), []),
+
     /* reset */
     resetToDefaults: useCallback(() =>
       dispatch({ type: 'RESET' }), []),
