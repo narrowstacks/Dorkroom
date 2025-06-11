@@ -300,20 +300,6 @@ export default function BorderCalculator() {
   const [isEditingPreset, setIsEditingPreset] = React.useState(false);
   const loadedPresetRef = React.useRef<BorderPreset | null>(null);
 
-  const deepEqual = (a: any, b: any) =>
-    JSON.stringify(a) === JSON.stringify(b);
-
-  const presetDirty = React.useMemo(
-    () =>
-      loadedPresetRef.current &&
-      !deepEqual(loadedPresetRef.current.settings, currentSettings),
-    [currentSettings]
-  );
-
-  React.useEffect(() => {
-    if (presetDirty) setIsEditingPreset(true);
-  }, [presetDirty]);
-
   const currentSettings = {
     aspectRatio,
     paperSize,
@@ -330,6 +316,20 @@ export default function BorderCalculator() {
     isLandscape,
     isRatioFlipped,
   };
+
+  const deepEqual = (a: any, b: any) =>
+    JSON.stringify(a) === JSON.stringify(b);
+
+  const presetDirty = React.useMemo(
+    () =>
+      loadedPresetRef.current &&
+      !deepEqual(loadedPresetRef.current.settings, currentSettings),
+    [currentSettings]
+  );
+
+  React.useEffect(() => {
+    if (presetDirty) setIsEditingPreset(true);
+  }, [presetDirty]);
 
   const presetItems = [
     ...presets.map(p => ({ label: p.name, value: p.id })),
