@@ -28,13 +28,14 @@ import { ThemedSelect } from '@/components/ThemedSelect';
 import { DEFAULT_BORDER_PRESETS } from '@/constants/borderPresets';
 import { useBorderPresets } from '@/hooks/useBorderPresets';
 import { 
-  EditIcon, 
-  RepeatIcon, 
-  ArrowUpIcon,
-  CheckIcon,
-  TrashIcon
-} from '@/components/ui/icon';
-import { RotateCwSquare, Proportions }  from "lucide-react-native"
+  RotateCwSquare, 
+  Proportions,
+  Edit2,
+  RotateCcw,
+  ArrowUp,
+  Check,
+  Trash2
+} from "lucide-react-native"
 import type { BorderPreset } from '@/types/borderPresetTypes';
 
 import {
@@ -207,6 +208,7 @@ export default function BorderCalculator() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width > DESKTOP_BREAKPOINT;
   const backgroundColor = useThemeColor({}, 'background');
+  const cardBackground = useThemeColor({}, 'cardBackground');
   const textColor = useThemeColor({}, 'text');
   const borderColor = useThemeColor({}, 'icon');
   const tintColor = useThemeColor({}, 'tint');
@@ -278,24 +280,26 @@ export default function BorderCalculator() {
             <Box sx={{ gap: 16, alignItems: 'center', width: '100%', mb: Platform.OS === 'web' ? 0 : 32, ...(Platform.OS === 'web' && isDesktop && { flex: 1, alignSelf: 'stretch', mb: 0 }) }}>
               <AnimatedPreview calculation={calculation} showBlades={showBlades} borderColor={borderColor} />
 
-              <Box sx={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-                <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="sm">
-                  <ButtonIcon as={RotateCwSquare} /><ButtonText style={{ marginLeft: 18 }}>Flip Paper Orientation</ButtonText>
+              <HStack sx={{ flex: 1, justifyContent: 'space-between', gap: Platform.OS === 'web' && !isDesktop ? 8 : 12 }}>
+                <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="md">
+                  <ButtonIcon as={RotateCwSquare} />
+                  <ButtonText style={{ fontSize: 13, fontWeight: 'bold' }}>Flip Paper Orientation</ButtonText>
                 </Button>
-                <Button onPress={() => setIsRatioFlipped(!isRatioFlipped)} variant="solid" action="primary" size="sm">
-                  <ButtonIcon as={Proportions} /><ButtonText style={{ marginLeft: 18 }}>Flip Aspect Ratio</ButtonText>
+                <Button onPress={() => setIsRatioFlipped(!isRatioFlipped)} variant="solid" action="primary" size="md">
+                  <ButtonIcon as={Proportions} />
+                  <ButtonText style={{ fontSize: 13, fontWeight: 'bold' }}>Flip Aspect Ratio</ButtonText>
                 </Button>
-              </Box>
+              </HStack>
 
-              <Box sx={{ alignItems: 'center', gap: 8, width: '100%', maxWidth: 400, alignSelf: 'center', minWidth: Platform.OS === 'web' ? 140 : 160, justifyContent: 'center' }}>
+              <Box style={{ backgroundColor: cardBackground, alignItems: 'center', gap: 8, width: '100%', maxWidth: 400, alignSelf: 'center', borderRadius: 16, padding: 16, minWidth: Platform.OS === 'web' ? 140 : 160, justifyContent: 'center' }}>
                 <Text sx={{ fontSize: 20 }}>Result</Text>
                 <ResultRow label="Image Dimensions:" value={`${calculation.printWidth.toFixed(2)} x ${calculation.printHeight.toFixed(2)} inches`} />
                 <ResultRow label="Left Blade:" value={`${calculation.leftBladeReading.toFixed(2)} inches`} />
                 <ResultRow label="Right Blade:" value={`${calculation.rightBladeReading.toFixed(2)} inches`} />
                 <ResultRow label="Top Blade:" value={`${calculation.topBladeReading.toFixed(2)} inches`} />
                 <ResultRow label="Bottom Blade:" value={`${calculation.bottomBladeReading.toFixed(2)} inches`} />
-                <Button onPress={resetToDefaults} variant="solid" action="negative" size="lg">
-                  <ButtonIcon as={RepeatIcon} /><ButtonText style={{ marginLeft: 18 }}>Reset to Defaults</ButtonText>
+                <Button onPress={resetToDefaults} variant="solid" action="negative" size="md" style={{ marginTop: 8 }}>
+                  <ButtonIcon as={RotateCcw} /><ButtonText style={{ marginLeft: 18 }}>Reset to Defaults</ButtonText>
                 </Button>
                 {calculation.isNonStandardPaperSize && (
                   <Box sx={{ borderWidth: 1, p: 16, borderRadius: 8, mt: 16, mb: 8, width: '100%', borderColor: tintColor, backgroundColor: `${tintColor}20` }}>
@@ -314,16 +318,16 @@ export default function BorderCalculator() {
             <Box sx={{ gap: 8 }}>
               <HStack style={{ gap: 12, alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Box style={{ flex: 1 }}><ThemedSelect label="Presets:" selectedValue={selectedPresetId} onValueChange={handleSelectPreset} items={presetItems as any} placeholder="Select Preset" /></Box>
-                {!isEditingPreset && !presetDirty && (<Box style={{ marginTop: 12 }}><Button onPress={() => setIsEditingPreset(true)} size="md" variant="outline"><ButtonIcon as={EditIcon} /></Button></Box>)}
+                {!isEditingPreset && !presetDirty && (<Box style={{ marginTop: 12 }}><Button onPress={() => setIsEditingPreset(true)} size="md" variant="outline"><ButtonIcon as={Edit2} /></Button></Box>)}
               </HStack>
               {(isEditingPreset || presetDirty) && (
                 <>
                   <Text sx={{ fontSize: 20 }}>Preset Name</Text>
                   <StyledTextInput value={presetName} onChangeText={setPresetName} placeholder="Preset Name" />
                   <HStack style={{ gap: 8, justifyContent: 'space-between' }}>
-                    <Button onPress={savePreset} variant="solid" action="positive" size="md"><ButtonIcon as={CheckIcon} /><ButtonText style={{ marginLeft: 18 }}>Save</ButtonText></Button>
-                    <Button onPress={updatePresetHandler} variant="solid" action="primary" size="md" isDisabled={!selectedPresetId}><ButtonIcon as={ArrowUpIcon} /><ButtonText style={{ marginLeft: 18 }}>Update</ButtonText></Button>
-                    <Button onPress={deletePresetHandler} variant="solid" action="negative" size="md" isDisabled={!selectedPresetId}><ButtonIcon as={TrashIcon} /><ButtonText style={{ marginLeft: 18 }}>Delete</ButtonText></Button>
+                    <Button onPress={savePreset} variant="solid" action="positive" size="md"><ButtonIcon as={Check} /><ButtonText style={{ marginLeft: 5 }}>Save</ButtonText></Button>
+                    <Button onPress={updatePresetHandler} variant="solid" action="primary" size="md" isDisabled={!selectedPresetId}><ButtonIcon as={ArrowUp} /><ButtonText style={{ marginLeft: 5 }}>Update</ButtonText></Button>
+                    <Button onPress={deletePresetHandler} variant="solid" action="negative" size="md" isDisabled={!selectedPresetId}><ButtonIcon as={Trash2} /><ButtonText style={{ marginLeft: 5 }}>Delete</ButtonText></Button>
                   </HStack>
                 </>
               )}

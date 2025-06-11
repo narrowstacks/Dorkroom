@@ -121,6 +121,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginBottom: 16,
     fontWeight: "600",
+    
   },
   infoSubtitle: {
     fontSize: 16,
