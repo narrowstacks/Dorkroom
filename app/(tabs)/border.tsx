@@ -31,21 +31,19 @@ import { ThemedSelect } from '@/components/ThemedSelect';
 import { DEFAULT_BORDER_PRESETS } from '@/constants/borderPresets';
 import { useBorderPresets } from '@/hooks/useBorderPresets';
 import { EditIcon } from '@/components/ui/icon';
-import { ButtonIcon } from '@/components/ui/button';
 import type { BorderPreset } from '@/types/borderPresetTypes';
 
 import {
   Box,
   Text,
   ScrollView,
-  Button,
-  ButtonText,
   HStack,
   Alert,
   AlertIcon,
   AlertText,
   InfoIcon,
 } from '@gluestack-ui/themed';
+import { Button, ButtonText, ButtonIcon } from '@/components/ui/button';
 
 // Animated Preview Component
 const AnimatedPreview = ({ calculation, showBlades, borderColor }: {
