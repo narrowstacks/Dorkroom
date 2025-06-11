@@ -1,6 +1,5 @@
 import React, { useRef, useEffect } from 'react';
 import {
-  StyleSheet,
   Platform,
   TextInput,   // ← still used only for the print-preview sliders; feel free to migrate later
   Switch,      // ← same here
@@ -23,7 +22,6 @@ import {
 
 import { useWindowDimensions } from '@/hooks/useWindowDimensions';
 import { useBorderCalculator } from '@/hooks/useBorderCalculator';
-import { ThemedView } from '@/components/ThemedView'; // kept for print-preview
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { getPlatformFont } from '@/styles/common';
 import { ASPECT_RATIOS, PAPER_SIZES } from '@/constants/border';
@@ -33,8 +31,7 @@ import { useBorderPresets } from '@/hooks/useBorderPresets';
 import { 
   EditIcon, 
   RepeatIcon, 
-  ArrowRightIcon, 
-  ArrowLeftIcon,
+  ArrowUpIcon,
   CheckIcon,
   TrashIcon
 } from '@/components/ui/icon';
@@ -77,7 +74,7 @@ const AnimatedPreview = ({ calculation, showBlades, borderColor }: {
     if (!calculation) return;
 
     const animationConfig = {
-      duration: 300,
+      duration: 100,
       useNativeDriver: false,
     };
 
@@ -131,7 +128,7 @@ const AnimatedPreview = ({ calculation, showBlades, borderColor }: {
   useEffect(() => {
     Animated.timing(animatedValues.bladeOpacity, {
       toValue: showBlades ? 1 : 0,
-      duration: 200,
+      duration: 100,
       useNativeDriver: false,
     }).start();
   }, [showBlades]);
@@ -140,113 +137,115 @@ const AnimatedPreview = ({ calculation, showBlades, borderColor }: {
 
   return (
     <Animated.View
-      style={[
-        styles.previewContainer,
-        {
-          width: animatedValues.previewWidth,
-          height: animatedValues.previewHeight,
-          borderColor,
-        },
-      ]}
+      style={{
+        position: 'relative', 
+        backgroundColor: 'transparent', 
+        overflow: 'hidden',
+        width: animatedValues.previewWidth,
+        height: animatedValues.previewHeight,
+        borderColor,
+      }}
     >
       <Animated.View
-        style={[
-          styles.paperPreview,
-          {
-            width: '100%',
-            height: '100%',
-            borderColor,
-            backgroundColor: 'white',
-          },
-        ]}
+        style={{
+          position: 'relative', 
+          borderWidth: 1, 
+          backgroundColor: 'white', 
+          overflow: 'hidden',
+          width: '100%',
+          height: '100%',
+          borderColor,
+        }}
       >
         <Animated.View
-          style={[
-            styles.printPreview,
-            {
-              backgroundColor: 'grey',
-              left: animatedValues.printLeft.interpolate({
-                inputRange: [0, 100],
-                outputRange: ['0%', '100%'],
-              }),
-              top: animatedValues.printTop.interpolate({
-                inputRange: [0, 100],
-                outputRange: ['0%', '100%'],
-              }),
-              width: animatedValues.printWidth.interpolate({
-                inputRange: [0, 100],
-                outputRange: ['0%', '100%'],
-              }),
-              height: animatedValues.printHeight.interpolate({
-                inputRange: [0, 100],
-                outputRange: ['0%', '100%'],
-              }),
-            },
-          ]}
+          style={{
+            position: 'absolute',
+            backgroundColor: 'grey',
+            left: animatedValues.printLeft.interpolate({
+              inputRange: [0, 100],
+              outputRange: ['0%', '100%'],
+            }),
+            top: animatedValues.printTop.interpolate({
+              inputRange: [0, 100],
+              outputRange: ['0%', '100%'],
+            }),
+            width: animatedValues.printWidth.interpolate({
+              inputRange: [0, 100],
+              outputRange: ['0%', '100%'],
+            }),
+            height: animatedValues.printHeight.interpolate({
+              inputRange: [0, 100],
+              outputRange: ['0%', '100%'],
+            }),
+          }}
         />
         <Animated.View
-          style={[
-            styles.blade,
-            styles.bladeVertical,
-            {
-              opacity: animatedValues.bladeOpacity,
-              left: animatedValues.leftBladePosition.interpolate({
-                inputRange: [0, 100],
-                outputRange: ['0%', '100%'],
-              }),
-              transform: [{ translateX: -calculation.bladeThickness }],
-              backgroundColor: borderColor,
-              width: calculation.bladeThickness,
-            },
-          ]}
+          style={{
+            position: 'absolute', 
+            boxShadow: '0px 2px 4px rgba(0,0,0,0.25)', 
+            elevation: 5,
+            top: -1000, 
+            bottom: -1000,
+            opacity: animatedValues.bladeOpacity,
+            left: animatedValues.leftBladePosition.interpolate({
+              inputRange: [0, 100],
+              outputRange: ['0%', '100%'],
+            }),
+            transform: [{ translateX: -calculation.bladeThickness }],
+            backgroundColor: borderColor,
+            width: calculation.bladeThickness,
+          }}
         />
         <Animated.View
-          style={[
-            styles.blade,
-            styles.bladeVertical,
-            {
-              opacity: animatedValues.bladeOpacity,
-              right: animatedValues.rightBladePosition.interpolate({
-                inputRange: [0, 100],
-                outputRange: ['0%', '100%'],
-              }),
-              transform: [{ translateX: calculation.bladeThickness }],
-              backgroundColor: borderColor,
-              width: calculation.bladeThickness,
-            },
-          ]}
+          style={{
+            position: 'absolute', 
+            boxShadow: '0px 2px 4px rgba(0,0,0,0.25)', 
+            elevation: 5,
+            top: -1000, 
+            bottom: -1000,
+            opacity: animatedValues.bladeOpacity,
+            right: animatedValues.rightBladePosition.interpolate({
+              inputRange: [0, 100],
+              outputRange: ['0%', '100%'],
+            }),
+            transform: [{ translateX: calculation.bladeThickness }],
+            backgroundColor: borderColor,
+            width: calculation.bladeThickness,
+          }}
         />
         <Animated.View
-          style={[
-            styles.blade,
-            styles.bladeHorizontal,
-            {
-              opacity: animatedValues.bladeOpacity,
-              top: animatedValues.topBladePosition.interpolate({
-                inputRange: [0, 100],
-                outputRange: ['0%', '100%'],
-              }),
-              transform: [{ translateY: -calculation.bladeThickness }],
-              backgroundColor: borderColor,
-              height: calculation.bladeThickness,
-            },
-          ]}
+          style={{
+            position: 'absolute', 
+            boxShadow: '0px 2px 4px rgba(0,0,0,0.25)', 
+            elevation: 5,
+            left: -1000, 
+            right: -1000,
+            opacity: animatedValues.bladeOpacity,
+            top: animatedValues.topBladePosition.interpolate({
+              inputRange: [0, 100],
+              outputRange: ['0%', '100%'],
+            }),
+            transform: [{ translateY: -calculation.bladeThickness }],
+            backgroundColor: borderColor,
+            height: calculation.bladeThickness,
+          }}
         />
         <Animated.View
-          style={[
-            styles.blade,
-            styles.bladeHorizontal,
-            {
-              opacity: animatedValues.bladeOpacity,
-              bottom: animatedValues.bottomBladePosition.interpolate({
-                inputRange: [0, 100],
-                outputRange: ['0%', '100%'],
-              }),
-              transform: [{ translateY: calculation.bladeThickness }],
-              backgroundColor: borderColor,
-              height: calculation.bladeThickness,
-            },
-          ]}
+          style={{
+            position: 'absolute', 
+            boxShadow: '0px 2px 4px rgba(0,0,0,0.25)', 
+            elevation: 5,
+            left: -1000, 
+            right: -1000,
+            opacity: animatedValues.bladeOpacity,
+            bottom: animatedValues.bottomBladePosition.interpolate({
+              inputRange: [0, 100],
+              outputRange: ['0%', '100%'],
+            }),
+            transform: [{ translateY: calculation.bladeThickness }],
+            backgroundColor: borderColor,
+            height: calculation.bladeThickness,
+          }}
         />
       </Animated.View>
     </Animated.View>
@@ -388,30 +387,62 @@ export default function BorderCalculator() {
 
   return (
     <ScrollView
-      sx={{ flex: 1, bg: backgroundColor }}
-      contentContainerStyle={styles.scrollContent}
+      sx={{ 
+        flex: 1, 
+        bg: backgroundColor 
+      }}
+      contentContainerStyle={{ 
+        flexGrow: 1,
+        paddingBottom: Platform.OS === 'ios' || Platform.OS === 'android' ? 100 : 80,
+      }}
     >
       {/* --------------- MAIN WRAPPER --------------- */}
-      <Box style={[styles.content, Platform.OS === 'web' && styles.webContent]}>
+      <Box sx={{ 
+        flex: 1, 
+        p: 16,
+        ...(Platform.OS === 'web' && { 
+          maxWidth: 1024, 
+          marginHorizontal: 'auto', 
+          width: '100%', 
+          p: 24 
+        })
+      }}>
         {/* ------------ HEADER ------------ */}
-        <Box style={styles.header}>
-          <Text style={styles.title}>border calculator</Text>
+        <Box sx={{ 
+          flexDirection: 'row', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          width: '100%', 
+          mb: 16 
+        }}>
+          <Text sx={{ fontSize: 24, textAlign: 'center' }}>border calculator</Text>
         </Box>
 
         {/* ------------ BODY ------------ */}
         <Box
-          style={[
-            styles.mainContent,
-            Platform.OS === 'web' && isDesktop && styles.webMainContent,
-          ]}
+          sx={{
+            width: '100%',
+            ...(Platform.OS === 'web' && isDesktop && { 
+              flexDirection: 'row', 
+              gap: 32, 
+              alignItems: 'flex-start' 
+            })
+          }}
         >
           {/* ---------- ANIMATED PREVIEW & RESULTS ---------- */}
           {calculation && (
-            <ThemedView
-              style={[
-                styles.previewSection,
-                Platform.OS === 'web' && isDesktop && styles.webPreviewSection,
-              ]}
+            <Box
+              sx={{
+                gap: 16,
+                alignItems: 'center',
+                width: '100%',
+                mb: Platform.OS === 'web' ? 0 : 32,
+                ...(Platform.OS === 'web' && isDesktop && { 
+                  flex: 1, 
+                  alignSelf: 'stretch', 
+                  mb: 0 
+                })
+              }}
             >
               {/* -- ANIMATED PREVIEW CANVAS -- */}
               <AnimatedPreview 
@@ -421,7 +452,12 @@ export default function BorderCalculator() {
               />
 
               {/* orientation controls */}
-              <Box style={styles.flipButtons}>
+              <Box sx={{ 
+                flex: 1, 
+                flexDirection: 'row', 
+                justifyContent: 'space-between', 
+                gap: 12 
+              }}>
                 <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="sm">
                   <ButtonIcon as={RotateCwSquare} />
                   <ButtonText style={{ marginLeft: 18 }}>Flip Paper Orientation</ButtonText>
@@ -433,39 +469,47 @@ export default function BorderCalculator() {
               </Box>
 
               {/* result read-out */}
-              <ThemedView style={styles.resultContainer}>
-                <Text style={styles.subtitle}>Result</Text>
+              <Box sx={{
+                alignItems: 'center',
+                gap: 8,
+                width: '100%',
+                maxWidth: 400,
+                alignSelf: 'center',
+                minWidth: Platform.OS === 'web' ? 140 : 160,
+                justifyContent: 'center',
+              }}>
+                <Text sx={{ fontSize: 20 }}>Result</Text>
 
-                <ThemedView style={styles.resultRow}>
-                  <Text style={styles.resultLabel}>Image Dimensions:</Text>
-                  <Text style={styles.resultValue}>
+                <Box sx={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', gap: 16 }}>
+                  <Text sx={{ fontSize: 16, textAlign: 'right', fontFamily: getPlatformFont(), flex: 1 }}>Image Dimensions:</Text>
+                  <Text sx={{ fontSize: 16, textAlign: 'left', fontFamily: getPlatformFont(), flex: 1 }}>
                     {calculation.printWidth.toFixed(2)} x {calculation.printHeight.toFixed(2)} inches
                   </Text>
-                </ThemedView>
-                <ThemedView style={styles.resultRow}>
-                  <Text style={styles.resultLabel}>Left Blade:</Text>
-                  <Text style={styles.resultValue}>
+                </Box>
+                <Box sx={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', gap: 16 }}>
+                  <Text sx={{ fontSize: 16, textAlign: 'right', fontFamily: getPlatformFont(), flex: 1 }}>Left Blade:</Text>
+                  <Text sx={{ fontSize: 16, textAlign: 'left', fontFamily: getPlatformFont(), flex: 1 }}>
                     {calculation.leftBladeReading.toFixed(2)} inches
                   </Text>
-                </ThemedView>
-                <ThemedView style={styles.resultRow}>
-                  <Text style={styles.resultLabel}>Right Blade:</Text>
-                  <Text style={styles.resultValue}>
+                </Box>
+                <Box sx={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', gap: 16 }}>
+                  <Text sx={{ fontSize: 16, textAlign: 'right', fontFamily: getPlatformFont(), flex: 1 }}>Right Blade:</Text>
+                  <Text sx={{ fontSize: 16, textAlign: 'left', fontFamily: getPlatformFont(), flex: 1 }}>
                     {calculation.rightBladeReading.toFixed(2)} inches
                   </Text>
-                </ThemedView>
-                <ThemedView style={styles.resultRow}>
-                  <Text style={styles.resultLabel}>Top Blade:</Text>
-                  <Text style={styles.resultValue}>
+                </Box>
+                <Box sx={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', gap: 16 }}>
+                  <Text sx={{ fontSize: 16, textAlign: 'right', fontFamily: getPlatformFont(), flex: 1 }}>Top Blade:</Text>
+                  <Text sx={{ fontSize: 16, textAlign: 'left', fontFamily: getPlatformFont(), flex: 1 }}>
                     {calculation.topBladeReading.toFixed(2)} inches
                   </Text>
-                </ThemedView>
-                <ThemedView style={styles.resultRow}>
-                  <Text style={styles.resultLabel}>Bottom Blade:</Text>
-                  <Text style={styles.resultValue}>
+                </Box>
+                <Box sx={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', gap: 16 }}>
+                  <Text sx={{ fontSize: 16, textAlign: 'right', fontFamily: getPlatformFont(), flex: 1 }}>Bottom Blade:</Text>
+                  <Text sx={{ fontSize: 16, textAlign: 'left', fontFamily: getPlatformFont(), flex: 1 }}>
                     {calculation.bottomBladeReading.toFixed(2)} inches
                   </Text>
-                </ThemedView>
+                </Box>
 
                 <Button onPress={resetToDefaults} variant="solid" action="negative" size="lg">
                   <ButtonIcon as={RepeatIcon} />
@@ -473,17 +517,23 @@ export default function BorderCalculator() {
                 </Button>
 
                 {calculation.isNonStandardPaperSize && (
-                  <ThemedView
-                    style={[
-                      styles.easelInstructionBox,
-                      { borderColor: tintColor, backgroundColor: `${tintColor}20` },
-                    ]}
+                  <Box
+                    sx={{
+                      borderWidth: 1,
+                      p: 16,
+                      borderRadius: 8,
+                      mt: 16,
+                      mb: 8,
+                      width: '100%',
+                      borderColor: tintColor, 
+                      backgroundColor: `${tintColor}20`
+                    }}
                   >
-                    <Text style={styles.easelInstructionTitle}>Non-Standard Paper Size</Text>
-                    <Text style={styles.easelInstructionText}>
+                    <Text sx={{ fontSize: 16, textAlign: 'center', mb: 8 }}>Non-Standard Paper Size</Text>
+                    <Text sx={{ fontSize: 14, textAlign: 'center' }}>
                       Position paper in the {calculation.easelSizeLabel} slot all the way to the left.
                     </Text>
-                  </ThemedView>
+                  </Box>
                 )}
 
                 {bladeWarning && (
@@ -510,18 +560,22 @@ export default function BorderCalculator() {
                     </Alert>
                   </Box>
                 )}
-              </ThemedView>
-            </ThemedView>
+              </Box>
+            </Box>
           )}
 
           {/* ---------- FORM SECTION ---------- */}
           <Box
-          style={[
-            styles.form,
-            Platform.OS === 'web' && isDesktop && styles.webForm,
-          ]}
-        >
-          <Box style={styles.formGroup}>
+            sx={{
+              gap: 16, 
+              width: '100%',
+              ...(Platform.OS === 'web' && isDesktop && { 
+                flex: 1, 
+                maxWidth: 480 
+              })
+            }}
+          >
+          <Box sx={{ gap: 8 }}>
             <HStack style={{ gap: 12, alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <Box style={{ flex: 1 }}>
               <ThemedSelect
@@ -542,9 +596,18 @@ export default function BorderCalculator() {
             </HStack>
             {(isEditingPreset || presetDirty) && (
               <>
-              <Text style={styles.subtitle}>Preset Name</Text>
+              <Text sx={{ fontSize: 20 }}>Preset Name</Text>
                 <TextInput
-                  style={[styles.input, { color: textColor, borderColor }]}
+                  style={{
+                    height: 40,
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    paddingHorizontal: 12,
+                    fontSize: 16,
+                    marginBottom: 4,
+                    color: textColor, 
+                    borderColor
+                  }}
                   value={presetName}
                   onChangeText={setPresetName}
                   placeholder="Preset Name"
@@ -556,7 +619,7 @@ export default function BorderCalculator() {
                     <ButtonText style={{ marginLeft: 18 }}>Save</ButtonText>
                   </Button>
                   <Button onPress={updatePresetHandler} variant="solid" action="primary" size="md" isDisabled={!selectedPresetId}>
-                    <ButtonIcon as={ArrowLeftIcon} />
+                    <ButtonIcon as={ArrowUpIcon} />
                     <ButtonText style={{ marginLeft: 18 }}>Update</ButtonText>
                   </Button>
                   <Button onPress={deletePresetHandler} variant="solid" action="negative" size="md" isDisabled={!selectedPresetId}>
@@ -579,12 +642,21 @@ export default function BorderCalculator() {
 
             {/* Custom aspect ratio inputs */}
             {aspectRatio === 'custom' && (
-              <Box style={styles.formGroup}>
-                <Box style={styles.row}>
-                  <Box style={styles.inputGroup}>
-                    <Text style={styles.label}>width:</Text>
+              <Box sx={{ gap: 8 }}>
+                <Box sx={{ flexDirection: 'row', alignItems: 'center', gap: 16, mt: 8 }}>
+                  <Box sx={{ flex: 1, gap: 4 }}>
+                    <Text sx={{ fontSize: 16, mb: Platform.OS === 'web' ? 0 : 4 }}>width:</Text>
                     <TextInput
-                      style={[styles.input, { color: textColor, borderColor }]}
+                      style={{
+                        height: 40,
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        paddingHorizontal: 12,
+                        fontSize: 16,
+                        marginBottom: 4,
+                        color: textColor, 
+                        borderColor
+                      }}
                       value={String(customAspectWidth)}
                       onChangeText={setCustomAspectWidth}
                       keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
@@ -593,10 +665,19 @@ export default function BorderCalculator() {
                       placeholderTextColor={borderColor}
                     />
                   </Box>
-                  <Box style={styles.inputGroup}>
-                    <Text style={styles.label}>height:</Text>
+                  <Box sx={{ flex: 1, gap: 4 }}>
+                    <Text sx={{ fontSize: 16, mb: Platform.OS === 'web' ? 0 : 4 }}>height:</Text>
                     <TextInput
-                      style={[styles.input, { color: textColor, borderColor }]}
+                      style={{
+                        height: 40,
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        paddingHorizontal: 12,
+                        fontSize: 16,
+                        marginBottom: 4,
+                        color: textColor, 
+                        borderColor
+                      }}
                       value={String(customAspectHeight)}
                       onChangeText={setCustomAspectHeight}
                       keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
@@ -620,12 +701,21 @@ export default function BorderCalculator() {
 
             {/* Custom paper size inputs */}
             {paperSize === 'custom' && (
-              <Box style={styles.formGroup}>
-                <Box style={styles.row}>
-                  <Box style={styles.inputGroup}>
-                    <Text style={styles.label}>Width (inches):</Text>
+              <Box sx={{ gap: 8 }}>
+                <Box sx={{ flexDirection: 'row', alignItems: 'center', gap: 16, mt: 8 }}>
+                  <Box sx={{ flex: 1, gap: 4 }}>
+                    <Text sx={{ fontSize: 16, mb: Platform.OS === 'web' ? 0 : 4 }}>Width (inches):</Text>
                     <TextInput
-                      style={[styles.input, { color: textColor, borderColor }]}
+                      style={{
+                        height: 40,
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        paddingHorizontal: 12,
+                        fontSize: 16,
+                        marginBottom: 4,
+                        color: textColor, 
+                        borderColor
+                      }}
                       value={String(customPaperWidth)}
                       onChangeText={setCustomPaperWidth}
                       keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
@@ -634,10 +724,19 @@ export default function BorderCalculator() {
                       placeholderTextColor={borderColor}
                     />
                   </Box>
-                  <Box style={styles.inputGroup}>
-                    <Text style={styles.label}>Height (inches):</Text>
+                  <Box sx={{ flex: 1, gap: 4 }}>
+                    <Text sx={{ fontSize: 16, mb: Platform.OS === 'web' ? 0 : 4 }}>Height (inches):</Text>
                     <TextInput
-                      style={[styles.input, { color: textColor, borderColor }]}
+                      style={{
+                        height: 40,
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        paddingHorizontal: 12,
+                        fontSize: 16,
+                        marginBottom: 4,
+                        color: textColor, 
+                        borderColor
+                      }}
                       value={String(customPaperHeight)}
                       onChangeText={setCustomPaperHeight}
                       keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
@@ -651,7 +750,7 @@ export default function BorderCalculator() {
             )}
 
             {/* Minimum border */}
-            <Box style={styles.formGroup}>
+            <Box sx={{ gap: 8 }}>
               <LabeledSliderInput
                 label="Minimum Border (inches):"
                 value={minBorder}
@@ -669,10 +768,10 @@ export default function BorderCalculator() {
             </Box>
 
             {/* Toggles */}
-            <Box style={styles.togglesRow}>
-              <Box style={styles.toggleColumn}>
-                <Box style={styles.row}>
-                  <Text style={styles.label}>Enable Offsets:</Text>
+            <Box sx={{ flexDirection: 'row', gap: 16, width: '100%' }}>
+              <Box sx={{ flex: 1 }}>
+                <Box sx={{ flexDirection: 'row', alignItems: 'center', gap: 16, mt: 8 }}>
+                  <Text sx={{ fontSize: 16, mb: Platform.OS === 'web' ? 0 : 4 }}>Enable Offsets:</Text>
                   <Switch
                     value={enableOffset}
                     onValueChange={setEnableOffset}
@@ -682,9 +781,9 @@ export default function BorderCalculator() {
                 </Box>
               </Box>
 
-              <Box style={styles.toggleColumn}>
-                <Box style={styles.row}>
-                  <Text style={styles.label}>Show Easel Blades:</Text>
+              <Box sx={{ flex: 1 }}>
+                <Box sx={{ flexDirection: 'row', alignItems: 'center', gap: 16, mt: 8 }}>
+                  <Text sx={{ fontSize: 16, mb: Platform.OS === 'web' ? 0 : 4 }}>Show Easel Blades:</Text>
                   <Switch
                     value={showBlades}
                     onValueChange={setShowBlades}
@@ -698,9 +797,9 @@ export default function BorderCalculator() {
             {/* Offset controls */}
             {enableOffset && (
               <>
-                <Box style={styles.formGroup}>
-                  <Box style={styles.row}>
-                    <Text style={styles.label}>ignore min border:</Text>
+                <Box sx={{ gap: 8 }}>
+                  <Box sx={{ flexDirection: 'row', alignItems: 'center', gap: 16, mt: 8 }}>
+                    <Text sx={{ fontSize: 16, mb: Platform.OS === 'web' ? 0 : 4 }}>ignore min border:</Text>
                     <Switch
                       value={ignoreMinBorder}
                       onValueChange={setIgnoreMinBorder}
@@ -709,16 +808,16 @@ export default function BorderCalculator() {
                     />
                   </Box>
                   {ignoreMinBorder && (
-                    <Text style={styles.infoText}>
+                    <Text sx={{ fontSize: 14, mb: 8, lineHeight: 20 }}>
                       Print can be positioned freely but will stay within paper edges
                     </Text>
                   )}
                 </Box>
 
-                <Box style={styles.formGroup}>
-                  <Box style={[styles.row, styles.offsetRow]}>
+                <Box sx={{ gap: 8 }}>
+                  <Box sx={{ flexDirection: 'row', alignItems: 'flex-start', gap: 24, mt: 8 }}>
                     {/* Horizontal offset */}
-                    <Box style={styles.inputGroup}>
+                    <Box sx={{ flex: 1, gap: 4 }}>
                       <LabeledSliderInput
                         label="horizontal offset:"
                         value={horizontalOffset}
@@ -736,7 +835,7 @@ export default function BorderCalculator() {
                     </Box>
 
                     {/* Vertical offset */}
-                    <Box style={styles.inputGroup}>
+                    <Box sx={{ flex: 1, gap: 4 }}>
                       <LabeledSliderInput
                         label="vertical offset:"
                         value={verticalOffset}
@@ -770,18 +869,28 @@ export default function BorderCalculator() {
 
         {/* ---------- INFO SECTION ---------- */}
         <Box
-          style={[
-            styles.infoSection,
-            Platform.OS === 'web' && isDesktop && styles.webInfoSection,
-          ]}
+          sx={{
+            p: 16, 
+            mt: 16, 
+            borderTopWidth: 1, 
+            borderTopColor: '#ccc',
+            ...(Platform.OS === 'web' && isDesktop && {
+              maxWidth: 1024,
+              marginHorizontal: 'auto',
+              width: '100%',
+              p: 24,
+              borderTopWidth: 1,
+              borderTopColor: '#ccc',
+            })
+          }}
         >
-          <Text style={styles.infoTitle}>About this Tool</Text>
+          <Text sx={{ fontSize: 20, textAlign: 'center', mb: 16 }}>About this Tool</Text>
 
-          <Text style={styles.infoContentText}>
+          <Text sx={{ fontSize: 14, mb: 8, lineHeight: 20 }}>
             The border calculator helps you determine the optimal placement of your enlarger easel blades when printing photos, ensuring consistent and aesthetically pleasing borders.
           </Text>
 
-          <Text style={styles.infoSubtitle}>How to Use:</Text>
+          <Text sx={{ fontSize: 16, mt: 16, mb: 8 }}>How to Use:</Text>
           {[
             '1. Select your desired aspect ratio (the ratio of your negative or image)',
             "2. Choose your paper size (the size of photo paper you're printing on)",
@@ -789,24 +898,24 @@ export default function BorderCalculator() {
             '4. Optionally enable offsets to shift the image from center',
             '5. View the blade positions in the results section',
           ].map((t) => (
-            <Text key={t} style={styles.infoContentText}>
+            <Text key={t} sx={{ fontSize: 14, mb: 8, lineHeight: 20 }}>
               {t}
             </Text>
           ))}
 
-          <Text style={styles.infoSubtitle}>Blade Measurements:</Text>
-          <Text style={styles.infoContentText}>
+          <Text sx={{ fontSize: 16, mt: 16, mb: 8 }}>Blade Measurements:</Text>
+          <Text sx={{ fontSize: 14, mb: 8, lineHeight: 20 }}>
             The measurements shown are distances from the edge of your enlarger baseboard to where each blade should be positioned. For non-standard paper sizes (sizes that don't have a standard easel slot), follow the instructions to place your paper in the appropriate easel slot.
           </Text>
 
-          <Text style={styles.infoSubtitle}>Tips:</Text>
+          <Text sx={{ fontSize: 16, mt: 16, mb: 8 }}>Tips:</Text>
           {[
             '• Easels only provide markings for quarter-inch increments, so you are on your own for measuring the blade positions with a ruler.',
             '• For uniform borders, keep offsets at 0',
             '• The "flip paper orientation" button rotates the paper between portrait and landscape',
             '• The "flip aspect ratio" button swaps the width and height of your image',
           ].map((t) => (
-            <Text key={t} style={styles.infoContentText}>
+            <Text key={t} sx={{ fontSize: 14, mb: 8, lineHeight: 20 }}>
               {t}
             </Text>
           ))}
@@ -815,90 +924,3 @@ export default function BorderCalculator() {
     </ScrollView>
   );
 }
-
-/* ------------------ StyleSheet (unchanged) ------------------ */
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: Platform.OS === 'ios' || Platform.OS === 'android' ? 100 : 80,
-  },
-  content: { flex: 1, padding: 16 },
-  title: { fontSize: 24, textAlign: 'center' },
-  subtitle: { fontSize: 20 },
-  form: { gap: 16, width: '100%' },
-  formGroup: { gap: 8 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 8 },
-  label: { fontSize: 16, marginBottom: Platform.OS === 'web' ? 0 : 4 },
-  inputGroup: { flex: 1, gap: 4 },
-  input: {
-    height: 40,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  previewSection: {
-    gap: 16,
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: Platform.OS === 'web' ? 0 : 32,
-  },
-  previewContainer: { position: 'relative', backgroundColor: 'transparent', overflow: 'hidden' },
-  paperPreview: { position: 'relative', borderWidth: 1, backgroundColor: 'transparent', overflow: 'hidden' },
-  printPreview: { position: 'absolute' },
-  blade: { position: 'absolute', boxShadow: '0px 2px 4px rgba(0,0,0,0.25)', elevation: 5 },
-  bladeVertical: { top: -1000, bottom: -1000 },
-  bladeHorizontal: { left: -1000, right: -1000 },
-  resultContainer: {
-    alignItems: 'center',
-    gap: 8,
-    width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
-    minWidth: Platform.OS === 'web' ? 140 : 160,
-    justifyContent: 'center',
-  },
-  resultRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', gap: 16 },
-  resultLabel: { fontSize: 16, textAlign: 'right', fontFamily: getPlatformFont(), flex: 1 },
-  resultValue: { fontSize: 16, textAlign: 'left', fontFamily: getPlatformFont(), flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', width: '100%', marginBottom: 16 },
-  webContent: { maxWidth: 1024, marginHorizontal: 'auto', width: '100%', padding: 24 },
-  mainContent: { width: '100%' },
-  webMainContent: { flexDirection: 'row', gap: 32, alignItems: 'flex-start' },
-  webForm: { flex: 1, maxWidth: 480 },
-  webPreviewSection: { flex: 1, alignSelf: 'stretch', marginBottom: 0 },
-  inputWarning: { borderColor: '#FFA500', borderWidth: 2 },
-  infoText: { fontSize: 14, marginBottom: 8, lineHeight: 20 },
-  togglesRow: { flexDirection: 'row', gap: 16, width: '100%' },
-  toggleColumn: { flex: 1 },
-  easelInstructionBox: {
-    borderWidth: 1,
-    padding: 16,
-    borderRadius: 8,
-    marginTop: 16,
-    marginBottom: 8,
-    width: '100%',
-  },
-  easelInstructionTitle: { fontSize: 16, textAlign: 'center', marginBottom: 8 },
-  easelInstructionText: { fontSize: 14, textAlign: 'center' },
-  infoSection: { padding: 16, marginTop: 16, borderTopWidth: 1, borderTopColor: '#ccc' },
-  infoTitle: { fontSize: 20, textAlign: 'center', marginBottom: 16 },
-  infoSubtitle: { fontSize: 16, marginTop: 16, marginBottom: 8 },
-  infoContentText: { fontSize: 14, marginBottom: 8, lineHeight: 20 },
-  webInfoSection: {
-    maxWidth: 1024,
-    marginHorizontal: 'auto',
-    width: '100%',
-    padding: 24,
-    borderTopWidth: 1,
-    borderTopColor: '#ccc',
-  },
-  minBorderInput: { width: 80, flex: 0 },
-  sliderContainer: { flex: 1, marginHorizontal: 8 },
-  mobileSliderContainer: { marginTop: 16, width: '100%' },
-  offsetRow: { alignItems: 'flex-start', gap: 24 },
-  flipButtons: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
-  flipButtonsNarrow: { flexDirection: 'column' },
-});
