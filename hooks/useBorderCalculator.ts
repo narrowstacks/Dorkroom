@@ -15,8 +15,10 @@ import {
   useCallback,
 } from 'react';
 import { useWindowDimensions } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { BorderCalculation } from '@/types/borderTypes';
+import type { BorderCalculatorState } from '@/types/borderPresetTypes';
 import {
   ASPECT_RATIOS,
   PAPER_SIZES,
@@ -160,6 +162,7 @@ const DEFAULT_CUSTOM_PAPER_WIDTH  = 13;
 const DEFAULT_CUSTOM_PAPER_HEIGHT = 10;
 const DEFAULT_CUSTOM_ASPECT_WIDTH  = 2;
 const DEFAULT_CUSTOM_ASPECT_HEIGHT = 3;
+const CALC_STORAGE_KEY = 'borderCalculatorState';
 
 const MAX_EASEL_DIMENSION = EASEL_SIZES
   .reduce((m, e) => Math.max(m, e.width, e.height), 0);
@@ -255,6 +258,54 @@ function reducer(state: State, action: Action): State {
 export const useBorderCalculator = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { width: winW, height: winH } = useWindowDimensions();
+
+  // Load cached state on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const json = await AsyncStorage.getItem(CALC_STORAGE_KEY);
+        if (json) {
+          const cached: BorderCalculatorState = JSON.parse(json);
+          if (cached && typeof cached === 'object') {
+            dispatch({ type: 'BATCH_UPDATE', payload: cached });
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to load calculator state', e);
+      }
+    })();
+  }, []);
+
+  const persistableState: BorderCalculatorState = useMemo(
+    () => ({
+      aspectRatio: state.aspectRatio,
+      paperSize: state.paperSize,
+      customAspectWidth: state.customAspectWidth,
+      customAspectHeight: state.customAspectHeight,
+      customPaperWidth: state.customPaperWidth,
+      customPaperHeight: state.customPaperHeight,
+      minBorder: state.minBorder,
+      enableOffset: state.enableOffset,
+      ignoreMinBorder: state.ignoreMinBorder,
+      horizontalOffset: state.horizontalOffset,
+      verticalOffset: state.verticalOffset,
+      showBlades: state.showBlades,
+      isLandscape: state.isLandscape,
+      isRatioFlipped: state.isRatioFlipped,
+      lastValidCustomAspectWidth: state.lastValidCustomAspectWidth,
+      lastValidCustomAspectHeight: state.lastValidCustomAspectHeight,
+      lastValidCustomPaperWidth: state.lastValidCustomPaperWidth,
+      lastValidCustomPaperHeight: state.lastValidCustomPaperHeight,
+      lastValidMinBorder: state.lastValidMinBorder,
+    }),
+    [state]
+  );
+
+  useEffect(() => {
+    AsyncStorage.setItem(CALC_STORAGE_KEY, JSON.stringify(persistableState)).catch(
+      (e) => console.warn('Failed to save calculator state', e)
+    );
+  }, [persistableState]);
 
   /* refs */
   const imageLayoutRef = useRef({ width: 0, height: 0 });

@@ -15,10 +15,18 @@ interface BorderPresetSettings {
   isRatioFlipped: boolean;
 }
 
+interface BorderCalculatorState extends BorderPresetSettings {
+  lastValidCustomAspectWidth: number;
+  lastValidCustomAspectHeight: number;
+  lastValidCustomPaperWidth: number;
+  lastValidCustomPaperHeight: number;
+  lastValidMinBorder: number;
+}
+
 interface BorderPreset {
   id: string;
   name: string;
   settings: BorderPresetSettings;
 }
 
-export type { BorderPresetSettings, BorderPreset };
+export type { BorderPresetSettings, BorderPreset, BorderCalculatorState };

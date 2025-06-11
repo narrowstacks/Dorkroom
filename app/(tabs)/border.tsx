@@ -30,6 +30,9 @@ import { ASPECT_RATIOS, PAPER_SIZES } from '@/constants/border';
 import { ThemedSelect } from '@/components/ThemedSelect';
 import { DEFAULT_BORDER_PRESETS } from '@/constants/borderPresets';
 import { useBorderPresets } from '@/hooks/useBorderPresets';
+import { EditIcon } from '@/components/ui/icon';
+import { ButtonIcon } from '@/components/ui/button';
+import type { BorderPreset } from '@/types/borderPresetTypes';
 
 import {
   Box,
@@ -294,6 +297,22 @@ export default function BorderCalculator() {
   const { presets, addPreset, updatePreset, removePreset } = useBorderPresets();
   const [selectedPresetId, setSelectedPresetId] = React.useState('');
   const [presetName, setPresetName] = React.useState('');
+  const [isEditingPreset, setIsEditingPreset] = React.useState(false);
+  const loadedPresetRef = React.useRef<BorderPreset | null>(null);
+
+  const deepEqual = (a: any, b: any) =>
+    JSON.stringify(a) === JSON.stringify(b);
+
+  const presetDirty = React.useMemo(
+    () =>
+      loadedPresetRef.current &&
+      !deepEqual(loadedPresetRef.current.settings, currentSettings),
+    [currentSettings]
+  );
+
+  React.useEffect(() => {
+    if (presetDirty) setIsEditingPreset(true);
+  }, [presetDirty]);
 
   const currentSettings = {
     aspectRatio,
@@ -326,18 +345,30 @@ export default function BorderCalculator() {
     if (preset) {
       applyPreset(preset.settings);
       setPresetName(preset.name);
+      loadedPresetRef.current = preset;
+      setIsEditingPreset(false);
     }
   };
 
   const savePreset = () => {
     if (!presetName.trim()) return;
-    addPreset({ id: 'user-' + Date.now(), name: presetName.trim(), settings: currentSettings });
-    setSelectedPresetId('');
+    const newPreset = {
+      id: 'user-' + Date.now(),
+      name: presetName.trim(),
+      settings: currentSettings,
+    };
+    addPreset(newPreset);
+    loadedPresetRef.current = newPreset;
+    setSelectedPresetId(newPreset.id);
+    setIsEditingPreset(false);
   };
 
   const updatePresetHandler = () => {
     if (!selectedPresetId) return;
-    updatePreset(selectedPresetId, { name: presetName.trim(), settings: currentSettings });
+    const updated = { name: presetName.trim(), settings: currentSettings };
+    updatePreset(selectedPresetId, updated);
+    loadedPresetRef.current = { ...(loadedPresetRef.current as BorderPreset), ...updated, id: selectedPresetId };
+    setIsEditingPreset(false);
   };
 
   const deletePresetHandler = () => {
@@ -345,6 +376,8 @@ export default function BorderCalculator() {
     removePreset(selectedPresetId);
     setSelectedPresetId('');
     setPresetName('');
+    loadedPresetRef.current = null;
+    setIsEditingPreset(false);
   };
 
   return (
@@ -477,6 +510,7 @@ export default function BorderCalculator() {
           ]}
         >
           <Box style={styles.formGroup}>
+            <Text style={styles.subtitle}>Preset</Text>
             <ThemedSelect
               label="Presets:"
               selectedValue={selectedPresetId}
@@ -484,24 +518,34 @@ export default function BorderCalculator() {
               items={presetItems as any}
               placeholder="Select Preset"
             />
-            <TextInput
-              style={[styles.input, { color: textColor, borderColor }]}
-              value={presetName}
-              onChangeText={setPresetName}
-              placeholder="Preset Name"
-              placeholderTextColor={borderColor}
-            />
-            <HStack style={{ gap: 8, justifyContent: 'space-between' }}>
-              <Button onPress={savePreset} variant="outline">
-                <ButtonText>Save</ButtonText>
+            {!isEditingPreset && !presetDirty && (
+              <Button mt="$2" onPress={() => setIsEditingPreset(true)} variant="outline">
+                <ButtonIcon as={EditIcon} mr="$1" />
+                <ButtonText>Edit</ButtonText>
               </Button>
-              <Button onPress={updatePresetHandler} variant="outline" isDisabled={!selectedPresetId}>
-                <ButtonText>Update</ButtonText>
-              </Button>
-              <Button onPress={deletePresetHandler} variant="outline" action="negative" isDisabled={!selectedPresetId}>
-                <ButtonText>Delete</ButtonText>
-              </Button>
-            </HStack>
+            )}
+            {(isEditingPreset || presetDirty) && (
+              <>
+                <TextInput
+                  style={[styles.input, { color: textColor, borderColor }]}
+                  value={presetName}
+                  onChangeText={setPresetName}
+                  placeholder="Preset Name"
+                  placeholderTextColor={borderColor}
+                />
+                <HStack style={{ gap: 8, justifyContent: 'space-between' }}>
+                  <Button onPress={savePreset} variant="outline">
+                    <ButtonText>Save</ButtonText>
+                  </Button>
+                  <Button onPress={updatePresetHandler} variant="outline" isDisabled={!selectedPresetId}>
+                    <ButtonText>Update</ButtonText>
+                  </Button>
+                  <Button onPress={deletePresetHandler} variant="outline" action="negative" isDisabled={!selectedPresetId}>
+                    <ButtonText>Delete</ButtonText>
+                  </Button>
+                </HStack>
+              </>
+            )}
           </Box>
 
           {/* Aspect ratio */}
