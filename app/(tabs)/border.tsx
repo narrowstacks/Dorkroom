@@ -30,7 +30,15 @@ import { ASPECT_RATIOS, PAPER_SIZES } from '@/constants/border';
 import { ThemedSelect } from '@/components/ThemedSelect';
 import { DEFAULT_BORDER_PRESETS } from '@/constants/borderPresets';
 import { useBorderPresets } from '@/hooks/useBorderPresets';
-import { EditIcon } from '@/components/ui/icon';
+import { 
+  EditIcon, 
+  RepeatIcon, 
+  ArrowRightIcon, 
+  ArrowLeftIcon,
+  CheckIcon,
+  TrashIcon
+} from '@/components/ui/icon';
+import { RotateCwSquare, Proportions }  from "lucide-react-native"
 import type { BorderPreset } from '@/types/borderPresetTypes';
 
 import {
@@ -413,15 +421,14 @@ export default function BorderCalculator() {
               />
 
               {/* orientation controls */}
-              <Box style={[
-                styles.flipButtons,
-                Platform.OS === 'web' && !isDesktop && styles.flipButtonsNarrow,
-              ]}>
-                <Button onPress={() => setIsLandscape(!isLandscape)} variant="outline">
-                  <ButtonText>Flip Paper Orientation</ButtonText>
+              <Box style={styles.flipButtons}>
+                <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="sm">
+                  <ButtonIcon as={RotateCwSquare} />
+                  <ButtonText style={{ marginLeft: 18 }}>Flip Paper Orientation</ButtonText>
                 </Button>
-                <Button onPress={() => setIsRatioFlipped(!isRatioFlipped)} variant="outline">
-                  <ButtonText>Flip Aspect Ratio</ButtonText>
+                <Button onPress={() => setIsRatioFlipped(!isRatioFlipped)} variant="solid" action="primary" size="sm">
+                  <ButtonIcon as={Proportions} />
+                  <ButtonText style={{ marginLeft: 18 }}>Flip Aspect Ratio</ButtonText>
                 </Button>
               </Box>
 
@@ -460,8 +467,9 @@ export default function BorderCalculator() {
                   </Text>
                 </ThemedView>
 
-                <Button onPress={resetToDefaults} action="negative">
-                  <ButtonText>Reset to Defaults</ButtonText>
+                <Button onPress={resetToDefaults} variant="solid" action="negative" size="lg">
+                  <ButtonIcon as={RepeatIcon} />
+                  <ButtonText style={{ marginLeft: 18 }}>Reset to Defaults</ButtonText>
                 </Button>
 
                 {calculation.isNonStandardPaperSize && (
@@ -479,22 +487,28 @@ export default function BorderCalculator() {
                 )}
 
                 {bladeWarning && (
-                  <Alert action="error" variant="outline" mt="$2">
-                    <AlertIcon as={InfoIcon} mr="$3" />
-                    <AlertText>{bladeWarning}</AlertText>
-                  </Alert>
+                  <Box style={{ marginTop: 8 }}>
+                    <Alert action="error" variant="outline">
+                      <AlertIcon as={InfoIcon} />
+                      <AlertText>{bladeWarning}</AlertText>
+                    </Alert>
+                  </Box>
                 )}
                 {minBorderWarning && (
-                  <Alert action="error" variant="outline" mt="$2">
-                    <AlertIcon as={InfoIcon} mr="$3" />
-                    <AlertText>{minBorderWarning}</AlertText>
-                  </Alert>
+                  <Box style={{ marginTop: 8 }}>
+                    <Alert action="error" variant="outline">
+                      <AlertIcon as={InfoIcon} />
+                      <AlertText>{minBorderWarning}</AlertText>
+                    </Alert>
+                  </Box>
                 )}
                 {paperSizeWarning && (
-                  <Alert action="warning" variant="outline" mt="$2">
-                    <AlertIcon as={InfoIcon} mr="$3" />
-                    <AlertText>{paperSizeWarning}</AlertText>
-                  </Alert>
+                  <Box style={{ marginTop: 8 }}>
+                    <Alert action="warning" variant="outline">
+                      <AlertIcon as={InfoIcon} />
+                      <AlertText>{paperSizeWarning}</AlertText>
+                    </Alert>
+                  </Box>
                 )}
               </ThemedView>
             </ThemedView>
@@ -508,22 +522,27 @@ export default function BorderCalculator() {
           ]}
         >
           <Box style={styles.formGroup}>
-            <Text style={styles.subtitle}>Preset</Text>
-            <ThemedSelect
-              label="Presets:"
-              selectedValue={selectedPresetId}
-              onValueChange={handleSelectPreset}
-              items={presetItems as any}
-              placeholder="Select Preset"
-            />
+            <HStack style={{ gap: 12, alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <Box style={{ flex: 1 }}>
+              <ThemedSelect
+                label="Presets:"
+                selectedValue={selectedPresetId}
+                onValueChange={handleSelectPreset}
+                items={presetItems as any}
+                placeholder="Select Preset"
+              />
+            </Box>
             {!isEditingPreset && !presetDirty && (
-              <Button mt="$2" onPress={() => setIsEditingPreset(true)} variant="outline">
-                <ButtonIcon as={EditIcon} mr="$1" />
-                <ButtonText>Edit</ButtonText>
-              </Button>
+              <Box style={{ marginTop: 12 }}>
+                <Button onPress={() => setIsEditingPreset(true)} size="md" variant="outline">
+                  <ButtonIcon as={EditIcon} />
+                </Button>
+              </Box>
             )}
+            </HStack>
             {(isEditingPreset || presetDirty) && (
               <>
+              <Text style={styles.subtitle}>Preset Name</Text>
                 <TextInput
                   style={[styles.input, { color: textColor, borderColor }]}
                   value={presetName}
@@ -532,14 +551,17 @@ export default function BorderCalculator() {
                   placeholderTextColor={borderColor}
                 />
                 <HStack style={{ gap: 8, justifyContent: 'space-between' }}>
-                  <Button onPress={savePreset} variant="outline">
-                    <ButtonText>Save</ButtonText>
+                  <Button onPress={savePreset} variant="solid" action="positive" size="md">
+                    <ButtonIcon as={CheckIcon} />
+                    <ButtonText style={{ marginLeft: 18 }}>Save</ButtonText>
                   </Button>
-                  <Button onPress={updatePresetHandler} variant="outline" isDisabled={!selectedPresetId}>
-                    <ButtonText>Update</ButtonText>
+                  <Button onPress={updatePresetHandler} variant="solid" action="primary" size="md" isDisabled={!selectedPresetId}>
+                    <ButtonIcon as={ArrowLeftIcon} />
+                    <ButtonText style={{ marginLeft: 18 }}>Update</ButtonText>
                   </Button>
-                  <Button onPress={deletePresetHandler} variant="outline" action="negative" isDisabled={!selectedPresetId}>
-                    <ButtonText>Delete</ButtonText>
+                  <Button onPress={deletePresetHandler} variant="solid" action="negative" size="md" isDisabled={!selectedPresetId}>
+                    <ButtonIcon as={TrashIcon} />
+                    <ButtonText style={{ marginLeft: 18 }}>Delete</ButtonText>
                   </Button>
                 </HStack>
               </>
@@ -733,10 +755,12 @@ export default function BorderCalculator() {
                   </Box>
 
                   {offsetWarning && (
-                    <Alert action="warning" variant="outline" mt="$2">
-                      <AlertIcon as={InfoIcon} mr="$3" />
-                      <AlertText>{offsetWarning}</AlertText>
-                    </Alert>
+                    <Box style={{ marginTop: 8 }}>
+                      <Alert action="warning" variant="outline">
+                        <AlertIcon as={InfoIcon} />
+                        <AlertText>{offsetWarning}</AlertText>
+                      </Alert>
+                    </Box>
                   )}
                 </Box>
               </>
