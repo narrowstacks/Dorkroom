@@ -30,7 +30,7 @@ import { useBorderPresets } from '@/hooks/useBorderPresets';
 import { 
   RotateCwSquare, 
   Proportions,
-  Edit2,
+  Edit,
   RotateCcw,
   ArrowUp,
   Check,
@@ -92,7 +92,7 @@ const DimensionInputGroup = ({ widthValue, onWidthChange, heightValue, onHeightC
 
 const ResultRow = ({ label, value }: { label: string; value: string }) => (
   <Box sx={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', gap: 16 }}>
-    <Text sx={{ fontSize: 16, textAlign: 'right', fontFamily: getPlatformFont(), flex: 1 }}>{label}</Text>
+    <Text sx={{ fontSize: 16, fontWeight: 'bold', textAlign: 'right', fontFamily: getPlatformFont(), flex: 1 }}>{label}</Text>
     <Text sx={{ fontSize: 16, textAlign: 'left', fontFamily: getPlatformFont(), flex: 1 }}>{value}</Text>
   </Box>
 );
@@ -110,12 +110,10 @@ const ToggleSwitch = ({ label, value, onValueChange }: { label: string; value: b
     const borderColor = useThemeColor({}, 'icon');
     const tintColor = useThemeColor({}, 'tint');
     return (
-        <Box sx={{ flex: 1 }}>
-            <Box sx={{ flexDirection: 'row', alignItems: 'center', gap: 16, mt: 8 }}>
-                <Text sx={{ fontSize: 16, mb: Platform.OS === 'web' ? 0 : 4 }}>{label}</Text>
+            <HStack sx={{ flexDirection: 'row', alignItems: 'center', gap: 16, mt: 8 }}>
+                <Text sx={{ fontSize: 14, mb: Platform.OS === 'web' ? 0 : 4 }}>{label}</Text>
                 <Switch value={value} onValueChange={onValueChange} trackColor={{ false: borderColor, true: tintColor }} thumbColor={value ? tintColor : '#f4f3f4'} />
-            </Box>
-        </Box>
+            </HStack>
     );
 };
 
@@ -212,6 +210,8 @@ export default function BorderCalculator() {
   const textColor = useThemeColor({}, 'text');
   const borderColor = useThemeColor({}, 'icon');
   const tintColor = useThemeColor({}, 'tint');
+  const outline = useThemeColor({}, 'outline');
+  const shadowColor = useThemeColor({}, 'shadowColor');
 
   const { aspectRatio, setAspectRatio, paperSize, setPaperSize, customAspectWidth, setCustomAspectWidth, customAspectHeight, setCustomAspectHeight, customPaperWidth, setCustomPaperWidth, customPaperHeight, setCustomPaperHeight, minBorder, setMinBorder, enableOffset, setEnableOffset, ignoreMinBorder, setIgnoreMinBorder, horizontalOffset, setHorizontalOffset, verticalOffset, setVerticalOffset, showBlades, setShowBlades, isLandscape, setIsLandscape, isRatioFlipped, setIsRatioFlipped, offsetWarning, bladeWarning, calculation, minBorderWarning, paperSizeWarning, resetToDefaults, applyPreset } = useBorderCalculator();
   const { presets, addPreset, updatePreset, removePreset } = useBorderPresets();
@@ -271,8 +271,8 @@ export default function BorderCalculator() {
   return (
     <ScrollView sx={{ flex: 1, bg: backgroundColor }} contentContainerStyle={{ flexGrow: 1, paddingBottom: Platform.OS === 'ios' || Platform.OS === 'android' ? 100 : 80 }}>
       <Box sx={{ flex: 1, p: 16, ...(Platform.OS === 'web' && { maxWidth: 1024, marginHorizontal: 'auto', width: '100%', p: 24 }) }}>
-        <Box sx={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', width: '100%', mb: 16 }}>
-          <Text sx={{ fontSize: 24, textAlign: 'center' }}>border calculator</Text>
+        <Box sx={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', width: '100%', mb: 24, pb: 16, borderBottomWidth: 1, borderBottomColor: outline }}>
+          <Text sx={{ fontSize: 30, textAlign: 'center', fontWeight: '600' }}>Border Calculator</Text>
         </Box>
 
         <Box sx={{ width: '100%', ...(Platform.OS === 'web' && isDesktop && { flexDirection: 'row', gap: 32, alignItems: 'flex-start' }) }}>
@@ -291,8 +291,25 @@ export default function BorderCalculator() {
                 </Button>
               </HStack>
 
-              <Box style={{ backgroundColor: cardBackground, alignItems: 'center', gap: 8, width: '100%', maxWidth: 400, alignSelf: 'center', borderRadius: 16, padding: 16, minWidth: Platform.OS === 'web' ? 140 : 160, justifyContent: 'center' }}>
-                <Text sx={{ fontSize: 20 }}>Result</Text>
+              <Box className="p-5 rounded-2xl mt-8 border shadow-sm" style={{ 
+                backgroundColor: cardBackground, 
+                borderColor: outline,
+                shadowColor,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+                elevation: 4,
+                borderWidth: 1,
+                alignItems: 'center', 
+                gap: 8, 
+                width: '100%', 
+                maxWidth: 400, 
+                alignSelf: 'center', 
+                borderRadius: 16, 
+                padding: 16, 
+                minWidth: Platform.OS === 'web' ? 140 : 160, 
+                justifyContent: 'center' 
+              }}>
                 <ResultRow label="Image Dimensions:" value={`${calculation.printWidth.toFixed(2)} x ${calculation.printHeight.toFixed(2)} inches`} />
                 <ResultRow label="Left Blade:" value={`${calculation.leftBladeReading.toFixed(2)} inches`} />
                 <ResultRow label="Right Blade:" value={`${calculation.rightBladeReading.toFixed(2)} inches`} />
@@ -318,7 +335,7 @@ export default function BorderCalculator() {
             <Box sx={{ gap: 8 }}>
               <HStack style={{ gap: 12, alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Box style={{ flex: 1 }}><ThemedSelect label="Presets:" selectedValue={selectedPresetId} onValueChange={handleSelectPreset} items={presetItems as any} placeholder="Select Preset" /></Box>
-                {!isEditingPreset && !presetDirty && (<Box style={{ marginTop: 12 }}><Button onPress={() => setIsEditingPreset(true)} size="md" variant="outline"><ButtonIcon as={Edit2} /></Button></Box>)}
+                {!isEditingPreset && !presetDirty && (<Box style={{ marginTop: 12 }}><Button onPress={() => setIsEditingPreset(true)} size="md" variant="solid"><ButtonIcon as={Edit} /></Button></Box>)}
               </HStack>
               {(isEditingPreset || presetDirty) && (
                 <>
@@ -341,24 +358,24 @@ export default function BorderCalculator() {
 
             <LabeledSliderInput label="Minimum Border (inches):" value={minBorder} onChange={setMinBorder} min={SLIDER_MIN_BORDER} max={SLIDER_MAX_BORDER} step={SLIDER_STEP_BORDER} labels={BORDER_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} inputWidth={Platform.OS === 'web' && isDesktop ? 80 : undefined} continuousUpdate={true} />
             
-            <Box sx={{ flexDirection: 'row', gap: 16, width: '100%' }}>
+            <HStack sx={{ flexDirection: 'row', gap: 16, width: '100%' }}>
               <ToggleSwitch label="Enable Offsets:" value={enableOffset} onValueChange={setEnableOffset} />
               <ToggleSwitch label="Show Easel Blades:" value={showBlades} onValueChange={setShowBlades} />
-            </Box>
+            </HStack>
 
             {enableOffset && (
               <>
                 <Box sx={{ gap: 8 }}>
-                  <ToggleSwitch label="ignore min border:" value={ignoreMinBorder} onValueChange={setIgnoreMinBorder} />
+                  <ToggleSwitch label="Ignore Min Border:" value={ignoreMinBorder} onValueChange={setIgnoreMinBorder} />
                   {ignoreMinBorder && <Text sx={{ fontSize: 14, mb: 8, lineHeight: 20 }}>Print can be positioned freely but will stay within paper edges</Text>}
                 </Box>
                 <Box sx={{ gap: 8 }}>
                   <Box sx={{ flexDirection: 'row', alignItems: 'flex-start', gap: 24, mt: 8 }}>
                     <Box sx={{ flex: 1, gap: 4 }}>
-                      <LabeledSliderInput label="horizontal offset:" value={horizontalOffset} onChange={setHorizontalOffset} min={OFFSET_SLIDER_MIN} max={OFFSET_SLIDER_MAX} step={OFFSET_SLIDER_STEP} labels={OFFSET_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} warning={!!offsetWarning} continuousUpdate={true} />
+                      <LabeledSliderInput label="Horizontal Offset:" value={horizontalOffset} onChange={setHorizontalOffset} min={OFFSET_SLIDER_MIN} max={OFFSET_SLIDER_MAX} step={OFFSET_SLIDER_STEP} labels={OFFSET_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} warning={!!offsetWarning} continuousUpdate={true} />
                     </Box>
                     <Box sx={{ flex: 1, gap: 4 }}>
-                      <LabeledSliderInput label="vertical offset:" value={verticalOffset} onChange={setVerticalOffset} min={OFFSET_SLIDER_MIN} max={OFFSET_SLIDER_MAX} step={OFFSET_SLIDER_STEP} labels={OFFSET_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} warning={!!offsetWarning} continuousUpdate={true} />
+                      <LabeledSliderInput label="Vertical Offset:" value={verticalOffset} onChange={setVerticalOffset} min={OFFSET_SLIDER_MIN} max={OFFSET_SLIDER_MAX} step={OFFSET_SLIDER_STEP} labels={OFFSET_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} warning={!!offsetWarning} continuousUpdate={true} />
                     </Box>
                   </Box>
                   {offsetWarning && <WarningAlert message={offsetWarning} action="warning" />}
