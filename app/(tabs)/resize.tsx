@@ -19,12 +19,141 @@ import { NumberInput } from "@/components/NumberInput";
 import { CalculatorLayout } from "@/components/CalculatorLayout";
 import { ResultsSection, ResultRow } from "@/components/ResultsSection";
 import { FormSection, FormGroup } from "@/components/FormSection";
-import { InfoSection, InfoText, InfoSubtitle } from "@/components/InfoSection";
+import { InfoSection, InfoText, InfoSubtitle, InfoList, InfoFormula } from "@/components/InfoSection";
+
+// --- Helper Components ---
+
+const ModeToggle = ({ 
+  isEnlargerHeightMode, 
+  setIsEnlargerHeightMode 
+}: { 
+  isEnlargerHeightMode: boolean; 
+  setIsEnlargerHeightMode: (value: boolean) => void; 
+}) => (
+  <FormControl>
+    <HStack space="md" alignItems="center" justifyContent="flex-start" paddingTop={10}>
+      <FormControlLabel>
+        <FormControlLabelText>Print Size</FormControlLabelText>
+      </FormControlLabel>
+      <Switch
+        value={isEnlargerHeightMode}
+        onValueChange={setIsEnlargerHeightMode}
+      />
+      <FormControlLabel>
+        <FormControlLabelText>Enlarger Height</FormControlLabelText>
+      </FormControlLabel>
+    </HStack>
+  </FormControl>
+);
+
+const DimensionInputGroup = ({ 
+  firstLabel, 
+  firstValue, 
+  onFirstChange, 
+  firstPlaceholder,
+  secondLabel, 
+  secondValue, 
+  onSecondChange, 
+  secondPlaceholder,
+  unit 
+}: {
+  firstLabel: string;
+  firstValue: string;
+  onFirstChange: (value: string) => void;
+  firstPlaceholder: string;
+  secondLabel: string;
+  secondValue: string;
+  onSecondChange: (value: string) => void;
+  secondPlaceholder: string;
+  unit: string;
+}) => (
+  <HStack space="sm">
+    <HStack alignItems="center" space="sm">
+      <Text w="$16" textAlign="right">{firstLabel}:</Text>
+      <NumberInput
+        value={firstValue}
+        onChangeText={onFirstChange}
+        placeholder={firstPlaceholder}
+      />
+      <Text minWidth={30} textAlign="left">{unit}</Text>
+    </HStack>
+    <HStack alignItems="center" space="sm">
+      <Text w="$16" textAlign="right">{secondLabel}:</Text>
+      <NumberInput
+        value={secondValue}
+        onChangeText={onSecondChange}
+        placeholder={secondPlaceholder}
+      />
+      <Text minWidth={30} textAlign="left">{unit}</Text>
+    </HStack>
+  </HStack>
+);
+
+const HOW_TO_USE_PRINT = [
+  "1. Choose your calculation method: Print Size or Enlarger Height",
+  "2. Print size is easier to use, but enlarger height is more accurate", 
+  "3. Enter the width and height of your original print",
+  "4. Enter the width and height of your desired new print size",
+  "5. Enter the original exposure time in seconds",
+  "6. The new exposure time will be calculated automatically"
+];
+
+const HOW_TO_USE_ENLARGER = [
+  "1. Choose your calculation method: Print Size or Enlarger Height",
+  "2. Print size is easier to use, but enlarger height is more accurate",
+  "3. Enter the original and new enlarger heights (lens to paper distance)",
+  "4. Enter the original exposure time in seconds", 
+  "5. The new exposure time will be calculated automatically"
+];
+
+const TIPS = [
+  "• The results should only be treated as a best-guess estimate",
+  "• Always make a test strip when resizing prints!",
+  "• The \"stops difference\" shows exposure change in photographic stops",
+  "• Positive stops = more exposure needed (larger print)",
+  "• Negative stops = less exposure needed (smaller print)",
+  "• Enlarger height method is more accurate when properly calibrated"
+];
+
+const InfoSectionContent = ({ isEnlargerHeightMode }: { isEnlargerHeightMode: boolean }) => {
+  const inverseSquareLawUrl = "https://en.wikipedia.org/wiki/Inverse-square_law";
+  
+  return (
+    <InfoSection title="About This Tool">
+      <InfoText>
+        The print resize calculator helps you determine the correct exposure time when enlarging or reducing the size of your darkroom prints.
+      </InfoText>
+
+      <InfoSubtitle>How to Use:</InfoSubtitle>
+      <InfoList items={isEnlargerHeightMode ? HOW_TO_USE_ENLARGER : HOW_TO_USE_PRINT} />
+
+      <InfoSubtitle>How It Works:</InfoSubtitle>
+      <InfoText>
+        When you change the size of a print, the light is spread across a different area, affecting the exposure needed. This is caused by the{" "}
+        <Link href={inverseSquareLawUrl} isExternal>
+          <LinkText>inverse-square law</LinkText>
+        </Link>
+        .
+      </InfoText>
+      
+      <InfoText>
+        The formula used depends on your selected mode:
+      </InfoText>
+      
+      <InfoFormula>
+        {isEnlargerHeightMode 
+          ? "New Time = Original Time × (New Height)² ÷ (Original Height)²"
+          : "New Time = Original Time × (New Area ÷ Original Area)"
+        }
+      </InfoFormula>
+
+      <InfoSubtitle>Tips:</InfoSubtitle>
+      <InfoList items={TIPS.slice(0, isEnlargerHeightMode ? 6 : 5)} />
+    </InfoSection>
+  );
+};
 
 export default function ResizeScreen() {
-  const inverseSquareLawUrl = "https://en.wikipedia.org/wiki/Inverse-square_law";
-
-  // Use the custom hook for state and logic
   const {
     isEnlargerHeightMode,
     setIsEnlargerHeightMode,
@@ -47,94 +176,11 @@ export default function ResizeScreen() {
     setNewHeight,
   } = useResizeCalculator();
 
-  const infoSection = (
-    <InfoSection title="About This Tool">
-      <InfoText>
-        The print resize calculator helps you determine the correct exposure
-        time when enlarging or reducing the size of your darkroom prints.
-      </InfoText>
-
-      <InfoSubtitle>How to Use:</InfoSubtitle>
-      <InfoText>
-        1. Choose your calculation method: Print Size or Enlarger Height
-      </InfoText>
-      <InfoText>
-        2. Print size is easier to use, but enlarger height is more accurate
-      </InfoText>
-      {isEnlargerHeightMode ? (
-        <>
-          <InfoText>
-            3. Enter the original and new enlarger heights (lens to paper distance)
-          </InfoText>
-          <InfoText>
-            4. Enter the original exposure time in seconds
-          </InfoText>
-        </>
-      ) : (
-        <>
-          <InfoText>
-            3. Enter the width and height of your original print
-          </InfoText>
-          <InfoText>
-            4. Enter the width and height of your desired new print size
-          </InfoText>
-          <InfoText>
-            5. Enter the original exposure time in seconds
-          </InfoText>
-        </>
-      )}
-      <InfoText>
-        {isEnlargerHeightMode ? "5" : "6"}. The new exposure time will be calculated automatically
-      </InfoText>
-
-      <InfoSubtitle>How It Works:</InfoSubtitle>
-      <InfoText>
-        When you change the size of a print, the light is spread across a
-        different area, affecting the exposure needed. This is caused by the{" "}
-        <Link href={inverseSquareLawUrl} isExternal>
-          <LinkText>inverse-square law</LinkText>
-        </Link>
-        .
-      </InfoText>
-      <InfoText>
-        The formula used depends on your selected mode:
-      </InfoText>
-      {isEnlargerHeightMode ? (
-        <Text className="text-base leading-6 font-semibold" style={{ fontWeight: "600" }}>
-          New Time = Original Time × (New Height)² ÷ (Original Height)²
-        </Text>
-      ) : (
-        <Text className="text-base leading-6 font-semibold" style={{ fontWeight: "600" }}>
-          New Time = Original Time × (New Area ÷ Original Area)
-        </Text>
-      )}
-
-      <InfoSubtitle>Tips:</InfoSubtitle>
-      <InfoText>
-        • The results should only be treated as a best-guess estimate
-      </InfoText>
-      <InfoText>
-        • Always make a test strip when resizing prints!
-      </InfoText>
-      <InfoText>
-        • The &quot;stops difference&quot; shows exposure change in photographic stops
-      </InfoText>
-      <InfoText>
-        • Positive stops = more exposure needed (larger print)
-      </InfoText>
-      <InfoText>
-        • Negative stops = less exposure needed (smaller print)
-      </InfoText>
-      {isEnlargerHeightMode && (
-        <InfoText>
-          • Enlarger height method is more accurate when properly calibrated
-        </InfoText>
-      )}
-    </InfoSection>
-  );
-
   return (
-    <CalculatorLayout title="Print Resize Calculator" infoSection={infoSection}>
+    <CalculatorLayout 
+      title="Print Resize Calculator" 
+      infoSection={<InfoSectionContent isEnlargerHeightMode={isEnlargerHeightMode} />}
+    >
       <ResultsSection show={!!newTime}>
         <ResultRow 
           label="New Time" 
@@ -149,94 +195,55 @@ export default function ResizeScreen() {
 
       <FormSection>
         <FormGroup label="Calculation Method">
-          <FormControl>
-            <HStack space="md" alignItems="center" justifyContent="left" paddingTop={10}>
-              <FormControlLabel>
-                <FormControlLabelText>Print Size</FormControlLabelText>
-              </FormControlLabel>
-              <Switch
-                value={isEnlargerHeightMode}
-                onValueChange={(value) => {
-                  setIsEnlargerHeightMode(value);
-                }}
-              />
-              <FormControlLabel>
-                <FormControlLabelText>Enlarger Height</FormControlLabelText>
-              </FormControlLabel>
-            </HStack>
-          </FormControl>
+          <ModeToggle 
+            isEnlargerHeightMode={isEnlargerHeightMode}
+            setIsEnlargerHeightMode={setIsEnlargerHeightMode}
+          />
         </FormGroup>
 
         {!isEnlargerHeightMode ? (
           <>
             <FormGroup label="Initial Image Size">
-              <HStack space="sm">
-                <HStack alignItems="center" space="sm">
-                  <Text w="$16" textAlign="right">Width:</Text>
-                  <NumberInput
-                    value={originalWidth}
-                    onChangeText={setOriginalWidth}
-                    placeholder="4"
-                  />
-                  <Text minWidth={30} textAlign="left">in</Text>
-                </HStack>
-                <HStack alignItems="center" space="sm">
-                  <Text w="$16" textAlign="right">Height:</Text>
-                  <NumberInput
-                    value={originalLength}
-                    onChangeText={setOriginalLength}
-                    placeholder="6"
-                  />
-                  <Text minWidth={30} textAlign="left">in</Text>
-                </HStack>
-              </HStack>
+              <DimensionInputGroup
+                firstLabel="Width"
+                firstValue={originalWidth}
+                onFirstChange={setOriginalWidth}
+                firstPlaceholder="4"
+                secondLabel="Height"
+                secondValue={originalLength}
+                onSecondChange={setOriginalLength}
+                secondPlaceholder="6"
+                unit="in"
+              />
             </FormGroup>
 
             <FormGroup label="New Image Size">
-              <HStack space="sm">
-                <HStack alignItems="center" space="sm">
-                  <Text w="$16" textAlign="right">Width:</Text>
-                  <NumberInput
-                    value={newWidth}
-                    onChangeText={setNewWidth}
-                    placeholder="6"
-                  />
-                  <Text minWidth={30} textAlign="left">in</Text>
-                </HStack>
-                <HStack alignItems="center" space="sm">
-                  <Text w="$16" textAlign="right">Height:</Text>
-                  <NumberInput
-                    value={newLength}
-                    onChangeText={setNewLength}
-                    placeholder="9"
-                  />
-                  <Text minWidth={30} textAlign="left">in</Text>
-                </HStack>
-              </HStack>
+              <DimensionInputGroup
+                firstLabel="Width"
+                firstValue={newWidth}
+                onFirstChange={setNewWidth}
+                firstPlaceholder="6"
+                secondLabel="Height"
+                secondValue={newLength}
+                onSecondChange={setNewLength}
+                secondPlaceholder="9"
+                unit="in"
+              />
             </FormGroup>
           </>
         ) : (
           <FormGroup label="Enlarger Heights">
-            <HStack space="sm">
-              <HStack alignItems="center" space="sm">
-                <Text w="$20" textAlign="right">Original:</Text>
-                <NumberInput
-                  value={originalHeight}
-                  onChangeText={setOriginalHeight}
-                  placeholder="500"
-                />
-                <Text minWidth={30} textAlign="left">cm</Text>
-              </HStack>
-              <HStack alignItems="center" space="sm">
-                <Text w="$20" textAlign="right">New:</Text>
-                <NumberInput
-                  value={newHeight}
-                  onChangeText={setNewHeight}
-                  placeholder="600"
-                />
-                <Text minWidth={30} textAlign="left">cm</Text>
-              </HStack>
-            </HStack>
+            <DimensionInputGroup
+              firstLabel="Original"
+              firstValue={originalHeight}
+              onFirstChange={setOriginalHeight}
+              firstPlaceholder="500"
+              secondLabel="New"
+              secondValue={newHeight}
+              onSecondChange={setNewHeight}
+              secondPlaceholder="600"
+              unit="cm"
+            />
           </FormGroup>
         )}
 

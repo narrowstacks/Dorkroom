@@ -13,7 +13,11 @@ interface InfoSubtitleProps {
 }
 
 interface InfoTextProps {
-  children: string;
+  children: string | ReactNode;
+}
+
+interface InfoListProps {
+  items: string[];
 }
 
 export function InfoSubtitle({ children }: InfoSubtitleProps) {
@@ -31,6 +35,49 @@ export function InfoText({ children }: InfoTextProps) {
     <Text className="text-base leading-6" style={[styles.infoContentText, { color: textSecondary }]}>
       {children}
     </Text>
+  );
+}
+
+export function InfoList({ items }: InfoListProps) {
+  const textSecondary = useThemeColor({}, "textSecondary");
+  
+  return (
+    <>
+      {items.map((item, index) => (
+        <Text 
+          key={index} 
+          className="text-base leading-6" 
+          style={[styles.infoContentText, { color: textSecondary }]}
+        >
+          {item}
+        </Text>
+      ))}
+    </>
+  );
+}
+
+export function InfoFormula({ children }: InfoTextProps) {
+  const textColor = useThemeColor({}, "text");
+  const cardBackground = useThemeColor({}, "cardBackground");
+  
+  return (
+    <Box 
+      className="p-3 rounded-lg mb-4" 
+      style={[
+        styles.formulaBox,
+        { 
+          backgroundColor: cardBackground,
+          borderColor: useThemeColor({}, "outline"),
+        }
+      ]}
+    >
+      <Text 
+        className="text-sm font-semibold text-center" 
+        style={[styles.formulaText, { color: textColor }]}
+      >
+        {children}
+      </Text>
+    </Box>
   );
 }
 
@@ -74,6 +121,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginBottom: 16,
     fontWeight: "600",
+    
   },
   infoSubtitle: {
     fontSize: 16,
@@ -85,5 +133,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 8,
     lineHeight: 22,
+  },
+  formulaBox: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+  },
+  formulaText: {
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
   },
 });

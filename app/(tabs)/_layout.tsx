@@ -7,7 +7,17 @@ import { Colors } from "@/constants/Colors";
 import * as Haptics from 'expo-haptics';
 
 import { HapticTab } from "@/components/HapticTab";
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { 
+  Home,
+  Crop,
+  Move,
+  Timer,
+  Camera,
+  Clock,
+  Settings,
+  Menu,
+  Aperture
+} from 'lucide-react-native';
 import TabBarBackground from "@/components/ui/TabBarBackground";
 
 // Navigation items configuration
@@ -15,37 +25,37 @@ const navigationItems = [
   {
     name: "index",
     title: "Home",
-    icon: "home",
+    icon: Home,
   },
   {
     name: "border",
     title: "Border",
-    icon: "crop-square",
+    icon: Crop,
   },
   {
     name: "resize",
     title: "Resize",
-    icon: "open-with",
+    icon: Move,
   },
   {
     name: "exposure",
     title: "Stops",
-    icon: "timer",
+    icon: Timer,
   },
   {
     name: "cameraExposure",
     title: "Exposure",
-    icon: "camera-alt",
+    icon: Aperture,
   },
   {
     name: "reciprocity",
     title: "Reciprocity",
-    icon: "schedule",
+    icon: Clock,
   },
   {
     name: "settings",
     title: "Settings",
-    icon: "settings",
+    icon: Settings,
   },
 ];
 
@@ -72,7 +82,11 @@ const getPageTintColor = (routeName: string, colors: typeof Colors.light) => {
 function TopNavigation() {
   const router = useRouter();
   const segments = useSegments();
-  const currentRoute = segments[segments.length - 1] || "index";
+  // Handle home page route detection - when on /(tabs) root, treat as "index"
+  const lastSegment = segments[segments.length - 1];
+  console.log('TopNav - segments:', segments, 'lastSegment:', lastSegment);
+  const currentRoute = lastSegment === "(tabs)" || !lastSegment ? "index" : lastSegment;
+  console.log('TopNav - currentRoute:', currentRoute);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
 
@@ -101,9 +115,8 @@ function TopNavigation() {
                   }
                 }}
               >
-                <MaterialIcons
+                <item.icon
                   size={20}
-                  name={item.icon as any}
                   color={isActive ? colors.background : colors.icon}
                 />
                 <Text style={[
@@ -133,7 +146,11 @@ export default function TabLayout() {
   const colors = Colors[colorScheme];
   const router = useRouter();
   const segments = useSegments();
-  const currentRoute = segments[segments.length - 1] || "index";
+  // Handle home page route detection - when on /(tabs) root, treat as "index"
+  const lastSegment = segments[segments.length - 1];
+  console.log('TabLayout - segments:', segments, 'lastSegment:', lastSegment);
+  const currentRoute = lastSegment === "(tabs)" || !lastSegment ? "index" : lastSegment;
+  console.log('TabLayout - currentRoute:', currentRoute);
 
   useEffect(() => {
     // Get initial dimensions after mount
@@ -237,9 +254,8 @@ export default function TabLayout() {
           style={styles.floatingMenuButton}
           onPress={showModal}
         >
-          <MaterialIcons
+          <Menu
             size={24}
-            name="menu"
             color={colors.background}
           />
         </TouchableOpacity>
@@ -307,9 +323,8 @@ export default function TabLayout() {
                       ]}
                       onPress={() => navigateToPage(item)}
                     >
-                      <MaterialIcons
+                      <item.icon
                         size={24}
-                        name={item.icon as any}
                         color={isActive ? colors.background : colors.icon}
                       />
                       <Text style={[
@@ -356,9 +371,8 @@ export default function TabLayout() {
           style={styles.floatingMenuButton}
           onPress={showModal}
         >
-          <MaterialIcons
+          <Menu
             size={24}
-            name="menu"
             color={colors.background}
           />
         </TouchableOpacity>
@@ -388,9 +402,8 @@ export default function TabLayout() {
                       ]}
                       onPress={() => navigateToPage(item)}
                     >
-                      <MaterialIcons
+                      <item.icon
                         size={24}
-                        name={item.icon as any}
                         color={isActive ? colors.background : colors.icon}
                       />
                       <Text style={[
@@ -462,7 +475,7 @@ export default function TabLayout() {
             title: "Home",
             tabBarActiveTintColor: getPageTintColor("index", colors),
             tabBarIcon: ({ color }) => (
-              <MaterialIcons size={28} name="home" color={color} />
+              <Home size={28} color={color} />
             ),
           }}
         />
@@ -472,7 +485,7 @@ export default function TabLayout() {
             title: "Border",
             tabBarActiveTintColor: getPageTintColor("border", colors),
             tabBarIcon: ({ color }) => (
-              <MaterialIcons size={28} name="crop-square" color={color} />
+              <Crop size={28} color={color} />
             ),
           }}
         />
@@ -482,11 +495,7 @@ export default function TabLayout() {
             title: "Resize",
             tabBarActiveTintColor: getPageTintColor("resize", colors),
             tabBarIcon: ({ color }) => (
-              <MaterialIcons
-                size={28}
-                name="open-with"
-                color={color}
-              />
+              <Move size={28} color={color} />
             ),
           }}
         />
@@ -496,7 +505,7 @@ export default function TabLayout() {
             title: "Stops",
             tabBarActiveTintColor: getPageTintColor("exposure", colors),
             tabBarIcon: ({ color }) => (
-              <MaterialIcons size={28} name="timer" color={color} />
+              <Timer size={28} color={color} />
             ),
           }}
         />
@@ -506,7 +515,7 @@ export default function TabLayout() {
             title: "Exposure",
             tabBarActiveTintColor: getPageTintColor("cameraExposure", colors),
             tabBarIcon: ({ color }) => (
-              <MaterialIcons size={28} name="camera-alt" color={color} />
+              <Aperture size={28} color={color} />
             ),
           }}
         />
@@ -516,7 +525,7 @@ export default function TabLayout() {
             title: "Reciprocity",
             tabBarActiveTintColor: getPageTintColor("reciprocity", colors),
             tabBarIcon: ({ color }) => (
-              <MaterialIcons size={28} name="schedule" color={color} />
+              <Clock size={28} color={color} />
             ),
           }}
         />
@@ -526,7 +535,7 @@ export default function TabLayout() {
             title: "Settings",
             tabBarActiveTintColor: getPageTintColor("settings", colors),
             tabBarIcon: ({ color }) => (
-              <MaterialIcons size={28} name="settings" color={color} />
+              <Settings size={28} color={color} />
             ),
           }}
         />
