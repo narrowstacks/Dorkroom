@@ -53,11 +53,11 @@ const navigationItems = [
     title: "Reciprocity",
     icon: Clock,
   },
-  {
-    name: "settings",
-    title: "Settings",
-    icon: Settings,
-  },
+  // {
+  //   name: "settings",
+  //   title: "Settings",
+  //   icon: Settings,
+  // },
 ];
 
 // Function to get the tint color for each page
