@@ -281,31 +281,31 @@ export default function BorderCalculator() {
             <Box sx={{ gap: 16, alignItems: 'center', width: '100%', mb: Platform.OS === 'web' ? 0 : 32, ...(Platform.OS === 'web' && isDesktop && { flex: 1, alignSelf: 'stretch', mb: 0 }) }}>
               <AnimatedPreview calculation={calculation} showBlades={showBlades} borderColor={borderColor} />
 
-{Platform.OS === 'web' && isDesktop ? (
-                <HStack sx={{ flex: 1, justifyContent: 'space-between', gap: 12 }}>
-                  <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="md">
-                    <ButtonIcon as={RotateCwSquare} />
-                    <ButtonText style={{ fontSize: 13, fontWeight: 'bold' }}>Flip Paper Orientation</ButtonText>
-                  </Button>
-                  <Button onPress={() => setIsRatioFlipped(!isRatioFlipped)} variant="solid" action="primary" size="md">
-                    <ButtonIcon as={Proportions} />
-                    <ButtonText style={{ fontSize: 13, fontWeight: 'bold' }}>Flip Aspect Ratio</ButtonText>
-                  </Button>
-                </HStack>
-              ) : (
+                {Platform.OS === 'web' && isDesktop ? (
+                  <HStack sx={{ flex: 1, justifyContent: 'space-between', gap: 12 }}>
+                    <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="md">
+                      <ButtonIcon as={RotateCwSquare} />
+                      <ButtonText style={{ fontSize: 13, fontWeight: 'bold' }}>Flip Paper Orientation</ButtonText>
+                    </Button>
+                    <Button onPress={() => setIsRatioFlipped(!isRatioFlipped)} variant="solid" action="primary" size="md">
+                      <ButtonIcon as={Proportions} />
+                      <ButtonText style={{ fontSize: 13, fontWeight: 'bold' }}>Flip Aspect Ratio</ButtonText>
+                    </Button>
+                  </HStack>
+                ) : (
                 <VStack sx={{ flex: 1, gap: 12, width: '100%' }}>
                   <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="md">
-                    <ButtonIcon as={RotateCwSquare} />
-                    <ButtonText style={{ fontSize: 13, fontWeight: 'bold' }}>Flip Paper Orientation</ButtonText>
+                    <ButtonIcon as={RotateCwSquare} size={24}/>
+                    <ButtonText style={{ fontSize: 18}}>Flip Paper Orientation</ButtonText>
                   </Button>
                   <Button onPress={() => setIsRatioFlipped(!isRatioFlipped)} variant="solid" action="primary" size="md">
-                    <ButtonIcon as={Proportions} />
-                    <ButtonText style={{ fontSize: 13, fontWeight: 'bold' }}>Flip Aspect Ratio</ButtonText>
+                    <ButtonIcon as={Proportions} size={24}/>
+                    <ButtonText style={{ fontSize: 18}}>Flip Aspect Ratio</ButtonText>
                   </Button>
                 </VStack>
               )}
 
-              <Box className="p-5 rounded-2xl mt-8 border shadow-sm" style={{ 
+              <Box className="p-5 rounded-2xl mt-1 mb-4 border shadow-sm" style={{ 
                 backgroundColor: cardBackground, 
                 borderColor: outline,
                 shadowColor,
@@ -356,9 +356,9 @@ export default function BorderCalculator() {
                   <Text sx={{ fontSize: 20 }}>Preset Name</Text>
                   <StyledTextInput value={presetName} onChangeText={setPresetName} placeholder="Preset Name" />
                   <HStack style={{ gap: 8, justifyContent: 'space-between' }}>
-                    <Button onPress={savePreset} variant="solid" action="positive" size="md"><ButtonIcon as={Check} /><ButtonText style={{ marginLeft: 5 }}>Save</ButtonText></Button>
-                    <Button onPress={updatePresetHandler} variant="solid" action="primary" size="md" isDisabled={!selectedPresetId}><ButtonIcon as={ArrowUp} /><ButtonText style={{ marginLeft: 5 }}>Update</ButtonText></Button>
-                    <Button onPress={deletePresetHandler} variant="solid" action="negative" size="md" isDisabled={!selectedPresetId}><ButtonIcon as={Trash2} /><ButtonText style={{ marginLeft: 5 }}>Delete</ButtonText></Button>
+                    <Button onPress={savePreset} variant="solid" action="positive" size="md"><ButtonIcon as={Check} /><ButtonText style={{ marginLeft: 5, fontSize: 18 }}>Save</ButtonText></Button>
+                    <Button onPress={updatePresetHandler} variant="solid" action="primary" size="md" isDisabled={!selectedPresetId}><ButtonIcon as={ArrowUp} /><ButtonText style={{ marginLeft: 5, fontSize: 18 }}>Update</ButtonText></Button>
+                    <Button onPress={deletePresetHandler} variant="solid" action="negative" size="md" isDisabled={!selectedPresetId}><ButtonIcon as={Trash2} /><ButtonText style={{ marginLeft: 5, fontSize: 18 }}>Delete</ButtonText></Button>
                   </HStack>
                 </>
               )}
