@@ -284,12 +284,12 @@ export default function BorderCalculator() {
                 {Platform.OS === 'web' && isDesktop ? (
                   <HStack sx={{ flex: 1, justifyContent: 'space-between', gap: 12 }}>
                     <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="md">
-                      <ButtonIcon as={RotateCwSquare} />
-                      <ButtonText style={{ fontSize: 13, fontWeight: 'bold' }}>Flip Paper Orientation</ButtonText>
+                      <ButtonIcon as={RotateCwSquare} size={24}/>
+                      <ButtonText style={{ fontSize: 12.5, fontWeight: 'bold' }}>Flip Paper Orientation</ButtonText>
                     </Button>
                     <Button onPress={() => setIsRatioFlipped(!isRatioFlipped)} variant="solid" action="primary" size="md">
-                      <ButtonIcon as={Proportions} />
-                      <ButtonText style={{ fontSize: 13, fontWeight: 'bold' }}>Flip Aspect Ratio</ButtonText>
+                      <ButtonIcon as={Proportions} size={24}/>
+                      <ButtonText style={{ fontSize: 12.5, fontWeight: 'bold' }}>Flip Aspect Ratio</ButtonText>
                     </Button>
                   </HStack>
                 ) : (
