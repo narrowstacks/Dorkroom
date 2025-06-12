@@ -43,6 +43,7 @@ import {
   Text,
   ScrollView,
   HStack,
+  VStack,
   Alert,
   AlertIcon,
   AlertText,
@@ -280,16 +281,29 @@ export default function BorderCalculator() {
             <Box sx={{ gap: 16, alignItems: 'center', width: '100%', mb: Platform.OS === 'web' ? 0 : 32, ...(Platform.OS === 'web' && isDesktop && { flex: 1, alignSelf: 'stretch', mb: 0 }) }}>
               <AnimatedPreview calculation={calculation} showBlades={showBlades} borderColor={borderColor} />
 
-              <HStack sx={{ flex: 1, justifyContent: 'space-between', gap: Platform.OS === 'web' && !isDesktop ? 8 : 12 }}>
-                <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="md">
-                  <ButtonIcon as={RotateCwSquare} />
-                  <ButtonText style={{ fontSize: 13, fontWeight: 'bold' }}>Flip Paper Orientation</ButtonText>
-                </Button>
-                <Button onPress={() => setIsRatioFlipped(!isRatioFlipped)} variant="solid" action="primary" size="md">
-                  <ButtonIcon as={Proportions} />
-                  <ButtonText style={{ fontSize: 13, fontWeight: 'bold' }}>Flip Aspect Ratio</ButtonText>
-                </Button>
-              </HStack>
+{Platform.OS === 'web' && isDesktop ? (
+                <HStack sx={{ flex: 1, justifyContent: 'space-between', gap: 12 }}>
+                  <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="md">
+                    <ButtonIcon as={RotateCwSquare} />
+                    <ButtonText style={{ fontSize: 13, fontWeight: 'bold' }}>Flip Paper Orientation</ButtonText>
+                  </Button>
+                  <Button onPress={() => setIsRatioFlipped(!isRatioFlipped)} variant="solid" action="primary" size="md">
+                    <ButtonIcon as={Proportions} />
+                    <ButtonText style={{ fontSize: 13, fontWeight: 'bold' }}>Flip Aspect Ratio</ButtonText>
+                  </Button>
+                </HStack>
+              ) : (
+                <VStack sx={{ flex: 1, gap: 12, width: '100%' }}>
+                  <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="md">
+                    <ButtonIcon as={RotateCwSquare} />
+                    <ButtonText style={{ fontSize: 13, fontWeight: 'bold' }}>Flip Paper Orientation</ButtonText>
+                  </Button>
+                  <Button onPress={() => setIsRatioFlipped(!isRatioFlipped)} variant="solid" action="primary" size="md">
+                    <ButtonIcon as={Proportions} />
+                    <ButtonText style={{ fontSize: 13, fontWeight: 'bold' }}>Flip Aspect Ratio</ButtonText>
+                  </Button>
+                </VStack>
+              )}
 
               <Box className="p-5 rounded-2xl mt-8 border shadow-sm" style={{ 
                 backgroundColor: cardBackground, 
