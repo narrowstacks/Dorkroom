@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Platform, View, TouchableOpacity, Text, StyleSheet, Dimensions, Modal, Animated } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Colors } from "@/constants/Colors";
 import * as Haptics from 'expo-haptics';
 
@@ -79,14 +80,19 @@ const getPageTintColor = (routeName: string, colors: typeof Colors.light) => {
   }
 };
 
+// Function to get the page title for document title
+const getPageTitle = (routeName: string) => {
+  const item = navigationItems.find(item => item.name === routeName);
+  const pageTitle = item?.title || "Home";
+  return `${pageTitle} - Dorkroom`;
+};
+
 function TopNavigation() {
   const router = useRouter();
   const segments = useSegments();
   // Handle home page route detection - when on /(tabs) root, treat as "index"
   const lastSegment = segments[segments.length - 1];
-  console.log('TopNav - segments:', segments, 'lastSegment:', lastSegment);
   const currentRoute = lastSegment === "(tabs)" || !lastSegment ? "index" : lastSegment;
-  console.log('TopNav - currentRoute:', currentRoute);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
 
@@ -148,9 +154,10 @@ export default function TabLayout() {
   const segments = useSegments();
   // Handle home page route detection - when on /(tabs) root, treat as "index"
   const lastSegment = segments[segments.length - 1];
-  console.log('TabLayout - segments:', segments, 'lastSegment:', lastSegment);
   const currentRoute = lastSegment === "(tabs)" || !lastSegment ? "index" : lastSegment;
-  console.log('TabLayout - currentRoute:', currentRoute);
+  
+  // Set document title for web
+  useDocumentTitle(getPageTitle(currentRoute));
 
   useEffect(() => {
     // Get initial dimensions after mount
