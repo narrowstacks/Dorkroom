@@ -1,8 +1,17 @@
 import React from "react";
-import { StyleSheet, ScrollView, Pressable } from "react-native";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import {
+  Select,
+  SelectTrigger,
+  SelectInput,
+  SelectIcon,
+  SelectPortal,
+  SelectBackdrop,
+  SelectContent,
+  SelectDragIndicatorWrapper,
+  SelectDragIndicator,
+  SelectItem,
+} from "@/components/ui/select";
+import { ChevronDownIcon } from "@/components/ui/icon";
 
 interface SelectListProps {
   value: string;
@@ -15,64 +24,32 @@ export function SelectList({
   value,
   onValueChange,
   items,
-  placeholder,
+  placeholder = "Select an option",
 }: SelectListProps) {
-  const borderColor = useThemeColor({}, "icon");
-  const tintColor = useThemeColor({}, "tint");
-  const backgroundColor = useThemeColor({}, "background");
-
   return (
-    <ThemedView style={[styles.container, { borderColor }]}>
-      <ScrollView
-        style={styles.scrollView}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-      >
-        {items.map((item) => (
-          <Pressable
-            key={item.value}
-            style={[
-              styles.item,
-              value === item.value && { backgroundColor: tintColor },
-              value !== item.value && { borderColor },
-            ]}
-            onPress={() => onValueChange(item.value)}
-          >
-            <ThemedText
-              style={[
-                styles.itemText,
-                value === item.value && styles.selectedItemText,
-              ]}
-            >
-              {item.label}
-            </ThemedText>
-          </Pressable>
-        ))}
-      </ScrollView>
-    </ThemedView>
+    <Select
+      selectedValue={value}
+      onValueChange={onValueChange}
+    >
+      <SelectTrigger variant="outline" size="md">
+        <SelectInput placeholder={placeholder} />
+        <SelectIcon className="mr-3" as={ChevronDownIcon} />
+      </SelectTrigger>
+      <SelectPortal>
+        <SelectBackdrop/>
+        <SelectContent>
+          <SelectDragIndicatorWrapper>
+            <SelectDragIndicator />
+          </SelectDragIndicatorWrapper>
+          {items.map((item) => (
+            <SelectItem
+              key={item.value}
+              label={item.label}
+              value={item.value}
+            />
+          ))}
+        </SelectContent>
+      </SelectPortal>
+    </Select>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 8,
-  },
-  scrollView: {
-    flexGrow: 0,
-  },
-  item: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    marginRight: 8,
-    borderWidth: 1,
-  },
-  itemText: {
-    fontSize: 14,
-  },
-  selectedItemText: {
-    color: "#fff",
-  },
-});
