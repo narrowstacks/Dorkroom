@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import * as Linking from 'expo-linking';
 import { decodePreset } from '@/utils/presetSharing';
-import type { BorderPresetSettings } from '@/types/borderPresetTypes';
+import type { BorderPreset, BorderPresetSettings } from '@/types/borderPresetTypes';
 
 export const useSharedPresetLoader = () => {
-  const [loadedPreset, setLoadedPreset] = useState<BorderPresetSettings | null>(null);
+  const [loadedPreset, setLoadedPreset] = useState<{ name: string, settings: BorderPresetSettings } | null>(null);
   const url = Linking.useURL();
 
   useEffect(() => {
     const handleUrl = (url: string | null) => {
       if (!url) return;
-
       try {
         let encodedData: string | null = null;
 
@@ -27,9 +26,9 @@ export const useSharedPresetLoader = () => {
         }
 
         if (encodedData) {
-          const decodedSettings = decodePreset(encodedData);
-          if (decodedSettings) {
-            setLoadedPreset(decodedSettings);
+          const decodedPreset = decodePreset(encodedData);
+          if (decodedPreset) {
+            setLoadedPreset(decodedPreset);
           }
         }
       } catch (error) {

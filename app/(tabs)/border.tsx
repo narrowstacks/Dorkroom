@@ -42,6 +42,7 @@ import * as Clipboard from 'expo-clipboard';
 import { encodePreset } from '@/utils/presetSharing';
 import { useSharedPresetLoader } from '@/hooks/useSharedPresetLoader';
 import { SHARING_URLS } from '@/constants/urls';
+import { generateSharingUrls } from '@/utils/urlHelpers';
 
 import {
   Box,
@@ -53,6 +54,16 @@ import {
   AlertIcon,
   AlertText,
   InfoIcon,
+  Modal,
+  ModalBackdrop,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
+  Heading,
+  Icon,
+  CloseIcon,
 } from '@gluestack-ui/themed';
 import { Button, ButtonText, ButtonIcon } from '@/components/ui/button';
 import { useToast, Toast, ToastTitle, VStack as ToastVStack } from '@gluestack-ui/themed';
@@ -201,7 +212,7 @@ const BorderInfoSection = () => (
 
     <InfoSubtitle>Blade Measurements:</InfoSubtitle>
     <InfoText>
-      The measurements shown are distances from the edge of your enlarger baseboard to where each blade should be positioned. For non-standard paper sizes (sizes that don't have a standard easel slot), follow the instructions to place your paper in the appropriate easel slot.
+      The measurements shown are distances from the edge of your enlarger baseboard to where each blade should be positioned. For non-standard paper sizes (sizes that don&apos;t have a standard easel slot), follow the instructions to place your paper in the appropriate easel slot.
     </InfoText>
 
     <InfoSubtitle>Tips:</InfoSubtitle>
@@ -228,6 +239,7 @@ export default function BorderCalculator() {
   const [selectedPresetId, setSelectedPresetId] = React.useState('');
   const [presetName, setPresetName] = React.useState('');
   const [isEditingPreset, setIsEditingPreset] = React.useState(false);
+  const [isShareModalVisible, setShareModalVisible] = React.useState(false);
   const loadedPresetRef = React.useRef<BorderPreset | null>(null);
 
   const currentSettings = { aspectRatio, paperSize, customAspectWidth, customAspectHeight, customPaperWidth, customPaperHeight, minBorder, enableOffset, ignoreMinBorder, horizontalOffset, verticalOffset, showBlades, isLandscape, isRatioFlipped };
@@ -239,18 +251,25 @@ export default function BorderCalculator() {
 
   React.useEffect(() => {
     if (loadedPresetFromUrl) {
-      applyPreset(loadedPresetFromUrl);
-      // Optionally, show a toast or message that a shared preset was loaded
-      toast.show({
-        placement: "top",
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-            <ToastVStack space="xs">
-              <ToastTitle>Shared preset loaded!</ToastTitle>
-            </ToastVStack>
-          </Toast>
-        ),
-      });
+      if (loadedPresetFromUrl) {
+        applyPreset(loadedPresetFromUrl.settings);
+        setPresetName(loadedPresetFromUrl.name);
+        // Create a temporary preset object to indicate it's loaded, but not saved yet
+        const tempPreset = { id: 'shared-' + Date.now(), name: loadedPresetFromUrl.name, settings: loadedPresetFromUrl.settings };
+        loadedPresetRef.current = tempPreset;
+        setSelectedPresetId(''); // It's not a saved preset yet
+        setIsEditingPreset(true); // Encourage user to save it
+        toast.show({
+            placement: "top",
+            render: ({ id }) => (
+                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                    <ToastVStack space="xs">
+                        <ToastTitle>Shared preset &quot;{loadedPresetFromUrl.name}&quot; loaded!</ToastTitle>
+                    </ToastVStack>
+                </Toast>
+            ),
+        });
+    }
     }
   }, [loadedPresetFromUrl]);
 
@@ -294,34 +313,91 @@ export default function BorderCalculator() {
     setIsEditingPreset(false);
   };
 
-  const handleSharePreset = async () => {
-    const encoded = encodePreset(currentSettings);
+  const sharePreset = async (preset: { name: string, settings: typeof currentSettings }) => {
+    const encoded = encodePreset(preset);
     if (!encoded) {
-      toast.show({ placement: "top", render: ({ id }) => <Toast nativeID={`toast-${id}`} action="error" variant="solid"><ToastTitle>Failed to create share link.</ToastTitle></Toast> });
-      return;
+        toast.show({ placement: "top", render: ({ id }) => <Toast nativeID={`toast-${id}`} action="error" variant="solid"><ToastTitle>Failed to create share link.</ToastTitle></Toast> });
+        return;
     }
 
-    const isDev = process.env.NODE_ENV === 'development';
-    const webUrl = isDev ? `${SHARING_URLS.BORDER_CALCULATOR.DEVELOPMENT}#${encoded}` : `${SHARING_URLS.BORDER_CALCULATOR.PRODUCTION}#${encoded}`;
-    const nativeUrl = `dorkroom://border/s/${encoded}`;
-    
+    const { webUrl, nativeUrl } = generateSharingUrls(encoded);
     const urlToCopy = Platform.OS === 'web' ? webUrl : nativeUrl;
 
     await Clipboard.setStringAsync(urlToCopy);
     toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-          <ToastVStack space="xs">
-            <ToastTitle>Share link copied to clipboard!</ToastTitle>
-          </ToastVStack>
-        </Toast>
-      ),
+        placement: "top",
+        render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastVStack space="xs">
+                    <ToastTitle>Share link for "{preset.name}" copied!</ToastTitle>
+                </ToastVStack>
+            </Toast>
+        ),
     });
+  };
+
+  const handleSharePreset = async () => {
+    // Check if the current settings match a saved preset
+    const matchedPreset = presets.find(p => JSON.stringify(p.settings) === JSON.stringify(currentSettings));
+
+    if (matchedPreset) {
+        // If it's a saved preset, share it directly
+        sharePreset(matchedPreset);
+    } else {
+        // If not saved, open the modal to force saving
+        setShareModalVisible(true);
+    }
+  };
+
+  const handleSaveAndShare = () => {
+    if (!presetName.trim()) {
+        toast.show({ placement: "top", render: ({ id }) => <Toast nativeID={`toast-${id}`} action="error" variant="solid"><ToastTitle>Please enter a name for the preset.</ToastTitle></Toast> });
+        return;
+    }
+    const newPreset = { id: 'user-' + Date.now(), name: presetName.trim(), settings: currentSettings };
+    addPreset(newPreset);
+    loadedPresetRef.current = newPreset;
+    setSelectedPresetId(newPreset.id);
+    setIsEditingPreset(false);
+    setShareModalVisible(false);
+    
+    // Now share the newly saved preset
+    sharePreset(newPreset);
   };
 
   return (
     <ScrollView sx={{ flex: 1, bg: backgroundColor }} contentContainerStyle={{ flexGrow: 1, paddingBottom: Platform.OS === 'ios' || Platform.OS === 'android' ? 100 : 80 }}>
+      <Modal isOpen={isShareModalVisible} onClose={() => setShareModalVisible(false)}>
+        <ModalBackdrop />
+        <ModalContent>
+          <ModalHeader>
+            <Heading size="lg">Save Preset to Share</Heading>
+            <ModalCloseButton>
+              <Icon as={CloseIcon} />
+            </ModalCloseButton>
+          </ModalHeader>
+          <ModalBody>
+            <Text>To share these settings, you must first save them as a named preset.</Text>
+            <StyledTextInput
+              value={presetName}
+              onChangeText={setPresetName}
+              placeholder="Enter Preset Name"
+              style={{ marginTop: 16, color: textColor, backgroundColor: cardBackground, borderColor: outline, borderWidth: 1, borderRadius: 8, padding: 16 }}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <HStack sx={{ gap: 12, justifyContent: 'flex-end' }}>
+              <Button variant="outline" size="sm" action="secondary" onPress={() => setShareModalVisible(false)}>
+                <ButtonText>Cancel</ButtonText>
+              </Button>
+              <Button size="sm" action="positive" onPress={handleSaveAndShare}>
+                <ButtonText>Save & Share</ButtonText>
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
       <Box sx={{ flex: 1, p: 16, ...(Platform.OS === 'web' && { maxWidth: 1024, marginHorizontal: 'auto', width: '100%', p: 24 }) }}>
         <Box sx={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', width: '100%', mb: 24, pb: 16, borderBottomWidth: 1, borderBottomColor: outline }}>
           <Text sx={{ fontSize: 30, textAlign: 'center', fontWeight: '600' }}>Border Calculator</Text>

@@ -1,6 +1,6 @@
 import { Buffer } from 'buffer';
 import { ASPECT_RATIOS, PAPER_SIZES } from '@/constants/border';
-import type { BorderPresetSettings } from '@/types/borderPresetTypes';
+import type { BorderPreset, BorderPresetSettings } from '@/types/borderPresetTypes';
 
 const findIndexByValue = (arr: readonly { value: string }[], value: string) => arr.findIndex(item => item.value === value);
 
@@ -22,9 +22,12 @@ const fromBooleanBitmask = (mask: number): Pick<BorderPresetSettings, 'enableOff
   isRatioFlipped: (mask & 16) !== 0,
 });
 
-export const encodePreset = (settings: BorderPresetSettings): string => {
+export const encodePreset = (preset: { name: string, settings: BorderPresetSettings }): string => {
   try {
+    const { name, settings } = preset;
     const parts: (string | number)[] = [];
+
+    parts.push(encodeURIComponent(name));
 
     const aspectRatioIndex = findIndexByValue(ASPECT_RATIOS, settings.aspectRatio);
     const paperSizeIndex = findIndexByValue(PAPER_SIZES, settings.paperSize);
@@ -60,14 +63,17 @@ export const encodePreset = (settings: BorderPresetSettings): string => {
   }
 };
 
-export const decodePreset = (encoded: string): BorderPresetSettings | null => {
+export const decodePreset = (encoded: string): { name: string, settings: BorderPresetSettings } | null => {
   try {
     let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
     while (base64.length % 4) {
       base64 += '=';
     }
     const rawString = Buffer.from(base64, 'base64').toString('ascii');
-    const parts = rawString.split('-').map(Number);
+    const stringParts = rawString.split('-');
+    
+    const name = decodeURIComponent(stringParts.shift() || '');
+    const parts = stringParts.map(Number);
 
     let partIndex = 0;
     const aspectRatioIndex = parts[partIndex++];
@@ -106,7 +112,7 @@ export const decodePreset = (encoded: string): BorderPresetSettings | null => {
       settings.customPaperHeight = parts[partIndex++] / 100;
     }
 
-    return settings;
+    return { name, settings };
   } catch (error) {
     console.error("Failed to decode preset:", error);
     return null;
