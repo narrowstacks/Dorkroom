@@ -34,9 +34,13 @@ import {
   RotateCcw,
   ArrowUp,
   Check,
-  Trash2
+  Trash2,
+  Share2
 } from "lucide-react-native"
 import type { BorderPreset } from '@/types/borderPresetTypes';
+import * as Clipboard from 'expo-clipboard';
+import { encodePreset } from '@/utils/presetSharing';
+import { useSharedPresetLoader } from '@/hooks/useSharedPresetLoader';
 
 import {
   Box,
@@ -50,6 +54,7 @@ import {
   InfoIcon,
 } from '@gluestack-ui/themed';
 import { Button, ButtonText, ButtonIcon } from '@/components/ui/button';
+import { useToast, Toast, ToastTitle, VStack as ToastVStack } from '@gluestack-ui/themed';
 import { InfoSection, InfoText, InfoSubtitle, InfoList } from '@/components/InfoSection';
 
 // --- Reusable Helper Components ---
@@ -181,7 +186,7 @@ const AnimatedPreview = ({ calculation, showBlades, borderColor }: { calculation
   );
 };
 
-const INFO_HOW_TO_USE = ['1. Select your desired aspect ratio (the ratio of your negative or image)', "2. Choose your paper size (the size of photo paper you're printing on)", '3. Set your minimum border width (at least 0.5" recommended)', '4. Optionally enable offsets to shift the image from center', '5. View the blade positions in the results section'];
+const INFO_HOW_TO_USE = ['1. Select your desired aspect ratio (the ratio of your negative or image)', '2. Choose your paper size (the size of photo paper you\'re printing on)', '3. Set your minimum border width (at least 0.5" recommended)', '4. Optionally enable offsets to shift the image from center', '5. View the blade positions in the results section'];
 const INFO_TIPS = ['• Easels only provide markings for quarter-inch increments, so you are on your own for measuring the blade positions with a ruler.', '• For uniform borders, keep offsets at 0', '• The "flip paper orientation" button rotates the paper between portrait and landscape', '• The "flip aspect ratio" button swaps the width and height of your image'];
 
 const BorderInfoSection = () => (
@@ -216,6 +221,8 @@ export default function BorderCalculator() {
 
   const { aspectRatio, setAspectRatio, paperSize, setPaperSize, customAspectWidth, setCustomAspectWidth, customAspectHeight, setCustomAspectHeight, customPaperWidth, setCustomPaperWidth, customPaperHeight, setCustomPaperHeight, minBorder, setMinBorder, enableOffset, setEnableOffset, ignoreMinBorder, setIgnoreMinBorder, horizontalOffset, setHorizontalOffset, verticalOffset, setVerticalOffset, showBlades, setShowBlades, isLandscape, setIsLandscape, isRatioFlipped, setIsRatioFlipped, offsetWarning, bladeWarning, calculation, minBorderWarning, paperSizeWarning, resetToDefaults, applyPreset } = useBorderCalculator();
   const { presets, addPreset, updatePreset, removePreset } = useBorderPresets();
+  const loadedPresetFromUrl = useSharedPresetLoader();
+  const toast = useToast();
 
   const [selectedPresetId, setSelectedPresetId] = React.useState('');
   const [presetName, setPresetName] = React.useState('');
@@ -228,6 +235,23 @@ export default function BorderCalculator() {
   React.useEffect(() => {
     if (presetDirty) setIsEditingPreset(true);
   }, [presetDirty]);
+
+  React.useEffect(() => {
+    if (loadedPresetFromUrl) {
+      applyPreset(loadedPresetFromUrl);
+      // Optionally, show a toast or message that a shared preset was loaded
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+            <ToastVStack space="xs">
+              <ToastTitle>Shared preset loaded!</ToastTitle>
+            </ToastVStack>
+          </Toast>
+        ),
+      });
+    }
+  }, [loadedPresetFromUrl]);
 
   const presetItems = [...presets.map(p => ({ label: p.name, value: p.id })), { label: '────────', value: '__divider__' }, ...DEFAULT_BORDER_PRESETS.map(p => ({ label: p.name, value: p.id }))];
 
@@ -267,6 +291,32 @@ export default function BorderCalculator() {
     setPresetName('');
     loadedPresetRef.current = null;
     setIsEditingPreset(false);
+  };
+
+  const handleSharePreset = async () => {
+    const encoded = encodePreset(currentSettings);
+    if (!encoded) {
+      toast.show({ placement: "top", render: ({ id }) => <Toast nativeID={`toast-${id}`} action="error" variant="solid"><ToastTitle>Failed to create share link.</ToastTitle></Toast> });
+      return;
+    }
+
+    const isDev = process.env.NODE_ENV === 'development';
+    const webUrl = isDev ? `http://localhost:8081/border#${encoded}` : `https://dorkroom.art/border#${encoded}`;
+    const nativeUrl = `dorkroom://border/s/${encoded}`;
+    
+    const urlToCopy = Platform.OS === 'web' ? webUrl : nativeUrl;
+
+    await Clipboard.setStringAsync(urlToCopy);
+    toast.show({
+      placement: "top",
+      render: ({ id }) => (
+        <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+          <ToastVStack space="xs">
+            <ToastTitle>Share link copied to clipboard!</ToastTitle>
+          </ToastVStack>
+        </Toast>
+      ),
+    });
   };
 
   return (
@@ -349,7 +399,10 @@ export default function BorderCalculator() {
             <Box sx={{ gap: 8 }}>
               <HStack style={{ gap: 12, alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Box style={{ flex: 1 }}><ThemedSelect label="Presets:" selectedValue={selectedPresetId} onValueChange={handleSelectPreset} items={presetItems as any} placeholder="Select Preset" /></Box>
-                {!isEditingPreset && !presetDirty && (<Box style={{ marginTop: 12 }}><Button onPress={() => setIsEditingPreset(true)} size="md" variant="solid"><ButtonIcon as={Edit} /></Button></Box>)}
+                <Box style={{ marginTop: 12, flexDirection: 'row', gap: 8 }}>
+                  <Button onPress={handleSharePreset} size="md" variant="solid"><ButtonIcon as={Share2} /></Button>
+                  {!isEditingPreset && !presetDirty && (<Button onPress={() => setIsEditingPreset(true)} size="md" variant="solid"><ButtonIcon as={Edit} /></Button>)}
+                </Box>
               </HStack>
               {(isEditingPreset || presetDirty) && (
                 <>
