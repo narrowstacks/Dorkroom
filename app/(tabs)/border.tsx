@@ -41,7 +41,6 @@ import type { BorderPreset } from '@/types/borderPresetTypes';
 import * as Clipboard from 'expo-clipboard';
 import { encodePreset } from '@/utils/presetSharing';
 import { useSharedPresetLoader } from '@/hooks/useSharedPresetLoader';
-import { SHARING_URLS } from '@/constants/urls';
 import { generateSharingUrls } from '@/utils/urlHelpers';
 
 import {
@@ -64,9 +63,12 @@ import {
   Heading,
   Icon,
   CloseIcon,
+  useToast, 
+  Toast, 
+  ToastTitle, 
+  VStack as ToastVStack 
 } from '@gluestack-ui/themed';
 import { Button, ButtonText, ButtonIcon } from '@/components/ui/button';
-import { useToast, Toast, ToastTitle, VStack as ToastVStack } from '@gluestack-ui/themed';
 import { InfoSection, InfoText, InfoSubtitle, InfoList } from '@/components/InfoSection';
 
 // --- Reusable Helper Components ---
@@ -175,11 +177,11 @@ const AnimatedPreview = ({ calculation, showBlades, borderColor }: { calculation
       Animated.timing(animatedValues.topBladePosition, { toValue: calculation.topBorderPercent, ...animationConfig }),
       Animated.timing(animatedValues.bottomBladePosition, { toValue: calculation.bottomBorderPercent, ...animationConfig }),
     ]).start();
-  }, [calculation]);
+  }, [calculation]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     Animated.timing(animatedValues.bladeOpacity, { toValue: showBlades ? 1 : 0, duration: 100, useNativeDriver: false }).start();
-  }, [showBlades]);
+  }, [showBlades]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!calculation) return null;
 
@@ -242,7 +244,7 @@ export default function BorderCalculator() {
   const [isShareModalVisible, setShareModalVisible] = React.useState(false);
   const loadedPresetRef = React.useRef<BorderPreset | null>(null);
 
-  const currentSettings = { aspectRatio, paperSize, customAspectWidth, customAspectHeight, customPaperWidth, customPaperHeight, minBorder, enableOffset, ignoreMinBorder, horizontalOffset, verticalOffset, showBlades, isLandscape, isRatioFlipped };
+  const currentSettings = React.useMemo(() => ({ aspectRatio, paperSize, customAspectWidth, customAspectHeight, customPaperWidth, customPaperHeight, minBorder, enableOffset, ignoreMinBorder, horizontalOffset, verticalOffset, showBlades, isLandscape, isRatioFlipped }), [aspectRatio, paperSize, customAspectWidth, customAspectHeight, customPaperWidth, customPaperHeight, minBorder, enableOffset, ignoreMinBorder, horizontalOffset, verticalOffset, showBlades, isLandscape, isRatioFlipped]);
   const presetDirty = React.useMemo(() => loadedPresetRef.current && JSON.stringify(loadedPresetRef.current.settings) !== JSON.stringify(currentSettings), [currentSettings]);
 
   React.useEffect(() => {
@@ -271,7 +273,7 @@ export default function BorderCalculator() {
         });
     }
     }
-  }, [loadedPresetFromUrl]);
+  }, [loadedPresetFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const presetItems = [...presets.map(p => ({ label: p.name, value: p.id })), { label: '────────', value: '__divider__' }, ...DEFAULT_BORDER_PRESETS.map(p => ({ label: p.name, value: p.id }))];
 
@@ -329,7 +331,7 @@ export default function BorderCalculator() {
         render: ({ id }) => (
             <Toast nativeID={`toast-${id}`} action="success" variant="solid">
                 <ToastVStack space="xs">
-                    <ToastTitle>Share link for "{preset.name}" copied!</ToastTitle>
+                    <ToastTitle>Share link for &quot;{preset.name}&quot; copied!</ToastTitle>
                 </ToastVStack>
             </Toast>
         ),
@@ -405,28 +407,28 @@ export default function BorderCalculator() {
 
         <Box sx={{ width: '100%', ...(Platform.OS === 'web' && isDesktop && { flexDirection: 'row', gap: 32, alignItems: 'flex-start' }) }}>
           {calculation && (
-            <Box sx={{ gap: 16, alignItems: 'center', width: '100%', mb: Platform.OS === 'web' ? 0 : 32, ...(Platform.OS === 'web' && isDesktop && { flex: 1, alignSelf: 'stretch', mb: 0 }) }}>
+            <Box sx={{ gap: 16, alignItems: 'center', width: '100%', mb: Platform.OS === 'web' ? 0 : 32, ...(Platform.OS === 'web' && isDesktop && { flex: 1, alignSelf: 'flex-start', mb: 0 }) }}>
               <AnimatedPreview calculation={calculation} showBlades={showBlades} borderColor={borderColor} />
 
                 {Platform.OS === 'web' && isDesktop ? (
                   <HStack sx={{ flex: 1, justifyContent: 'space-between', gap: 12 }}>
                     <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="md">
-                      <ButtonIcon as={RotateCwSquare} size={24}/>
+                      <ButtonIcon as={RotateCwSquare} size="md"/>
                       <ButtonText style={{ fontSize: 12.5, fontWeight: 'bold' }}>Flip Paper Orientation</ButtonText>
                     </Button>
                     <Button onPress={() => setIsRatioFlipped(!isRatioFlipped)} variant="solid" action="primary" size="md">
-                      <ButtonIcon as={Proportions} size={24}/>
+                      <ButtonIcon as={Proportions} size="md"/>
                       <ButtonText style={{ fontSize: 12.5, fontWeight: 'bold' }}>Flip Aspect Ratio</ButtonText>
                     </Button>
                   </HStack>
                 ) : (
                 <VStack sx={{ flex: 1, gap: 12, width: '100%' }}>
                   <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="md">
-                    <ButtonIcon as={RotateCwSquare} size={24}/>
+                    <ButtonIcon as={RotateCwSquare} size="md"/>
                     <ButtonText style={{ fontSize: 18}}>Flip Paper Orientation</ButtonText>
                   </Button>
                   <Button onPress={() => setIsRatioFlipped(!isRatioFlipped)} variant="solid" action="primary" size="md">
-                    <ButtonIcon as={Proportions} size={24}/>
+                    <ButtonIcon as={Proportions} size="md"/>
                     <ButtonText style={{ fontSize: 18}}>Flip Aspect Ratio</ButtonText>
                   </Button>
                 </VStack>
