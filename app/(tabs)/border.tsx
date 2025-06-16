@@ -41,6 +41,7 @@ import type { BorderPreset } from '@/types/borderPresetTypes';
 import * as Clipboard from 'expo-clipboard';
 import { encodePreset } from '@/utils/presetSharing';
 import { useSharedPresetLoader } from '@/hooks/useSharedPresetLoader';
+import { SHARING_URLS } from '@/constants/urls';
 
 import {
   Box,
@@ -301,7 +302,7 @@ export default function BorderCalculator() {
     }
 
     const isDev = process.env.NODE_ENV === 'development';
-    const webUrl = isDev ? `http://localhost:8081/border#${encoded}` : `https://dorkroom.art/border#${encoded}`;
+    const webUrl = isDev ? `${SHARING_URLS.BORDER_CALCULATOR.DEVELOPMENT}#${encoded}` : `${SHARING_URLS.BORDER_CALCULATOR.PRODUCTION}#${encoded}`;
     const nativeUrl = `dorkroom://border/s/${encoded}`;
     
     const urlToCopy = Platform.OS === 'web' ? webUrl : nativeUrl;
