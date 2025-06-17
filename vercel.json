@@ -2,7 +2,6 @@
   "outputDirectory": "dist",
   "devCommand": "npm run dev",
   "cleanUrls": true,
-  "framework": "static",
   "buildCommand": "bun run vercel-build",
   "rewrites": [
     {
