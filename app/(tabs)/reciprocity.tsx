@@ -1,10 +1,8 @@
 import React from "react";
 import { Platform, StyleSheet } from "react-native";
-import { Textarea, TextareaInput } from "@/components/ui/textarea";
-import { Button, ButtonText } from "@/components/ui/button";
+import { Textarea, TextareaInput, Button, ButtonText, Box, Text } from "@gluestack-ui/themed";
 import { useReciprocityCalculator } from "@/hooks/useReciprocityCalculator";
 import { FILM_TYPES, EXPOSURE_PRESETS } from "@/constants/reciprocity";
-import { Box, Text } from "@gluestack-ui/themed";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { fonts } from "@/styles/common";
 import { CalculatorLayout } from "@/components/CalculatorLayout";

@@ -66,9 +66,11 @@ import {
   useToast, 
   Toast, 
   ToastTitle, 
-  VStack as ToastVStack 
+  VStack as ToastVStack,
+  Button,
+  ButtonText,
+  ButtonIcon
 } from '@gluestack-ui/themed';
-import { Button, ButtonText, ButtonIcon } from '@/components/ui/button';
 import { InfoSection, InfoText, InfoSubtitle, InfoList } from '@/components/InfoSection';
 
 // --- Reusable Helper Components ---
