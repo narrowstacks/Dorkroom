@@ -264,7 +264,12 @@ export class DorkroomClient {
    */
   searchFilms(query: string, colorType?: string): Film[] {
     this.ensureLoaded();
-    const lowerQuery = query.toLowerCase();
+    const lowerQuery = query.toLowerCase().trim();
+    
+    // Return empty array for empty queries
+    if (!lowerQuery) {
+      return [];
+    }
     
     return this.films.filter(film => {
       const matchesQuery = 
@@ -282,7 +287,12 @@ export class DorkroomClient {
    */
   searchDevelopers(query: string, type?: string): Developer[] {
     this.ensureLoaded();
-    const lowerQuery = query.toLowerCase();
+    const lowerQuery = query.toLowerCase().trim();
+    
+    // Return empty array for empty queries
+    if (!lowerQuery) {
+      return [];
+    }
     
     return this.developers.filter(developer => {
       const matchesQuery = 
