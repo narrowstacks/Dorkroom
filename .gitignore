@@ -49,4 +49,5 @@ app-example
 .vercel
 .cursor
 .claude
+.yoyo
 bun.lock

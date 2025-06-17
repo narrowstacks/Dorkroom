@@ -34,9 +34,14 @@ import {
   RotateCcw,
   ArrowUp,
   Check,
-  Trash2
+  Trash2,
+  Share2
 } from "lucide-react-native"
 import type { BorderPreset } from '@/types/borderPresetTypes';
+import * as Clipboard from 'expo-clipboard';
+import { encodePreset } from '@/utils/presetSharing';
+import { useSharedPresetLoader } from '@/hooks/useSharedPresetLoader';
+import { generateSharingUrls } from '@/utils/urlHelpers';
 
 import {
   Box,
@@ -48,6 +53,20 @@ import {
   AlertIcon,
   AlertText,
   InfoIcon,
+  Modal,
+  ModalBackdrop,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
+  Heading,
+  Icon,
+  CloseIcon,
+  useToast, 
+  Toast, 
+  ToastTitle, 
+  VStack as ToastVStack 
 } from '@gluestack-ui/themed';
 import { Button, ButtonText, ButtonIcon } from '@/components/ui/button';
 import { InfoSection, InfoText, InfoSubtitle, InfoList } from '@/components/InfoSection';
@@ -158,11 +177,11 @@ const AnimatedPreview = ({ calculation, showBlades, borderColor }: { calculation
       Animated.timing(animatedValues.topBladePosition, { toValue: calculation.topBorderPercent, ...animationConfig }),
       Animated.timing(animatedValues.bottomBladePosition, { toValue: calculation.bottomBorderPercent, ...animationConfig }),
     ]).start();
-  }, [calculation]);
+  }, [calculation]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     Animated.timing(animatedValues.bladeOpacity, { toValue: showBlades ? 1 : 0, duration: 100, useNativeDriver: false }).start();
-  }, [showBlades]);
+  }, [showBlades]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!calculation) return null;
 
@@ -181,7 +200,7 @@ const AnimatedPreview = ({ calculation, showBlades, borderColor }: { calculation
   );
 };
 
-const INFO_HOW_TO_USE = ['1. Select your desired aspect ratio (the ratio of your negative or image)', "2. Choose your paper size (the size of photo paper you're printing on)", '3. Set your minimum border width (at least 0.5" recommended)', '4. Optionally enable offsets to shift the image from center', '5. View the blade positions in the results section'];
+const INFO_HOW_TO_USE = ['1. Select your desired aspect ratio (the ratio of your negative or image)', '2. Choose your paper size (the size of photo paper you\'re printing on)', '3. Set your minimum border width (at least 0.5" recommended)', '4. Optionally enable offsets to shift the image from center', '5. View the blade positions in the results section'];
 const INFO_TIPS = ['• Easels only provide markings for quarter-inch increments, so you are on your own for measuring the blade positions with a ruler.', '• For uniform borders, keep offsets at 0', '• The "flip paper orientation" button rotates the paper between portrait and landscape', '• The "flip aspect ratio" button swaps the width and height of your image'];
 
 const BorderInfoSection = () => (
@@ -195,7 +214,7 @@ const BorderInfoSection = () => (
 
     <InfoSubtitle>Blade Measurements:</InfoSubtitle>
     <InfoText>
-      The measurements shown are distances from the edge of your enlarger baseboard to where each blade should be positioned. For non-standard paper sizes (sizes that don't have a standard easel slot), follow the instructions to place your paper in the appropriate easel slot.
+      The measurements shown are distances from the edge of your enlarger baseboard to where each blade should be positioned. For non-standard paper sizes (sizes that don&apos;t have a standard easel slot), follow the instructions to place your paper in the appropriate easel slot.
     </InfoText>
 
     <InfoSubtitle>Tips:</InfoSubtitle>
@@ -216,18 +235,45 @@ export default function BorderCalculator() {
 
   const { aspectRatio, setAspectRatio, paperSize, setPaperSize, customAspectWidth, setCustomAspectWidth, customAspectHeight, setCustomAspectHeight, customPaperWidth, setCustomPaperWidth, customPaperHeight, setCustomPaperHeight, minBorder, setMinBorder, enableOffset, setEnableOffset, ignoreMinBorder, setIgnoreMinBorder, horizontalOffset, setHorizontalOffset, verticalOffset, setVerticalOffset, showBlades, setShowBlades, isLandscape, setIsLandscape, isRatioFlipped, setIsRatioFlipped, offsetWarning, bladeWarning, calculation, minBorderWarning, paperSizeWarning, resetToDefaults, applyPreset } = useBorderCalculator();
   const { presets, addPreset, updatePreset, removePreset } = useBorderPresets();
+  const loadedPresetFromUrl = useSharedPresetLoader();
+  const toast = useToast();
 
   const [selectedPresetId, setSelectedPresetId] = React.useState('');
   const [presetName, setPresetName] = React.useState('');
   const [isEditingPreset, setIsEditingPreset] = React.useState(false);
+  const [isShareModalVisible, setShareModalVisible] = React.useState(false);
   const loadedPresetRef = React.useRef<BorderPreset | null>(null);
 
-  const currentSettings = { aspectRatio, paperSize, customAspectWidth, customAspectHeight, customPaperWidth, customPaperHeight, minBorder, enableOffset, ignoreMinBorder, horizontalOffset, verticalOffset, showBlades, isLandscape, isRatioFlipped };
+  const currentSettings = React.useMemo(() => ({ aspectRatio, paperSize, customAspectWidth, customAspectHeight, customPaperWidth, customPaperHeight, minBorder, enableOffset, ignoreMinBorder, horizontalOffset, verticalOffset, showBlades, isLandscape, isRatioFlipped }), [aspectRatio, paperSize, customAspectWidth, customAspectHeight, customPaperWidth, customPaperHeight, minBorder, enableOffset, ignoreMinBorder, horizontalOffset, verticalOffset, showBlades, isLandscape, isRatioFlipped]);
   const presetDirty = React.useMemo(() => loadedPresetRef.current && JSON.stringify(loadedPresetRef.current.settings) !== JSON.stringify(currentSettings), [currentSettings]);
 
   React.useEffect(() => {
     if (presetDirty) setIsEditingPreset(true);
   }, [presetDirty]);
+
+  React.useEffect(() => {
+    if (loadedPresetFromUrl) {
+      if (loadedPresetFromUrl) {
+        applyPreset(loadedPresetFromUrl.settings);
+        setPresetName(loadedPresetFromUrl.name);
+        // Create a temporary preset object to indicate it's loaded, but not saved yet
+        const tempPreset = { id: 'shared-' + Date.now(), name: loadedPresetFromUrl.name, settings: loadedPresetFromUrl.settings };
+        loadedPresetRef.current = tempPreset;
+        setSelectedPresetId(''); // It's not a saved preset yet
+        setIsEditingPreset(true); // Encourage user to save it
+        toast.show({
+            placement: "top",
+            render: ({ id }) => (
+                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                    <ToastVStack space="xs">
+                        <ToastTitle>Shared preset &quot;{loadedPresetFromUrl.name}&quot; loaded!</ToastTitle>
+                    </ToastVStack>
+                </Toast>
+            ),
+        });
+    }
+    }
+  }, [loadedPresetFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const presetItems = [...presets.map(p => ({ label: p.name, value: p.id })), { label: '────────', value: '__divider__' }, ...DEFAULT_BORDER_PRESETS.map(p => ({ label: p.name, value: p.id }))];
 
@@ -269,8 +315,91 @@ export default function BorderCalculator() {
     setIsEditingPreset(false);
   };
 
+  const sharePreset = async (preset: { name: string, settings: typeof currentSettings }) => {
+    const encoded = encodePreset(preset);
+    if (!encoded) {
+        toast.show({ placement: "top", render: ({ id }) => <Toast nativeID={`toast-${id}`} action="error" variant="solid"><ToastTitle>Failed to create share link.</ToastTitle></Toast> });
+        return;
+    }
+
+    const { webUrl, nativeUrl } = generateSharingUrls(encoded);
+    const urlToCopy = Platform.OS === 'web' ? webUrl : nativeUrl;
+
+    await Clipboard.setStringAsync(urlToCopy);
+    toast.show({
+        placement: "top",
+        render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastVStack space="xs">
+                    <ToastTitle>Share link for &quot;{preset.name}&quot; copied!</ToastTitle>
+                </ToastVStack>
+            </Toast>
+        ),
+    });
+  };
+
+  const handleSharePreset = async () => {
+    // Check if the current settings match a saved preset
+    const matchedPreset = presets.find(p => JSON.stringify(p.settings) === JSON.stringify(currentSettings));
+
+    if (matchedPreset) {
+        // If it's a saved preset, share it directly
+        sharePreset(matchedPreset);
+    } else {
+        // If not saved, open the modal to force saving
+        setShareModalVisible(true);
+    }
+  };
+
+  const handleSaveAndShare = () => {
+    if (!presetName.trim()) {
+        toast.show({ placement: "top", render: ({ id }) => <Toast nativeID={`toast-${id}`} action="error" variant="solid"><ToastTitle>Please enter a name for the preset.</ToastTitle></Toast> });
+        return;
+    }
+    const newPreset = { id: 'user-' + Date.now(), name: presetName.trim(), settings: currentSettings };
+    addPreset(newPreset);
+    loadedPresetRef.current = newPreset;
+    setSelectedPresetId(newPreset.id);
+    setIsEditingPreset(false);
+    setShareModalVisible(false);
+    
+    // Now share the newly saved preset
+    sharePreset(newPreset);
+  };
+
   return (
     <ScrollView sx={{ flex: 1, bg: backgroundColor }} contentContainerStyle={{ flexGrow: 1, paddingBottom: Platform.OS === 'ios' || Platform.OS === 'android' ? 100 : 80 }}>
+      <Modal isOpen={isShareModalVisible} onClose={() => setShareModalVisible(false)}>
+        <ModalBackdrop />
+        <ModalContent>
+          <ModalHeader>
+            <Heading size="lg">Save Preset to Share</Heading>
+            <ModalCloseButton>
+              <Icon as={CloseIcon} />
+            </ModalCloseButton>
+          </ModalHeader>
+          <ModalBody>
+            <Text>To share these settings, you must first save them as a named preset.</Text>
+            <StyledTextInput
+              value={presetName}
+              onChangeText={setPresetName}
+              placeholder="Enter Preset Name"
+              style={{ marginTop: 16, color: textColor, backgroundColor: cardBackground, borderColor: outline, borderWidth: 1, borderRadius: 8, padding: 16 }}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <HStack sx={{ gap: 12, justifyContent: 'flex-end' }}>
+              <Button variant="outline" size="sm" action="secondary" onPress={() => setShareModalVisible(false)}>
+                <ButtonText>Cancel</ButtonText>
+              </Button>
+              <Button size="sm" action="positive" onPress={handleSaveAndShare}>
+                <ButtonText>Save & Share</ButtonText>
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
       <Box sx={{ flex: 1, p: 16, ...(Platform.OS === 'web' && { maxWidth: 1024, marginHorizontal: 'auto', width: '100%', p: 24 }) }}>
         <Box sx={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', width: '100%', mb: 24, pb: 16, borderBottomWidth: 1, borderBottomColor: outline }}>
           <Text sx={{ fontSize: 30, textAlign: 'center', fontWeight: '600' }}>Border Calculator</Text>
@@ -278,28 +407,28 @@ export default function BorderCalculator() {
 
         <Box sx={{ width: '100%', ...(Platform.OS === 'web' && isDesktop && { flexDirection: 'row', gap: 32, alignItems: 'flex-start' }) }}>
           {calculation && (
-            <Box sx={{ gap: 16, alignItems: 'center', width: '100%', mb: Platform.OS === 'web' ? 0 : 32, ...(Platform.OS === 'web' && isDesktop && { flex: 1, alignSelf: 'stretch', mb: 0 }) }}>
+            <Box sx={{ gap: 16, alignItems: 'center', width: '100%', mb: Platform.OS === 'web' ? 0 : 32, ...(Platform.OS === 'web' && isDesktop && { flex: 1, alignSelf: 'flex-start', mb: 0 }) }}>
               <AnimatedPreview calculation={calculation} showBlades={showBlades} borderColor={borderColor} />
 
                 {Platform.OS === 'web' && isDesktop ? (
                   <HStack sx={{ flex: 1, justifyContent: 'space-between', gap: 12 }}>
                     <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="md">
-                      <ButtonIcon as={RotateCwSquare} size={24}/>
+                      <ButtonIcon as={RotateCwSquare} size="md"/>
                       <ButtonText style={{ fontSize: 12.5, fontWeight: 'bold' }}>Flip Paper Orientation</ButtonText>
                     </Button>
                     <Button onPress={() => setIsRatioFlipped(!isRatioFlipped)} variant="solid" action="primary" size="md">
-                      <ButtonIcon as={Proportions} size={24}/>
+                      <ButtonIcon as={Proportions} size="md"/>
                       <ButtonText style={{ fontSize: 12.5, fontWeight: 'bold' }}>Flip Aspect Ratio</ButtonText>
                     </Button>
                   </HStack>
                 ) : (
                 <VStack sx={{ flex: 1, gap: 12, width: '100%' }}>
                   <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="md">
-                    <ButtonIcon as={RotateCwSquare} size={24}/>
+                    <ButtonIcon as={RotateCwSquare} size="md"/>
                     <ButtonText style={{ fontSize: 18}}>Flip Paper Orientation</ButtonText>
                   </Button>
                   <Button onPress={() => setIsRatioFlipped(!isRatioFlipped)} variant="solid" action="primary" size="md">
-                    <ButtonIcon as={Proportions} size={24}/>
+                    <ButtonIcon as={Proportions} size="md"/>
                     <ButtonText style={{ fontSize: 18}}>Flip Aspect Ratio</ButtonText>
                   </Button>
                 </VStack>
@@ -349,7 +478,10 @@ export default function BorderCalculator() {
             <Box sx={{ gap: 8 }}>
               <HStack style={{ gap: 12, alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Box style={{ flex: 1 }}><ThemedSelect label="Presets:" selectedValue={selectedPresetId} onValueChange={handleSelectPreset} items={presetItems as any} placeholder="Select Preset" /></Box>
-                {!isEditingPreset && !presetDirty && (<Box style={{ marginTop: 12 }}><Button onPress={() => setIsEditingPreset(true)} size="md" variant="solid"><ButtonIcon as={Edit} /></Button></Box>)}
+                <Box style={{ marginTop: 12, flexDirection: 'row', gap: 8 }}>
+                  <Button onPress={handleSharePreset} size="md" variant="solid"><ButtonIcon as={Share2} /></Button>
+                  {!isEditingPreset && !presetDirty && (<Button onPress={() => setIsEditingPreset(true)} size="md" variant="solid"><ButtonIcon as={Edit} /></Button>)}
+                </Box>
               </HStack>
               {(isEditingPreset || presetDirty) && (
                 <>
