@@ -2,12 +2,12 @@
   "outputDirectory": "dist",
   "devCommand": "npm run dev",
   "cleanUrls": true,
-  "buildCommand": "bun run vercel-build",
+  "buildCommand": "bun run web-export",
   "rewrites": [
     {
       "source": "/:path*",
       "destination": "/"
     }
   ],
-  "installCommand": "curl -fsSL https://bun.sh/install | bash && ~/.bun/bin/bun install"
+  "installCommand": "bun install"
 }

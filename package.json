@@ -13,7 +13,7 @@
     "dev": "expo start",
     "build": "expo export -p web",
     "clean": "rm -rf node_modules .expo dist",
-    "vercel-build": "bunx expo export -p web",
+    "web-export": "bunx expo export -p web",
     "deploy": "bunx vercel deploy"
   },
   "jest": {
