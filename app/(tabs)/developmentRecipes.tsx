@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Platform, StyleSheet, ScrollView, TextInput, TouchableOpacity, Modal } from "react-native";
 import { Box, Text, Button, ButtonText, VStack, HStack } from "@gluestack-ui/themed";
-import { Search, X, Filter, RefreshCw } from "lucide-react-native";
+import { Search, X, Filter, RefreshCw, ChevronDown } from "lucide-react-native";
 
 import { CalculatorLayout } from "@/components/CalculatorLayout";
 import { FormSection, FormGroup } from "@/components/FormSection";
@@ -15,8 +15,6 @@ import {
   FILM_COLOR_TYPES,
   DEVELOPER_TYPES,
   SORT_OPTIONS,
-  PUSH_PULL_LABELS,
-  convertToDisplay,
   formatTime,
 } from "@/constants/developmentRecipes";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
@@ -60,19 +58,58 @@ function SearchInput({ value, onChangeText, placeholder, onClear }: SearchInputP
   );
 }
 
-interface CombinationCardProps {
+interface TableHeaderProps {
+  title: string;
+  sortKey: string;
+  currentSort: string;
+  onSort: (sortKey: string) => void;
+}
+
+function TableHeader({ title, sortKey, currentSort, onSort }: TableHeaderProps) {
+  const textColor = useThemeColor({}, "text");
+  const developmentTint = useThemeColor({}, "developmentRecipesTint");
+  const isActive = currentSort === sortKey;
+
+  // Define flex values to match the row cells
+  const getHeaderStyle = () => {
+    switch (sortKey) {
+      case 'filmName': return { flex: 2.5 };
+      case 'developerName': return { flex: 2 };
+      case 'timeMinutes': return { flex: 1 };
+      case 'temperatureF': return { flex: 1 };
+      case 'shootingIso': return { flex: 0.8 };
+      case 'dilution': return { flex: 1.2 };
+      default: return { flex: 1 };
+    }
+  };
+
+  return (
+    <TouchableOpacity 
+      style={[styles.tableHeader, getHeaderStyle()]} 
+      onPress={() => onSort(sortKey)}
+    >
+      <Text style={[styles.tableHeaderText, { color: isActive ? developmentTint : textColor }]}>
+        {title}
+      </Text>
+      {isActive && (
+        <ChevronDown size={12} color={developmentTint} style={styles.sortIcon} />
+      )}
+    </TouchableOpacity>
+  );
+}
+
+interface RecipeRowProps {
   combination: Combination;
   film: Film | undefined;
   developer: Developer | undefined;
   onPress: () => void;
+  isEven: boolean;
 }
 
-function CombinationCard({ combination, film, developer, onPress }: CombinationCardProps) {
-  const cardBackground = useThemeColor({}, "cardBackground");
-  const shadowColor = useThemeColor({}, "shadowColor");
-  const outline = useThemeColor({}, "outline");
-  const textSecondary = useThemeColor({}, "textSecondary");
+function RecipeRow({ combination, film, developer, onPress, isEven }: RecipeRowProps) {
+  const textColor = useThemeColor({}, "text");
   const developmentTint = useThemeColor({}, "developmentRecipesTint");
+  const rowBackground = useThemeColor({}, isEven ? "cardBackground" : "background");
 
   const filmName = film ? `${film.brand} ${film.name}` : "Unknown Film";
   const developerName = developer ? `${developer.manufacturer} ${developer.name}` : "Unknown Developer";
@@ -82,66 +119,55 @@ function CombinationCard({ combination, film, developer, onPress }: CombinationC
     (developer?.dilutions.find(d => d.id === combination.dilutionId)?.dilution) || 
     "Stock";
 
+  // Format temperature more compactly
+  const tempDisplay = `${combination.temperatureF}°F`;
+
   return (
     <TouchableOpacity onPress={onPress}>
-      <Box
-        style={[
-          styles.combinationCard,
-          {
-            backgroundColor: cardBackground,
-            borderColor: outline,
-            shadowColor,
-          },
-        ]}
-      >
-      {/* Header with film and developer names */}
-      <Box style={styles.cardHeader}>
-        <Text style={[styles.filmName, { color: developmentTint }]} numberOfLines={1}>
-          {filmName}
-        </Text>
-        <Text style={[styles.developerName, { color: textSecondary }]} numberOfLines={1}>
-          {developerName}
-        </Text>
-      </Box>
-
-      {/* Development parameters */}
-      <Box style={styles.parametersGrid}>
-        <Box style={styles.parameterItem}>
-          <Text style={[styles.parameterLabel, { color: textSecondary }]}>Time</Text>
-          <Text style={styles.parameterValue}>{formatTime(combination.timeMinutes)}</Text>
+      <Box style={[styles.tableRow, { backgroundColor: rowBackground }]}>
+        <Box style={styles.filmCell}>
+          <Text style={[styles.filmText, { color: developmentTint }]} numberOfLines={1}>
+            {filmName}
+          </Text>
         </Box>
         
-        <Box style={styles.parameterItem}>
-          <Text style={[styles.parameterLabel, { color: textSecondary }]}>Temp</Text>
-          <Text style={styles.parameterValue}>{convertToDisplay(combination.temperatureF)}</Text>
+        <Box style={styles.developerCell}>
+          <Text style={[styles.developerText, { color: textColor }]} numberOfLines={1}>
+            {developerName}
+          </Text>
         </Box>
         
-        <Box style={styles.parameterItem}>
-          <Text style={[styles.parameterLabel, { color: textSecondary }]}>ISO</Text>
-          <Text style={styles.parameterValue}>{combination.shootingIso}</Text>
+        <Box style={styles.timeCell}>
+          <Text style={[styles.paramText, { color: textColor }]}>
+            {formatTime(combination.timeMinutes)}
+          </Text>
         </Box>
         
-        <Box style={styles.parameterItem}>
-          <Text style={[styles.parameterLabel, { color: textSecondary }]}>Dilution</Text>
-          <Text style={styles.parameterValue}>{dilutionInfo}</Text>
+        <Box style={styles.tempCell}>
+          <Text style={[styles.paramText, { color: textColor }]}>
+            {tempDisplay}
+          </Text>
         </Box>
-      </Box>
-
-      {/* Push/pull and notes */}
-      {(combination.pushPull !== 0 || combination.notes) && (
-        <Box style={styles.cardFooter}>
-          {combination.pushPull !== 0 && (
-            <Text style={[styles.pushPullText, { color: developmentTint }]}>
-              {PUSH_PULL_LABELS[combination.pushPull] || `${combination.pushPull > 0 ? '+' : ''}${combination.pushPull} stops`}
+        
+        <Box style={styles.isoCell}>
+          <Text style={[styles.paramText, { color: textColor }]}>
+            {combination.shootingIso}
+          </Text>
+        </Box>
+        
+        <Box style={styles.dilutionCell}>
+          <Text style={[styles.paramText, { color: textColor }]} numberOfLines={1}>
+            {dilutionInfo}
+          </Text>
+        </Box>
+        
+        {combination.pushPull !== 0 && (
+          <Box style={styles.pushPullCell}>
+            <Text style={[styles.pushPullTableText, { color: developmentTint }]}>
+              {combination.pushPull > 0 ? `+${combination.pushPull}` : combination.pushPull}
             </Text>
-          )}
-          {combination.notes && (
-            <Text style={[styles.notesText, { color: textSecondary }]} numberOfLines={2}>
-              {combination.notes}
-            </Text>
-          )}
-        </Box>
-      )}
+          </Box>
+        )}
       </Box>
     </TouchableOpacity>
   );
@@ -184,6 +210,7 @@ export default function DevelopmentRecipes() {
   const isDesktop = Platform.OS === "web" && width > 768;
   const textColor = useThemeColor({}, "text");
   const developmentTint = useThemeColor({}, "developmentRecipesTint");
+  const outline = useThemeColor({}, "outline");
 
   // Film suggestions for search
   const filmSuggestions = React.useMemo(() => {
@@ -438,17 +465,31 @@ export default function DevelopmentRecipes() {
             </Text>
           </Box>
         ) : (
-          <ScrollView style={styles.resultsScrollView} showsVerticalScrollIndicator={false}>
-            {filteredCombinations.map((combination) => (
-              <CombinationCard
-                key={combination.uuid}
-                combination={combination}
-                film={getFilmById(combination.filmStockId)}
-                developer={getDeveloperById(combination.developerId)}
-                onPress={() => setSelectedCombination(combination)}
-              />
-            ))}
-          </ScrollView>
+          <Box style={styles.tableContainer}>
+            {/* Table Header */}
+            <Box style={[styles.tableHeaderRow, { borderBottomColor: outline }]}>
+              <TableHeader title="Film" sortKey="filmName" currentSort={sortBy} onSort={setSortBy} />
+              <TableHeader title="Developer" sortKey="developerName" currentSort={sortBy} onSort={setSortBy} />
+              <TableHeader title="Time" sortKey="timeMinutes" currentSort={sortBy} onSort={setSortBy} />
+              <TableHeader title="Temp" sortKey="temperatureF" currentSort={sortBy} onSort={setSortBy} />
+              <TableHeader title="ISO" sortKey="shootingIso" currentSort={sortBy} onSort={setSortBy} />
+              <TableHeader title="Dilution" sortKey="dilution" currentSort={sortBy} onSort={setSortBy} />
+            </Box>
+            
+            {/* Table Body */}
+            <ScrollView style={styles.tableScrollView} showsVerticalScrollIndicator={false}>
+              {filteredCombinations.map((combination, index) => (
+                <RecipeRow
+                  key={combination.uuid}
+                  combination={combination}
+                  film={getFilmById(combination.filmStockId)}
+                  developer={getDeveloperById(combination.developerId)}
+                  onPress={() => setSelectedCombination(combination)}
+                  isEven={index % 2 === 0}
+                />
+              ))}
+            </ScrollView>
+          </Box>
         )}
         </Box>
       </Box>
@@ -608,68 +649,94 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: 16,
   },
-  resultsScrollView: {
+  // Table Styles
+  tableContainer: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
+  },
+  tableHeaderRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 2,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Platform.OS === 'web' ? 8 : 4,
+    paddingVertical: 4,
+    justifyContent: 'center',
+  },
+  tableHeaderText: {
+    fontSize: Platform.OS === 'web' ? 14 : 12,
+    fontWeight: '600',
+    marginRight: 4,
+    textAlign: 'center',
+  },
+  sortIcon: {
+    marginLeft: 2,
+  },
+  tableScrollView: {
     flex: 1,
   },
-  
-  // Combination Card Styles
-  combinationCard: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  tableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Platform.OS === 'web' ? 12 : 8,
+    paddingHorizontal: Platform.OS === 'web' ? 8 : 4,
+    minHeight: Platform.OS === 'web' ? 48 : 40,
   },
-  cardHeader: {
-    marginBottom: 12,
+  filmCell: {
+    flex: 2.5,
+    paddingRight: 8,
   },
-  filmName: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 2,
+  filmText: {
+    fontSize: Platform.OS === 'web' ? 14 : 12,
+    fontWeight: '600',
   },
-  developerName: {
-    fontSize: 14,
-    fontWeight: "500",
+  developerCell: {
+    flex: 2,
+    paddingRight: 8,
   },
-  parametersGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+  developerText: {
+    fontSize: Platform.OS === 'web' ? 13 : 11,
+    fontWeight: '500',
   },
-  parameterItem: {
-    width: "48%",
-    marginBottom: 8,
+  timeCell: {
+    flex: 1,
+    paddingRight: 8,
+    alignItems: 'center',
   },
-  parameterLabel: {
+  tempCell: {
+    flex: 1,
+    paddingRight: 8,
+    alignItems: 'center',
+  },
+  isoCell: {
+    flex: 0.8,
+    paddingRight: 8,
+    alignItems: 'center',
+  },
+  dilutionCell: {
+    flex: 1.2,
+    paddingRight: 8,
+    alignItems: 'center',
+  },
+  pushPullCell: {
+    flex: 0.5,
+    alignItems: 'center',
+  },
+  paramText: {
+    fontSize: Platform.OS === 'web' ? 13 : 11,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  pushPullTableText: {
     fontSize: 12,
-    fontWeight: "500",
-    marginBottom: 2,
-  },
-  parameterValue: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  cardFooter: {
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.1)",
-  },
-  pushPullText: {
-    fontSize: 12,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  notesText: {
-    fontSize: 12,
-    fontStyle: "italic",
+    fontWeight: '600',
+    textAlign: 'center',
   },
   
   // Loading and Error Styles
