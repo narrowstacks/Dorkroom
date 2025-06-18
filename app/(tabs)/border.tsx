@@ -27,8 +27,8 @@ import { ASPECT_RATIOS, PAPER_SIZES } from '@/constants/border';
 import { ThemedSelect } from '@/components/ThemedSelect';
 import { DEFAULT_BORDER_PRESETS } from '@/constants/borderPresets';
 import { useBorderPresets } from '@/hooks/useBorderPresets';
-import { 
-  RotateCwSquare, 
+import {
+  RotateCwSquare,
   Proportions,
   Edit,
   RotateCcw,
@@ -63,9 +63,9 @@ import {
   Heading,
   Icon,
   CloseIcon,
-  useToast, 
-  Toast, 
-  ToastTitle, 
+  useToast,
+  Toast,
+  ToastTitle,
   VStack as ToastVStack,
   Button,
   ButtonText,
@@ -364,7 +364,7 @@ export default function BorderCalculator() {
     setSelectedPresetId(newPreset.id);
     setIsEditingPreset(false);
     setShareModalVisible(false);
-    
+
     // Now share the newly saved preset
     sharePreset(newPreset);
   };
@@ -407,12 +407,12 @@ export default function BorderCalculator() {
           <Text sx={{ fontSize: 30, textAlign: 'center', fontWeight: '600' }}>Border Calculator</Text>
         </Box>
 
-        <Box sx={{ width: '100%', ...(Platform.OS === 'web' && isDesktop && { flexDirection: 'row', gap: 32, alignItems: 'flex-start' }) }}>
+        <Box sx={{ width: '100%', ...(isDesktop && { flexDirection: 'row', gap: 32, alignItems: 'flex-start' }) }}>
           {calculation && (
-            <Box sx={{ gap: 16, alignItems: 'center', width: '100%', mb: Platform.OS === 'web' ? 0 : 32, ...(Platform.OS === 'web' && isDesktop && { flex: 1, alignSelf: 'flex-start', mb: 0 }) }}>
+            <Box sx={{ gap: 16, alignItems: 'center', width: '100%', mb: Platform.OS === 'web' ? 0 : 32, ...(isDesktop && { flex: 1, alignSelf: 'flex-start', mb: 0 }) }}>
               <AnimatedPreview calculation={calculation} showBlades={showBlades} borderColor={borderColor} />
 
-                {Platform.OS === 'web' && isDesktop ? (
+                {isDesktop ? (
                   <HStack sx={{ flex: 1, justifyContent: 'space-between', gap: 12 }}>
                     <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="md">
                       <ButtonIcon as={RotateCwSquare} size="md"/>
@@ -436,8 +436,8 @@ export default function BorderCalculator() {
                 </VStack>
               )}
 
-              <Box className="p-5 rounded-2xl mt-1 mb-4 border shadow-sm" style={{ 
-                backgroundColor: cardBackground, 
+              <Box className="p-5 rounded-2xl mt-1 mb-4 border shadow-sm" style={{
+                backgroundColor: cardBackground,
                 borderColor: outline,
                 shadowColor,
                 shadowOffset: { width: 0, height: 2 },
@@ -445,15 +445,15 @@ export default function BorderCalculator() {
                 shadowRadius: 8,
                 elevation: 4,
                 borderWidth: 1,
-                alignItems: 'center', 
-                gap: 8, 
-                width: '100%', 
-                maxWidth: 400, 
-                alignSelf: 'center', 
-                borderRadius: 16, 
-                padding: 16, 
-                minWidth: Platform.OS === 'web' ? 140 : 160, 
-                justifyContent: 'center' 
+                alignItems: 'center',
+                gap: 8,
+                width: '100%',
+                maxWidth: 400,
+                alignSelf: 'center',
+                borderRadius: 16,
+                padding: 16,
+                minWidth: Platform.OS === 'web' ? 140 : 160,
+                justifyContent: 'center'
               }}>
                 <ResultRow label="Image Dimensions:" value={`${calculation.printWidth.toFixed(2)} x ${calculation.printHeight.toFixed(2)} inches`} />
                 <ResultRow label="Left Blade:" value={`${calculation.leftBladeReading.toFixed(2)} inches`} />
@@ -476,7 +476,7 @@ export default function BorderCalculator() {
             </Box>
           )}
 
-          <Box sx={{ gap: 16, width: '100%', ...(Platform.OS === 'web' && isDesktop && { flex: 1, maxWidth: 480 }) }}>
+          <Box sx={{ gap: 16, width: '100%', ...(isDesktop && { flex: 1, maxWidth: 480 }) }}>
             <Box sx={{ gap: 8 }}>
               <HStack style={{ gap: 12, alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Box style={{ flex: 1 }}><ThemedSelect label="Presets:" selectedValue={selectedPresetId} onValueChange={handleSelectPreset} items={presetItems as any} placeholder="Select Preset" /></Box>
@@ -500,12 +500,12 @@ export default function BorderCalculator() {
 
             <ThemedSelect label="Aspect Ratio:" selectedValue={aspectRatio} onValueChange={setAspectRatio} items={ASPECT_RATIOS as any} placeholder="Select Aspect Ratio" />
             {aspectRatio === 'custom' && <DimensionInputGroup widthValue={String(customAspectWidth)} onWidthChange={setCustomAspectWidth} heightValue={String(customAspectHeight)} onHeightChange={setCustomAspectHeight} widthLabel="width:" heightLabel="height:" widthPlaceholder="Width" heightPlaceholder="Height" widthDefault="2" heightDefault="3" />}
-            
+
             <ThemedSelect label="Paper Size:" selectedValue={paperSize} onValueChange={setPaperSize} items={PAPER_SIZES as any} placeholder="Select Paper Size" />
             {paperSize === 'custom' && <DimensionInputGroup widthValue={String(customPaperWidth)} onWidthChange={setCustomPaperWidth} heightValue={String(customPaperHeight)} onHeightChange={setCustomPaperHeight} widthLabel="Width (inches):" heightLabel="Height (inches):" widthPlaceholder="Width" heightPlaceholder="Height" widthDefault="8" heightDefault="10" />}
 
-            <LabeledSliderInput label="Minimum Border (inches):" value={minBorder} onChange={setMinBorder} min={SLIDER_MIN_BORDER} max={SLIDER_MAX_BORDER} step={SLIDER_STEP_BORDER} labels={BORDER_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} inputWidth={Platform.OS === 'web' && isDesktop ? 80 : undefined} continuousUpdate={true} />
-            
+            <LabeledSliderInput label="Minimum Border (inches):" value={minBorder} onChange={setMinBorder} min={SLIDER_MIN_BORDER} max={SLIDER_MAX_BORDER} step={SLIDER_STEP_BORDER} labels={BORDER_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} inputWidth={isDesktop ? 80 : undefined} continuousUpdate={true} />
+
             <HStack sx={{ flexDirection: 'row', gap: 16, width: '100%' }}>
               <ToggleSwitch label="Enable Offsets:" value={enableOffset} onValueChange={setEnableOffset} />
               <ToggleSwitch label="Show Easel Blades:" value={showBlades} onValueChange={setShowBlades} />
