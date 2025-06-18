@@ -23,6 +23,7 @@ export type {
   DorkroomClientConfig,
   Logger,
   FuzzySearchOptions,
+  ApiResponse,
 } from './types';
 
 // Error classes

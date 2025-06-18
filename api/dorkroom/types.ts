@@ -2,7 +2,7 @@
  * TypeScript interfaces for Dorkroom API data structures.
  * 
  * These interfaces represent the data structures returned by the
- * Dorkroom Static API for film stocks, developers, and development combinations.
+ * Dorkroom REST API for film stocks, developers, and development combinations.
  */
 
 /**
@@ -16,19 +16,27 @@ export interface Film {
   /** Manufacturer/brand name */
   brand: string;
   /** ISO speed rating */
-  iso_speed: number;
+  isoSpeed: number;
   /** Type of film (color, b&w, etc.) */
-  color_type: string;
+  colorType: string;
   /** Optional detailed description */
   description?: string;
   /** Whether film is discontinued (0=no, 1=yes) */
   discontinued: number;
   /** List of notes from manufacturer */
-  manufacturer_notes: string[];
+  manufacturerNotes: string[];
   /** Description of grain characteristics */
-  grain_structure?: string;
+  grainStructure?: string | null;
   /** Information about reciprocity failure */
-  reciprocity_failure?: string;
+  reciprocityFailure?: number | null;
+  /** URL for a static image of the film box */
+  staticImageURL?: string;
+  /** Date the film was added to the database */
+  dateAdded: string;
+  /** UUID for the film */
+  uuid: string;
+  /** URL-friendly slug for the film */
+  slug: string;
 }
 
 /**
@@ -36,9 +44,8 @@ export interface Film {
  */
 export interface Dilution {
   id: number;
-  ratio: string;
-  description?: string;
-  [key: string]: any;
+  name: string;
+  dilution: string;
 }
 
 /**
@@ -51,26 +58,32 @@ export interface Developer {
   name: string;
   /** Manufacturer/brand name */
   manufacturer: string;
-  /** Type of developer (e.g., "Black & White Film") */
+  /** Type of developer (e.g., "concentrate") */
   type: string;
   /** Whether for film or paper development */
-  film_or_paper: string;
+  filmOrPaper: string;
   /** List of available dilution ratios */
   dilutions: Dilution[];
   /** Working solution lifetime in hours */
-  working_life_hours?: number;
+  workingLifeHours?: number | null;
   /** Stock solution lifetime in months */
-  stock_life_months?: number;
+  stockLifeMonths?: number | null;
   /** Additional notes about the developer */
   notes?: string;
   /** Whether developer is discontinued (0=no, 1=yes) */
   discontinued: number;
   /** How to prepare the developer */
-  mixing_instructions?: string;
+  mixingInstructions?: string | null;
   /** Safety information and warnings */
-  safety_notes?: string;
+  safetyNotes?: string | null;
   /** URLs to manufacturer datasheets */
-  datasheet_url?: string[];
+  datasheetUrl?: string[];
+  /** UUID for the developer */
+  uuid: string;
+  /** URL-friendly slug for the developer */
+  slug: string;
+  /** Date the developer was added */
+  dateAdded: string;
 }
 
 /**
@@ -81,26 +94,32 @@ export interface Combination {
   id: string;
   /** Display name describing the combination */
   name: string;
-  /** ID of the film used */
-  film_stock_id: string;
-  /** ID of the developer used */
-  developer_id: string;
+  /** UUID of the film used */
+  filmStockId: string;
+  /** UUID of the developer used */
+  developerId: string;
   /** Development temperature in Fahrenheit */
-  temperature_f: number;
+  temperatureF: number;
   /** Development time in minutes */
-  time_minutes: number;
+  timeMinutes: number;
   /** ISO at which the film was shot */
-  shooting_iso: number;
+  shootingIso: number;
   /** Push/pull processing offset (0=normal, +1=push 1 stop, etc.) */
-  push_pull: number;
+  pushPull: number;
   /** Description of agitation pattern */
-  agitation_schedule?: string;
+  agitationSchedule?: string;
   /** Additional development notes */
   notes?: string;
   /** ID of specific dilution used */
-  dilution_id?: number;
+  dilutionId?: number;
   /** Custom dilution ratio if not standard */
-  custom_dilution?: string;
+  customDilution?: string | null;
+  /** UUID for the combination */
+  uuid: string;
+  /** URL-friendly slug for the combination */
+  slug: string;
+  /** Date the combination was added */
+  dateAdded: string;
 }
 
 /**
@@ -135,4 +154,14 @@ export interface FuzzySearchOptions {
   limit?: number;
   /** Minimum similarity score (0-1) to include in results */
   threshold?: number;
+}
+
+/**
+ * Represents the structure of a successful API response.
+ */
+export interface ApiResponse<T> {
+  data: T[];
+  success: boolean;
+  message: string;
+  total: number;
 } 

@@ -1,22 +1,22 @@
 /**
- * Main client for interacting with the Dorkroom Static API.
+ * Main client for interacting with the Dorkroom REST API.
  * 
  * This client provides methods to fetch film stocks, developers, and 
- * development combinations from the Dorkroom Static API. Features:
+ * development combinations from the Dorkroom REST API. Features:
  * - Automatic retries and timeouts
  * - Indexed lookups for O(1) performance
- * - Optional fuzzy searching
+ * - API-driven fuzzy searching
  * - Comprehensive error handling
  */
 
-import Fuse, { FuseResult } from 'fuse.js';
 import { 
   Film, 
   Developer, 
   Combination, 
   DorkroomClientConfig, 
   Logger, 
-  FuzzySearchOptions 
+  FuzzySearchOptions,
+  ApiResponse
 } from './types';
 import { DataFetchError, DataParseError, DataNotLoadedError } from './errors';
 import { 
@@ -27,17 +27,7 @@ import {
 } from './transport';
 
 /**
- * Configuration for Fuse.js fuzzy search.
- */
-const FUSE_CONFIG = {
-  includeScore: true,
-  threshold: 0.4, // 0 = perfect match, 1 = match anything
-  ignoreLocation: true,
-  useExtendedSearch: true,
-};
-
-/**
- * Main client for interacting with the Dorkroom Static API.
+ * Main client for interacting with the Dorkroom REST API.
  */
 export class DorkroomClient {
   private readonly baseUrl: string;
@@ -56,13 +46,8 @@ export class DorkroomClient {
   private developerIndex = new Map<string, Developer>();
   private combinationIndex = new Map<string, Combination>();
 
-  // Fuzzy search instances
-  private filmSearcher?: Fuse<Film>;
-  private developerSearcher?: Fuse<Developer>;
-
   constructor(config: DorkroomClientConfig = {}) {
-    this.baseUrl = config.baseUrl || 
-      'https://raw.githubusercontent.com/narrowstacks/dorkroom-static-api/main/';
+    this.baseUrl = config.baseUrl || 'https://api.dorkroom.art/api';
     this.timeout = config.timeout || 10000; // 10 seconds
     this.logger = config.logger || new ConsoleLogger();
     
@@ -74,21 +59,24 @@ export class DorkroomClient {
   }
 
   /**
-   * Fetch and parse a JSON file from the API.
+   * Fetch and parse a JSON resource from the API.
    */
-  private async fetch<T>(filename: string): Promise<T[]> {
-    const url = joinURL(this.baseUrl, filename);
+  private async fetch<T>(resource: string, params: URLSearchParams = new URLSearchParams()): Promise<T[]> {
+    const url = joinURL(this.baseUrl, `${resource}?${params.toString()}`);
     
     try {
-      this.logger.debug(`Fetching ${filename}`);
+      this.logger.debug(`Fetching ${resource} with params: ${params.toString()}`);
       const response = await this.transport.get(url, this.timeout);
       
       try {
-        const data = await response.json();
-        return data as T[];
+        const apiResponse = await response.json() as ApiResponse<T>;
+        if (apiResponse && apiResponse.data) {
+          return apiResponse.data;
+        }
+        throw new DataParseError(`Invalid API response structure from ${resource}`);
       } catch (error) {
         throw new DataParseError(
-          `Invalid JSON in ${filename}: ${error}`,
+          `Invalid JSON in ${resource}: ${error}`,
           error as Error
         );
       }
@@ -97,7 +85,7 @@ export class DorkroomClient {
         throw error;
       }
       throw new DataFetchError(
-        `Failed to fetch ${filename}: ${error}`,
+        `Failed to fetch ${resource}: ${error}`,
         error as Error
       );
     }
@@ -112,9 +100,9 @@ export class DorkroomClient {
     try {
       // Fetch all data in parallel
       const [rawFilms, rawDevelopers, rawCombinations] = await Promise.all([
-        this.fetch<Film>('film_stocks.json'),
-        this.fetch<Developer>('developers.json'),
-        this.fetch<Combination>('development_combinations.json'),
+        this.fetch<Film>('films'),
+        this.fetch<Developer>('developers'),
+        this.fetch<Combination>('combinations'),
       ]);
 
       // Store data
@@ -124,9 +112,6 @@ export class DorkroomClient {
 
       // Build indexes
       this.buildIndexes();
-
-      // Initialize fuzzy searchers
-      this.initializeFuzzySearch();
 
       this.loaded = true;
       this.logger.info(
@@ -149,41 +134,16 @@ export class DorkroomClient {
     this.combinationIndex.clear();
 
     for (const film of this.films) {
-      this.filmIndex.set(film.id, film);
+      this.filmIndex.set(film.uuid, film);
     }
 
     for (const developer of this.developers) {
-      this.developerIndex.set(developer.id, developer);
+      this.developerIndex.set(developer.uuid, developer);
     }
 
     for (const combination of this.combinations) {
-      this.combinationIndex.set(combination.id, combination);
+      this.combinationIndex.set(combination.uuid, combination);
     }
-  }
-
-  /**
-   * Initialize fuzzy search instances.
-   */
-  private initializeFuzzySearch(): void {
-    // Film fuzzy search
-    this.filmSearcher = new Fuse(this.films, {
-      ...FUSE_CONFIG,
-      keys: [
-        { name: 'name', weight: 0.4 },
-        { name: 'brand', weight: 0.4 },
-        { name: 'description', weight: 0.2 },
-      ],
-    });
-
-    // Developer fuzzy search
-    this.developerSearcher = new Fuse(this.developers, {
-      ...FUSE_CONFIG,
-      keys: [
-        { name: 'name', weight: 0.4 },
-        { name: 'manufacturer', weight: 0.4 },
-        { name: 'notes', weight: 0.2 },
-      ],
-    });
   }
 
   /**
@@ -196,7 +156,7 @@ export class DorkroomClient {
   }
 
   /**
-   * Get a film by its ID.
+   * Get a film by its UUID.
    */
   getFilm(filmId: string): Film | undefined {
     this.ensureLoaded();
@@ -204,7 +164,7 @@ export class DorkroomClient {
   }
 
   /**
-   * Get a developer by its ID.
+   * Get a developer by its UUID.
    */
   getDeveloper(developerId: string): Developer | undefined {
     this.ensureLoaded();
@@ -212,7 +172,7 @@ export class DorkroomClient {
   }
 
   /**
-   * Get a combination by its ID.
+   * Get a combination by its UUID.
    */
   getCombination(combinationId: string): Combination | undefined {
     this.ensureLoaded();
@@ -248,7 +208,7 @@ export class DorkroomClient {
    */
   getCombinationsForFilm(filmId: string): Combination[] {
     this.ensureLoaded();
-    return this.combinations.filter(c => c.film_stock_id === filmId);
+    return this.combinations.filter(c => c.filmStockId === filmId);
   }
 
   /**
@@ -256,7 +216,7 @@ export class DorkroomClient {
    */
   getCombinationsForDeveloper(developerId: string): Combination[] {
     this.ensureLoaded();
-    return this.combinations.filter(c => c.developer_id === developerId);
+    return this.combinations.filter(c => c.developerId === developerId);
   }
 
   /**
@@ -276,7 +236,7 @@ export class DorkroomClient {
         film.name.toLowerCase().includes(lowerQuery) ||
         film.brand.toLowerCase().includes(lowerQuery);
       
-      const matchesColorType = !colorType || film.color_type === colorType;
+      const matchesColorType = !colorType || film.colorType === colorType;
       
       return matchesQuery && matchesColorType;
     });
@@ -306,61 +266,41 @@ export class DorkroomClient {
   }
 
   /**
-   * Fuzzy search for films by name, brand, and description.
+   * Fuzzy search for films by name, brand, and description via the API.
    */
-  fuzzySearchFilms(
+  async fuzzySearchFilms(
     query: string, 
     options: FuzzySearchOptions = {}
-  ): Film[] {
-    this.ensureLoaded();
-    
-    if (!this.filmSearcher) {
-      this.logger.warn('Fuzzy search not initialized, falling back to regular search');
-      return this.searchFilms(query).slice(0, options.limit || 10);
+  ): Promise<Film[]> {
+    const params = new URLSearchParams({
+      query,
+      fuzzy: 'true',
+    });
+
+    if (options.limit) {
+      params.append('limit', options.limit.toString());
     }
-
-    const results = this.filmSearcher.search(query);
     
-    // Filter by threshold if specified
-    const threshold = options.threshold || 0.6;
-    const filteredResults = results.filter((result: FuseResult<Film>) => 
-      (result.score || 0) <= (1 - threshold)
-    );
-
-    // Apply limit
-    const limit = options.limit || 10;
-    return filteredResults
-      .slice(0, limit)
-      .map((result: FuseResult<Film>) => result.item);
+    return this.fetch<Film>('films', params);
   }
 
   /**
-   * Fuzzy search for developers by manufacturer, name, and notes.
+   * Fuzzy search for developers by manufacturer, name, and notes via the API.
    */
-  fuzzySearchDevelopers(
+  async fuzzySearchDevelopers(
     query: string, 
     options: FuzzySearchOptions = {}
-  ): Developer[] {
-    this.ensureLoaded();
-    
-    if (!this.developerSearcher) {
-      this.logger.warn('Fuzzy search not initialized, falling back to regular search');
-      return this.searchDevelopers(query).slice(0, options.limit || 10);
+  ): Promise<Developer[]> {
+    const params = new URLSearchParams({
+      query,
+      fuzzy: 'true',
+    });
+
+    if (options.limit) {
+      params.append('limit', options.limit.toString());
     }
-
-    const results = this.developerSearcher.search(query);
     
-    // Filter by threshold if specified
-    const threshold = options.threshold || 0.6;
-    const filteredResults = results.filter((result: FuseResult<Developer>) => 
-      (result.score || 0) <= (1 - threshold)
-    );
-
-    // Apply limit
-    const limit = options.limit || 10;
-    return filteredResults
-      .slice(0, limit)
-      .map((result: FuseResult<Developer>) => result.item);
+    return this.fetch<Developer>('developers', params);
   }
 
   /**
@@ -392,8 +332,6 @@ export class DorkroomClient {
     this.filmIndex.clear();
     this.developerIndex.clear();
     this.combinationIndex.clear();
-    this.filmSearcher = undefined;
-    this.developerSearcher = undefined;
     this.loaded = false;
   }
 } 
