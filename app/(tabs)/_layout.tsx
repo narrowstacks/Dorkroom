@@ -17,7 +17,8 @@ import {
   Clock,
   Settings,
   Menu,
-  Aperture
+  Aperture,
+  FlaskConical
 } from 'lucide-react-native';
 import TabBarBackground from "@/components/ui/TabBarBackground";
 
@@ -53,6 +54,11 @@ const navigationItems = [
     title: "Reciprocity",
     icon: Clock,
   },
+  {
+    name: "developmentRecipes",
+    title: "Development",
+    icon: FlaskConical,
+  },
   // {
   //   name: "settings",
   //   title: "Settings",
@@ -73,6 +79,8 @@ const getPageTintColor = (routeName: string, colors: typeof Colors.light) => {
       return colors.cameraExposureCalcTint;
     case "reciprocity":
       return colors.reciprocityCalcTint;
+    case "developmentRecipes":
+      return colors.developmentRecipesTint;
     case "index":
     case "settings":
     default:
@@ -533,6 +541,16 @@ export default function TabLayout() {
             tabBarActiveTintColor: getPageTintColor("reciprocity", colors),
             tabBarIcon: ({ color }) => (
               <Clock size={28} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="developmentRecipes"
+          options={{
+            title: "Development",
+            tabBarActiveTintColor: getPageTintColor("developmentRecipes", colors),
+            tabBarIcon: ({ color }) => (
+              <FlaskConical size={28} color={color} />
             ),
           }}
         />

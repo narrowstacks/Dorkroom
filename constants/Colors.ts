@@ -52,6 +52,9 @@ type ColorScheme = {
   bladeShadowColor: string;
   paperColor: string;
   printPreviewColor: string;
+
+  // development recipes
+  developmentRecipesTint: string;
 };
 
 export const Colors: {
@@ -100,6 +103,9 @@ export const Colors: {
     bladeShadowColor: '#151515',
     paperColor: '#ffffff',
     printPreviewColor: '#8b8b8b',
+
+    // development recipes
+    developmentRecipesTint: '#795548',
   },
   dark: {
     text: '#ECEDEE',
@@ -146,6 +152,9 @@ export const Colors: {
     bladeShadowColor: '#151515',
     paperColor: '#5e5e5e',
     printPreviewColor: '#393939',
+
+    // development recipes
+    developmentRecipesTint: '#795548',
   },
   darkroom: {
     background: '#000000',
@@ -188,6 +197,9 @@ export const Colors: {
     bladeShadowColor: '#3a0000',
     paperColor: '#000000',
     printPreviewColor: '#ff0000',
+
+    // development recipes
+    developmentRecipesTint: "#8f0000",
   },
   eInk: {
     background: '#FFFFFF',
@@ -229,6 +241,9 @@ export const Colors: {
     bladeShadowColor: '#ffffff',
     paperColor: '#ffffff',
     printPreviewColor: '#7f7f7f',
+
+    // development recipes
+    developmentRecipesTint: "#000000",
   },
 };
 
