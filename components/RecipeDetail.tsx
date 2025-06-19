@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { StyleSheet, ScrollView, Platform } from "react-native";
+import { StyleSheet, ScrollView, Platform, Animated, TouchableOpacity } from "react-native";
+import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import {
   Box,
@@ -36,6 +37,10 @@ export function RecipeDetail({ combination, film, developer, onClose }: RecipeDe
   const [showCalculator, setShowCalculator] = useState(false);
   const { width } = useWindowDimensions();
   const isMobile = Platform.OS !== "web" || width <= 768;
+  
+  // Animation for bottom sheet
+  const translateY = React.useRef(new Animated.Value(1000)).current;
+  const opacity = React.useRef(new Animated.Value(0)).current;
   
   const textColor = useThemeColor({}, "text");
   const textSecondary = useThemeColor({}, "textSecondary");
@@ -91,43 +96,61 @@ export function RecipeDetail({ combination, film, developer, onClose }: RecipeDe
     { label: "120 (500ml per roll)", value: "120" },
   ];
 
-  // On mobile, if calculator is shown, display it as a separate module
-  if (isMobile && showCalculator) {
-    return (
-      <Box style={[styles.container, { backgroundColor: cardBackground, borderColor: outline }]}>
-        {/* Header */}
-        <Box style={styles.header}>
-          <VStack space="xs" style={styles.headerContent}>
-            <Text style={[styles.filmName, { color: developmentTint }]} numberOfLines={2}>
-              Chemistry Calculator
-            </Text>
-            <Text style={[styles.developerName, { color: textSecondary }]} numberOfLines={2}>
-              {filmName} + {developerName}
-            </Text>
-          </VStack>
-          
-          <HStack space="xs">
-            <Button variant="ghost" size="sm" onPress={() => setShowCalculator(false)} style={styles.backButton}>
-              <Text style={[styles.backButtonText, { color: developmentTint }]}>Back</Text>
-            </Button>
-            <Button variant="ghost" size="sm" onPress={onClose} style={styles.closeButton}>
-              <X size={20} color={textColor} />
-            </Button>
-          </HStack>
-        </Box>
+  // Animation functions for bottom sheet
+  const showBottomSheet = () => {
+    setShowCalculator(true);
+    Animated.parallel([
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
-        {/* Chemistry Calculator */}
-        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          <Box style={styles.calculatorContent}>
-            <ChemistryCalculator 
-              availableDilutions={availableDilutions}
-              defaultDilution={dilutionInfo}
-            />
-          </Box>
-        </ScrollView>
-      </Box>
-    );
-  }
+  const hideBottomSheet = () => {
+    Animated.parallel([
+      Animated.timing(translateY, {
+        toValue: 1000,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowCalculator(false);
+    });
+  };
+
+  // Handle pan gesture for swipe down
+  const onGestureEvent = Animated.event(
+    [{ nativeEvent: { translationY: translateY } }],
+    { useNativeDriver: true }
+  );
+
+  const onHandlerStateChange = (event: any) => {
+    if (event.nativeEvent.state === State.END) {
+      const { translationY, velocityY } = event.nativeEvent;
+      
+      if (translationY > 100 || velocityY > 500) {
+        hideBottomSheet();
+      } else {
+        // Snap back to position
+        Animated.spring(translateY, {
+          toValue: 0,
+          useNativeDriver: true,
+        }).start();
+      }
+    }
+  };
 
   return (
     <Box style={[styles.container, { backgroundColor: cardBackground, borderColor: outline }]}>
@@ -265,12 +288,12 @@ export function RecipeDetail({ combination, film, developer, onClose }: RecipeDe
         <Box style={styles.calculatorSection}>
           <Button 
             variant="outline" 
-            onPress={() => setShowCalculator(!showCalculator)}
+            onPress={isMobile ? showBottomSheet : () => setShowCalculator(!showCalculator)}
             style={[styles.calculatorToggle, { borderColor: developmentTint }]}
           >
             <Calculator size={16} color={developmentTint} />
             <ButtonText style={[styles.calculatorToggleText, { color: developmentTint }]}>
-              {showCalculator ? 'Hide Calculator' : 'Show Chemistry Calculator'}
+              Show Chemistry Calculator
             </ButtonText>
           </Button>
 
@@ -391,6 +414,71 @@ export function RecipeDetail({ combination, film, developer, onClose }: RecipeDe
         </Box>
         </VStack>
       </ScrollView>
+
+      {/* Bottom Sheet Overlay - Mobile Only */}
+      {isMobile && showCalculator && (
+        <>
+          {/* Backdrop */}
+          <TouchableOpacity
+            style={styles.backdrop}
+            activeOpacity={1}
+            onPress={hideBottomSheet}
+          >
+            <Animated.View 
+              style={[
+                styles.backdropOverlay, 
+                { opacity }
+              ]}
+              pointerEvents="none"
+            />
+          </TouchableOpacity>
+          
+          {/* Bottom Sheet */}
+          <PanGestureHandler
+            onGestureEvent={onGestureEvent}
+            onHandlerStateChange={onHandlerStateChange}
+          >
+            <Animated.View
+              style={[
+                styles.bottomSheet,
+                { 
+                  backgroundColor: cardBackground,
+                  borderColor: outline,
+                  transform: [{ translateY }]
+                }
+              ]}
+            >
+              {/* Bottom Sheet Header */}
+              <Box style={styles.bottomSheetHeader}>
+                <Box style={styles.dragHandle} />
+                <HStack style={styles.bottomSheetTitleContainer}>
+                  <VStack space="xs" style={styles.bottomSheetTitleContent}>
+                    <Text style={[styles.bottomSheetTitle, { color: textColor }]}>
+                      Chemistry Calculator
+                    </Text>
+                    <Text style={[styles.bottomSheetSubtitle, { color: textSecondary }]}>
+                      {filmName} + {developerName}
+                    </Text>
+                  </VStack>
+                  <Button variant="ghost" size="sm" onPress={hideBottomSheet} style={styles.closeButton}>
+                    <X size={20} color={textColor} />
+                  </Button>
+                </HStack>
+              </Box>
+
+              {/* Bottom Sheet Content */}
+              <ScrollView style={styles.bottomSheetScrollView} showsVerticalScrollIndicator={false}>
+                <Box style={styles.bottomSheetContent}>
+                  <ChemistryCalculator 
+                    availableDilutions={availableDilutions}
+                    defaultDilution={dilutionInfo}
+                  />
+                </Box>
+              </ScrollView>
+            </Animated.View>
+          </PanGestureHandler>
+        </>
+      )}
     </Box>
   );
 }
@@ -430,18 +518,6 @@ const styles = StyleSheet.create({
     height: 32,
     padding: 0,
     minHeight: 32,
-  },
-  backButton: {
-    paddingHorizontal: 12,
-    height: 32,
-    minHeight: 32,
-  },
-  backButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  calculatorContent: {
-    padding: 16,
   },
   scrollContainer: {
     flex: 1,
@@ -552,5 +628,70 @@ const styles = StyleSheet.create({
   },
   resetButtonText: {
     fontSize: 12,
+  },
+  // Bottom Sheet Styles
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+  },
+  backdropOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  bottomSheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    maxHeight: '85%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    zIndex: 1001,
+    overflow: 'hidden',
+  },
+  bottomSheetHeader: {
+    paddingTop: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+  },
+  dragHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+  bottomSheetTitleContainer: {
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  bottomSheetTitleContent: {
+    flex: 1,
+    marginRight: 12,
+  },
+  bottomSheetTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  bottomSheetSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  bottomSheetScrollView: {
+    flex: 1,
+  },
+  bottomSheetContent: {
+    padding: 16,
+    paddingBottom: 32,
   },
 });

@@ -1,21 +1,24 @@
 import React, { useState } from "react";
 import { Platform, StyleSheet, ScrollView, TextInput, TouchableOpacity, Modal } from "react-native";
 import { Box, Text, Button, ButtonText, VStack, HStack } from "@gluestack-ui/themed";
-import { Search, X, Filter, RefreshCw, ChevronDown, ChevronUp } from "lucide-react-native";
+import { Search, X, Filter, RefreshCw, ChevronDown, ChevronUp, Plus } from "lucide-react-native";
 
 import { CalculatorLayout } from "@/components/CalculatorLayout";
 import { FormSection, FormGroup } from "@/components/FormSection";
 import { InfoSection, InfoText, InfoSubtitle, InfoList } from "@/components/InfoSection";
 import { StyledSelect } from "@/components/StyledSelect";
 import { RecipeDetail } from "@/components/RecipeDetail";
+import { CustomRecipeForm } from "@/components/CustomRecipeForm";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useDevelopmentRecipes } from "@/hooks/useDevelopmentRecipes";
+import { useCustomRecipes } from "@/hooks/useCustomRecipes";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import {
   DEVELOPER_TYPES,
   formatTime,
 } from "@/constants/developmentRecipes";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
+import type { CustomRecipe } from "@/types/customRecipeTypes";
 
 interface SearchInputProps {
   value: string;
@@ -218,13 +221,199 @@ export default function DevelopmentRecipes() {
     getAvailableISOs,
   } = useDevelopmentRecipes();
 
+  const { customRecipes } = useCustomRecipes();
+
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCombination, setSelectedCombination] = useState<Combination | null>(null);
+  const [selectedCustomRecipe, setSelectedCustomRecipe] = useState<CustomRecipe | null>(null);
+  const [showCustomRecipeForm, setShowCustomRecipeForm] = useState(false);
+  const [editingCustomRecipe, setEditingCustomRecipe] = useState<CustomRecipe | undefined>(undefined);
+  const [showCustomRecipes, setShowCustomRecipes] = useState(true);
+  
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
   const textColor = useThemeColor({}, "text");
   const developmentTint = useThemeColor({}, "developmentRecipesTint");
   const outline = useThemeColor({}, "outline");
+
+  // Convert custom recipes to combination-like format for display
+  const customRecipesAsCombinations = React.useMemo(() => {
+    return customRecipes.map((recipe): Combination => ({
+      id: recipe.id,
+      name: recipe.name,
+      uuid: recipe.id,
+      slug: recipe.id,
+      filmStockId: recipe.filmId,
+      developerId: recipe.developerId,
+      temperatureF: recipe.temperatureF,
+      timeMinutes: recipe.timeMinutes,
+      shootingIso: recipe.shootingIso,
+      pushPull: recipe.pushPull,
+      agitationSchedule: recipe.agitationSchedule,
+      notes: recipe.notes,
+      customDilution: recipe.customDilution,
+      dateAdded: recipe.dateCreated,
+      // Custom recipe specific handling
+      dilutionId: undefined,
+    }));
+  }, [customRecipes]);
+
+  // Combined API + custom recipes for display
+  const allCombinations = React.useMemo(() => {
+    if (!showCustomRecipes) {
+      return filteredCombinations;
+    }
+    
+    // Filter custom recipes based on current filters
+    let filteredCustom = customRecipesAsCombinations;
+    
+    // Apply film filter
+    if (selectedFilm) {
+      filteredCustom = filteredCustom.filter(combo => {
+        const recipe = customRecipes.find(r => r.id === combo.id);
+        if (!recipe) return false;
+        
+        if (recipe.isCustomFilm) {
+          // For custom films, check if the name/brand matches the selected film
+          return recipe.customFilm?.brand?.toLowerCase().includes(selectedFilm.brand.toLowerCase()) ||
+                 recipe.customFilm?.name?.toLowerCase().includes(selectedFilm.name.toLowerCase());
+        } else {
+          return combo.filmStockId === selectedFilm.uuid;
+        }
+      });
+    } else if (filmSearch.trim()) {
+      filteredCustom = filteredCustom.filter(combo => {
+        const recipe = customRecipes.find(r => r.id === combo.id);
+        if (!recipe) return false;
+        
+        if (recipe.isCustomFilm && recipe.customFilm) {
+          const filmMatch = recipe.customFilm.brand.toLowerCase().includes(filmSearch.toLowerCase()) ||
+                           recipe.customFilm.name.toLowerCase().includes(filmSearch.toLowerCase());
+          return filmMatch;
+        } else {
+          const film = getFilmById(combo.filmStockId);
+          return film && (
+            film.name.toLowerCase().includes(filmSearch.toLowerCase()) ||
+            film.brand.toLowerCase().includes(filmSearch.toLowerCase())
+          );
+        }
+      });
+    }
+    
+    // Apply developer filter
+    if (selectedDeveloper) {
+      filteredCustom = filteredCustom.filter(combo => {
+        const recipe = customRecipes.find(r => r.id === combo.id);
+        if (!recipe) return false;
+        
+        if (recipe.isCustomDeveloper) {
+          return recipe.customDeveloper?.manufacturer?.toLowerCase().includes(selectedDeveloper.manufacturer.toLowerCase()) ||
+                 recipe.customDeveloper?.name?.toLowerCase().includes(selectedDeveloper.name.toLowerCase());
+        } else {
+          return combo.developerId === selectedDeveloper.uuid;
+        }
+      });
+    } else if (developerSearch.trim()) {
+      filteredCustom = filteredCustom.filter(combo => {
+        const recipe = customRecipes.find(r => r.id === combo.id);
+        if (!recipe) return false;
+        
+        if (recipe.isCustomDeveloper && recipe.customDeveloper) {
+          const devMatch = recipe.customDeveloper.manufacturer.toLowerCase().includes(developerSearch.toLowerCase()) ||
+                          recipe.customDeveloper.name.toLowerCase().includes(developerSearch.toLowerCase());
+          return devMatch;
+        } else {
+          const dev = getDeveloperById(combo.developerId);
+          return dev && (
+            dev.name.toLowerCase().includes(developerSearch.toLowerCase()) ||
+            dev.manufacturer.toLowerCase().includes(developerSearch.toLowerCase())
+          );
+        }
+      });
+    }
+    
+    return [...filteredCombinations, ...filteredCustom];
+  }, [filteredCombinations, customRecipesAsCombinations, customRecipes, showCustomRecipes, selectedFilm, selectedDeveloper, filmSearch, developerSearch, getFilmById, getDeveloperById]);
+
+  // Custom recipe helpers
+  const getCustomRecipeFilm = (recipeId: string): Film | undefined => {
+    const recipe = customRecipes.find(r => r.id === recipeId);
+    if (!recipe) return undefined;
+    
+    if (recipe.isCustomFilm && recipe.customFilm) {
+      // Convert custom film data to Film interface
+      return {
+        uuid: `custom_film_${recipe.id}`,
+        id: `custom_film_${recipe.id}`,
+        slug: `custom_film_${recipe.id}`,
+        brand: recipe.customFilm.brand,
+        name: recipe.customFilm.name,
+        isoSpeed: recipe.customFilm.isoSpeed,
+        colorType: recipe.customFilm.colorType,
+        grainStructure: recipe.customFilm.grainStructure,
+        description: recipe.customFilm.description,
+        discontinued: false,
+        manufacturerNotes: [],
+        staticImageURL: null,
+        dateAdded: recipe.dateCreated,
+      } as Film;
+    } else {
+      return getFilmById(recipe.filmId);
+    }
+  };
+
+  const getCustomRecipeDeveloper = (recipeId: string): Developer | undefined => {
+    const recipe = customRecipes.find(r => r.id === recipeId);
+    if (!recipe) return undefined;
+    
+    if (recipe.isCustomDeveloper && recipe.customDeveloper) {
+      // Convert custom developer data to Developer interface
+      return {
+        uuid: `custom_dev_${recipe.id}`,
+        id: `custom_dev_${recipe.id}`,
+        slug: `custom_dev_${recipe.id}`,
+        name: recipe.customDeveloper.name,
+        manufacturer: recipe.customDeveloper.manufacturer,
+        type: recipe.customDeveloper.type,
+        filmOrPaper: recipe.customDeveloper.filmOrPaper,
+        workingLifeHours: recipe.customDeveloper.workingLifeHours,
+        stockLifeMonths: recipe.customDeveloper.stockLifeMonths,
+        notes: recipe.customDeveloper.notes,
+        mixingInstructions: recipe.customDeveloper.mixingInstructions,
+        safetyNotes: recipe.customDeveloper.safetyNotes,
+        discontinued: false,
+        datasheetUrl: [],
+        dilutions: recipe.customDeveloper.dilutions.map((d, idx) => ({
+          id: idx,
+          name: d.name,
+          dilution: d.dilution,
+        })),
+        dateAdded: recipe.dateCreated,
+      } as Developer;
+    } else {
+      return getDeveloperById(recipe.developerId);
+    }
+  };
+
+  const handleCustomRecipePress = (recipe: CustomRecipe) => {
+    setSelectedCustomRecipe(recipe);
+    setSelectedCombination(null); // Clear API recipe selection
+  };
+
+  const handleEditCustomRecipe = (recipe: CustomRecipe) => {
+    setEditingCustomRecipe(recipe);
+    setShowCustomRecipeForm(true);
+  };
+
+  const handleNewCustomRecipe = () => {
+    setEditingCustomRecipe(undefined);
+    setShowCustomRecipeForm(true);
+  };
+
+  const handleCustomRecipeFormClose = () => {
+    setShowCustomRecipeForm(false);
+    setEditingCustomRecipe(undefined);
+  };
 
   // Film suggestions for search
   const filmSuggestions = React.useMemo(() => {
@@ -474,17 +663,66 @@ export default function DevelopmentRecipes() {
 
       {/* Results Section */}
       <Box style={styles.resultsSection}>
-        <Text style={[styles.resultsHeader, { color: textColor }]}>
-          {filteredCombinations.length} Development Recipe{filteredCombinations.length !== 1 ? 's' : ''}
-        </Text>
+        <HStack style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <Text style={[styles.resultsHeader, { color: textColor }]}>
+            {allCombinations.length} Development Recipe{allCombinations.length !== 1 ? 's' : ''} 
+            {customRecipes.length > 0 && showCustomRecipes && (
+              <Text style={{ fontSize: 14, fontWeight: 'normal', color: textColor, opacity: 0.7 }}>
+                {' '}({customRecipes.length} custom)
+              </Text>
+            )}
+          </Text>
+          
+          <HStack style={{ gap: 8, alignItems: 'center' }}>
+            {customRecipes.length > 0 && (
+              <TouchableOpacity 
+                onPress={() => setShowCustomRecipes(!showCustomRecipes)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 8,
+                  borderRadius: 6,
+                  backgroundColor: showCustomRecipes ? developmentTint : 'transparent',
+                  borderWidth: 1,
+                  borderColor: developmentTint,
+                }}
+              >
+                <Text style={{
+                  fontSize: 12,
+                  color: showCustomRecipes ? '#fff' : developmentTint,
+                  fontWeight: '500'
+                }}>
+                  My Recipes
+                </Text>
+              </TouchableOpacity>
+            )}
+            
+            <TouchableOpacity 
+              onPress={handleNewCustomRecipe}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: 8,
+                borderRadius: 6,
+                backgroundColor: developmentTint,
+                gap: 4,
+              }}
+            >
+              <Plus size={14} color="#fff" />
+              <Text style={{ fontSize: 12, color: '#fff', fontWeight: '500' }}>
+                Add Recipe
+              </Text>
+            </TouchableOpacity>
+          </HStack>
+        </HStack>
 
-        {filteredCombinations.length === 0 ? (
+        {allCombinations.length === 0 ? (
           <Box style={styles.noResultsContainer}>
             <Text style={[styles.noResultsText, { color: textColor }]}>
               No development recipes found.
             </Text>
             <Text style={[styles.noResultsSubtext, { color: textColor }]}>
-              Try adjusting your search terms or filters.
+              Try adjusting your search terms or filters, or create your own recipe.
             </Text>
           </Box>
         ) : (
@@ -501,16 +739,36 @@ export default function DevelopmentRecipes() {
             
             {/* Table Body */}
             <ScrollView style={styles.tableScrollView} showsVerticalScrollIndicator={false}>
-              {filteredCombinations.map((combination, index) => (
-                <RecipeRow
-                  key={combination.uuid}
-                  combination={combination}
-                  film={getFilmById(combination.filmStockId)}
-                  developer={getDeveloperById(combination.developerId)}
-                  onPress={() => setSelectedCombination(combination)}
-                  isEven={index % 2 === 0}
-                />
-              ))}
+              {allCombinations.map((combination, index) => {
+                const isCustomRecipe = customRecipes.some(r => r.id === combination.id);
+                const customRecipe = isCustomRecipe ? customRecipes.find(r => r.id === combination.id) : undefined;
+                
+                const film = isCustomRecipe && customRecipe 
+                  ? getCustomRecipeFilm(customRecipe.id)
+                  : getFilmById(combination.filmStockId);
+                  
+                const developer = isCustomRecipe && customRecipe
+                  ? getCustomRecipeDeveloper(customRecipe.id) 
+                  : getDeveloperById(combination.developerId);
+
+                return (
+                  <RecipeRow
+                    key={combination.uuid}
+                    combination={combination}
+                    film={film}
+                    developer={developer}
+                    onPress={() => {
+                      if (isCustomRecipe && customRecipe) {
+                        handleCustomRecipePress(customRecipe);
+                      } else {
+                        setSelectedCombination(combination);
+                        setSelectedCustomRecipe(null);
+                      }
+                    }}
+                    isEven={index % 2 === 0}
+                  />
+                );
+              })}
             </ScrollView>
           </Box>
         )}
@@ -545,6 +803,128 @@ export default function DevelopmentRecipes() {
               onClose={() => setSelectedCombination(null)}
             />
           )}
+        </Modal>
+      )}
+
+      {/* Custom Recipe Detail Modal - Mobile */}
+      {!isDesktop && (
+        <Modal
+          visible={selectedCustomRecipe !== null}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setSelectedCustomRecipe(null)}
+        >
+          {selectedCustomRecipe && (
+            <RecipeDetail
+              combination={{
+                id: selectedCustomRecipe.id,
+                name: selectedCustomRecipe.name,
+                uuid: selectedCustomRecipe.id,
+                slug: selectedCustomRecipe.id,
+                filmStockId: selectedCustomRecipe.filmId,
+                developerId: selectedCustomRecipe.developerId,
+                temperatureF: selectedCustomRecipe.temperatureF,
+                timeMinutes: selectedCustomRecipe.timeMinutes,
+                shootingIso: selectedCustomRecipe.shootingIso,
+                pushPull: selectedCustomRecipe.pushPull,
+                agitationSchedule: selectedCustomRecipe.agitationSchedule,
+                notes: selectedCustomRecipe.notes,
+                customDilution: selectedCustomRecipe.customDilution,
+                dateAdded: selectedCustomRecipe.dateCreated,
+              }}
+              film={getCustomRecipeFilm(selectedCustomRecipe.id)}
+              developer={getCustomRecipeDeveloper(selectedCustomRecipe.id)}
+              onClose={() => setSelectedCustomRecipe(null)}
+            />
+          )}
+        </Modal>
+      )}
+
+      {/* Custom Recipe Detail Modal - Desktop */}
+      {isDesktop && selectedCustomRecipe && (
+        <Modal
+          visible={true}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setSelectedCustomRecipe(null)}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setSelectedCustomRecipe(null)}
+          >
+            <TouchableOpacity 
+              style={styles.modalContent}
+              activeOpacity={1}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <RecipeDetail
+                combination={{
+                  id: selectedCustomRecipe.id,
+                  name: selectedCustomRecipe.name,
+                  uuid: selectedCustomRecipe.id,
+                  slug: selectedCustomRecipe.id,
+                  filmStockId: selectedCustomRecipe.filmId,
+                  developerId: selectedCustomRecipe.developerId,
+                  temperatureF: selectedCustomRecipe.temperatureF,
+                  timeMinutes: selectedCustomRecipe.timeMinutes,
+                  shootingIso: selectedCustomRecipe.shootingIso,
+                  pushPull: selectedCustomRecipe.pushPull,
+                  agitationSchedule: selectedCustomRecipe.agitationSchedule,
+                  notes: selectedCustomRecipe.notes,
+                  customDilution: selectedCustomRecipe.customDilution,
+                  dateAdded: selectedCustomRecipe.dateCreated,
+                }}
+                film={getCustomRecipeFilm(selectedCustomRecipe.id)}
+                developer={getCustomRecipeDeveloper(selectedCustomRecipe.id)}
+                onClose={() => setSelectedCustomRecipe(null)}
+              />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
+      )}
+
+      {/* Custom Recipe Form Modal - Mobile */}
+      {!isDesktop && (
+        <Modal
+          visible={showCustomRecipeForm}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={handleCustomRecipeFormClose}
+        >
+          <CustomRecipeForm
+            recipe={editingCustomRecipe}
+            onClose={handleCustomRecipeFormClose}
+            onSave={handleCustomRecipeFormClose}
+          />
+        </Modal>
+      )}
+
+      {/* Custom Recipe Form Modal - Desktop */}
+      {isDesktop && showCustomRecipeForm && (
+        <Modal
+          visible={true}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={handleCustomRecipeFormClose}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={handleCustomRecipeFormClose}
+          >
+            <TouchableOpacity 
+              style={styles.modalContentLarge}
+              activeOpacity={1}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <CustomRecipeForm
+                recipe={editingCustomRecipe}
+                onClose={handleCustomRecipeFormClose}
+                onSave={handleCustomRecipeFormClose}
+              />
+            </TouchableOpacity>
+          </TouchableOpacity>
         </Modal>
       )}
       </Box>
@@ -832,5 +1212,47 @@ const styles = StyleSheet.create({
   noResultsSubtext: {
     fontSize: 14,
     textAlign: "center",
+  },
+  
+  // Desktop Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    maxWidth: 580,
+    maxHeight: '85%',
+    width: '100%',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  modalContentLarge: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    maxWidth: 720,
+    maxHeight: '90%',
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 16,
   },
 });
