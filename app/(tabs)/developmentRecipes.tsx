@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Platform, StyleSheet, ScrollView, TextInput, TouchableOpacity, Modal } from "react-native";
 import { Box, Text, Button, ButtonText, VStack, HStack } from "@gluestack-ui/themed";
-import { Search, X, Filter, RefreshCw, ChevronDown } from "lucide-react-native";
+import { Search, X, Filter, RefreshCw, ChevronDown, ChevronUp } from "lucide-react-native";
 
 import { CalculatorLayout } from "@/components/CalculatorLayout";
 import { FormSection, FormGroup } from "@/components/FormSection";
@@ -12,9 +12,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useDevelopmentRecipes } from "@/hooks/useDevelopmentRecipes";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import {
-  FILM_COLOR_TYPES,
   DEVELOPER_TYPES,
-  SORT_OPTIONS,
   formatTime,
 } from "@/constants/developmentRecipes";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
@@ -62,10 +60,11 @@ interface TableHeaderProps {
   title: string;
   sortKey: string;
   currentSort: string;
+  sortDirection: 'asc' | 'desc';
   onSort: (sortKey: string) => void;
 }
 
-function TableHeader({ title, sortKey, currentSort, onSort }: TableHeaderProps) {
+function TableHeader({ title, sortKey, currentSort, sortDirection, onSort }: TableHeaderProps) {
   const textColor = useThemeColor({}, "text");
   const developmentTint = useThemeColor({}, "developmentRecipesTint");
   const isActive = currentSort === sortKey;
@@ -92,7 +91,11 @@ function TableHeader({ title, sortKey, currentSort, onSort }: TableHeaderProps) 
         {title}
       </Text>
       {isActive && (
-        <ChevronDown size={12} color={developmentTint} style={styles.sortIcon} />
+        sortDirection === 'asc' ? (
+          <ChevronUp size={12} color={developmentTint} style={styles.sortIcon} />
+        ) : (
+          <ChevronDown size={12} color={developmentTint} style={styles.sortIcon} />
+        )
       )}
     </TouchableOpacity>
   );
@@ -110,9 +113,15 @@ function RecipeRow({ combination, film, developer, onPress, isEven }: RecipeRowP
   const textColor = useThemeColor({}, "text");
   const developmentTint = useThemeColor({}, "developmentRecipesTint");
   const rowBackground = useThemeColor({}, isEven ? "cardBackground" : "background");
+  const { width } = useWindowDimensions();
+  const isMobile = Platform.OS !== "web" || width <= 768;
 
-  const filmName = film ? `${film.brand} ${film.name}` : "Unknown Film";
-  const developerName = developer ? `${developer.manufacturer} ${developer.name}` : "Unknown Developer";
+  const filmName = film ? 
+    (isMobile ? film.name : `${film.brand} ${film.name}`) : 
+    "Unknown Film";
+  const developerName = developer ? 
+    (isMobile ? developer.name : `${developer.manufacturer} ${developer.name}`) : 
+    "Unknown Developer";
 
   // Get dilution info
   const dilutionInfo = combination.customDilution || 
@@ -178,9 +187,11 @@ export default function DevelopmentRecipes() {
     // State
     filmSearch,
     developerSearch,
-    colorTypeFilter,
     developerTypeFilter,
+    dilutionFilter,
+    isoFilter,
     sortBy,
+    sortDirection,
     selectedFilm,
     selectedDeveloper,
     isLoading,
@@ -193,15 +204,18 @@ export default function DevelopmentRecipes() {
     // Actions
     setFilmSearch,
     setDeveloperSearch,
-    setColorTypeFilter,
     setDeveloperTypeFilter,
-    setSortBy,
+    setDilutionFilter,
+    setIsoFilter,
+    handleSort,
     setSelectedFilm,
     setSelectedDeveloper,
     loadData,
     clearFilters,
     getFilmById,
     getDeveloperById,
+    getAvailableDilutions,
+    getAvailableISOs,
   } = useDevelopmentRecipes();
 
   const [showFilters, setShowFilters] = useState(false);
@@ -312,12 +326,12 @@ export default function DevelopmentRecipes() {
           <Box>
             <Text style={[styles.sectionLabel, { color: textColor }]}>Search</Text>
             
-            <VStack space="sm">
-              <Box>
+            <Box style={[styles.searchFieldsContainer, isDesktop && styles.searchFieldsDesktop]}>
+              <Box style={[styles.searchField, isDesktop && styles.searchFieldDesktop]}>
                 <SearchInput
                   value={filmSearch}
                   onChangeText={setFilmSearch}
-                  placeholder="Search films..."
+                  placeholder="Type to search films..."
                   onClear={() => setFilmSearch('')}
                 />
                 
@@ -342,11 +356,11 @@ export default function DevelopmentRecipes() {
                 )}
               </Box>
 
-              <Box>
+              <Box style={[styles.searchField, isDesktop && styles.searchFieldDesktop]}>
                 <SearchInput
                   value={developerSearch}
                   onChangeText={setDeveloperSearch}
-                  placeholder="Search developers..."
+                  placeholder="Type to search developers..."
                   onClear={() => setDeveloperSearch('')}
                 />
                 
@@ -370,7 +384,7 @@ export default function DevelopmentRecipes() {
                   </Box>
                 )}
               </Box>
-            </VStack>
+            </Box>
           </Box>
 
           {/* Selected Items Display */}
@@ -421,29 +435,38 @@ export default function DevelopmentRecipes() {
           {/* Filters */}
           {showFilters && (
             <VStack space="sm">
-              <FormGroup label="Film Type">
-                <StyledSelect
-                  value={colorTypeFilter}
-                  onValueChange={setColorTypeFilter}
-                  items={FILM_COLOR_TYPES}
-                />
-              </FormGroup>
+              {/* Developer Type Filter - only show when no specific developer is selected */}
+              {!selectedDeveloper && (
+                <FormGroup label="Developer Type">
+                  <StyledSelect
+                    value={developerTypeFilter}
+                    onValueChange={setDeveloperTypeFilter}
+                    items={DEVELOPER_TYPES}
+                  />
+                </FormGroup>
+              )}
 
-              <FormGroup label="Developer Type">
-                <StyledSelect
-                  value={developerTypeFilter}
-                  onValueChange={setDeveloperTypeFilter}
-                  items={DEVELOPER_TYPES}
-                />
-              </FormGroup>
+              {/* Dilution Filter - only show when developer is selected */}
+              {selectedDeveloper && (
+                <FormGroup label="Dilution">
+                  <StyledSelect
+                    value={dilutionFilter}
+                    onValueChange={setDilutionFilter}
+                    items={getAvailableDilutions()}
+                  />
+                </FormGroup>
+              )}
 
-              <FormGroup label="Sort By">
-                <StyledSelect
-                  value={sortBy}
-                  onValueChange={setSortBy}
-                  items={SORT_OPTIONS}
-                />
-              </FormGroup>
+              {/* ISO Filter - only show when film is selected */}
+              {selectedFilm && (
+                <FormGroup label="Shooting ISO">
+                  <StyledSelect
+                    value={isoFilter}
+                    onValueChange={setIsoFilter}
+                    items={getAvailableISOs()}
+                  />
+                </FormGroup>
+              )}
             </VStack>
           )}
         </VStack>
@@ -468,12 +491,12 @@ export default function DevelopmentRecipes() {
           <Box style={styles.tableContainer}>
             {/* Table Header */}
             <Box style={[styles.tableHeaderRow, { borderBottomColor: outline }]}>
-              <TableHeader title="Film" sortKey="filmName" currentSort={sortBy} onSort={setSortBy} />
-              <TableHeader title="Developer" sortKey="developerName" currentSort={sortBy} onSort={setSortBy} />
-              <TableHeader title="Time" sortKey="timeMinutes" currentSort={sortBy} onSort={setSortBy} />
-              <TableHeader title="Temp" sortKey="temperatureF" currentSort={sortBy} onSort={setSortBy} />
-              <TableHeader title="ISO" sortKey="shootingIso" currentSort={sortBy} onSort={setSortBy} />
-              <TableHeader title="Dilution" sortKey="dilution" currentSort={sortBy} onSort={setSortBy} />
+              <TableHeader title="Film" sortKey="filmName" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+              <TableHeader title="Developer" sortKey="developerName" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+              <TableHeader title="Time" sortKey="timeMinutes" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+              <TableHeader title="Temp" sortKey="temperatureF" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+              <TableHeader title="ISO" sortKey="shootingIso" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+              <TableHeader title="Dilution" sortKey="dilution" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
             </Box>
             
             {/* Table Body */}
@@ -536,25 +559,44 @@ const styles = StyleSheet.create({
   },
   desktopMainContainer: {
     flexDirection: 'row',
-    gap: 24,
+    gap: 32,
     alignItems: 'flex-start',
+    justifyContent: 'flex-start',
   },
   leftPanel: {
     flex: 1,
   },
   desktopLeftPanel: {
     flex: 1,
-    maxWidth: '60%',
+    maxWidth: 800,
+    width: '60%',
   },
   desktopRightPanel: {
-    width: '40%',
+    width: 450,
     minWidth: 400,
+    maxWidth: 500,
     maxHeight: '80vh',
   },
   sectionLabel: {
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 8,
+  },
+  
+  // Search Fields Layout Styles
+  searchFieldsContainer: {
+    gap: 16,
+  },
+  searchFieldsDesktop: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  searchField: {
+    flex: 1,
+  },
+  searchFieldDesktop: {
+    flex: 1,
+    minWidth: 0, // Allows flex items to shrink below content size
   },
   
   // Search Input Styles
@@ -565,21 +607,21 @@ const styles = StyleSheet.create({
   },
   searchIcon: {
     position: "absolute",
-    left: 12,
+    left: 10,
     zIndex: 1,
   },
   searchInput: {
-    height: 48,
+    height: 44,
     borderWidth: 1,
     borderRadius: 12,
-    paddingLeft: 44,
-    paddingRight: 44,
-    fontSize: 16,
+    paddingLeft: 36,
+    paddingRight: 36,
+    fontSize: 12,
     flex: 1,
   },
   clearButton: {
     position: "absolute",
-    right: 12,
+    right: 10,
     zIndex: 1,
     padding: 4,
   },

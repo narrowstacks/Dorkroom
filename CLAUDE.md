@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `bun run ios` - Start iOS simulator
 - `bun run android` - Start Android emulator
 - `bun test` - Run Jest tests
-- `expo lint` - Run linting (use this for code quality checks)
+- `bun run lint` - Run linting (use this for code quality checks)
 
 ### Build and Deployment
 - `bun run build` or `expo export -p web` - Build web version

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { StyleSheet, Platform } from "react-native";
+import { StyleSheet, ScrollView, Platform } from "react-native";
+import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import {
   Box,
   Text,
@@ -14,6 +15,7 @@ import { X, Calculator, Beaker } from "lucide-react-native";
 
 import { FormGroup } from "@/components/FormSection";
 import { StyledSelect } from "@/components/StyledSelect";
+import { ChemistryCalculator } from "@/components/ChemistryCalculator";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useChemistryCalculator } from "@/hooks/useChemistryCalculator";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
@@ -32,6 +34,8 @@ interface RecipeDetailProps {
 
 export function RecipeDetail({ combination, film, developer, onClose }: RecipeDetailProps) {
   const [showCalculator, setShowCalculator] = useState(false);
+  const { width } = useWindowDimensions();
+  const isMobile = Platform.OS !== "web" || width <= 768;
   
   const textColor = useThemeColor({}, "text");
   const textSecondary = useThemeColor({}, "textSecondary");
@@ -87,6 +91,44 @@ export function RecipeDetail({ combination, film, developer, onClose }: RecipeDe
     { label: "120 (500ml per roll)", value: "120" },
   ];
 
+  // On mobile, if calculator is shown, display it as a separate module
+  if (isMobile && showCalculator) {
+    return (
+      <Box style={[styles.container, { backgroundColor: cardBackground, borderColor: outline }]}>
+        {/* Header */}
+        <Box style={styles.header}>
+          <VStack space="xs" style={styles.headerContent}>
+            <Text style={[styles.filmName, { color: developmentTint }]} numberOfLines={2}>
+              Chemistry Calculator
+            </Text>
+            <Text style={[styles.developerName, { color: textSecondary }]} numberOfLines={2}>
+              {filmName} + {developerName}
+            </Text>
+          </VStack>
+          
+          <HStack space="xs">
+            <Button variant="ghost" size="sm" onPress={() => setShowCalculator(false)} style={styles.backButton}>
+              <Text style={[styles.backButtonText, { color: developmentTint }]}>Back</Text>
+            </Button>
+            <Button variant="ghost" size="sm" onPress={onClose} style={styles.closeButton}>
+              <X size={20} color={textColor} />
+            </Button>
+          </HStack>
+        </Box>
+
+        {/* Chemistry Calculator */}
+        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          <Box style={styles.calculatorContent}>
+            <ChemistryCalculator 
+              availableDilutions={availableDilutions}
+              defaultDilution={dilutionInfo}
+            />
+          </Box>
+        </ScrollView>
+      </Box>
+    );
+  }
+
   return (
     <Box style={[styles.container, { backgroundColor: cardBackground, borderColor: outline }]}>
       {/* Header */}
@@ -105,8 +147,9 @@ export function RecipeDetail({ combination, film, developer, onClose }: RecipeDe
         </Button>
       </Box>
 
-      {/* Recipe Details */}
-      <VStack space="lg" style={styles.content}>
+      {/* Recipe Details - Scrollable */}
+      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <VStack space="lg" style={styles.content}>
         {/* Basic Parameters */}
         <Box>
           <Text style={[styles.sectionTitle, { color: textColor }]}>Development Parameters</Text>
@@ -231,8 +274,8 @@ export function RecipeDetail({ combination, film, developer, onClose }: RecipeDe
             </ButtonText>
           </Button>
 
-          {/* Chemistry Calculator */}
-          {showCalculator && (
+          {/* Chemistry Calculator - Desktop Only */}
+          {showCalculator && !isMobile && (
             <VStack space="md" style={[styles.calculator, { backgroundColor: inputBackground }]}>
               <HStack space="sm" style={styles.calculatorHeader}>
                 <Beaker size={16} color={developmentTint} />
@@ -346,7 +389,8 @@ export function RecipeDetail({ combination, film, developer, onClose }: RecipeDe
             </VStack>
           )}
         </Box>
-      </VStack>
+        </VStack>
+      </ScrollView>
     </Box>
   );
 }
@@ -356,7 +400,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderWidth: 1,
     borderRadius: 12,
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   header: {
     flexDirection: 'row',
@@ -387,9 +431,25 @@ const styles = StyleSheet.create({
     padding: 0,
     minHeight: 32,
   },
+  backButton: {
+    paddingHorizontal: 12,
+    height: 32,
+    minHeight: 32,
+  },
+  backButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  calculatorContent: {
+    padding: 16,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
   content: {
     padding: 16,
     paddingTop: 12,
+    paddingBottom: 24,
   },
   sectionTitle: {
     fontSize: 16,
@@ -442,6 +502,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     padding: 16,
     borderRadius: 12,
+    marginBottom: 16,
   },
   calculatorHeader: {
     alignItems: 'center',

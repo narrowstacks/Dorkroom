@@ -12,8 +12,8 @@ export const FILM_COLOR_TYPES = [
 // Filter options for developer types
 export const DEVELOPER_TYPES = [
   { label: "All Developers", value: "" },
-  { label: "Film", value: "film" },
-  { label: "Paper", value: "paper" },
+  { label: "Powder", value: "powder" },
+  { label: "Concentrate", value: "concentrate" },
 ];
 
 // Temperature conversion utilities
@@ -39,8 +39,6 @@ export function formatTime(minutes: number): string {
 
 // Sort options for results
 export const SORT_OPTIONS = [
-  { label: "Film Name", value: "filmName" },
-  { label: "Developer Name", value: "developerName" },
   { label: "Development Time", value: "timeMinutes" },
   { label: "Temperature", value: "temperatureF" },
   { label: "ISO", value: "shootingIso" },

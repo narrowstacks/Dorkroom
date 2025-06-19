@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.affords.dorkroom",
       "supportsTablet": true
     },
     "android": {

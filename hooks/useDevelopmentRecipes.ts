@@ -7,9 +7,11 @@ export interface DevelopmentRecipesState {
   // Search and filter state
   filmSearch: string;
   developerSearch: string;
-  colorTypeFilter: string;
   developerTypeFilter: string;
+  dilutionFilter: string;
+  isoFilter: string;
   sortBy: string;
+  sortDirection: 'asc' | 'desc';
   
   // Selected items
   selectedFilm: Film | null;
@@ -30,9 +32,12 @@ export interface DevelopmentRecipesActions {
   // Search and filter actions
   setFilmSearch: (search: string) => void;
   setDeveloperSearch: (search: string) => void;
-  setColorTypeFilter: (filter: string) => void;
   setDeveloperTypeFilter: (filter: string) => void;
+  setDilutionFilter: (filter: string) => void;
+  setIsoFilter: (filter: string) => void;
   setSortBy: (sort: string) => void;
+  setSortDirection: (direction: 'asc' | 'desc') => void;
+  handleSort: (sortKey: string) => void;
   
   // Selection actions
   setSelectedFilm: (film: Film | null) => void;
@@ -47,6 +52,8 @@ export interface DevelopmentRecipesActions {
   getDeveloperById: (id: string) => Developer | undefined;
   getCombinationsForFilm: (filmId: string) => Combination[];
   getCombinationsForDeveloper: (developerId: string) => Combination[];
+  getAvailableDilutions: () => { label: string; value: string }[];
+  getAvailableISOs: () => { label: string; value: string }[];
 }
 
 const client = new DorkroomClient();
@@ -55,12 +62,26 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
   // State
   const [filmSearch, setFilmSearch] = useState<string>('');
   const [developerSearch, setDeveloperSearch] = useState<string>('');
-  const [colorTypeFilter, setColorTypeFilter] = useState<string>('');
   const [developerTypeFilter, setDeveloperTypeFilter] = useState<string>('');
+  const [dilutionFilter, setDilutionFilter] = useState<string>('');
+  const [isoFilter, setIsoFilter] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('filmName');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
   const [selectedFilm, setSelectedFilm] = useState<Film | null>(null);
   const [selectedDeveloper, setSelectedDeveloper] = useState<Developer | null>(null);
+
+  // Clear ISO filter when film selection changes
+  const setSelectedFilmAndClearISO = useCallback((film: Film | null) => {
+    setSelectedFilm(film);
+    setIsoFilter('');
+  }, []);
+
+  // Clear dilution filter when developer selection changes
+  const setSelectedDeveloperAndClearDilution = useCallback((developer: Developer | null) => {
+    setSelectedDeveloper(developer);
+    setDilutionFilter('');
+  }, []);
   
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
@@ -119,15 +140,74 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
     return allCombinations.filter(combo => combo.developerId === developerId);
   }, [allCombinations]);
 
+  // Get available dilutions for selected developer
+  const getAvailableDilutions = useCallback((): { label: string; value: string }[] => {
+    if (!selectedDeveloper) return [];
+    
+    const dilutions = [{ label: "All Dilutions", value: "" }];
+    const dilutionSet = new Set<string>();
+    
+    // Get combinations for this developer
+    const combinations = allCombinations.filter(combo => combo.developerId === selectedDeveloper.uuid);
+    
+    combinations.forEach(combo => {
+      const dilutionInfo = combo.customDilution || 
+        (selectedDeveloper.dilutions.find(d => d.id === combo.dilutionId)?.dilution) || 
+        "Stock";
+      dilutionSet.add(dilutionInfo);
+    });
+    
+    Array.from(dilutionSet).sort().forEach(dilution => {
+      dilutions.push({ label: dilution, value: dilution });
+    });
+    
+    return dilutions;
+  }, [selectedDeveloper, allCombinations]);
+
+  // Get available ISOs for selected film
+  const getAvailableISOs = useCallback((): { label: string; value: string }[] => {
+    if (!selectedFilm) return [];
+    
+    const isos = [{ label: "All ISOs", value: "" }];
+    const isoSet = new Set<number>();
+    
+    // Get combinations for this film
+    const combinations = allCombinations.filter(combo => combo.filmStockId === selectedFilm.uuid);
+    
+    combinations.forEach(combo => {
+      isoSet.add(combo.shootingIso);
+    });
+    
+    Array.from(isoSet).sort((a, b) => a - b).forEach(iso => {
+      isos.push({ label: iso.toString(), value: iso.toString() });
+    });
+    
+    return isos;
+  }, [selectedFilm, allCombinations]);
+
+  // Handle sort with direction toggle
+  const handleSort = useCallback((sortKey: string) => {
+    if (sortBy === sortKey) {
+      // Same column, toggle direction
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New column, reset to ascending
+      setSortBy(sortKey);
+      setSortDirection('asc');
+    }
+  }, [sortBy, sortDirection]);
+
   // Clear all filters
   const clearFilters = useCallback(() => {
     setFilmSearch('');
     setDeveloperSearch('');
-    setColorTypeFilter('');
     setDeveloperTypeFilter('');
+    setDilutionFilter('');
+    setIsoFilter('');
     setSelectedFilm(null);
     setSelectedDeveloper(null);
     setSortBy('filmName');
+    setSortDirection('asc');
   }, []);
 
   // Filter and sort combinations based on current state
@@ -147,12 +227,6 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
       combinations = combinations.filter(combo => filmIds.includes(combo.filmStockId));
     }
 
-    // Filter by color type
-    if (colorTypeFilter) {
-      const matchingFilms = allFilms.filter(film => film.colorType === colorTypeFilter);
-      const filmIds = matchingFilms.map(film => film.uuid);
-      combinations = combinations.filter(combo => filmIds.includes(combo.filmStockId));
-    }
 
     // Filter by selected developer
     if (selectedDeveloper) {
@@ -169,37 +243,62 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
 
     // Filter by developer type
     if (developerTypeFilter) {
-      const matchingDevelopers = allDevelopers.filter(dev => dev.filmOrPaper === developerTypeFilter);
+      const matchingDevelopers = allDevelopers.filter(dev => dev.type === developerTypeFilter);
       const developerIds = matchingDevelopers.map(dev => dev.uuid);
       combinations = combinations.filter(combo => developerIds.includes(combo.developerId));
     }
 
+    // Filter by dilution (only when specific developer is selected)
+    if (dilutionFilter && selectedDeveloper) {
+      combinations = combinations.filter(combo => {
+        const dilutionInfo = combo.customDilution || 
+          (selectedDeveloper.dilutions.find(d => d.id === combo.dilutionId)?.dilution) || 
+          "Stock";
+        return dilutionInfo === dilutionFilter;
+      });
+    }
+
+    // Filter by shooting ISO (only when specific film is selected)
+    if (isoFilter && selectedFilm) {
+      combinations = combinations.filter(combo => combo.shootingIso.toString() === isoFilter);
+    }
+
     // Sort combinations
     combinations.sort((a, b) => {
+      let comparison = 0;
+      
       switch (sortBy) {
         case 'filmName': {
           const filmA = getFilmById(a.filmStockId);
           const filmB = getFilmById(b.filmStockId);
           const nameA = filmA ? `${filmA.brand} ${filmA.name}` : '';
           const nameB = filmB ? `${filmB.brand} ${filmB.name}` : '';
-          return nameA.localeCompare(nameB);
+          comparison = nameA.localeCompare(nameB);
+          break;
         }
         case 'developerName': {
           const devA = getDeveloperById(a.developerId);
           const devB = getDeveloperById(b.developerId);
           const nameA = devA ? `${devA.manufacturer} ${devA.name}` : '';
           const nameB = devB ? `${devB.manufacturer} ${devB.name}` : '';
-          return nameA.localeCompare(nameB);
+          comparison = nameA.localeCompare(nameB);
+          break;
         }
         case 'timeMinutes':
-          return a.timeMinutes - b.timeMinutes;
+          comparison = a.timeMinutes - b.timeMinutes;
+          break;
         case 'temperatureF':
-          return a.temperatureF - b.temperatureF;
+          comparison = a.temperatureF - b.temperatureF;
+          break;
         case 'shootingIso':
-          return a.shootingIso - b.shootingIso;
+          comparison = a.shootingIso - b.shootingIso;
+          break;
         default:
-          return 0;
+          comparison = 0;
       }
+      
+      // Apply sort direction
+      return sortDirection === 'desc' ? -comparison : comparison;
     });
 
     return combinations;
@@ -209,11 +308,13 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
     allDevelopers,
     filmSearch,
     developerSearch,
-    colorTypeFilter,
     developerTypeFilter,
+    dilutionFilter,
+    isoFilter,
     selectedFilm,
     selectedDeveloper,
     sortBy,
+    sortDirection,
     getFilmById,
     getDeveloperById,
   ]);
@@ -222,9 +323,11 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
     // State
     filmSearch,
     developerSearch,
-    colorTypeFilter,
     developerTypeFilter,
+    dilutionFilter,
+    isoFilter,
     sortBy,
+    sortDirection,
     selectedFilm,
     selectedDeveloper,
     isLoading,
@@ -237,16 +340,21 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
     // Actions
     setFilmSearch,
     setDeveloperSearch,
-    setColorTypeFilter,
     setDeveloperTypeFilter,
+    setDilutionFilter,
+    setIsoFilter,
     setSortBy,
-    setSelectedFilm,
-    setSelectedDeveloper,
+    setSortDirection,
+    handleSort,
+    setSelectedFilm: setSelectedFilmAndClearISO,
+    setSelectedDeveloper: setSelectedDeveloperAndClearDilution,
     loadData,
     clearFilters,
     getFilmById,
     getDeveloperById,
     getCombinationsForFilm,
     getCombinationsForDeveloper,
+    getAvailableDilutions,
+    getAvailableISOs,
   };
 };
