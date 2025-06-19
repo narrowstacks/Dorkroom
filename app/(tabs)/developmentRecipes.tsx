@@ -221,7 +221,7 @@ export default function DevelopmentRecipes() {
     getAvailableISOs,
   } = useDevelopmentRecipes();
 
-  const { customRecipes } = useCustomRecipes();
+  const { customRecipes, addCustomRecipe } = useCustomRecipes();
 
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCombination, setSelectedCombination] = useState<Combination | null>(null);
@@ -229,6 +229,8 @@ export default function DevelopmentRecipes() {
   const [showCustomRecipeForm, setShowCustomRecipeForm] = useState(false);
   const [editingCustomRecipe, setEditingCustomRecipe] = useState<CustomRecipe | undefined>(undefined);
   const [showCustomRecipes, setShowCustomRecipes] = useState(true);
+  const [isSavingCustomRecipe, setIsSavingCustomRecipe] = useState(false);
+  const [forceRefresh, setForceRefresh] = useState(0);
   
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
@@ -238,6 +240,7 @@ export default function DevelopmentRecipes() {
 
   // Convert custom recipes to combination-like format for display
   const customRecipesAsCombinations = React.useMemo(() => {
+    console.log('Converting custom recipes to combinations, count:', customRecipes.length);
     return customRecipes.map((recipe): Combination => ({
       id: recipe.id,
       name: recipe.name,
@@ -260,6 +263,8 @@ export default function DevelopmentRecipes() {
 
   // Combined API + custom recipes for display
   const allCombinations = React.useMemo(() => {
+    console.log('Recalculating allCombinations, showCustomRecipes:', showCustomRecipes, 'customRecipes.length:', customRecipes.length);
+    
     if (!showCustomRecipes) {
       return filteredCombinations;
     }
@@ -332,8 +337,17 @@ export default function DevelopmentRecipes() {
       });
     }
     
-    return [...filteredCombinations, ...filteredCustom];
-  }, [filteredCombinations, customRecipesAsCombinations, customRecipes, showCustomRecipes, selectedFilm, selectedDeveloper, filmSearch, developerSearch, getFilmById, getDeveloperById]);
+    // Sort custom recipes by creation date (newest first) to show recently added ones at the top
+    const sortedCustomRecipes = filteredCustom.sort((a, b) => {
+      const recipeA = customRecipes.find(r => r.id === a.id);
+      const recipeB = customRecipes.find(r => r.id === b.id);
+      if (!recipeA || !recipeB) return 0;
+      return new Date(recipeB.dateCreated).getTime() - new Date(recipeA.dateCreated).getTime();
+    });
+    
+    // Combine custom recipes (newest first) with API recipes
+    return [...sortedCustomRecipes, ...filteredCombinations];
+  }, [filteredCombinations, customRecipesAsCombinations, customRecipes, showCustomRecipes, selectedFilm, selectedDeveloper, filmSearch, developerSearch, getFilmById, getDeveloperById, forceRefresh]);
 
   // Custom recipe helpers
   const getCustomRecipeFilm = (recipeId: string): Film | undefined => {
@@ -352,9 +366,9 @@ export default function DevelopmentRecipes() {
         colorType: recipe.customFilm.colorType,
         grainStructure: recipe.customFilm.grainStructure,
         description: recipe.customFilm.description,
-        discontinued: false,
+        discontinued: 0, // Fix: discontinued should be a number according to Film type
         manufacturerNotes: [],
-        staticImageURL: null,
+        staticImageURL: undefined,
         dateAdded: recipe.dateCreated,
       } as Film;
     } else {
@@ -381,7 +395,7 @@ export default function DevelopmentRecipes() {
         notes: recipe.customDeveloper.notes,
         mixingInstructions: recipe.customDeveloper.mixingInstructions,
         safetyNotes: recipe.customDeveloper.safetyNotes,
-        discontinued: false,
+        discontinued: 0, // Fix: discontinued should be a number according to Developer type
         datasheetUrl: [],
         dilutions: recipe.customDeveloper.dilutions.map((d, idx) => ({
           id: idx,
@@ -413,6 +427,75 @@ export default function DevelopmentRecipes() {
   const handleCustomRecipeFormClose = () => {
     setShowCustomRecipeForm(false);
     setEditingCustomRecipe(undefined);
+  };
+
+  const handleCustomRecipeSave = async (recipeId: string) => {
+    // Recipe has already been saved by the form at this point
+    // Just wait a moment for state to propagate and then close
+    setIsSavingCustomRecipe(true);
+    
+    const initialCount = customRecipes.length;
+    console.log('Starting save, initial custom recipes count:', initialCount);
+    
+    // Wait for the customRecipes state to actually update
+    let attempts = 0;
+    const maxAttempts = 20; // 2 seconds max
+    
+    while (customRecipes.length <= initialCount && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+      console.log('Waiting for state update, attempt:', attempts, 'count:', customRecipes.length);
+    }
+    
+    if (customRecipes.length > initialCount) {
+      console.log('State updated successfully, new count:', customRecipes.length);
+    } else {
+      console.log('State did not update within timeout, forcing refresh');
+    }
+    
+    // Force a refresh of the recipe list
+    setForceRefresh(prev => prev + 1);
+    
+    setShowCustomRecipeForm(false);
+    setEditingCustomRecipe(undefined);
+    setIsSavingCustomRecipe(false);
+  };
+
+  // Handle duplicating a recipe (either API or custom)
+  const handleDuplicateRecipe = (combination: Combination, isCustom: boolean = false) => {
+    const customRecipe = isCustom ? customRecipes.find(r => r.id === combination.id) : undefined;
+    const film = isCustom && customRecipe ? getCustomRecipeFilm(customRecipe.id) : getFilmById(combination.filmStockId);
+    const developer = isCustom && customRecipe ? getCustomRecipeDeveloper(customRecipe.id) : getDeveloperById(combination.developerId);
+
+    // Create a new custom recipe based on the existing one
+    const duplicateRecipe: CustomRecipe = {
+      id: `duplicate_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: `Copy of ${combination.name || (film ? `${film.brand} ${film.name}` : 'Unknown')}`,
+      filmId: isCustom && customRecipe?.isCustomFilm ? customRecipe.filmId : combination.filmStockId,
+      developerId: isCustom && customRecipe?.isCustomDeveloper ? customRecipe.developerId : combination.developerId,
+      temperatureF: combination.temperatureF,
+      timeMinutes: combination.timeMinutes,
+      shootingIso: combination.shootingIso,
+      pushPull: combination.pushPull,
+      agitationSchedule: combination.agitationSchedule,
+      notes: combination.notes,
+      customDilution: combination.customDilution || undefined,
+      isCustomFilm: isCustom && customRecipe ? customRecipe.isCustomFilm : false,
+      isCustomDeveloper: isCustom && customRecipe ? customRecipe.isCustomDeveloper : false,
+      customFilm: isCustom && customRecipe ? customRecipe.customFilm : undefined,
+      customDeveloper: isCustom && customRecipe ? customRecipe.customDeveloper : undefined,
+      dateCreated: new Date().toISOString(),
+      dateModified: new Date().toISOString(),
+      isPublic: false,
+    };
+
+    // Set up editing the duplicated recipe
+    setEditingCustomRecipe(duplicateRecipe);
+    setShowCustomRecipeForm(true);
+    
+    // Close any open recipe details
+    setSelectedCombination(null);
+    setSelectedCustomRecipe(null);
   };
 
   // Film suggestions for search
@@ -505,9 +588,9 @@ export default function DevelopmentRecipes() {
 
   return (
     <CalculatorLayout title="Development Recipes" infoSection={infoSection}>
-      <Box style={[styles.mainContainer, isDesktop && styles.desktopMainContainer]}>
-        {/* Left Panel - Search, Filters, and Results */}
-        <Box style={[styles.leftPanel, isDesktop && styles.desktopLeftPanel]}>
+      <Box style={styles.mainContainer}>
+        {/* Search, Filters, and Results */}
+        <Box style={styles.leftPanel}>
           {/* Search and Filter Section */}
           <FormSection>
         <VStack space="md">
@@ -775,19 +858,7 @@ export default function DevelopmentRecipes() {
         </Box>
       </Box>
 
-      {/* Right Panel - Recipe Detail (Desktop) */}
-      {isDesktop && selectedCombination && (
-        <Box style={styles.desktopRightPanel}>
-          <RecipeDetail
-            combination={selectedCombination}
-            film={getFilmById(selectedCombination.filmStockId)}
-            developer={getDeveloperById(selectedCombination.developerId)}
-            onClose={() => setSelectedCombination(null)}
-          />
-        </Box>
-      )}
-
-      {/* Mobile Modal - Recipe Detail */}
+      {/* API Recipe Detail Modal - Mobile */}
       {!isDesktop && (
         <Modal
           visible={selectedCombination !== null}
@@ -801,8 +872,41 @@ export default function DevelopmentRecipes() {
               film={getFilmById(selectedCombination.filmStockId)}
               developer={getDeveloperById(selectedCombination.developerId)}
               onClose={() => setSelectedCombination(null)}
+              onDuplicate={() => handleDuplicateRecipe(selectedCombination, false)}
+              isCustomRecipe={false}
             />
           )}
+        </Modal>
+      )}
+
+      {/* API Recipe Detail Modal - Desktop */}
+      {isDesktop && selectedCombination && (
+        <Modal
+          visible={true}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setSelectedCombination(null)}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setSelectedCombination(null)}
+          >
+            <TouchableOpacity 
+              style={styles.modalContent}
+              activeOpacity={1}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <RecipeDetail
+                combination={selectedCombination}
+                film={getFilmById(selectedCombination.filmStockId)}
+                developer={getDeveloperById(selectedCombination.developerId)}
+                onClose={() => setSelectedCombination(null)}
+                onDuplicate={() => handleDuplicateRecipe(selectedCombination, false)}
+                isCustomRecipe={false}
+              />
+            </TouchableOpacity>
+          </TouchableOpacity>
         </Modal>
       )}
 
@@ -835,6 +939,24 @@ export default function DevelopmentRecipes() {
               film={getCustomRecipeFilm(selectedCustomRecipe.id)}
               developer={getCustomRecipeDeveloper(selectedCustomRecipe.id)}
               onClose={() => setSelectedCustomRecipe(null)}
+              onEdit={() => handleEditCustomRecipe(selectedCustomRecipe)}
+              onDuplicate={() => handleDuplicateRecipe({
+                id: selectedCustomRecipe.id,
+                name: selectedCustomRecipe.name,
+                uuid: selectedCustomRecipe.id,
+                slug: selectedCustomRecipe.id,
+                filmStockId: selectedCustomRecipe.filmId,
+                developerId: selectedCustomRecipe.developerId,
+                temperatureF: selectedCustomRecipe.temperatureF,
+                timeMinutes: selectedCustomRecipe.timeMinutes,
+                shootingIso: selectedCustomRecipe.shootingIso,
+                pushPull: selectedCustomRecipe.pushPull,
+                agitationSchedule: selectedCustomRecipe.agitationSchedule,
+                notes: selectedCustomRecipe.notes,
+                customDilution: selectedCustomRecipe.customDilution,
+                dateAdded: selectedCustomRecipe.dateCreated,
+              }, true)}
+              isCustomRecipe={true}
             />
           )}
         </Modal>
@@ -878,6 +1000,24 @@ export default function DevelopmentRecipes() {
                 film={getCustomRecipeFilm(selectedCustomRecipe.id)}
                 developer={getCustomRecipeDeveloper(selectedCustomRecipe.id)}
                 onClose={() => setSelectedCustomRecipe(null)}
+                onEdit={() => handleEditCustomRecipe(selectedCustomRecipe)}
+                onDuplicate={() => handleDuplicateRecipe({
+                  id: selectedCustomRecipe.id,
+                  name: selectedCustomRecipe.name,
+                  uuid: selectedCustomRecipe.id,
+                  slug: selectedCustomRecipe.id,
+                  filmStockId: selectedCustomRecipe.filmId,
+                  developerId: selectedCustomRecipe.developerId,
+                  temperatureF: selectedCustomRecipe.temperatureF,
+                  timeMinutes: selectedCustomRecipe.timeMinutes,
+                  shootingIso: selectedCustomRecipe.shootingIso,
+                  pushPull: selectedCustomRecipe.pushPull,
+                  agitationSchedule: selectedCustomRecipe.agitationSchedule,
+                  notes: selectedCustomRecipe.notes,
+                  customDilution: selectedCustomRecipe.customDilution,
+                  dateAdded: selectedCustomRecipe.dateCreated,
+                }, true)}
+                isCustomRecipe={true}
               />
             </TouchableOpacity>
           </TouchableOpacity>
@@ -895,7 +1035,7 @@ export default function DevelopmentRecipes() {
           <CustomRecipeForm
             recipe={editingCustomRecipe}
             onClose={handleCustomRecipeFormClose}
-            onSave={handleCustomRecipeFormClose}
+            onSave={handleCustomRecipeSave}
           />
         </Modal>
       )}
@@ -921,7 +1061,7 @@ export default function DevelopmentRecipes() {
               <CustomRecipeForm
                 recipe={editingCustomRecipe}
                 onClose={handleCustomRecipeFormClose}
-                onSave={handleCustomRecipeFormClose}
+                onSave={handleCustomRecipeSave}
               />
             </TouchableOpacity>
           </TouchableOpacity>
@@ -937,25 +1077,8 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
   },
-  desktopMainContainer: {
-    flexDirection: 'row',
-    gap: 32,
-    alignItems: 'flex-start',
-    justifyContent: 'flex-start',
-  },
   leftPanel: {
     flex: 1,
-  },
-  desktopLeftPanel: {
-    flex: 1,
-    maxWidth: 800,
-    width: '60%',
-  },
-  desktopRightPanel: {
-    width: 450,
-    minWidth: 400,
-    maxWidth: 500,
-    maxHeight: '80vh',
   },
   sectionLabel: {
     fontSize: 16,

@@ -12,7 +12,7 @@ import {
   Input,
   InputField,
 } from "@gluestack-ui/themed";
-import { X, Calculator, Beaker } from "lucide-react-native";
+import { X, Calculator, Beaker, Edit3, Copy } from "lucide-react-native";
 
 import { FormGroup } from "@/components/FormSection";
 import { StyledSelect } from "@/components/StyledSelect";
@@ -31,9 +31,12 @@ interface RecipeDetailProps {
   film: Film | undefined;
   developer: Developer | undefined;
   onClose: () => void;
+  onEdit?: () => void; // For editing custom recipes
+  onDuplicate?: () => void; // For duplicating any recipe
+  isCustomRecipe?: boolean; // Whether this is a custom recipe
 }
 
-export function RecipeDetail({ combination, film, developer, onClose }: RecipeDetailProps) {
+export function RecipeDetail({ combination, film, developer, onClose, onEdit, onDuplicate, isCustomRecipe }: RecipeDetailProps) {
   const [showCalculator, setShowCalculator] = useState(false);
   const { width } = useWindowDimensions();
   const isMobile = Platform.OS !== "web" || width <= 768;
@@ -165,9 +168,25 @@ export function RecipeDetail({ combination, film, developer, onClose }: RecipeDe
           </Text>
         </VStack>
         
-        <Button variant="ghost" size="sm" onPress={onClose} style={styles.closeButton}>
-          <X size={20} color={textColor} />
-        </Button>
+        <HStack space="xs" style={styles.headerActions}>
+          {/* Edit button for custom recipes */}
+          {isCustomRecipe && onEdit && (
+            <Button variant="outline" size="sm" onPress={onEdit} style={styles.actionButton}>
+              <Edit3 size={16} color={developmentTint} />
+            </Button>
+          )}
+          
+          {/* Duplicate button for all recipes */}
+          {onDuplicate && (
+            <Button variant="outline" size="sm" onPress={onDuplicate} style={styles.actionButton}>
+              <Copy size={16} color={textColor} />
+            </Button>
+          )}
+          
+          <Button variant="outline" size="sm" onPress={onClose} style={styles.closeButton}>
+            <X size={20} color={textColor} />
+          </Button>
+        </HStack>
       </Box>
 
       {/* Recipe Details - Scrollable */}
@@ -512,6 +531,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,
+  },
+  headerActions: {
+    alignItems: 'center',
+  },
+  actionButton: {
+    width: 32,
+    height: 32,
+    padding: 0,
+    minHeight: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   closeButton: {
     width: 32,
