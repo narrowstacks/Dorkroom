@@ -5,7 +5,15 @@
  * similar to the Python requests.Session with retries.
  */
 
-import { DataFetchError } from './errors';
+import { 
+  DataFetchError, 
+  NetworkError, 
+  TimeoutError, 
+  RateLimitError, 
+  ServerError, 
+  ClientError, 
+  CircuitBreakerError 
+} from './errors';
 import type { Logger } from './types';
 
 /**
@@ -34,6 +42,93 @@ export interface RetryConfig {
 }
 
 /**
+ * Configuration for circuit breaker behavior.
+ */
+export interface CircuitBreakerConfig {
+  /** Number of failures before opening circuit */
+  failureThreshold: number;
+  /** Time in milliseconds to wait before attempting recovery */
+  recoveryTimeoutMs: number;
+  /** Number of successful requests needed to close circuit */
+  successThreshold: number;
+}
+
+/**
+ * Circuit breaker states.
+ */
+enum CircuitBreakerState {
+  CLOSED = 'CLOSED',
+  OPEN = 'OPEN',
+  HALF_OPEN = 'HALF_OPEN'
+}
+
+/**
+ * Circuit breaker implementation for handling API failures.
+ */
+class CircuitBreaker {
+  private state = CircuitBreakerState.CLOSED;
+  private failures = 0;
+  private successes = 0;
+  private nextAttemptTime = 0;
+
+  constructor(private config: CircuitBreakerConfig) {}
+
+  async execute<T>(operation: () => Promise<T>): Promise<T> {
+    if (this.state === CircuitBreakerState.OPEN) {
+      if (Date.now() < this.nextAttemptTime) {
+        throw new CircuitBreakerError(
+          'Circuit breaker is open - too many recent failures',
+          new Date(this.nextAttemptTime)
+        );
+      } else {
+        this.state = CircuitBreakerState.HALF_OPEN;
+        this.successes = 0;
+      }
+    }
+
+    try {
+      const result = await operation();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+
+  private onSuccess(): void {
+    this.failures = 0;
+
+    if (this.state === CircuitBreakerState.HALF_OPEN) {
+      this.successes++;
+      if (this.successes >= this.config.successThreshold) {
+        this.state = CircuitBreakerState.CLOSED;
+      }
+    }
+  }
+
+  private onFailure(): void {
+    this.failures++;
+
+    if (this.failures >= this.config.failureThreshold) {
+      this.state = CircuitBreakerState.OPEN;
+      this.nextAttemptTime = Date.now() + this.config.recoveryTimeoutMs;
+    }
+  }
+
+  getState(): string {
+    return this.state;
+  }
+
+  reset(): void {
+    this.state = CircuitBreakerState.CLOSED;
+    this.failures = 0;
+    this.successes = 0;
+    this.nextAttemptTime = 0;
+  }
+}
+
+/**
  * Default retry configuration.
  */
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
@@ -41,6 +136,15 @@ export const DEFAULT_RETRY_CONFIG: RetryConfig = {
   baseDelay: 300,
   backoffFactor: 2,
   retryStatusCodes: [502, 503, 504, 429], // Server errors and rate limiting
+};
+
+/**
+ * Default circuit breaker configuration.
+ */
+export const DEFAULT_CIRCUIT_BREAKER_CONFIG: CircuitBreakerConfig = {
+  failureThreshold: 5,
+  recoveryTimeoutMs: 30000, // 30 seconds
+  successThreshold: 2,
 };
 
 /**
@@ -70,96 +174,150 @@ export class ConsoleLogger implements Logger {
 export class FetchHTTPTransport implements HTTPTransport {
   private readonly retryConfig: RetryConfig;
   private readonly logger: Logger;
+  private readonly circuitBreaker: CircuitBreaker;
 
   constructor(
     retryConfig: Partial<RetryConfig> = {},
-    logger: Logger = new ConsoleLogger()
+    logger: Logger = new ConsoleLogger(),
+    circuitBreakerConfig: Partial<CircuitBreakerConfig> = {}
   ) {
     this.retryConfig = { ...DEFAULT_RETRY_CONFIG, ...retryConfig };
     this.logger = logger;
+    this.circuitBreaker = new CircuitBreaker({
+      ...DEFAULT_CIRCUIT_BREAKER_CONFIG,
+      ...circuitBreakerConfig
+    });
   }
 
   async get(url: string, timeout: number): Promise<Response> {
-    let lastError: Error | null = null;
+    return this.circuitBreaker.execute(async () => {
+      let lastError: Error | null = null;
 
-    for (let attempt = 0; attempt <= this.retryConfig.maxRetries; attempt++) {
-      try {
-        this.logger.debug(`GET ${url} (attempt ${attempt + 1})`);
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
-
+      for (let attempt = 0; attempt <= this.retryConfig.maxRetries; attempt++) {
         try {
-          const response = await fetch(url, {
-            method: 'GET',
-            signal: controller.signal,
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'Dorkroom-Client-TS/1.0',
-            },
-          });
+          this.logger.debug(`GET ${url} (attempt ${attempt + 1})`);
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-          clearTimeout(timeoutId);
+          try {
+            const response = await fetch(url, {
+              method: 'GET',
+              signal: controller.signal,
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'Dorkroom-Client-TS/1.0',
+              },
+            });
 
-          // Check if we should retry based on status code
-          if (this.retryConfig.retryStatusCodes.includes(response.status)) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            clearTimeout(timeoutId);
+
+            // Classify and handle different response types
+            if (response.status === 429) {
+              const retryAfter = response.headers.get('retry-after');
+              const retryAfterMs = retryAfter ? parseInt(retryAfter) * 1000 : 60000;
+              throw new RateLimitError(
+                `Rate limit exceeded: ${response.statusText}`,
+                retryAfterMs,
+                new Date(Date.now() + retryAfterMs)
+              );
+            }
+
+            if (response.status >= 500) {
+              throw new ServerError(
+                `Server error: ${response.status} ${response.statusText}`,
+                response.status,
+                true
+              );
+            }
+
+            if (response.status >= 400) {
+              throw new ClientError(
+                `Client error: ${response.status} ${response.statusText}`,
+                response.status
+              );
+            }
+
+            if (!response.ok) {
+              throw new DataFetchError(
+                `HTTP ${response.status}: ${response.statusText}`,
+                undefined,
+                response.status,
+                this.retryConfig.retryStatusCodes.includes(response.status)
+              );
+            }
+
+            return response;
+          } catch (error) {
+            clearTimeout(timeoutId);
+            
+            // Handle different error types
+            if (error instanceof DOMException && error.name === 'AbortError') {
+              throw new TimeoutError(`Request timed out after ${timeout}ms`, timeout);
+            }
+            
+            if (error instanceof TypeError) {
+              throw new NetworkError(`Network error: ${error.message}`, error);
+            }
+            
+            throw error;
           }
-
-          // If not ok but not a retry status, throw immediately
-          if (!response.ok) {
-            throw new DataFetchError(
-              `HTTP ${response.status}: ${response.statusText}`
-            );
-          }
-
-          return response;
         } catch (error) {
-          clearTimeout(timeoutId);
-          throw error;
-        }
-      } catch (error) {
-        lastError = error as Error;
-        
-        // Don't retry on the last attempt
-        if (attempt === this.retryConfig.maxRetries) {
-          break;
-        }
+          lastError = error as Error;
+          
+          // Don't retry on the last attempt
+          if (attempt === this.retryConfig.maxRetries) {
+            break;
+          }
 
-        // Don't retry certain types of errors
-        if (error instanceof DataFetchError && !this.shouldRetryError(error)) {
-          break;
+          // Don't retry certain types of errors
+          if (!this.shouldRetryError(error as Error)) {
+            break;
+          }
+
+          // Calculate delay with exponential backoff
+          const delay = this.retryConfig.baseDelay * 
+            Math.pow(this.retryConfig.backoffFactor, attempt);
+          
+          this.logger.warn(
+            `Request failed (attempt ${attempt + 1}), retrying in ${delay}ms: ${error}`
+          );
+
+          await this.sleep(delay);
         }
-
-        // Calculate delay with exponential backoff
-        const delay = this.retryConfig.baseDelay * 
-          Math.pow(this.retryConfig.backoffFactor, attempt);
-        
-        this.logger.warn(
-          `Request failed (attempt ${attempt + 1}), retrying in ${delay}ms: ${error}`
-        );
-
-        await this.sleep(delay);
       }
-    }
 
-    // All retries exhausted
-    throw new DataFetchError(
-      `Failed to fetch ${url} after ${this.retryConfig.maxRetries + 1} attempts`,
-      lastError || undefined
-    );
+      // All retries exhausted
+      throw new DataFetchError(
+        `Failed to fetch ${url} after ${this.retryConfig.maxRetries + 1} attempts`,
+        lastError || undefined,
+        undefined,
+        false
+      );
+    });
   }
 
   /**
    * Determine if an error should trigger a retry.
    */
   private shouldRetryError(error: Error): boolean {
-    // Retry network errors, timeouts, and abort errors
+    // Don't retry client errors (except rate limiting which is handled separately)
+    if (error instanceof ClientError) {
+      return false;
+    }
+
+    // Don't retry circuit breaker errors
+    if (error instanceof CircuitBreakerError) {
+      return false;
+    }
+
+    // Retry server errors, network errors, timeouts, and retryable data fetch errors
     return (
-      error.name === 'TypeError' || // Network errors in fetch
-      error.name === 'AbortError' || // Timeout errors
-      error.message.includes('fetch') ||
-      error.message.includes('network')
+      error instanceof ServerError ||
+      error instanceof NetworkError ||
+      error instanceof TimeoutError ||
+      error instanceof RateLimitError ||
+      (error instanceof DataFetchError && error.isRetryable)
     );
   }
 
@@ -168,6 +326,20 @@ export class FetchHTTPTransport implements HTTPTransport {
    */
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Get circuit breaker state for monitoring.
+   */
+  getCircuitBreakerState(): string {
+    return this.circuitBreaker.getState();
+  }
+
+  /**
+   * Reset circuit breaker (useful for testing).
+   */
+  resetCircuitBreaker(): void {
+    this.circuitBreaker.reset();
   }
 }
 
