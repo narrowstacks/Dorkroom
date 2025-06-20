@@ -265,13 +265,16 @@ export class DorkroomClient {
       const [rawFilms, rawDevelopers, rawCombinations] = await Promise.all([
         this.fetch<Film>('films'),
         this.fetch<Developer>('developers'),
-        this.fetch<Combination>('combinations'),
+        this.fetch<any>('combinations'),
       ]);
 
       // Store data
       this.films = rawFilms;
       this.developers = rawDevelopers;
-      this.combinations = rawCombinations;
+      this.combinations = (rawCombinations as any[]).map(c => ({
+        ...c,
+        dilutionId: c.dilutionId ? parseInt(String(c.dilutionId), 10) : undefined,
+      }));
 
       // Build indexes
       this.buildIndexes();

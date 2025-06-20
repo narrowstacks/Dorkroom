@@ -54,31 +54,7 @@ export interface ChemistryCalculatorActions {
   reset: () => void;
 }
 
-/**
- * Parses dilution string to extract ratio (e.g., "1:9" returns 0.1)
- */
-function parseDilutionRatio(dilution: string): number {
-  if (!dilution || dilution.toLowerCase() === 'stock') {
-    return 1; // Stock solution = 100% developer
-  }
-  
-  // Handle formats like "1:9", "1+9", "1 part to 9 parts water"
-  const ratioMatch = dilution.match(/(\d+)[\s:+]*(\d+)/);
-  if (ratioMatch) {
-    const developerParts = parseInt(ratioMatch[1]);
-    const waterParts = parseInt(ratioMatch[2]);
-    return developerParts / (developerParts + waterParts);
-  }
-  
-  // Handle percentage format like "10%" or "1:10"
-  const percentMatch = dilution.match(/(\d+)%/);
-  if (percentMatch) {
-    return parseInt(percentMatch[1]) / 100;
-  }
-  
-  // Default to stock if we can't parse
-  return 1;
-}
+import { parseDilutionRatio } from '@/utils/dilutionUtils';
 
 /**
  * Converts volume to milliliters based on unit

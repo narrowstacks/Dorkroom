@@ -195,7 +195,7 @@ export function createDeveloperIssue(
 
   // Format dilutions
   const dilutionText = developerData.dilutions
-    .map(d => `${d.name}:${d.dilution}`)
+    .map(d => `${d.name}: ${d.dilution}`)
     .join('\n');
 
   const bodyParts = [

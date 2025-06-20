@@ -17,6 +17,7 @@ import {
   DEVELOPER_TYPES,
   formatTime,
 } from "@/constants/developmentRecipes";
+import { formatDilution } from "@/utils/dilutionUtils";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
 import type { CustomRecipe } from "@/types/customRecipeTypes";
 
@@ -127,9 +128,11 @@ function RecipeRow({ combination, film, developer, onPress, isEven }: RecipeRowP
     "Unknown Developer";
 
   // Get dilution info
-  const dilutionInfo = combination.customDilution || 
+  const dilutionInfo = formatDilution(
+    combination.customDilution || 
     (developer?.dilutions.find(d => d.id === combination.dilutionId)?.dilution) || 
-    "Stock";
+    "Stock"
+  );
 
   // Format temperature more compactly
   const tempDisplay = `${combination.temperatureF}°F`;

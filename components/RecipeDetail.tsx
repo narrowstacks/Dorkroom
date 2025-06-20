@@ -25,6 +25,7 @@ import {
   formatTime,
   PUSH_PULL_LABELS,
 } from "@/constants/developmentRecipes";
+import { formatDilution } from "@/utils/dilutionUtils";
 
 interface RecipeDetailProps {
   combination: Combination;
@@ -59,9 +60,11 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
   const developerName = developer ? `${developer.manufacturer} ${developer.name}` : "Unknown Developer";
 
   // Get dilution info
-  const dilutionInfo = combination.customDilution || 
+  const dilutionInfo = formatDilution(
+    combination.customDilution || 
     (developer?.dilutions.find(d => d.id === combination.dilutionId)?.dilution) || 
-    "Stock";
+    "Stock"
+  );
 
   // Available dilutions for calculator
   const availableDilutions = useMemo(() => {
@@ -423,7 +426,7 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
                 </Box>
               )}
 
-              <Button variant="ghost" onPress={chemistry.reset} style={styles.resetButton}>
+              <Button variant="outline" onPress={chemistry.reset} style={styles.resetButton}>
                 <ButtonText style={[styles.resetButtonText, { color: textSecondary }]}>
                   Reset Calculator
                 </ButtonText>
@@ -479,7 +482,7 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
                       {filmName} + {developerName}
                     </Text>
                   </VStack>
-                  <Button variant="ghost" size="sm" onPress={hideBottomSheet} style={styles.closeButton}>
+                  <Button variant="outline" size="sm" onPress={hideBottomSheet} style={styles.closeButton}>
                     <X size={20} color={textColor} />
                   </Button>
                 </HStack>

@@ -23,6 +23,7 @@ import { useDevelopmentRecipes } from '@/hooks/useDevelopmentRecipes';
 import { useCustomRecipes } from '@/hooks/useCustomRecipes';
 import { createRecipeIssue, createFilmIssue, createDeveloperIssue, createIssueUrl, fahrenheitToCelsius } from '@/utils/githubIssueGenerator';
 import { DEVELOPER_TYPES } from '@/constants/developmentRecipes';
+import { formatDilution, isValidDilution, normalizeDilution } from '@/utils/dilutionUtils';
 import type { CustomRecipe, CustomRecipeFormData, CustomFilmData, CustomDeveloperData } from '@/types/customRecipeTypes';
 import type { Film, Developer } from '@/api/dorkroom/types';
 
@@ -99,7 +100,7 @@ export function CustomRecipeForm({ recipe, onClose, onSave }: CustomRecipeFormPr
         notes: '',
         mixingInstructions: '',
         safetyNotes: '',
-        dilutions: [{ name: 'Stock', dilution: '1:1' }],
+        dilutions: [{ name: 'Stock', dilution: '1+1' }],
       },
       temperatureF: 68,
       timeMinutes: 7,
@@ -171,7 +172,9 @@ export function CustomRecipeForm({ recipe, onClose, onSave }: CustomRecipeFormPr
   const updateDilution = (index: number, field: 'name' | 'dilution', value: string) => {
     if (formData.customDeveloper) {
       const newDilutions = [...formData.customDeveloper.dilutions];
-      newDilutions[index] = { ...newDilutions[index], [field]: value };
+      // Normalize dilution values to plus notation
+      const processedValue = field === 'dilution' ? normalizeDilution(value) : value;
+      newDilutions[index] = { ...newDilutions[index], [field]: processedValue };
       updateCustomDeveloper({ dilutions: newDilutions });
     }
   };
@@ -516,7 +519,7 @@ export function CustomRecipeForm({ recipe, onClose, onSave }: CustomRecipeFormPr
                               <InputField
                                 value={dilution.dilution}
                                 onChangeText={(value) => updateDilution(index, 'dilution', value)}
-                                placeholder="Ratio (e.g., 1:1)"
+                                placeholder="Ratio (e.g., 1+1)"
                               />
                             </Input>
                           </Box>
@@ -581,8 +584,8 @@ export function CustomRecipeForm({ recipe, onClose, onSave }: CustomRecipeFormPr
                 <Input>
                   <InputField
                     value={formData.customDilution}
-                    onChangeText={(value) => updateFormData({ customDilution: value })}
-                    placeholder="e.g., 1:1, 1:2, Stock"
+                    onChangeText={(value) => updateFormData({ customDilution: normalizeDilution(value) })}
+                    placeholder="e.g., 1+1, 1+9, Stock"
                   />
                 </Input>
               </FormGroup>
