@@ -476,6 +476,16 @@ export default function DevelopmentRecipes() {
     setEditingCustomRecipe(undefined);
   };
 
+  const handleCustomRecipeDelete = () => {
+    console.log('[DevelopmentRecipes] handleCustomRecipeDelete called');
+    
+    // Force refresh to ensure the deletion is reflected in the UI
+    forceRefresh();
+    
+    // Clear the selected custom recipe since it was deleted
+    setSelectedCustomRecipe(null);
+  };
+
   const handleCustomRecipeSave = async (recipeId: string) => {
     console.log('[DevelopmentRecipes] handleCustomRecipeSave called for recipe:', recipeId);
     console.log('[DevelopmentRecipes] Current customRecipes count before refresh:', customRecipes.length);
@@ -988,6 +998,7 @@ export default function DevelopmentRecipes() {
                 customDilution: currentSelectedCustomRecipe.customDilution,
                 dateAdded: currentSelectedCustomRecipe.dateCreated,
               }, true)}
+              onDelete={handleCustomRecipeDelete}
               isCustomRecipe={true}
             />
           )}

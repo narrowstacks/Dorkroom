@@ -11,14 +11,19 @@ import {
   ButtonText,
   Input,
   InputField,
+  useToast,
+  Toast,
+  ToastTitle,
 } from "@gluestack-ui/themed";
-import { X, Calculator, Beaker, Edit3, Copy } from "lucide-react-native";
+import { X, Calculator, Beaker, Edit3, Copy, Trash2 } from "lucide-react-native";
 
 import { FormGroup } from "@/components/FormSection";
 import { StyledSelect } from "@/components/StyledSelect";
 import { ChemistryCalculator } from "@/components/ChemistryCalculator";
+import { showConfirmAlert } from "@/components/ConfirmAlert";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useChemistryCalculator } from "@/hooks/useChemistryCalculator";
+import { useCustomRecipes } from "@/hooks/useCustomRecipes";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
 import {
   convertToDisplay,
@@ -34,11 +39,13 @@ interface RecipeDetailProps {
   onClose: () => void;
   onEdit?: () => void; // For editing custom recipes
   onDuplicate?: () => void; // For duplicating any recipe
+  onDelete?: () => void; // For deleting custom recipes
   isCustomRecipe?: boolean; // Whether this is a custom recipe
 }
 
-export function RecipeDetail({ combination, film, developer, onClose, onEdit, onDuplicate, isCustomRecipe }: RecipeDetailProps) {
+export function RecipeDetail({ combination, film, developer, onClose, onEdit, onDuplicate, onDelete, isCustomRecipe }: RecipeDetailProps) {
   const [showCalculator, setShowCalculator] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { width } = useWindowDimensions();
   const isMobile = Platform.OS !== "web" || width <= 768;
   
@@ -54,6 +61,8 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
   const inputBackground = useThemeColor({}, "inputBackground");
 
   const chemistry = useChemistryCalculator();
+  const { deleteCustomRecipe, forceRefresh } = useCustomRecipes();
+  const toast = useToast();
 
   // Get film and developer names
   const filmName = film ? `${film.brand} ${film.name}` : "Unknown Film";
@@ -136,6 +145,65 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
     });
   };
 
+  // Delete functionality for custom recipes - identical to CustomRecipeForm.tsx
+  const performDeletion = async () => {
+    if (!combination.id) return;
+    
+    console.log('[RecipeDetail] Starting delete operation');
+    setIsLoading(true);
+    
+    try {
+      const recipeName = filmName; // Use the film name as the recipe name for the toast
+      
+      await deleteCustomRecipe(combination.id);
+      await forceRefresh();
+      
+      // Show success toast
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+            <ToastTitle>&quot;{recipeName}&quot; deleted.</ToastTitle>
+          </Toast>
+        ),
+      });
+      
+      if (onDelete) {
+        onDelete();
+      } else {
+        onClose();
+      }
+    } catch (error) {
+      console.error('[RecipeDetail] Delete operation failed:', error);
+      const errorMessage = error instanceof Error 
+        ? `Failed to delete recipe: ${error.message}` 
+        : "Failed to delete recipe";
+      
+      // Show error toast
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{errorMessage}</ToastTitle>
+          </Toast>
+        ),
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    showConfirmAlert(
+      "Delete Recipe",
+      "Are you sure you want to delete this recipe? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: performDeletion }
+      ]
+    );
+  };
+
   // Handle pan gesture for swipe down
   const onGestureEvent = Animated.event(
     [{ nativeEvent: { translationY: translateY } }],
@@ -176,6 +244,19 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
           {isCustomRecipe && onEdit && (
             <Button variant="outline" size="sm" onPress={onEdit} style={styles.actionButton}>
               <Edit3 size={16} color={developmentTint} />
+            </Button>
+          )}
+          
+          {/* Delete button for custom recipes */}
+          {isCustomRecipe && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onPress={handleDelete} 
+              style={styles.actionButton}
+              disabled={isLoading}
+            >
+              <Trash2 size={16} color="#ff4444" />
             </Button>
           )}
           

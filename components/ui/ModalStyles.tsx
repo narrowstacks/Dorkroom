@@ -23,19 +23,19 @@ export function getModalConfiguration(
         size: isDesktop ? 'md' : 'full',
         className: isDesktop ? 'max-w-2xl' : 'h-full',
         style: Platform.OS !== 'web' && !isDesktop ? {
-          maxHeight: '40%',
+          maxHeight: '65%',
           marginTop: 'auto',
-          borderTopLeftRadius: 48,
-          borderTopRightRadius: 48,
-          borderBottomLeftRadius: 48,
-          borderBottomRightRadius: 48,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          borderBottomLeftRadius: 24,
+          borderBottomRightRadius: 24,
         } : undefined,
       };
 
     case ModalSize.MEDIUM:
       return {
         size: isDesktop ? 'md' : 'full',
-        className: isDesktop ? 'max-w-2xl' : 'max-w-full',
+        className: isDesktop ? 'max-w-2xl' : 'h-full',
         style: Platform.OS !== 'web' && !isDesktop ? {
           maxHeight: '95%',
           marginTop: 'auto',
@@ -74,8 +74,9 @@ export function getModalConfiguration(
 export const getRecipeDetailModalConfig = (isDesktop: boolean): ModalConfiguration => 
   getModalConfiguration(ModalSize.SMALL, isDesktop);
 
+// Use the same configuration for both regular and custom recipe modals
 export const getCustomRecipeDetailModalConfig = (isDesktop: boolean): ModalConfiguration => 
-  getModalConfiguration(ModalSize.MEDIUM, isDesktop);
+  getModalConfiguration(ModalSize.SMALL, isDesktop);
 
 export const getRecipeFormModalConfig = (isDesktop: boolean): ModalConfiguration => 
   getModalConfiguration(ModalSize.LARGE, isDesktop); 
