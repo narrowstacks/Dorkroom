@@ -127,3 +127,4 @@ Key calculators:
 ### Rules
 - Assume the expo server is already running-- don't try to run `bun run dev`.
 - We should aim for consistency in styling, including libraries used.
+- When grepping the codebase, use ripgrep `rg` instead of standard grep.

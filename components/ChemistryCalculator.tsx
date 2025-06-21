@@ -159,7 +159,7 @@ export function ChemistryCalculator({
           </Box>
         )}
 
-        <Button variant="ghost" onPress={chemistry.reset} style={styles.resetButton}>
+        <Button variant="outline" onPress={chemistry.reset} style={styles.resetButton}>
           <RotateCcw size={14} color={textSecondary} />
           <ButtonText style={[styles.resetButtonText, { color: textSecondary }]}>
             Reset Calculator

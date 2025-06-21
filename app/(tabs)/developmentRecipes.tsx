@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Platform, StyleSheet, ScrollView, TextInput, TouchableOpacity, Modal } from "react-native";
-import { Box, Text, Button, ButtonText, VStack, HStack } from "@gluestack-ui/themed";
+import { Platform, StyleSheet, ScrollView, TextInput, TouchableOpacity } from "react-native";
+import { Box, Text, Button, ButtonText, VStack, HStack, Modal, ModalBackdrop, ModalContent, ModalCloseButton, ModalHeader, ModalBody } from "@gluestack-ui/themed";
 import { Search, X, Filter, RefreshCw, ChevronDown, ChevronUp, Plus } from "lucide-react-native";
 
 import { CalculatorLayout } from "@/components/CalculatorLayout";
@@ -9,6 +9,11 @@ import { InfoSection, InfoText, InfoSubtitle, InfoList } from "@/components/Info
 import { StyledSelect } from "@/components/StyledSelect";
 import { RecipeDetail } from "@/components/RecipeDetail";
 import { CustomRecipeForm } from "@/components/CustomRecipeForm";
+import { 
+  getRecipeDetailModalConfig, 
+  getCustomRecipeDetailModalConfig, 
+  getRecipeFormModalConfig 
+} from "@/components/ui/ModalStyles";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useDevelopmentRecipes } from "@/hooks/useDevelopmentRecipes";
 import { useCustomRecipes } from "@/hooks/useCustomRecipes";
@@ -136,6 +141,14 @@ function RecipeRow({ combination, film, developer, onPress, isEven }: RecipeRowP
 
   // Format temperature more compactly
   const tempDisplay = `${combination.temperatureF}°F`;
+  
+  // Debug logging for temperature display
+  console.log('[RecipeRow] Rendering row for combination:', JSON.stringify({ 
+    id: combination.id, 
+    temperatureF: combination.temperatureF, 
+    tempDisplay,
+    uuid: combination.uuid 
+  }));
 
   return (
     <TouchableOpacity onPress={onPress}>
@@ -224,7 +237,8 @@ export default function DevelopmentRecipes() {
     getAvailableISOs,
   } = useDevelopmentRecipes();
 
-  const { customRecipes, addCustomRecipe } = useCustomRecipes();
+  const { customRecipes, forceRefresh, stateVersion } = useCustomRecipes();
+  console.log('[DevelopmentRecipes] Component render - customRecipes count:', customRecipes.length);
 
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCombination, setSelectedCombination] = useState<Combination | null>(null);
@@ -232,8 +246,6 @@ export default function DevelopmentRecipes() {
   const [showCustomRecipeForm, setShowCustomRecipeForm] = useState(false);
   const [editingCustomRecipe, setEditingCustomRecipe] = useState<CustomRecipe | undefined>(undefined);
   const [showCustomRecipes, setShowCustomRecipes] = useState(true);
-  const [isSavingCustomRecipe, setIsSavingCustomRecipe] = useState(false);
-  const [forceRefresh, setForceRefresh] = useState(0);
   
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
@@ -243,105 +255,112 @@ export default function DevelopmentRecipes() {
 
   // Convert custom recipes to combination-like format for display
   const customRecipesAsCombinations = React.useMemo(() => {
-    console.log('Converting custom recipes to combinations, count:', customRecipes.length);
-    return customRecipes.map((recipe): Combination => ({
-      id: recipe.id,
-      name: recipe.name,
-      uuid: recipe.id,
-      slug: recipe.id,
-      filmStockId: recipe.filmId,
-      developerId: recipe.developerId,
-      temperatureF: recipe.temperatureF,
-      timeMinutes: recipe.timeMinutes,
-      shootingIso: recipe.shootingIso,
-      pushPull: recipe.pushPull,
-      agitationSchedule: recipe.agitationSchedule,
-      notes: recipe.notes,
-      customDilution: recipe.customDilution,
-      dateAdded: recipe.dateCreated,
-      // Custom recipe specific handling
-      dilutionId: undefined,
-    }));
-  }, [customRecipes]);
+    console.log('[DevelopmentRecipes] customRecipesAsCombinations useMemo triggered');
+    console.log('[DevelopmentRecipes] Converting custom recipes to combinations, count:', customRecipes.length);
+    console.log('[DevelopmentRecipes] customRecipes reference check:', customRecipes);
+    console.log('[DevelopmentRecipes] customRecipes dateModified values:', customRecipes.map(r => ({ id: r.id, dateModified: r.dateModified })));
+    
+    const combinations = customRecipes.map((recipe): Combination => {
+      console.log('[DevelopmentRecipes] Converting recipe to combination:', JSON.stringify({ 
+        id: recipe.id, 
+        temperatureF: recipe.temperatureF, 
+        dateModified: recipe.dateModified 
+      }));
+      return {
+        id: recipe.id,
+        name: recipe.name,
+        uuid: recipe.id,
+        slug: recipe.id,
+        filmStockId: recipe.filmId,
+        developerId: recipe.developerId,
+        temperatureF: recipe.temperatureF,
+        timeMinutes: recipe.timeMinutes,
+        shootingIso: recipe.shootingIso,
+        pushPull: recipe.pushPull,
+        agitationSchedule: recipe.agitationSchedule,
+        notes: recipe.notes,
+        customDilution: recipe.customDilution,
+        dateAdded: recipe.dateCreated,
+        // Custom recipe specific handling
+        dilutionId: undefined,
+      };
+    });
+    console.log('[DevelopmentRecipes] Converted to combinations:', combinations.length);
+    console.log('[DevelopmentRecipes] Combination temperature values:', combinations.map(c => ({ id: c.id, temperatureF: c.temperatureF })));
+    return combinations;
+  }, [customRecipes, stateVersion]); // stateVersion is intentionally included to force re-computation
 
   // Combined API + custom recipes for display
   const allCombinations = React.useMemo(() => {
-    console.log('Recalculating allCombinations, showCustomRecipes:', showCustomRecipes, 'customRecipes.length:', customRecipes.length);
+    console.log('[DevelopmentRecipes] allCombinations useMemo triggered');
+    console.log('[DevelopmentRecipes] Recalculating allCombinations, showCustomRecipes:', showCustomRecipes, 'customRecipes.length:', customRecipes.length);
+    console.log('[DevelopmentRecipes] filteredCombinations.length:', filteredCombinations.length);
+    console.log('[DevelopmentRecipes] customRecipesAsCombinations.length:', customRecipesAsCombinations.length);
+    console.log('[DevelopmentRecipes] stateVersion:', stateVersion);
     
     if (!showCustomRecipes) {
+      console.log('[DevelopmentRecipes] Not showing custom recipes, returning only API recipes');
       return filteredCombinations;
     }
     
     // Filter custom recipes based on current filters
-    let filteredCustom = customRecipesAsCombinations;
-    
-    // Apply film filter
-    if (selectedFilm) {
-      filteredCustom = filteredCustom.filter(combo => {
-        const recipe = customRecipes.find(r => r.id === combo.id);
-        if (!recipe) return false;
-        
+    let filteredCustomCombinations = customRecipesAsCombinations.filter(combination => {
+      const recipe = customRecipes.find(r => r.id === combination.id);
+      if (!recipe) return false;
+      
+      // Apply film filter
+      if (selectedFilm) {
         if (recipe.isCustomFilm) {
           // For custom films, check if the name/brand matches the selected film
           return recipe.customFilm?.brand?.toLowerCase().includes(selectedFilm.brand.toLowerCase()) ||
                  recipe.customFilm?.name?.toLowerCase().includes(selectedFilm.name.toLowerCase());
         } else {
-          return combo.filmStockId === selectedFilm.uuid;
+          return combination.filmStockId === selectedFilm.uuid;
         }
-      });
-    } else if (filmSearch.trim()) {
-      filteredCustom = filteredCustom.filter(combo => {
-        const recipe = customRecipes.find(r => r.id === combo.id);
-        if (!recipe) return false;
-        
+      } else if (filmSearch.trim()) {
         if (recipe.isCustomFilm && recipe.customFilm) {
           const filmMatch = recipe.customFilm.brand.toLowerCase().includes(filmSearch.toLowerCase()) ||
                            recipe.customFilm.name.toLowerCase().includes(filmSearch.toLowerCase());
           return filmMatch;
         } else {
-          const film = getFilmById(combo.filmStockId);
+          const film = getFilmById(combination.filmStockId);
           return film && (
             film.name.toLowerCase().includes(filmSearch.toLowerCase()) ||
             film.brand.toLowerCase().includes(filmSearch.toLowerCase())
           );
         }
-      });
-    }
-    
-    // Apply developer filter
-    if (selectedDeveloper) {
-      filteredCustom = filteredCustom.filter(combo => {
-        const recipe = customRecipes.find(r => r.id === combo.id);
-        if (!recipe) return false;
-        
+      }
+      
+      // Apply developer filter
+      if (selectedDeveloper) {
         if (recipe.isCustomDeveloper) {
           return recipe.customDeveloper?.manufacturer?.toLowerCase().includes(selectedDeveloper.manufacturer.toLowerCase()) ||
                  recipe.customDeveloper?.name?.toLowerCase().includes(selectedDeveloper.name.toLowerCase());
         } else {
-          return combo.developerId === selectedDeveloper.uuid;
+          return combination.developerId === selectedDeveloper.uuid;
         }
-      });
-    } else if (developerSearch.trim()) {
-      filteredCustom = filteredCustom.filter(combo => {
-        const recipe = customRecipes.find(r => r.id === combo.id);
-        if (!recipe) return false;
-        
+      } else if (developerSearch.trim()) {
         if (recipe.isCustomDeveloper && recipe.customDeveloper) {
           const devMatch = recipe.customDeveloper.manufacturer.toLowerCase().includes(developerSearch.toLowerCase()) ||
                           recipe.customDeveloper.name.toLowerCase().includes(developerSearch.toLowerCase());
           return devMatch;
         } else {
-          const dev = getDeveloperById(combo.developerId);
+          const dev = getDeveloperById(combination.developerId);
           return dev && (
             dev.name.toLowerCase().includes(developerSearch.toLowerCase()) ||
             dev.manufacturer.toLowerCase().includes(developerSearch.toLowerCase())
           );
         }
-      });
-    }
+      }
+      
+      // If no specific filters applied, include all custom recipes
+      return true;
+    });
+    
+    console.log('[DevelopmentRecipes] Filtered custom combinations:', filteredCustomCombinations.length);
     
     // Sort custom recipes by creation date (newest first) to show recently added ones at the top
-    const sortedCustomRecipes = filteredCustom.sort((a, b) => {
+    filteredCustomCombinations.sort((a, b) => {
       const recipeA = customRecipes.find(r => r.id === a.id);
       const recipeB = customRecipes.find(r => r.id === b.id);
       if (!recipeA || !recipeB) return 0;
@@ -349,8 +368,10 @@ export default function DevelopmentRecipes() {
     });
     
     // Combine custom recipes (newest first) with API recipes
-    return [...sortedCustomRecipes, ...filteredCombinations];
-  }, [filteredCombinations, customRecipesAsCombinations, customRecipes, showCustomRecipes, selectedFilm, selectedDeveloper, filmSearch, developerSearch, getFilmById, getDeveloperById, forceRefresh]);
+    const combined = [...filteredCustomCombinations, ...filteredCombinations];
+    console.log('[DevelopmentRecipes] Final combined count:', combined.length, '(custom:', filteredCustomCombinations.length, 'api:', filteredCombinations.length, ')');
+    return combined;
+  }, [filteredCombinations, customRecipesAsCombinations, showCustomRecipes, selectedFilm, selectedDeveloper, filmSearch, developerSearch, getFilmById, getDeveloperById, customRecipes, stateVersion]);
 
   // Custom recipe helpers
   const getCustomRecipeFilm = (recipeId: string): Film | undefined => {
@@ -412,67 +433,85 @@ export default function DevelopmentRecipes() {
     }
   };
 
+  // Get current version of selected custom recipe (to handle updates)
+  const currentSelectedCustomRecipe = React.useMemo(() => {
+    if (!selectedCustomRecipe) return null;
+    // Find the current version from the customRecipes array
+    const currentVersion = customRecipes.find(r => r.id === selectedCustomRecipe.id);
+    return currentVersion || selectedCustomRecipe; // Fallback to original if not found
+  }, [selectedCustomRecipe, customRecipes, stateVersion]); // stateVersion ensures fresh data
+
   const handleCustomRecipePress = (recipe: CustomRecipe) => {
+    console.log('[DevelopmentRecipes] handleCustomRecipePress called for recipe:', recipe.id);
     setSelectedCustomRecipe(recipe);
     setSelectedCombination(null); // Clear API recipe selection
   };
 
   const handleEditCustomRecipe = (recipe: CustomRecipe) => {
+    console.log('[DevelopmentRecipes] ===== handleEditCustomRecipe called =====');
+    console.log('[DevelopmentRecipes] Recipe to edit:', recipe.id, recipe.name);
+    console.log('[DevelopmentRecipes] Full recipe object:', JSON.stringify(recipe, null, 2));
+    console.log('[DevelopmentRecipes] Setting editingCustomRecipe and showing form...');
     setEditingCustomRecipe(recipe);
     setShowCustomRecipeForm(true);
+    console.log('[DevelopmentRecipes] State updated - editingCustomRecipe set and form shown');
   };
 
   const handleNewCustomRecipe = () => {
+    console.log('[DevelopmentRecipes] handleNewCustomRecipe called');
     setEditingCustomRecipe(undefined);
     setShowCustomRecipeForm(true);
   };
 
   const handleCustomRecipeFormClose = () => {
+    console.log('[DevelopmentRecipes] handleCustomRecipeFormClose called');
+    
+    // Force refresh to ensure any recipe deletions are reflected in the UI
+    forceRefresh();
+    
+    // Clear any selected custom recipe if it might have been deleted
+    setSelectedCustomRecipe(null);
+    
     setShowCustomRecipeForm(false);
     setEditingCustomRecipe(undefined);
   };
 
   const handleCustomRecipeSave = async (recipeId: string) => {
-    // Recipe has already been saved by the form at this point
-    // Just wait a moment for state to propagate and then close
-    setIsSavingCustomRecipe(true);
+    console.log('[DevelopmentRecipes] handleCustomRecipeSave called for recipe:', recipeId);
+    console.log('[DevelopmentRecipes] Current customRecipes count before refresh:', customRecipes.length);
     
-    const initialCount = customRecipes.length;
-    console.log('Starting save, initial custom recipes count:', initialCount);
+    // Force immediate refresh to ensure updated data is displayed
+    // This is critical for both saves AND deletes
+    console.log('[DevelopmentRecipes] Calling forceRefresh to update recipe list...');
+    await forceRefresh();
+    console.log('[DevelopmentRecipes] forceRefresh completed');
     
-    // Wait for the customRecipes state to actually update
-    let attempts = 0;
-    const maxAttempts = 20; // 2 seconds max
+    // Check if the recipe still exists (it won't if it was deleted)
+    const recipeStillExists = customRecipes.some(r => r.id === recipeId);
+    console.log('[DevelopmentRecipes] Recipe still exists after refresh:', recipeStillExists);
     
-    while (customRecipes.length <= initialCount && attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      attempts++;
-      console.log('Waiting for state update, attempt:', attempts, 'count:', customRecipes.length);
+    // If recipe was deleted, clear any selections that might reference it
+    if (!recipeStillExists) {
+      console.log('[DevelopmentRecipes] Recipe was deleted, clearing selections...');
+      setSelectedCustomRecipe(null);
     }
     
-    if (customRecipes.length > initialCount) {
-      console.log('State updated successfully, new count:', customRecipes.length);
-    } else {
-      console.log('State did not update within timeout, forcing refresh');
-    }
+    console.log('[DevelopmentRecipes] Updated customRecipes count after refresh:', customRecipes.length);
     
-    // Force a refresh of the recipe list
-    setForceRefresh(prev => prev + 1);
-    
+    // Close the form modal
     setShowCustomRecipeForm(false);
     setEditingCustomRecipe(undefined);
-    setIsSavingCustomRecipe(false);
+    console.log('[DevelopmentRecipes] handleCustomRecipeSave completed');
   };
 
   // Handle duplicating a recipe (either API or custom)
   const handleDuplicateRecipe = (combination: Combination, isCustom: boolean = false) => {
     const customRecipe = isCustom ? customRecipes.find(r => r.id === combination.id) : undefined;
     const film = isCustom && customRecipe ? getCustomRecipeFilm(customRecipe.id) : getFilmById(combination.filmStockId);
-    const developer = isCustom && customRecipe ? getCustomRecipeDeveloper(customRecipe.id) : getDeveloperById(combination.developerId);
 
     // Create a new custom recipe based on the existing one
     const duplicateRecipe: CustomRecipe = {
-      id: `duplicate_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `duplicate_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       name: `Copy of ${combination.name || (film ? `${film.brand} ${film.name}` : 'Unknown')}`,
       filmId: isCustom && customRecipe?.isCustomFilm ? customRecipe.filmId : combination.filmStockId,
       developerId: isCustom && customRecipe?.isCustomDeveloper ? customRecipe.developerId : combination.developerId,
@@ -837,9 +876,24 @@ export default function DevelopmentRecipes() {
                   ? getCustomRecipeDeveloper(customRecipe.id) 
                   : getDeveloperById(combination.developerId);
 
+                // Generate a stable key that includes modification timestamp for custom recipes
+                const recipeKey = isCustomRecipe && customRecipe 
+                  ? `${combination.uuid}_${customRecipe.dateModified}` 
+                  : combination.uuid;
+
+                // Debug logging for key generation
+                console.log('[DevelopmentRecipes] Rendering row:', JSON.stringify({
+                  id: combination.id,
+                  isCustomRecipe,
+                  recipeKey,
+                  combinationTemp: combination.temperatureF,
+                  customRecipeTemp: customRecipe?.temperatureF,
+                  dateModified: customRecipe?.dateModified
+                }));
+
                 return (
                   <RecipeRow
-                    key={combination.uuid}
+                    key={recipeKey}
                     combination={combination}
                     film={film}
                     developer={developer}
@@ -861,13 +915,16 @@ export default function DevelopmentRecipes() {
         </Box>
       </Box>
 
-      {/* API Recipe Detail Modal - Mobile */}
-      {!isDesktop && (
-        <Modal
-          visible={selectedCombination !== null}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setSelectedCombination(null)}
+      {/* API Recipe Detail Modal */}
+      <Modal
+        isOpen={selectedCombination !== null}
+        onClose={() => setSelectedCombination(null)}
+        size={getRecipeDetailModalConfig(isDesktop).size}
+      >
+        <ModalBackdrop />
+        <ModalContent 
+          className={getRecipeDetailModalConfig(isDesktop).className}
+          style={getRecipeDetailModalConfig(isDesktop).style}
         >
           {selectedCombination && (
             <RecipeDetail
@@ -879,197 +936,96 @@ export default function DevelopmentRecipes() {
               isCustomRecipe={false}
             />
           )}
-        </Modal>
-      )}
+        </ModalContent>
+      </Modal>
 
-      {/* API Recipe Detail Modal - Desktop */}
-      {isDesktop && selectedCombination && (
-        <Modal
-          visible={true}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setSelectedCombination(null)}
+      {/* Custom Recipe Detail Modal */}
+      <Modal
+        isOpen={selectedCustomRecipe !== null}
+        onClose={() => setSelectedCustomRecipe(null)}
+        size={getCustomRecipeDetailModalConfig(isDesktop).size}
+      >
+        <ModalBackdrop />
+        <ModalContent 
+          className={getCustomRecipeDetailModalConfig(isDesktop).className}
+          style={getCustomRecipeDetailModalConfig(isDesktop).style}
         >
-          <TouchableOpacity 
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setSelectedCombination(null)}
-          >
-            <TouchableOpacity 
-              style={styles.modalContent}
-              activeOpacity={1}
-              onPress={(e) => e.stopPropagation()}
-            >
-              <RecipeDetail
-                combination={selectedCombination}
-                film={getFilmById(selectedCombination.filmStockId)}
-                developer={getDeveloperById(selectedCombination.developerId)}
-                onClose={() => setSelectedCombination(null)}
-                onDuplicate={() => handleDuplicateRecipe(selectedCombination, false)}
-                isCustomRecipe={false}
-              />
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </Modal>
-      )}
-
-      {/* Custom Recipe Detail Modal - Mobile */}
-      {!isDesktop && (
-        <Modal
-          visible={selectedCustomRecipe !== null}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setSelectedCustomRecipe(null)}
-        >
-          {selectedCustomRecipe && (
+          {currentSelectedCustomRecipe && (
             <RecipeDetail
               combination={{
-                id: selectedCustomRecipe.id,
-                name: selectedCustomRecipe.name,
-                uuid: selectedCustomRecipe.id,
-                slug: selectedCustomRecipe.id,
-                filmStockId: selectedCustomRecipe.filmId,
-                developerId: selectedCustomRecipe.developerId,
-                temperatureF: selectedCustomRecipe.temperatureF,
-                timeMinutes: selectedCustomRecipe.timeMinutes,
-                shootingIso: selectedCustomRecipe.shootingIso,
-                pushPull: selectedCustomRecipe.pushPull,
-                agitationSchedule: selectedCustomRecipe.agitationSchedule,
-                notes: selectedCustomRecipe.notes,
-                customDilution: selectedCustomRecipe.customDilution,
-                dateAdded: selectedCustomRecipe.dateCreated,
+                id: currentSelectedCustomRecipe.id,
+                name: currentSelectedCustomRecipe.name,
+                uuid: currentSelectedCustomRecipe.id,
+                slug: currentSelectedCustomRecipe.id,
+                filmStockId: currentSelectedCustomRecipe.filmId,
+                developerId: currentSelectedCustomRecipe.developerId,
+                temperatureF: currentSelectedCustomRecipe.temperatureF,
+                timeMinutes: currentSelectedCustomRecipe.timeMinutes,
+                shootingIso: currentSelectedCustomRecipe.shootingIso,
+                pushPull: currentSelectedCustomRecipe.pushPull,
+                agitationSchedule: currentSelectedCustomRecipe.agitationSchedule,
+                notes: currentSelectedCustomRecipe.notes,
+                customDilution: currentSelectedCustomRecipe.customDilution,
+                dateAdded: currentSelectedCustomRecipe.dateCreated,
               }}
-              film={getCustomRecipeFilm(selectedCustomRecipe.id)}
-              developer={getCustomRecipeDeveloper(selectedCustomRecipe.id)}
+              film={getCustomRecipeFilm(currentSelectedCustomRecipe.id)}
+              developer={getCustomRecipeDeveloper(currentSelectedCustomRecipe.id)}
               onClose={() => setSelectedCustomRecipe(null)}
-              onEdit={() => handleEditCustomRecipe(selectedCustomRecipe)}
+              onEdit={() => handleEditCustomRecipe(currentSelectedCustomRecipe)}
               onDuplicate={() => handleDuplicateRecipe({
-                id: selectedCustomRecipe.id,
-                name: selectedCustomRecipe.name,
-                uuid: selectedCustomRecipe.id,
-                slug: selectedCustomRecipe.id,
-                filmStockId: selectedCustomRecipe.filmId,
-                developerId: selectedCustomRecipe.developerId,
-                temperatureF: selectedCustomRecipe.temperatureF,
-                timeMinutes: selectedCustomRecipe.timeMinutes,
-                shootingIso: selectedCustomRecipe.shootingIso,
-                pushPull: selectedCustomRecipe.pushPull,
-                agitationSchedule: selectedCustomRecipe.agitationSchedule,
-                notes: selectedCustomRecipe.notes,
-                customDilution: selectedCustomRecipe.customDilution,
-                dateAdded: selectedCustomRecipe.dateCreated,
+                id: currentSelectedCustomRecipe.id,
+                name: currentSelectedCustomRecipe.name,
+                uuid: currentSelectedCustomRecipe.id,
+                slug: currentSelectedCustomRecipe.id,
+                filmStockId: currentSelectedCustomRecipe.filmId,
+                developerId: currentSelectedCustomRecipe.developerId,
+                temperatureF: currentSelectedCustomRecipe.temperatureF,
+                timeMinutes: currentSelectedCustomRecipe.timeMinutes,
+                shootingIso: currentSelectedCustomRecipe.shootingIso,
+                pushPull: currentSelectedCustomRecipe.pushPull,
+                agitationSchedule: currentSelectedCustomRecipe.agitationSchedule,
+                notes: currentSelectedCustomRecipe.notes,
+                customDilution: currentSelectedCustomRecipe.customDilution,
+                dateAdded: currentSelectedCustomRecipe.dateCreated,
               }, true)}
               isCustomRecipe={true}
             />
           )}
-        </Modal>
-      )}
+        </ModalContent>
+      </Modal>
 
-      {/* Custom Recipe Detail Modal - Desktop */}
-      {isDesktop && selectedCustomRecipe && (
-        <Modal
-          visible={true}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setSelectedCustomRecipe(null)}
+      {/* Custom Recipe Form Modal - Both Mobile and Desktop */}
+      <Modal
+        isOpen={showCustomRecipeForm}
+        onClose={handleCustomRecipeFormClose}
+        size={getRecipeFormModalConfig(isDesktop).size}
+      >
+        <ModalBackdrop />
+        <ModalContent 
+          className={getRecipeFormModalConfig(isDesktop).className}
+          style={getRecipeFormModalConfig(isDesktop).style}
         >
-          <TouchableOpacity 
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setSelectedCustomRecipe(null)}
-          >
-            <TouchableOpacity 
-              style={styles.modalContent}
-              activeOpacity={1}
-              onPress={(e) => e.stopPropagation()}
-            >
-              <RecipeDetail
-                combination={{
-                  id: selectedCustomRecipe.id,
-                  name: selectedCustomRecipe.name,
-                  uuid: selectedCustomRecipe.id,
-                  slug: selectedCustomRecipe.id,
-                  filmStockId: selectedCustomRecipe.filmId,
-                  developerId: selectedCustomRecipe.developerId,
-                  temperatureF: selectedCustomRecipe.temperatureF,
-                  timeMinutes: selectedCustomRecipe.timeMinutes,
-                  shootingIso: selectedCustomRecipe.shootingIso,
-                  pushPull: selectedCustomRecipe.pushPull,
-                  agitationSchedule: selectedCustomRecipe.agitationSchedule,
-                  notes: selectedCustomRecipe.notes,
-                  customDilution: selectedCustomRecipe.customDilution,
-                  dateAdded: selectedCustomRecipe.dateCreated,
-                }}
-                film={getCustomRecipeFilm(selectedCustomRecipe.id)}
-                developer={getCustomRecipeDeveloper(selectedCustomRecipe.id)}
-                onClose={() => setSelectedCustomRecipe(null)}
-                onEdit={() => handleEditCustomRecipe(selectedCustomRecipe)}
-                onDuplicate={() => handleDuplicateRecipe({
-                  id: selectedCustomRecipe.id,
-                  name: selectedCustomRecipe.name,
-                  uuid: selectedCustomRecipe.id,
-                  slug: selectedCustomRecipe.id,
-                  filmStockId: selectedCustomRecipe.filmId,
-                  developerId: selectedCustomRecipe.developerId,
-                  temperatureF: selectedCustomRecipe.temperatureF,
-                  timeMinutes: selectedCustomRecipe.timeMinutes,
-                  shootingIso: selectedCustomRecipe.shootingIso,
-                  pushPull: selectedCustomRecipe.pushPull,
-                  agitationSchedule: selectedCustomRecipe.agitationSchedule,
-                  notes: selectedCustomRecipe.notes,
-                  customDilution: selectedCustomRecipe.customDilution,
-                  dateAdded: selectedCustomRecipe.dateCreated,
-                }, true)}
-                isCustomRecipe={true}
-              />
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </Modal>
-      )}
-
-      {/* Custom Recipe Form Modal - Mobile */}
-      {!isDesktop && (
-        <Modal
-          visible={showCustomRecipeForm}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={handleCustomRecipeFormClose}
-        >
-          <CustomRecipeForm
-            recipe={editingCustomRecipe}
-            onClose={handleCustomRecipeFormClose}
-            onSave={handleCustomRecipeSave}
-          />
-        </Modal>
-      )}
-
-      {/* Custom Recipe Form Modal - Desktop */}
-      {isDesktop && showCustomRecipeForm && (
-        <Modal
-          visible={true}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={handleCustomRecipeFormClose}
-        >
-          <TouchableOpacity 
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={handleCustomRecipeFormClose}
-          >
-            <TouchableOpacity 
-              style={styles.modalContentLarge}
-              activeOpacity={1}
-              onPress={(e) => e.stopPropagation()}
-            >
-              <CustomRecipeForm
-                recipe={editingCustomRecipe}
-                onClose={handleCustomRecipeFormClose}
-                onSave={handleCustomRecipeSave}
-              />
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </Modal>
-      )}
+          {isDesktop && (
+            <ModalHeader className="pb-4">
+              <Text className="text-lg font-semibold">
+                {editingCustomRecipe ? 'Edit Recipe' : 'New Recipe'}
+              </Text>
+              <ModalCloseButton>
+                <X size={20} />
+              </ModalCloseButton>
+            </ModalHeader>
+          )}
+          <ModalBody className="flex-1 p-0">
+            <CustomRecipeForm
+              recipe={editingCustomRecipe}
+              onClose={handleCustomRecipeFormClose}
+              onSave={handleCustomRecipeSave}
+              isDesktop={isDesktop}
+              isMobileWeb={Platform.OS === 'web' && !isDesktop}
+            />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
       </Box>
     </CalculatorLayout>
   );
@@ -1339,46 +1295,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
   },
-  
-  // Desktop Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    maxWidth: 580,
-    maxHeight: '85%',
-    width: '100%',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 16,
-  },
-  modalContentLarge: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    maxWidth: 720,
-    maxHeight: '90%',
-    width: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 16,
-  },
+
 });

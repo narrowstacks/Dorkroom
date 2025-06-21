@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Select,
   SelectTrigger,
@@ -11,7 +11,7 @@ import {
   SelectScrollView,
 } from "@/components/ui/select";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { ChevronDownIcon } from "@/components/ui/icon"
+import { ChevronDownIcon } from "@/components/ui/icon";
 
 interface StyledSelectProps {
   value: string;
@@ -24,50 +24,73 @@ export function StyledSelect({
   value, 
   onValueChange, 
   items, 
-  placeholder = "Select an option" 
+  placeholder = "Select an option"
 }: StyledSelectProps) {
+  // Get theme colors
   const textColor = useThemeColor({}, "text");
+  const backgroundColor = useThemeColor({}, "background");
   const borderColor = useThemeColor({}, "borderColor");
-  const inputBackground = useThemeColor({}, "inputBackground");
+  const iconColor = useThemeColor({}, "icon");
+  const placeholderTextColor = useThemeColor({}, "tabIconDefault");
+  
+  // Dropdown specific background for better contrast
+  const dropdownBackgroundColor = useThemeColor(
+    { light: "#ffffff", dark: "#2c2c2c" }, 
+    "cardBackground"
+  );
   
   const selectedItem = items.find(item => item.value === value);
+  
+  // Basic debug logging
+  useEffect(() => {
+    console.log('[StyledSelect] Gluestack Select mounted - value:', value, 'items:', items.length);
+  }, [value, items]);
   
   return (
     <Select
       selectedValue={value}
-      onValueChange={onValueChange}
-      className={`w-full border rounded-xl`}
-      style={{
-        backgroundColor: inputBackground,
-        borderColor,
+      onValueChange={(newValue) => {
+        console.log('[StyledSelect] Value changed to:', newValue);
+        onValueChange(newValue);
       }}
     >
-      <SelectTrigger
-        className={`h-12 flex-row items-center justify-between px-4`}
+      <SelectTrigger 
+        variant="outline" 
+        size="md"
         style={{
-          backgroundColor: inputBackground,
-          borderColor,
+          backgroundColor: backgroundColor,
+          borderColor: borderColor,
         }}
       >
-        <SelectInput
-          placeholder={placeholder}
-          value={selectedItem?.label || ""}
-          editable={false}
-          className={`flex-1 text-base`}
-          style={{ color: textColor }}
+        <SelectInput 
+          placeholder={placeholder} 
+          value={selectedItem?.label || ""} 
+          style={{
+            color: textColor,
+          }}
+          placeholderTextColor={placeholderTextColor}
         />
-        <SelectIcon className="mr-3" as={ChevronDownIcon} color={textColor} />
+        <SelectIcon 
+          as={ChevronDownIcon} 
+          className="mr-3"
+          color={textColor}
+          size="sm"
+        />
       </SelectTrigger>
       <SelectPortal>
         <SelectBackdrop />
-        <SelectContent className={`bg-background rounded-t-xl`}>
+        <SelectContent 
+          className="z-[10000]"
+          style={{
+            backgroundColor: dropdownBackgroundColor,
+          }}
+        >
           <SelectScrollView>
             {items.map((item) => (
               <SelectItem
                 key={item.value}
                 label={item.label}
                 value={item.value}
-                className={`py-4 px-6 border-b border-outline-200`}
               />
             ))}
           </SelectScrollView>

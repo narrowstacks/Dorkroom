@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Platform, ScrollView, Alert, Linking } from 'react-native';
+import { Platform, ScrollView, Linking, Modal, TouchableOpacity } from 'react-native';
 import {
   Box,
   Text,
@@ -19,6 +19,7 @@ import { FormSection, FormGroup } from '@/components/FormSection';
 import { StyledSelect } from '@/components/StyledSelect';
 import { NumberInput } from '@/components/NumberInput';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { showAlert, showConfirmAlert } from '@/components/ConfirmAlert';
 import { useDevelopmentRecipes } from '@/hooks/useDevelopmentRecipes';
 import { useCustomRecipes } from '@/hooks/useCustomRecipes';
 import { createRecipeIssue, createFilmIssue, createDeveloperIssue, createIssueUrl, fahrenheitToCelsius } from '@/utils/githubIssueGenerator';
@@ -27,10 +28,23 @@ import { formatDilution, isValidDilution, normalizeDilution } from '@/utils/dilu
 import type { CustomRecipe, CustomRecipeFormData, CustomFilmData, CustomDeveloperData } from '@/types/customRecipeTypes';
 import type { Film, Developer } from '@/api/dorkroom/types';
 
+// Step components
+import { 
+  ProgressIndicator, 
+  StepNavigation, 
+  RecipeIdentityStep, 
+  DeveloperSetupStep, 
+  DevelopmentParamsStep, 
+  FinalDetailsStep,
+  SaveSubmitStep
+} from '@/components/recipe-steps';
+
 interface CustomRecipeFormProps {
   recipe?: CustomRecipe; // For editing existing recipes
   onClose: () => void;
   onSave?: (recipeId: string) => void;
+  isDesktop?: boolean;
+  isMobileWeb?: boolean;
 }
 
 const FILM_COLOR_TYPES = [
@@ -45,16 +59,40 @@ const FILM_OR_PAPER_TYPES = [
   { label: "Both", value: "both" },
 ];
 
-export function CustomRecipeForm({ recipe, onClose, onSave }: CustomRecipeFormProps) {
+const STEP_TITLES = ['Recipe Identity', 'Developer Setup', 'Development Parameters', 'Final Details', 'Save & Submit'];
+
+export function CustomRecipeForm({ 
+  recipe, 
+  onClose, 
+  onSave, 
+  isDesktop = false, 
+  isMobileWeb = false 
+}: CustomRecipeFormProps) {
+  console.log('[CustomRecipeForm] ===== COMPONENT RENDER =====');
+  console.log('[CustomRecipeForm] Props received:', {
+    hasRecipe: !!recipe,
+    recipeId: recipe?.id,
+    recipeName: recipe?.name,
+    hasOnClose: !!onClose,
+    hasOnSave: !!onSave,
+    isDesktop,
+    isMobileWeb
+  });
+  console.log('[CustomRecipeForm] Full recipe object:', JSON.stringify(recipe, null, 2));
+
   const textColor = useThemeColor({}, "text");
-  const developmentTint = useThemeColor({}, "developmentRecipesTint");
   const cardBackground = useThemeColor({}, "cardBackground");
   const outline = useThemeColor({}, "outline");
   
   const { allFilms, allDevelopers, getFilmById, getDeveloperById } = useDevelopmentRecipes();
-  const { addCustomRecipe, updateCustomRecipe, deleteCustomRecipe } = useCustomRecipes();
+  const { addCustomRecipe, updateCustomRecipe, deleteCustomRecipe, forceRefresh } = useCustomRecipes();
   
+  // Step state management
+  const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedDilution, setSelectedDilution] = useState<string>('');
+  
+  // Form data initialization
   const [formData, setFormData] = useState<CustomRecipeFormData>(() => {
     if (recipe) {
       return {
@@ -138,6 +176,93 @@ export function CustomRecipeForm({ recipe, onClose, onSave }: CustomRecipeFormPr
     { label: "+2 stops", value: "2" },
   ];
 
+  // Get available dilutions for selected developer
+  const selectedDeveloper = formData.useExistingDeveloper && formData.selectedDeveloperId 
+    ? getDeveloperById(formData.selectedDeveloperId) || null
+    : null;
+
+  const dilutionOptions = React.useMemo(() => {
+    if (!selectedDeveloper) return [];
+    
+    const options = [
+      { label: "Select a dilution...", value: "" },
+      ...selectedDeveloper.dilutions.map((d: any) => ({
+        label: `${d.name} (${d.dilution})`,
+        value: d.dilution
+      })),
+      { label: "Custom dilution", value: "custom" }
+    ];
+    
+    return options;
+  }, [selectedDeveloper]);
+
+  // Initialize selectedDilution when editing an existing recipe
+  useEffect(() => {
+    if (recipe && formData.useExistingDeveloper && formData.customDilution && selectedDeveloper) {
+      const matchingDilution = selectedDeveloper.dilutions.find((d: any) => d.dilution === formData.customDilution);
+      if (matchingDilution) {
+        setSelectedDilution(matchingDilution.dilution);
+      } else {
+        setSelectedDilution('custom');
+      }
+    }
+  }, [recipe, formData.useExistingDeveloper, formData.customDilution, selectedDeveloper]);
+
+  // Step validation functions
+  const validateRecipeIdentity = (): boolean => {
+    if (!formData.name.trim()) return false;
+    if (formData.useExistingFilm && !formData.selectedFilmId) return false;
+    if (!formData.useExistingFilm && formData.customFilm) {
+      if (!formData.customFilm.brand.trim() || !formData.customFilm.name.trim()) return false;
+    }
+    return true;
+  };
+
+  const validateDeveloperSetup = (): boolean => {
+    if (formData.useExistingDeveloper && !formData.selectedDeveloperId) return false;
+    if (!formData.useExistingDeveloper && formData.customDeveloper) {
+      if (!formData.customDeveloper.manufacturer.trim() || 
+          !formData.customDeveloper.name.trim() || 
+          !formData.customDeveloper.type.trim()) return false;
+    }
+    return true;
+  };
+
+  const validateDevelopmentParams = (): boolean => {
+    return formData.temperatureF >= 32 && 
+           formData.temperatureF <= 120 &&
+           formData.timeMinutes > 0 &&
+           formData.shootingIso > 0;
+  };
+
+  const validateFinalDetails = (): boolean => {
+    return true; // All fields are optional in this step
+  };
+
+  const validateSaveSubmit = (): boolean => {
+    return true; // Just action buttons, no validation needed
+  };
+
+  const validateCurrentStep = (): boolean => {
+    switch (currentStep) {
+      case 0: return validateRecipeIdentity();
+      case 1: return validateDeveloperSetup();
+      case 2: return validateDevelopmentParams();
+      case 3: return validateFinalDetails();
+      case 4: return validateSaveSubmit();
+      default: return false;
+    }
+  };
+
+  const stepValidation = {
+    0: validateRecipeIdentity(),
+    1: validateDeveloperSetup(),
+    2: validateDevelopmentParams(),
+    3: validateFinalDetails(),
+    4: validateSaveSubmit()
+  };
+
+  // Form data update functions
   const updateFormData = (updates: Partial<CustomRecipeFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
   };
@@ -172,7 +297,6 @@ export function CustomRecipeForm({ recipe, onClose, onSave }: CustomRecipeFormPr
   const updateDilution = (index: number, field: 'name' | 'dilution', value: string) => {
     if (formData.customDeveloper) {
       const newDilutions = [...formData.customDeveloper.dilutions];
-      // Normalize dilution values to plus notation
       const processedValue = field === 'dilution' ? normalizeDilution(value) : value;
       newDilutions[index] = { ...newDilutions[index], [field]: processedValue };
       updateCustomDeveloper({ dilutions: newDilutions });
@@ -186,68 +310,96 @@ export function CustomRecipeForm({ recipe, onClose, onSave }: CustomRecipeFormPr
     }
   };
 
+  const handleDilutionChange = (value: string) => {
+    setSelectedDilution(value);
+    if (value && value !== 'custom') {
+      updateFormData({ customDilution: value });
+    } else if (value === 'custom') {
+      updateFormData({ customDilution: '' });
+    }
+  };
+
+  // Navigation functions
+  const nextStep = () => {
+    if (currentStep < 4 && validateCurrentStep()) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const previousStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  // Validation and save functions
   const validateForm = (): string | null => {
-    if (!formData.name.trim()) {
-      return "Recipe name is required";
-    }
-
-    if (formData.useExistingFilm && !formData.selectedFilmId) {
-      return "Please select a film";
-    }
-
-    if (!formData.useExistingFilm && formData.customFilm) {
-      if (!formData.customFilm.brand.trim() || !formData.customFilm.name.trim()) {
-        return "Film brand and name are required";
-      }
-    }
-
-    if (formData.useExistingDeveloper && !formData.selectedDeveloperId) {
-      return "Please select a developer";
-    }
-
-    if (!formData.useExistingDeveloper && formData.customDeveloper) {
-      if (!formData.customDeveloper.manufacturer.trim() || !formData.customDeveloper.name.trim()) {
-        return "Developer manufacturer and name are required";
-      }
-      if (!formData.customDeveloper.type.trim()) {
-        return "Developer type is required";
-      }
-    }
-
-    if (formData.temperatureF < 32 || formData.temperatureF > 120) {
-      return "Temperature must be between 32°F and 120°F";
-    }
-
-    if (formData.timeMinutes <= 0) {
-      return "Development time must be greater than 0";
-    }
-
-    if (formData.shootingIso <= 0) {
-      return "Shooting ISO must be greater than 0";
-    }
-
+    if (!validateRecipeIdentity()) return "Please complete recipe identity information";
+    if (!validateDeveloperSetup()) return "Please complete developer setup";
+    if (!validateDevelopmentParams()) return "Please check development parameters";
     return null;
   };
 
   const handleSave = async () => {
+    console.log('[CustomRecipeForm] handleSave called');
+    
     const validationError = validateForm();
     if (validationError) {
-      Alert.alert("Validation Error", validationError);
+      console.log('[CustomRecipeForm] Validation failed:', validationError);
+      showAlert("Validation Error", validationError);
       return;
     }
 
+    console.log('[CustomRecipeForm] Validation passed, starting save operation');
     setIsLoading(true);
     try {
+      let savedRecipeId: string;
+      
       if (recipe) {
+        console.log('[CustomRecipeForm] Updating existing recipe:', recipe.id);
         await updateCustomRecipe(recipe.id, formData);
+        savedRecipeId = recipe.id;
       } else {
-        const newRecipeId = await addCustomRecipe(formData);
-        onSave?.(newRecipeId);
+        console.log('[CustomRecipeForm] Adding new recipe');
+        savedRecipeId = await addCustomRecipe(formData);
       }
+      
+      console.log('[CustomRecipeForm] Successfully saved recipe:', savedRecipeId);
+      onSave?.(savedRecipeId);
       onClose();
     } catch (error) {
-      Alert.alert("Error", "Failed to save recipe");
-      console.error('Failed to save recipe:', error);
+      console.error('[CustomRecipeForm] Save operation failed:', error);
+      const errorMessage = error instanceof Error 
+        ? `Failed to save recipe: ${error.message}` 
+        : "Failed to save recipe";
+      showAlert("Error", errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Delete functionality
+  const performDeletion = async () => {
+    if (!recipe) return;
+    
+    console.log('[CustomRecipeForm] Starting delete operation');
+    setIsLoading(true);
+    
+    try {
+      await deleteCustomRecipe(recipe.id);
+      await forceRefresh();
+      
+      if (onSave) {
+        onSave(recipe.id);
+      } else {
+        onClose();
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error 
+        ? `Failed to delete recipe: ${error.message}` 
+        : "Failed to delete recipe";
+      
+      showAlert("Error", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -256,23 +408,12 @@ export function CustomRecipeForm({ recipe, onClose, onSave }: CustomRecipeFormPr
   const handleDelete = async () => {
     if (!recipe) return;
 
-    Alert.alert(
+    showConfirmAlert(
       "Delete Recipe",
       "Are you sure you want to delete this recipe? This action cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteCustomRecipe(recipe.id);
-              onClose();
-            } catch (error) {
-              Alert.alert("Error", "Failed to delete recipe");
-            }
-          }
-        }
+        { text: "Delete", style: "destructive", onPress: performDeletion }
       ]
     );
   };
@@ -280,11 +421,10 @@ export function CustomRecipeForm({ recipe, onClose, onSave }: CustomRecipeFormPr
   const handleSubmitToGitHub = async () => {
     const validationError = validateForm();
     if (validationError) {
-      Alert.alert("Validation Error", validationError);
+      showAlert("Validation Error", validationError);
       return;
     }
 
-    // Get film and developer data
     const filmData = formData.useExistingFilm 
       ? getFilmById(formData.selectedFilmId!) 
       : formData.customFilm;
@@ -293,7 +433,6 @@ export function CustomRecipeForm({ recipe, onClose, onSave }: CustomRecipeFormPr
       ? getDeveloperById(formData.selectedDeveloperId!) 
       : formData.customDeveloper;
 
-    // Create temporary recipe object for issue generation
     const tempRecipe: CustomRecipe = {
       id: recipe?.id || 'temp',
       name: formData.name,
@@ -315,7 +454,6 @@ export function CustomRecipeForm({ recipe, onClose, onSave }: CustomRecipeFormPr
       isPublic: formData.isPublic,
     };
 
-    // Create GitHub issue
     const issueData = createRecipeIssue(tempRecipe, filmData, developerData, "");
     const githubUrl = createIssueUrl(issueData);
 
@@ -325,363 +463,196 @@ export function CustomRecipeForm({ recipe, onClose, onSave }: CustomRecipeFormPr
       try {
         await Linking.openURL(githubUrl);
       } catch (error) {
-        Alert.alert("Error", "Could not open GitHub in browser");
+        showAlert("Error", "Could not open GitHub in browser");
       }
     }
   };
 
+  // Render current step
+  const renderCurrentStep = () => {
+    switch (currentStep) {
+      case 0:
+        return (
+          <RecipeIdentityStep
+            formData={formData}
+            updateFormData={updateFormData}
+            updateCustomFilm={updateCustomFilm}
+            filmOptions={filmOptions}
+            isDesktop={isDesktop}
+          />
+        );
+      case 1:
+        return (
+          <DeveloperSetupStep
+            formData={formData}
+            updateFormData={updateFormData}
+            updateCustomDeveloper={updateCustomDeveloper}
+            developerOptions={developerOptions}
+            selectedDeveloper={selectedDeveloper}
+            dilutionOptions={dilutionOptions}
+            selectedDilution={selectedDilution}
+            handleDilutionChange={handleDilutionChange}
+            addDilution={addDilution}
+            updateDilution={updateDilution}
+            removeDilution={removeDilution}
+            isDesktop={isDesktop}
+          />
+        );
+      case 2:
+        return (
+          <DevelopmentParamsStep
+            formData={formData}
+            updateFormData={updateFormData}
+            isDesktop={isDesktop}
+          />
+        );
+      case 3:
+        return (
+          <FinalDetailsStep
+            formData={formData}
+            updateFormData={updateFormData}
+            selectedDilution={selectedDilution}
+            isDesktop={isDesktop}
+          />
+        );
+      case 4:
+        return (
+          <SaveSubmitStep
+            formData={formData}
+            recipe={recipe}
+            onSave={handleSave}
+            onDelete={handleDelete}
+            onSubmitToGitHub={handleSubmitToGitHub}
+            isLoading={isLoading}
+            isDesktop={isDesktop}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Check if we're on the final step (no Next button needed)
+  const isLastStep = currentStep === 4;
+
   return (
-    <Box style={{ flex: 1, backgroundColor: cardBackground, display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <Box style={{ padding: 16, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: outline }}>
-        <HStack style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+    <Box style={{
+      flex: 1,
+      backgroundColor: cardBackground,
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+      {/* Header with progress indicator */}
+      <Box style={{ 
+        paddingTop: Platform.OS === 'ios' ? 20 : Platform.OS === 'android' ? 16 : 16,
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: outline,
+        backgroundColor: cardBackground,
+        // For native mobile, optimized for bottom-sheet style modal
+        ...(Platform.OS !== 'web' && {
+          paddingTop: 24, // Extra padding for rounded top corners
+          minHeight: 80,
+          borderTopLeftRadius: 48,
+          borderTopRightRadius: 48,
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+        })
+      }}>
+        <HStack style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <Text style={{ fontSize: 18, fontWeight: '600', color: textColor }}>
             {recipe ? 'Edit Recipe' : 'New Recipe'}
           </Text>
-          <Button onPress={onClose} variant="outline" size="sm">
-            <X size={16} color={textColor} />
-          </Button>
+          {!isDesktop && (
+            <Button onPress={onClose} variant="outline" size="sm">
+              <X size={16} color={textColor} />
+            </Button>
+          )}
         </HStack>
+        
+        <ProgressIndicator 
+          currentStep={currentStep}
+          totalSteps={5}
+          stepTitles={STEP_TITLES}
+          stepValidation={stepValidation}
+        />
       </Box>
 
-      {/* Scrollable Content */}
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
-        <VStack space="md">
-          {/* Basic Info Section */}
-          <VStack space="sm">
-            {/* Recipe Name */}
-            <FormGroup label="Recipe Name">
-              <Input>
-                <InputField
-                  value={formData.name}
-                  onChangeText={(value) => updateFormData({ name: value })}
-                  placeholder="Enter recipe name"
-                />
-              </Input>
-            </FormGroup>
-
-            {/* Film Selection */}
-            <Box>
-              <Text style={{ fontSize: 16, fontWeight: '600', color: textColor, marginBottom: 8 }}>
-                Film
-              </Text>
-              
-              <HStack style={{ alignItems: 'center', marginBottom: 8 }}>
-                <Switch
-                  value={formData.useExistingFilm}
-                  onValueChange={(value) => updateFormData({ useExistingFilm: value })}
-                />
-                <Text style={{ marginLeft: 8, color: textColor, fontSize: 14 }}>
-                  Use existing film from database
-                </Text>
-              </HStack>
-
-              {formData.useExistingFilm ? (
-                <FormGroup label="Select Film">
-                  <StyledSelect
-                    value={formData.selectedFilmId || ''}
-                    onValueChange={(value) => updateFormData({ selectedFilmId: value })}
-                    items={filmOptions}
-                  />
-                </FormGroup>
-              ) : (
-                <VStack space="sm">
-                  <FormGroup label="Film Brand">
-                    <Input>
-                      <InputField
-                        value={formData.customFilm?.brand || ''}
-                        onChangeText={(value) => updateCustomFilm({ brand: value })}
-                        placeholder="e.g., Kodak"
-                      />
-                    </Input>
-                  </FormGroup>
-                  
-                  <FormGroup label="Film Name">
-                    <Input>
-                      <InputField
-                        value={formData.customFilm?.name || ''}
-                        onChangeText={(value) => updateCustomFilm({ name: value })}
-                        placeholder="e.g., Tri-X 400"
-                      />
-                    </Input>
-                  </FormGroup>
-                  
-                  <FormGroup label="Film Type">
-                    <StyledSelect
-                      value={formData.customFilm?.colorType || 'bw'}
-                      onValueChange={(value) => updateCustomFilm({ colorType: value as 'bw' | 'color' | 'slide' })}
-                      items={FILM_COLOR_TYPES}
-                    />
-                  </FormGroup>
-                  
-                  <FormGroup label="Film ISO Speed">
-                    <NumberInput
-                      value={String(formData.customFilm?.isoSpeed || 400)}
-                      onChangeText={(value) => updateCustomFilm({ isoSpeed: parseInt(value) || 400 })}
-                      placeholder="400"
-                    />
-                  </FormGroup>
-                  
-                  <FormGroup label="Grain Structure (Optional)">
-                    <Input>
-                      <InputField
-                        value={formData.customFilm?.grainStructure || ''}
-                        onChangeText={(value) => updateCustomFilm({ grainStructure: value })}
-                        placeholder="e.g., Fine, Medium, Coarse"
-                      />
-                    </Input>
-                  </FormGroup>
-                </VStack>
-              )}
-            </Box>
-
-            {/* Developer Selection */}
-            <Box>
-              <Text style={{ fontSize: 16, fontWeight: '600', color: textColor, marginBottom: 8 }}>
-                Developer
-              </Text>
-              
-              <HStack style={{ alignItems: 'center', marginBottom: 8 }}>
-                <Switch
-                  value={formData.useExistingDeveloper}
-                  onValueChange={(value) => updateFormData({ useExistingDeveloper: value })}
-                />
-                <Text style={{ marginLeft: 8, color: textColor, fontSize: 14 }}>
-                  Use existing developer from database
-                </Text>
-              </HStack>
-
-              {formData.useExistingDeveloper ? (
-                <FormGroup label="Select Developer">
-                  <StyledSelect
-                    value={formData.selectedDeveloperId || ''}
-                    onValueChange={(value) => updateFormData({ selectedDeveloperId: value })}
-                    items={developerOptions}
-                  />
-                </FormGroup>
-              ) : (
-                <VStack space="sm">
-                  <FormGroup label="Developer Manufacturer">
-                    <Input>
-                      <InputField
-                        value={formData.customDeveloper?.manufacturer || ''}
-                        onChangeText={(value) => updateCustomDeveloper({ manufacturer: value })}
-                        placeholder="e.g., Kodak"
-                      />
-                    </Input>
-                  </FormGroup>
-                  
-                  <FormGroup label="Developer Name">
-                    <Input>
-                      <InputField
-                        value={formData.customDeveloper?.name || ''}
-                        onChangeText={(value) => updateCustomDeveloper({ name: value })}
-                        placeholder="e.g., D-76"
-                      />
-                    </Input>
-                  </FormGroup>
-                  
-                  <FormGroup label="Developer Type">
-                    <StyledSelect
-                      value={formData.customDeveloper?.type || ''}
-                      onValueChange={(value) => updateCustomDeveloper({ type: value })}
-                      items={DEVELOPER_TYPES}
-                    />
-                  </FormGroup>
-                  
-                  <FormGroup label="For Use With">
-                    <StyledSelect
-                      value={formData.customDeveloper?.filmOrPaper || 'film'}
-                      onValueChange={(value) => updateCustomDeveloper({ filmOrPaper: value as 'film' | 'paper' | 'both' })}
-                      items={FILM_OR_PAPER_TYPES}
-                    />
-                  </FormGroup>
-
-                  {/* Dilutions */}
-                  <Box>
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: textColor, marginBottom: 8 }}>
-                      Dilutions
-                    </Text>
-                    <VStack space="xs">
-                      {formData.customDeveloper?.dilutions.map((dilution, index) => (
-                        <HStack key={index} style={{ alignItems: 'center', gap: 8 }}>
-                          <Box style={{ flex: 1 }}>
-                            <Input>
-                              <InputField
-                                value={dilution.name}
-                                onChangeText={(value) => updateDilution(index, 'name', value)}
-                                placeholder="Name (e.g., Stock)"
-                              />
-                            </Input>
-                          </Box>
-                          <Box style={{ flex: 1 }}>
-                            <Input>
-                              <InputField
-                                value={dilution.dilution}
-                                onChangeText={(value) => updateDilution(index, 'dilution', value)}
-                                placeholder="Ratio (e.g., 1+1)"
-                              />
-                            </Input>
-                          </Box>
-                          {formData.customDeveloper!.dilutions.length > 1 && (
-                            <Button onPress={() => removeDilution(index)} variant="outline" size="sm">
-                              <Trash2 size={16} color={textColor} />
-                            </Button>
-                          )}
-                        </HStack>
-                      ))}
-                      <Button onPress={addDilution} variant="outline" size="sm" style={{ alignSelf: 'flex-start' }}>
-                        <Plus size={16} color={textColor} />
-                        <ButtonText>Add Dilution</ButtonText>
-                      </Button>
-                    </VStack>
-                  </Box>
-                </VStack>
-              )}
-            </Box>
-          </VStack>
-
-          {/* Development Parameters Section */}
-          <FormSection>
-            <Text style={{ fontSize: 16, fontWeight: '600', color: textColor, marginBottom: 12 }}>
-              Development Parameters
-            </Text>
-            
-            <VStack space="sm">
-              <FormGroup label={`Temperature (°F) - ${fahrenheitToCelsius(formData.temperatureF)}°C`}>
-                <NumberInput
-                  value={String(formData.temperatureF)}
-                  onChangeText={(value: string) => updateFormData({ temperatureF: parseFloat(value) || 68 })}
-                  placeholder="68"
-                />
-              </FormGroup>
-              
-              <FormGroup label="Development Time (minutes)">
-                <NumberInput
-                  value={String(formData.timeMinutes)}
-                  onChangeText={(value: string) => updateFormData({ timeMinutes: parseFloat(value) || 7 })}
-                  placeholder="7"
-                />
-              </FormGroup>
-              
-              <FormGroup label="Shooting ISO">
-                <NumberInput
-                  value={String(formData.shootingIso)}
-                  onChangeText={(value: string) => updateFormData({ shootingIso: parseInt(value) || 400 })}
-                  placeholder="400"
-                />
-              </FormGroup>
-              
-              <FormGroup label="Push/Pull">
-                <StyledSelect
-                  value={formData.pushPull.toString()}
-                  onValueChange={(value) => updateFormData({ pushPull: parseInt(value) })}
-                  items={pushPullOptions}
-                />
-              </FormGroup>
-              
-              <FormGroup label="Custom Dilution (Optional)">
-                <Input>
-                  <InputField
-                    value={formData.customDilution}
-                    onChangeText={(value) => updateFormData({ customDilution: normalizeDilution(value) })}
-                    placeholder="e.g., 1+1, 1+9, Stock"
-                  />
-                </Input>
-              </FormGroup>
-              
-              <FormGroup label="Agitation Schedule (Optional)">
-                <Textarea>
-                  <TextareaInput
-                    value={formData.agitationSchedule}
-                    onChangeText={(value) => updateFormData({ agitationSchedule: value })}
-                    placeholder="e.g., Initial 30s, then 5s every 30s"
-                    multiline
-                    numberOfLines={3}
-                  />
-                </Textarea>
-              </FormGroup>
-              
-              <FormGroup label="Notes (Optional)">
-                <Textarea>
-                  <TextareaInput
-                    value={formData.notes}
-                    onChangeText={(value) => updateFormData({ notes: value })}
-                    placeholder="Additional notes about this recipe"
-                    multiline
-                    numberOfLines={3}
-                  />
-                </Textarea>
-              </FormGroup>
-
-              {/* Public/GitHub Submission - moved here for better logical flow */}
-              <Box style={{ marginTop: 16 }}>
-                <HStack style={{ alignItems: 'center', justifyContent: 'space-between' }}>
-                  <VStack style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: textColor }}>
-                      Public Recipe
-                    </Text>
-                    <Text style={{ fontSize: 12, color: textColor, opacity: 0.8 }}>
-                      Consider submitting to GitHub for inclusion in the public database
-                    </Text>
-                  </VStack>
-                  <Switch
-                    value={formData.isPublic}
-                    onValueChange={(value) => updateFormData({ isPublic: value })}
-                  />
-                </HStack>
-              </Box>
-            </VStack>
-          </FormSection>
-        </VStack>
-      </ScrollView>
-
-      {/* Fixed Action Buttons at Bottom */}
+      {/* Content area - properly scrollable with native mobile adjustments */}
       <Box style={{ 
-        padding: 16, 
-        borderTopWidth: 1, 
-        borderTopColor: outline,
-        backgroundColor: cardBackground
+        flex: 1, 
+        minHeight: 0 // Critical for proper flex scrolling
       }}>
-        <VStack space="sm">
-          <Button 
-            onPress={handleSave}
-            disabled={isLoading}
-            style={{ backgroundColor: developmentTint }}
-          >
-            <Save size={16} color="#fff" />
-            <ButtonText style={{ marginLeft: 8 }}>
-              {isLoading ? 'Saving...' : (recipe ? 'Update Recipe' : 'Save Recipe')}
-            </ButtonText>
-          </Button>
-
-          {formData.isPublic && (
-            <Button 
-              onPress={handleSubmitToGitHub}
-              variant="outline"
-              style={{ borderColor: developmentTint }}
-            >
-              <Github size={16} color={developmentTint} />
-              <ButtonText style={{ marginLeft: 8, color: developmentTint }}>
-                Submit to GitHub
-              </ButtonText>
-            </Button>
-          )}
-
-          {recipe && (
-            <Button 
-              onPress={handleDelete}
-              variant="outline"
-              style={{ borderColor: '#ff4444' }}
-            >
-              <Trash2 size={16} color="#ff4444" />
-              <ButtonText style={{ marginLeft: 8, color: '#ff4444' }}>
-                Delete Recipe
-              </ButtonText>
-            </Button>
-          )}
-        </VStack>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ 
+            flexGrow: 1, 
+            padding: 16,
+            // For native mobile, ensure comfortable spacing for modal bottom sheet
+            ...(Platform.OS !== 'web' && {
+              paddingBottom: 24
+            })
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {renderCurrentStep()}
+        </ScrollView>
       </Box>
+
+      {/* Navigation footer - optimized for native mobile thumb access */}
+      <Box style={{
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+        borderTopWidth: 1,
+        borderTopColor: outline,
+        backgroundColor: cardBackground,
+        // For native mobile bottom-sheet style, ensure comfortable thumb access
+        ...(Platform.OS !== 'web' && {
+          paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+          minHeight: 70
+        })
+      }}>
+        {/* Only show step navigation if not on final step */}
+        {!isLastStep && (
+          <StepNavigation
+            currentStep={currentStep}
+            totalSteps={5}
+            canProceed={validateCurrentStep()}
+            onPrevious={previousStep}
+            onNext={nextStep}
+            onSave={handleSave}
+            isLoading={isLoading}
+            recipe={recipe}
+            showGitHubSubmit={false} // Moved to SaveSubmitStep
+            isDesktop={isDesktop}
+          />
+        )}
+        
+        {/* On final step, show simple navigation without save buttons */}
+        {isLastStep && (
+          <HStack space="md">
+            <Button
+              variant="outline"
+              onPress={previousStep}
+              style={{ flex: 1 }}
+            >
+              <ButtonText>Previous</ButtonText>
+            </Button>
+            
+            <Button
+              onPress={onClose}
+              style={{ flex: 1, backgroundColor: outline }}
+            >
+              <ButtonText>Close</ButtonText>
+            </Button>
+          </HStack>
+        )}
+      </Box>
+
+
     </Box>
   );
 } 
