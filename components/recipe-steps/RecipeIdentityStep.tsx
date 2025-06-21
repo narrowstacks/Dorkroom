@@ -10,7 +10,7 @@ interface RecipeIdentityStepProps {
   formData: CustomRecipeFormData;
   updateFormData: (updates: Partial<CustomRecipeFormData>) => void;
   updateCustomFilm: (updates: Partial<CustomFilmData>) => void;
-  filmOptions: Array<{ label: string; value: string }>;
+  filmOptions: { label: string; value: string }[];
   isDesktop?: boolean;
 }
 
@@ -124,10 +124,10 @@ export function RecipeIdentityStep({
               </Box>
               
               <Box style={{ flex: isDesktop ? 1 : undefined }}>
-                <FormGroup label="Film ISO Speed">
+                <FormGroup label="Box Speed (ISO)">
                   <NumberInput
                     value={String(formData.customFilm?.isoSpeed || 400)}
-                    onChangeText={(value) => updateCustomFilm({ isoSpeed: parseInt(value) || 400 })}
+                    onChangeText={(value) => updateCustomFilm({ isoSpeed: parseFloat(value) || 400 })}
                     placeholder="400"
                   />
                 </FormGroup>

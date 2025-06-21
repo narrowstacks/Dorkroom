@@ -79,4 +79,4 @@ export const getCustomRecipeDetailModalConfig = (isDesktop: boolean): ModalConfi
   getModalConfiguration(ModalSize.SMALL, isDesktop);
 
 export const getRecipeFormModalConfig = (isDesktop: boolean): ModalConfiguration => 
-  getModalConfiguration(ModalSize.LARGE, isDesktop); 
+  getModalConfiguration(ModalSize.SMALL, isDesktop); 

@@ -128,6 +128,12 @@ function RecipeRow({ combination, film, developer, onPress, isEven }: RecipeRowP
   const filmName = film ? 
     (isMobile ? film.name : `${film.brand} ${film.name}`) : 
     "Unknown Film";
+  
+  // Format push/pull value if present
+  const pushPullDisplay = combination.pushPull !== 0 
+    ? ` ${combination.pushPull > 0 ? `+${combination.pushPull}` : combination.pushPull}`
+    : null;
+    
   const developerName = developer ? 
     (isMobile ? developer.name : `${developer.manufacturer} ${developer.name}`) : 
     "Unknown Developer";
@@ -154,8 +160,13 @@ function RecipeRow({ combination, film, developer, onPress, isEven }: RecipeRowP
     <TouchableOpacity onPress={onPress}>
       <Box style={[styles.tableRow, { backgroundColor: rowBackground }]}>
         <Box style={styles.filmCell}>
-          <Text style={[styles.filmText, { color: developmentTint }]} numberOfLines={1}>
+          <Text style={[styles.filmText, { color: textColor }]} numberOfLines={1}>
             {filmName}
+            {pushPullDisplay && (
+              <Text style={{ color: developmentTint }}>
+                {pushPullDisplay}
+              </Text>
+            )}
           </Text>
         </Box>
         
@@ -188,14 +199,6 @@ function RecipeRow({ combination, film, developer, onPress, isEven }: RecipeRowP
             {dilutionInfo}
           </Text>
         </Box>
-        
-        {combination.pushPull !== 0 && (
-          <Box style={styles.pushPullCell}>
-            <Text style={[styles.pushPullTableText, { color: developmentTint }]}>
-              {combination.pushPull > 0 ? `+${combination.pushPull}` : combination.pushPull}
-            </Text>
-          </Box>
-        )}
       </Box>
     </TouchableOpacity>
   );
@@ -869,7 +872,13 @@ export default function DevelopmentRecipes() {
               <TableHeader title="Time" sortKey="timeMinutes" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
               <TableHeader title="Temp" sortKey="temperatureF" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
               <TableHeader title="ISO" sortKey="shootingIso" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
-              <TableHeader title="Dilution" sortKey="dilution" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+              <TableHeader 
+                title={Platform.OS !== "web" || width <= 768 ? "Dil" : "Dilution"} 
+                sortKey="dilution" 
+                currentSort={sortBy} 
+                sortDirection={sortDirection} 
+                onSort={handleSort} 
+              />
             </Box>
             
             {/* Table Body */}
@@ -1239,18 +1248,9 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     alignItems: 'center',
   },
-  pushPullCell: {
-    flex: 0.5,
-    alignItems: 'center',
-  },
   paramText: {
     fontSize: Platform.OS === 'web' ? 13 : 11,
     fontWeight: '500',
-    textAlign: 'center',
-  },
-  pushPullTableText: {
-    fontSize: 12,
-    fontWeight: '600',
     textAlign: 'center',
   },
   

@@ -14,9 +14,9 @@ interface DeveloperSetupStepProps {
   formData: CustomRecipeFormData;
   updateFormData: (updates: Partial<CustomRecipeFormData>) => void;
   updateCustomDeveloper: (updates: Partial<CustomDeveloperData>) => void;
-  developerOptions: Array<{ label: string; value: string }>;
+  developerOptions: { label: string; value: string }[];
   selectedDeveloper: Developer | null;
-  dilutionOptions: Array<{ label: string; value: string }>;
+  dilutionOptions: { label: string; value: string }[];
   selectedDilution: string;
   handleDilutionChange: (value: string) => void;
   addDilution: () => void;

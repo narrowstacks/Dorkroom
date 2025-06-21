@@ -142,7 +142,7 @@ export function CustomRecipeForm({
       },
       temperatureF: 68,
       timeMinutes: 7,
-      shootingIso: 400,
+      shootingIso: 400, // Will be auto-updated by useEffect when film is selected
       pushPull: 0,
       agitationSchedule: '',
       notes: '',
@@ -168,13 +168,7 @@ export function CustomRecipeForm({
     }))
   ];
 
-  const pushPullOptions = [
-    { label: "-2 stops", value: "-2" },
-    { label: "-1 stop", value: "-1" },
-    { label: "Normal", value: "0" },
-    { label: "+1 stop", value: "1" },
-    { label: "+2 stops", value: "2" },
-  ];
+
 
   // Get available dilutions for selected developer
   const selectedDeveloper = formData.useExistingDeveloper && formData.selectedDeveloperId 
@@ -207,6 +201,8 @@ export function CustomRecipeForm({
       }
     }
   }, [recipe, formData.useExistingDeveloper, formData.customDilution, selectedDeveloper]);
+
+
 
   // Step validation functions
   const validateRecipeIdentity = (): boolean => {
@@ -318,6 +314,37 @@ export function CustomRecipeForm({
       updateFormData({ customDilution: '' });
     }
   };
+
+  // Auto-update shooting ISO when film selection changes (only for new recipes)
+  useEffect(() => {
+    // Don't auto-update if we're editing an existing recipe
+    if (recipe) return;
+
+    let filmIso: number | undefined;
+
+    if (formData.useExistingFilm && formData.selectedFilmId) {
+      // Get ISO from selected existing film
+      const selectedFilm = getFilmById(formData.selectedFilmId);
+      filmIso = selectedFilm?.isoSpeed;
+    } else if (!formData.useExistingFilm && formData.customFilm?.isoSpeed) {
+      // Get ISO from custom film
+      filmIso = formData.customFilm.isoSpeed;
+    }
+
+    // Update shooting ISO if we have a valid film ISO and it's different from current
+    if (filmIso && filmIso !== formData.shootingIso) {
+      console.log('[CustomRecipeForm] Auto-updating shooting ISO from', formData.shootingIso, 'to', filmIso);
+      updateFormData({ shootingIso: filmIso });
+    }
+  }, [
+    recipe, // Only run for new recipes
+    formData.useExistingFilm,
+    formData.selectedFilmId,
+    formData.customFilm?.isoSpeed,
+    formData.shootingIso,
+    getFilmById,
+    updateFormData
+  ]);
 
   // Navigation functions
   const nextStep = () => {
@@ -503,6 +530,8 @@ export function CustomRecipeForm({
           <DevelopmentParamsStep
             formData={formData}
             updateFormData={updateFormData}
+            filmOptions={filmOptions}
+            getFilmById={getFilmById}
             isDesktop={isDesktop}
           />
         );
