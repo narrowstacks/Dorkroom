@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ScrollView, View, Text, Pressable, Platform, Dimensions } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import { debugLog } from '@/utils/debugLogger';
 
 // Add window dimension hook
 const useWindowDimensions = () => {
@@ -27,17 +28,17 @@ export default function SettingsScreen() {
 
   // Placeholder functions for settings changes
   const handleThemeChange = (value: string) => {
-    console.log('Theme changed to:', value);
+    debugLog('Theme changed to:', value);
     setSelectedTheme(value);
   };
 
   const handleLengthUnitChange = (value: string) => {
-    console.log('Length unit changed to:', value);
+    debugLog('Length unit changed to:', value);
     setSelectedLengthUnit(value);
   };
 
   const handleVolumeUnitChange = (value: string) => {
-    console.log('Volume unit changed to:', value);
+    debugLog('Volume unit changed to:', value);
     setSelectedVolumeUnit(value);
   };
 

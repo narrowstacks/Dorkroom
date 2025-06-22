@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ChevronDownIcon } from "@/components/ui/icon";
+import { debugLog } from "@/utils/debugLogger";
 
 interface StyledSelectProps {
   value: string;
@@ -43,14 +44,14 @@ export function StyledSelect({
   
   // Basic debug logging
   useEffect(() => {
-    console.log('[StyledSelect] Gluestack Select mounted - value:', value, 'items:', items.length);
+    debugLog('[StyledSelect] Gluestack Select mounted - value:', value, 'items:', items.length);
   }, [value, items]);
   
   return (
     <Select
       selectedValue={value}
       onValueChange={(newValue) => {
-        console.log('[StyledSelect] Value changed to:', newValue);
+        debugLog('[StyledSelect] Value changed to:', newValue);
         onValueChange(newValue);
       }}
     >

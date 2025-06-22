@@ -1,16 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Platform, TouchableOpacity } from 'react-native';
 import { Box, Text, Input, InputField, HStack, VStack, Switch } from '@gluestack-ui/themed';
 import { FormGroup } from '@/components/FormSection';
 import { StyledSelect } from '@/components/StyledSelect';
 import { NumberInput } from '@/components/NumberInput';
+import { SearchInput } from '@/components/SearchInput';
+import { SearchDropdown } from '@/components/SearchDropdown';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useWindowDimensions } from '@/hooks/useWindowDimensions';
 import type { CustomRecipeFormData, CustomFilmData } from '@/types/customRecipeTypes';
+import type { Film } from '@/api/dorkroom/types';
 
 interface RecipeIdentityStepProps {
   formData: CustomRecipeFormData;
   updateFormData: (updates: Partial<CustomRecipeFormData>) => void;
   updateCustomFilm: (updates: Partial<CustomFilmData>) => void;
   filmOptions: { label: string; value: string }[];
+  allFilms: Film[];
   isDesktop?: boolean;
 }
 
@@ -30,6 +36,7 @@ const FILM_COLOR_TYPES = [
  * @param updateFormData - Function to update form data
  * @param updateCustomFilm - Function to update custom film data
  * @param filmOptions - Available films for selection dropdown
+ * @param allFilms - All films for search functionality
  * @param isDesktop - Whether running on desktop layout
  */
 export function RecipeIdentityStep({
@@ -37,9 +44,64 @@ export function RecipeIdentityStep({
   updateFormData,
   updateCustomFilm,
   filmOptions,
+  allFilms,
   isDesktop = false
 }: RecipeIdentityStepProps) {
   const textColor = useThemeColor({}, "text");
+  const { width } = useWindowDimensions();
+  
+  // State for film search and dropdown
+  const [filmSearch, setFilmSearch] = useState("");
+  const [isFilmSearchFocused, setIsFilmSearchFocused] = useState(false);
+  const [filmSearchPosition, setFilmSearchPosition] = useState<{top: number, left: number, width: number} | null>(null);
+  
+  // Add refs for position tracking
+  const filmSearchRef = React.useRef<any>(null);
+  
+  // Get selected film object
+  const selectedFilm = allFilms.find(film => film.uuid === formData.selectedFilmId) || null;
+  
+  // Film suggestions for desktop search dropdown
+  const filteredFilms = React.useMemo(() => {
+    if (!isFilmSearchFocused) return [];
+    if (!filmSearch.trim()) return allFilms;
+    return allFilms.filter(film =>
+      film.name.toLowerCase().includes(filmSearch.toLowerCase()) ||
+      film.brand.toLowerCase().includes(filmSearch.toLowerCase())
+    );
+  }, [allFilms, filmSearch, isFilmSearchFocused]);
+
+  // Convert to SearchDropdownItem format
+  const filmDropdownItems = React.useMemo(() => 
+    filteredFilms.map(film => ({
+      id: film.uuid,
+      title: film.name,
+      subtitle: film.brand
+    }))
+  , [filteredFilms]);
+  
+  // Handle dropdown item selection
+  const handleFilmDropdownSelect = (item: { id: string; title: string; subtitle: string }) => {
+    const film = allFilms.find(f => f.uuid === item.id);
+    if (film) {
+      updateFormData({ selectedFilmId: film.uuid });
+      setFilmSearch('');
+      setIsFilmSearchFocused(false);
+    }
+  };
+
+  // Handle layout for dynamic positioning
+  const handleFilmSearchLayout = () => {
+    if (filmSearchRef.current && isDesktop) {
+      filmSearchRef.current.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
+        setFilmSearchPosition({
+          top: pageY + height,
+          left: pageX,
+          width: width
+        });
+      });
+    }
+  };
 
   return (
     <VStack space="lg">
@@ -72,11 +134,58 @@ export function RecipeIdentityStep({
 
         {formData.useExistingFilm ? (
           <FormGroup label="Select Film">
-            <StyledSelect
-              value={formData.selectedFilmId || ''}
-              onValueChange={(value) => updateFormData({ selectedFilmId: value })}
-              items={filmOptions}
-            />
+            <Box 
+              ref={filmSearchRef}
+              style={{ position: 'relative', overflow: 'visible', zIndex: 999999 }}
+              onLayout={handleFilmSearchLayout}
+            >
+              {isDesktop ? (
+                <SearchInput
+                  variant="desktop"
+                  type="film"
+                  placeholder="Type to search films..."
+                  value={filmSearch}
+                  onChangeText={setFilmSearch}
+                  onClear={() => setFilmSearch('')}
+                  onFocus={() => {
+                    setIsFilmSearchFocused(true);
+                    handleFilmSearchLayout();
+                  }}
+                  onBlur={() => {
+                    // Delay hiding to allow item selection
+                    setTimeout(() => setIsFilmSearchFocused(false), 150);
+                  }}
+                />
+              ) : (
+                <SearchInput
+                  variant="mobile"
+                  type="film"
+                  placeholder="Type to search films..."
+                  selectedItem={selectedFilm}
+                  onPress={() => setIsFilmSearchFocused(true)}
+                />
+              )}
+              
+              {/* Selected film display */}
+              {selectedFilm && (
+                <Box style={{
+                  marginTop: 8,
+                  padding: 8,
+                  backgroundColor: "rgba(0,0,0,0.05)",
+                  borderRadius: 8,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}>
+                  <Text style={{ fontSize: 14, color: textColor }}>
+                    Selected: {selectedFilm.brand} {selectedFilm.name}
+                  </Text>
+                  <TouchableOpacity onPress={() => updateFormData({ selectedFilmId: undefined })}>
+                    <Text style={{ fontSize: 14, color: textColor }}>Remove</Text>
+                  </TouchableOpacity>
+                </Box>
+              )}
+            </Box>
           </FormGroup>
         ) : (
           <VStack space="sm">
@@ -146,6 +255,34 @@ export function RecipeIdentityStep({
           </VStack>
         )}
       </VStack>
+      
+      {/* Film Search Dropdown - Desktop only */}
+      {isDesktop && (
+        <SearchDropdown
+          variant="desktop"
+          isOpen={isFilmSearchFocused}
+          onClose={() => setIsFilmSearchFocused(false)}
+          items={filmDropdownItems}
+          onItemSelect={handleFilmDropdownSelect}
+          position="left"
+          dynamicPosition={filmSearchPosition}
+        />
+      )}
+
+      {/* Mobile Film Selection Modal */}
+      {!isDesktop && (
+        <SearchDropdown
+          variant="mobile"
+          type="film"
+          isOpen={isFilmSearchFocused}
+          onClose={() => setIsFilmSearchFocused(false)}
+          films={allFilms}
+          onFilmSelect={(film) => {
+            updateFormData({ selectedFilmId: film.uuid });
+          }}
+          onItemSelect={() => {}} // Not used for mobile variant
+        />
+      )}
     </VStack>
   );
 } 

@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Platform, TouchableOpacity } from 'react-native';
 import { Box, Text, Input, InputField, HStack, VStack, Switch, Button, ButtonText } from '@gluestack-ui/themed';
 import { Plus, Trash2 } from 'lucide-react-native';
 import { FormGroup } from '@/components/FormSection';
 import { StyledSelect } from '@/components/StyledSelect';
 import { NumberInput } from '@/components/NumberInput';
+import { SearchInput } from '@/components/SearchInput';
+import { SearchDropdown } from '@/components/SearchDropdown';
+import { MobileSelectButton } from '@/components/MobileSelectButton';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { normalizeDilution } from '@/utils/dilutionUtils';
+import { useWindowDimensions } from '@/hooks/useWindowDimensions';
 import { DEVELOPER_TYPES } from '@/constants/developmentRecipes';
 import type { CustomRecipeFormData, CustomDeveloperData } from '@/types/customRecipeTypes';
 import type { Developer } from '@/api/dorkroom/types';
@@ -14,7 +18,7 @@ interface DeveloperSetupStepProps {
   formData: CustomRecipeFormData;
   updateFormData: (updates: Partial<CustomRecipeFormData>) => void;
   updateCustomDeveloper: (updates: Partial<CustomDeveloperData>) => void;
-  developerOptions: { label: string; value: string }[];
+  allDevelopers: Developer[];
   selectedDeveloper: Developer | null;
   dilutionOptions: { label: string; value: string }[];
   selectedDilution: string;
@@ -40,7 +44,7 @@ const FILM_OR_PAPER_TYPES = [
  * @param formData - Current form data state
  * @param updateFormData - Function to update form data
  * @param updateCustomDeveloper - Function to update custom developer data
- * @param developerOptions - Available developers for selection dropdown
+ * @param allDevelopers - Available developers for selection
  * @param selectedDeveloper - Currently selected developer object
  * @param dilutionOptions - Available dilutions for selected developer
  * @param selectedDilution - Currently selected dilution
@@ -54,7 +58,7 @@ export function DeveloperSetupStep({
   formData,
   updateFormData,
   updateCustomDeveloper,
-  developerOptions,
+  allDevelopers,
   selectedDeveloper,
   dilutionOptions,
   selectedDilution,
@@ -65,6 +69,58 @@ export function DeveloperSetupStep({
   isDesktop = false
 }: DeveloperSetupStepProps) {
   const textColor = useThemeColor({}, "text");
+  const { width } = useWindowDimensions();
+  const isMobile = Platform.OS !== "web" || width <= 768;
+  
+  // State for developer search and dropdown
+  const [developerSearch, setDeveloperSearch] = useState("");
+  const [isDeveloperSearchFocused, setIsDeveloperSearchFocused] = useState(false);
+  const [developerSearchPosition, setDeveloperSearchPosition] = useState<{top: number, left: number, width: number} | null>(null);
+  
+  // Add refs for position tracking
+  const developerSearchRef = React.useRef<any>(null);
+  
+  // Developer suggestions for desktop search dropdown
+  const filteredDevelopers = React.useMemo(() => {
+    if (!isDeveloperSearchFocused) return [];
+    if (!developerSearch.trim()) return allDevelopers;
+    return allDevelopers.filter(dev =>
+      dev.name.toLowerCase().includes(developerSearch.toLowerCase()) ||
+      dev.manufacturer.toLowerCase().includes(developerSearch.toLowerCase())
+    );
+  }, [allDevelopers, developerSearch, isDeveloperSearchFocused]);
+
+  // Convert to SearchDropdownItem format
+  const developerDropdownItems = React.useMemo(() => 
+    filteredDevelopers.map(developer => ({
+      id: developer.uuid,
+      title: developer.name,
+      subtitle: developer.manufacturer
+    }))
+  , [filteredDevelopers]);
+  
+  // Handle dropdown item selection
+  const handleDeveloperDropdownSelect = (item: { id: string; title: string; subtitle: string }) => {
+    const developer = allDevelopers.find(d => d.uuid === item.id);
+    if (developer) {
+      updateFormData({ selectedDeveloperId: developer.uuid });
+      setDeveloperSearch('');
+      setIsDeveloperSearchFocused(false);
+    }
+  };
+
+  // Handle layout for dynamic positioning
+  const handleDeveloperSearchLayout = () => {
+    if (developerSearchRef.current && isDesktop) {
+      developerSearchRef.current.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
+        setDeveloperSearchPosition({
+          top: pageY + height,
+          left: pageX,
+          width: width
+        });
+      });
+    }
+  };
 
   return (
     <VStack space="lg">
@@ -87,22 +143,79 @@ export function DeveloperSetupStep({
         {formData.useExistingDeveloper ? (
           <VStack space="sm">
             <FormGroup label="Select Developer">
-              <StyledSelect
-                value={formData.selectedDeveloperId || ''}
-                onValueChange={(value) => {
-                  updateFormData({ selectedDeveloperId: value });
-                }}
-                items={developerOptions}
-              />
+              <Box 
+                ref={developerSearchRef}
+                style={{ position: 'relative', overflow: 'visible', zIndex: 999999 }}
+                onLayout={handleDeveloperSearchLayout}
+              >
+                {isDesktop ? (
+                  <SearchInput
+                    variant="desktop"
+                    type="developer"
+                    placeholder="Type to search developers..."
+                    value={developerSearch}
+                    onChangeText={setDeveloperSearch}
+                    onClear={() => setDeveloperSearch('')}
+                    onFocus={() => {
+                      setIsDeveloperSearchFocused(true);
+                      handleDeveloperSearchLayout();
+                    }}
+                    onBlur={() => {
+                      // Delay hiding to allow item selection
+                      setTimeout(() => setIsDeveloperSearchFocused(false), 150);
+                    }}
+                  />
+                ) : (
+                  <SearchInput
+                    variant="mobile"
+                    type="developer"
+                    placeholder="Type to search developers..."
+                    selectedItem={selectedDeveloper}
+                    onPress={() => setIsDeveloperSearchFocused(true)}
+                  />
+                )}
+                
+                {/* Selected developer display */}
+                {selectedDeveloper && (
+                  <Box style={{
+                    marginTop: 8,
+                    padding: 8,
+                    backgroundColor: "rgba(0,0,0,0.05)",
+                    borderRadius: 8,
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}>
+                    <Text style={{ fontSize: 14, color: textColor }}>
+                      Selected: {selectedDeveloper.manufacturer} {selectedDeveloper.name}
+                    </Text>
+                    <TouchableOpacity onPress={() => updateFormData({ selectedDeveloperId: undefined })}>
+                      <Text style={{ fontSize: 14, color: textColor }}>Remove</Text>
+                    </TouchableOpacity>
+                  </Box>
+                )}
+              </Box>
             </FormGroup>
             
             {selectedDeveloper && dilutionOptions.length > 0 && (
               <FormGroup label="Select Dilution">
-                <StyledSelect
-                  value={selectedDilution}
-                  onValueChange={handleDilutionChange}
-                  items={dilutionOptions}
-                />
+                {!isMobile ? (
+                  // Desktop: Show traditional select
+                  <StyledSelect
+                    value={selectedDilution}
+                    onValueChange={handleDilutionChange}
+                    items={dilutionOptions}
+                  />
+                ) : (
+                  // Mobile: Show selection button
+                  <MobileSelectButton
+                    label="Dilution"
+                    selectedValue={selectedDilution}
+                    selectedLabel={dilutionOptions.find(opt => opt.value === selectedDilution)?.label}
+                    onPress={() => setShowMobileDilutionModal(true)}
+                    type="dilution"
+                  />
+                )}
               </FormGroup>
             )}
           </VStack>
@@ -200,7 +313,7 @@ export function DeveloperSetupStep({
                         <InputField
                           value={dilution.name}
                           onChangeText={(value) => updateDilution(index, 'name', value)}
-                          placeholder="Name (e.g., Stock)"
+                          placeholder="e.g., Stock, 1+1, 1+9"
                         />
                       </Input>
                     </Box>
@@ -209,26 +322,100 @@ export function DeveloperSetupStep({
                         <InputField
                           value={dilution.dilution}
                           onChangeText={(value) => updateDilution(index, 'dilution', value)}
-                          placeholder="Ratio (e.g., 1+1)"
+                          placeholder="e.g., Stock, 1+1, 1+9"
                         />
                       </Input>
                     </Box>
-                    {formData.customDeveloper!.dilutions.length > 1 && (
-                      <Button onPress={() => removeDilution(index)} variant="outline" size="sm">
-                        <Trash2 size={16} color={textColor} />
-                      </Button>
+                    {formData.customDeveloper?.dilutions.length! > 1 && (
+                      <TouchableOpacity onPress={() => removeDilution(index)}>
+                        <Trash2 size={20} color={textColor} />
+                      </TouchableOpacity>
                     )}
                   </HStack>
                 ))}
-                <Button onPress={addDilution} variant="outline" size="sm" style={{ alignSelf: 'flex-start' }}>
+                
+                <Button
+                  variant="outline"
+                  onPress={addDilution}
+                  style={{ marginTop: 8 }}
+                >
                   <Plus size={16} color={textColor} />
-                  <ButtonText>Add Dilution</ButtonText>
+                  <ButtonText style={{ color: textColor, marginLeft: 4 }}>
+                    Add Dilution
+                  </ButtonText>
                 </Button>
               </VStack>
             </Box>
+
+            {/* Optional fields */}
+            <VStack space="sm">
+              <FormGroup label="Mixing Instructions (Optional)">
+                <Input>
+                  <InputField
+                    value={formData.customDeveloper?.mixingInstructions || ''}
+                    onChangeText={(value) => updateCustomDeveloper({ mixingInstructions: value })}
+                    placeholder="e.g., Dissolve chemicals in order at 125°F"
+                    multiline
+                    numberOfLines={3}
+                  />
+                </Input>
+              </FormGroup>
+              
+              <FormGroup label="Safety Notes (Optional)">
+                <Input>
+                  <InputField
+                    value={formData.customDeveloper?.safetyNotes || ''}
+                    onChangeText={(value) => updateCustomDeveloper({ safetyNotes: value })}
+                    placeholder="e.g., Use in well-ventilated area, avoid skin contact"
+                    multiline
+                    numberOfLines={3}
+                  />
+                </Input>
+              </FormGroup>
+              
+              <FormGroup label="General Notes (Optional)">
+                <Input>
+                  <InputField
+                    value={formData.customDeveloper?.notes || ''}
+                    onChangeText={(value) => updateCustomDeveloper({ notes: value })}
+                    placeholder="Additional notes about the developer"
+                    multiline
+                    numberOfLines={3}
+                  />
+                </Input>
+              </FormGroup>
+            </VStack>
           </VStack>
         )}
       </VStack>
+      
+      {/* Developer Search Dropdown - Desktop only */}
+      {isDesktop && (
+        <SearchDropdown
+          variant="desktop"
+          isOpen={isDeveloperSearchFocused}
+          onClose={() => setIsDeveloperSearchFocused(false)}
+          items={developerDropdownItems}
+          onItemSelect={handleDeveloperDropdownSelect}
+          position="right"
+          dynamicPosition={developerSearchPosition}
+        />
+      )}
+
+      {/* Mobile Developer Selection Modal */}
+      {!isDesktop && (
+        <SearchDropdown
+          variant="mobile"
+          type="developer"
+          isOpen={isDeveloperSearchFocused}
+          onClose={() => setIsDeveloperSearchFocused(false)}
+          developers={allDevelopers}
+          onDeveloperSelect={(developer) => {
+            updateFormData({ selectedDeveloperId: developer.uuid });
+          }}
+          onItemSelect={() => {}} // Not used for mobile variant
+        />
+      )}
     </VStack>
   );
 } 

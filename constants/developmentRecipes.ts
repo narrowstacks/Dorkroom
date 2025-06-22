@@ -33,7 +33,7 @@ export function formatTime(minutes: number): string {
     const remainingMinutes = Math.round(minutes % 60);
     return `${hours}h ${remainingMinutes}m`;
   } else {
-    return `${minutes}min`;
+    return `${minutes} min`;
   }
 }
 

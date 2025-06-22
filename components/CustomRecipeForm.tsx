@@ -1,32 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Platform, ScrollView, Linking, Modal, TouchableOpacity } from 'react-native';
+import { Platform, ScrollView, Linking } from 'react-native';
 import {
   Box,
   Text,
   Button,
   ButtonText,
-  VStack,
   HStack,
-  Input,
-  InputField,
-  Textarea,
-  TextareaInput,
-  Switch,
 } from '@gluestack-ui/themed';
-import { X, Plus, Github, Save, Trash2 } from 'lucide-react-native';
+import { X } from 'lucide-react-native';
 
-import { FormSection, FormGroup } from '@/components/FormSection';
-import { StyledSelect } from '@/components/StyledSelect';
-import { NumberInput } from '@/components/NumberInput';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { showAlert, showConfirmAlert } from '@/components/ConfirmAlert';
 import { useDevelopmentRecipes } from '@/hooks/useDevelopmentRecipes';
 import { useCustomRecipes } from '@/hooks/useCustomRecipes';
-import { createRecipeIssue, createFilmIssue, createDeveloperIssue, createIssueUrl, fahrenheitToCelsius } from '@/utils/githubIssueGenerator';
-import { DEVELOPER_TYPES } from '@/constants/developmentRecipes';
-import { formatDilution, isValidDilution, normalizeDilution } from '@/utils/dilutionUtils';
+import { createRecipeIssue, createIssueUrl } from '@/utils/githubIssueGenerator';
+import { normalizeDilution } from '@/utils/dilutionUtils';
+import { debugLog } from '@/utils/debugLogger';
 import type { CustomRecipe, CustomRecipeFormData, CustomFilmData, CustomDeveloperData } from '@/types/customRecipeTypes';
-import type { Film, Developer } from '@/api/dorkroom/types';
 
 // Step components
 import { 
@@ -47,17 +37,6 @@ interface CustomRecipeFormProps {
   isMobileWeb?: boolean;
 }
 
-const FILM_COLOR_TYPES = [
-  { label: "Black & White", value: "bw" },
-  { label: "Color Negative", value: "color" },
-  { label: "Color Slide", value: "slide" },
-];
-
-const FILM_OR_PAPER_TYPES = [
-  { label: "Film", value: "film" },
-  { label: "Paper", value: "paper" },
-  { label: "Both", value: "both" },
-];
 
 const STEP_TITLES = ['Recipe Identity', 'Developer Setup', 'Development Parameters', 'Final Details', 'Save & Submit'];
 
@@ -68,8 +47,8 @@ export function CustomRecipeForm({
   isDesktop = false, 
   isMobileWeb = false 
 }: CustomRecipeFormProps) {
-  console.log('[CustomRecipeForm] ===== COMPONENT RENDER =====');
-  console.log('[CustomRecipeForm] Props received:', {
+  debugLog('[CustomRecipeForm] ===== COMPONENT RENDER =====');
+  debugLog('[CustomRecipeForm] Props received:', {
     hasRecipe: !!recipe,
     recipeId: recipe?.id,
     recipeName: recipe?.name,
@@ -78,7 +57,7 @@ export function CustomRecipeForm({
     isDesktop,
     isMobileWeb
   });
-  console.log('[CustomRecipeForm] Full recipe object:', JSON.stringify(recipe, null, 2));
+  debugLog('[CustomRecipeForm] Full recipe object:', JSON.stringify(recipe, null, 2));
 
   const textColor = useThemeColor({}, "text");
   const cardBackground = useThemeColor({}, "cardBackground");
@@ -160,13 +139,6 @@ export function CustomRecipeForm({
     }))
   ];
 
-  const developerOptions = [
-    { label: "Select a developer...", value: "" },
-    ...allDevelopers.map(dev => ({
-      label: `${dev.manufacturer} ${dev.name}`,
-      value: dev.uuid
-    }))
-  ];
 
 
 
@@ -333,7 +305,7 @@ export function CustomRecipeForm({
 
     // Update shooting ISO if we have a valid film ISO and it's different from current
     if (filmIso && filmIso !== formData.shootingIso) {
-      console.log('[CustomRecipeForm] Auto-updating shooting ISO from', formData.shootingIso, 'to', filmIso);
+      debugLog('[CustomRecipeForm] Auto-updating shooting ISO from', formData.shootingIso, 'to', filmIso);
       updateFormData({ shootingIso: filmIso });
     }
   }, [
@@ -368,34 +340,34 @@ export function CustomRecipeForm({
   };
 
   const handleSave = async () => {
-    console.log('[CustomRecipeForm] handleSave called');
+    debugLog('[CustomRecipeForm] handleSave called');
     
     const validationError = validateForm();
     if (validationError) {
-      console.log('[CustomRecipeForm] Validation failed:', validationError);
+      debugLog('[CustomRecipeForm] Validation failed:', validationError);
       showAlert("Validation Error", validationError);
       return;
     }
 
-    console.log('[CustomRecipeForm] Validation passed, starting save operation');
+    debugLog('[CustomRecipeForm] Validation passed, starting save operation');
     setIsLoading(true);
     try {
       let savedRecipeId: string;
       
       if (recipe) {
-        console.log('[CustomRecipeForm] Updating existing recipe:', recipe.id);
+        debugLog('[CustomRecipeForm] Updating existing recipe:', recipe.id);
         await updateCustomRecipe(recipe.id, formData);
         savedRecipeId = recipe.id;
       } else {
-        console.log('[CustomRecipeForm] Adding new recipe');
+        debugLog('[CustomRecipeForm] Adding new recipe');
         savedRecipeId = await addCustomRecipe(formData);
       }
       
-      console.log('[CustomRecipeForm] Successfully saved recipe:', savedRecipeId);
+      debugLog('[CustomRecipeForm] Successfully saved recipe:', savedRecipeId);
       onSave?.(savedRecipeId);
       onClose();
     } catch (error) {
-      console.error('[CustomRecipeForm] Save operation failed:', error);
+      debugLog('[CustomRecipeForm] Save operation failed:', error);
       const errorMessage = error instanceof Error 
         ? `Failed to save recipe: ${error.message}` 
         : "Failed to save recipe";
@@ -409,7 +381,7 @@ export function CustomRecipeForm({
   const performDeletion = async () => {
     if (!recipe) return;
     
-    console.log('[CustomRecipeForm] Starting delete operation');
+    debugLog('[CustomRecipeForm] Starting delete operation');
     setIsLoading(true);
     
     try {
@@ -505,6 +477,7 @@ export function CustomRecipeForm({
             updateFormData={updateFormData}
             updateCustomFilm={updateCustomFilm}
             filmOptions={filmOptions}
+            allFilms={allFilms}
             isDesktop={isDesktop}
           />
         );
@@ -514,7 +487,7 @@ export function CustomRecipeForm({
             formData={formData}
             updateFormData={updateFormData}
             updateCustomDeveloper={updateCustomDeveloper}
-            developerOptions={developerOptions}
+            allDevelopers={allDevelopers}
             selectedDeveloper={selectedDeveloper}
             dilutionOptions={dilutionOptions}
             selectedDilution={selectedDilution}

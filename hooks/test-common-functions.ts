@@ -4,6 +4,7 @@
  * This is only for testing and can be removed after verification
  */
 
+import { debugLog } from '@/utils/debugLogger';
 import {
   calculateNewTime,
   roundStops,
@@ -39,7 +40,7 @@ const closest = findClosestValue(7.2, values); // Should find "8.0"
 const thickness = calculateBladeThickness(16, 20, 20 * 24, 2); // Calculate thickness
 
 // Log results to console for verification
-console.log({
+debugLog({
   timeTest,
   stopsTest,
   speedTest1,

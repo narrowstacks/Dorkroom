@@ -24,6 +24,7 @@ import { showConfirmAlert } from "@/components/ConfirmAlert";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useChemistryCalculator } from "@/hooks/useChemistryCalculator";
 import { useCustomRecipes } from "@/hooks/useCustomRecipes";
+import { debugLog } from "@/utils/debugLogger";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
 import {
   convertToDisplay,
@@ -149,7 +150,7 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
   const performDeletion = async () => {
     if (!combination.id) return;
     
-    console.log('[RecipeDetail] Starting delete operation');
+    debugLog('[RecipeDetail] Starting delete operation');
     setIsLoading(true);
     
     try {
@@ -174,7 +175,7 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
         onClose();
       }
     } catch (error) {
-      console.error('[RecipeDetail] Delete operation failed:', error);
+      debugLog('[RecipeDetail] Delete operation failed:', error);
       const errorMessage = error instanceof Error 
         ? `Failed to delete recipe: ${error.message}` 
         : "Failed to delete recipe";

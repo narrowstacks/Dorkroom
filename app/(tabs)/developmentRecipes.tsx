@@ -1,15 +1,17 @@
 import React, { useState } from "react";
-import { Platform, StyleSheet, ScrollView, TextInput, TouchableOpacity, SafeAreaView } from "react-native";
-import { Box, Text, Button, ButtonText, VStack, HStack, Modal, ModalBackdrop, ModalContent, ModalCloseButton, ModalHeader, ModalBody, FlatList } from "@gluestack-ui/themed";
-import { Search, X, Filter, RefreshCw, ChevronDown, ChevronUp, Plus, Grid3X3, Table } from "lucide-react-native";
+import { Platform, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { Box, Text, Button, ButtonText, VStack, HStack, Modal, ModalBackdrop, ModalContent, ModalCloseButton, ModalHeader, ModalBody } from "@gluestack-ui/themed";
+import { X, Filter, RefreshCw, ChevronDown, ChevronUp, Plus, Grid3X3, Table } from "lucide-react-native";
 
 import { CalculatorLayout } from "@/components/CalculatorLayout";
 import { FormSection, FormGroup } from "@/components/FormSection";
 import { InfoSection, InfoText, InfoSubtitle, InfoList } from "@/components/InfoSection";
 import { StyledSelect } from "@/components/StyledSelect";
-import { ThemedSelect } from "@/components/ThemedSelect";
 import { RecipeDetail } from "@/components/RecipeDetail";
 import { CustomRecipeForm } from "@/components/CustomRecipeForm";
+import { RecipeCard } from "@/components/RecipeCard";
+import { SearchInput } from "@/components/SearchInput";
+import { SearchDropdown } from "@/components/SearchDropdown";
 import { 
   getRecipeDetailModalConfig, 
   getCustomRecipeDetailModalConfig, 
@@ -24,226 +26,10 @@ import {
   formatTime,
 } from "@/constants/developmentRecipes";
 import { formatDilution } from "@/utils/dilutionUtils";
+import { debugLog } from "@/utils/debugLogger";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
 import type { CustomRecipe } from "@/types/customRecipeTypes";
 
-interface SearchInputProps {
-  value: string;
-  onChangeText: (text: string) => void;
-  placeholder: string;
-  onClear: () => void;
-}
-
-function SearchInput({ value, onChangeText, placeholder, onClear }: SearchInputProps) {
-  const textColor = useThemeColor({}, "text");
-  const borderColor = useThemeColor({}, "borderColor");
-  const inputBackground = useThemeColor({}, "inputBackground");
-  const iconColor = useThemeColor({}, "icon");
-
-  return (
-    <Box style={styles.searchContainer}>
-      <Search size={20} color={iconColor} style={styles.searchIcon} />
-      <TextInput
-        style={[
-          styles.searchInput,
-          {
-            color: textColor,
-            backgroundColor: inputBackground,
-            borderColor,
-          },
-        ]}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={iconColor}
-      />
-      {value.length > 0 && (
-        <TouchableOpacity onPress={onClear} style={styles.clearButton}>
-          <X size={20} color={iconColor} />
-        </TouchableOpacity>
-      )}
-    </Box>
-  );
-}
-
-interface MobileSelectionModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  type: 'film' | 'developer';
-  films: Film[];
-  developers: Developer[];
-  onFilmSelect: (film: Film) => void;
-  onDeveloperSelect: (developer: Developer) => void;
-}
-
-function MobileSelectionModal({ 
-  isOpen, 
-  onClose, 
-  type, 
-  films, 
-  developers, 
-  onFilmSelect, 
-  onDeveloperSelect 
-}: MobileSelectionModalProps) {
-  const [searchText, setSearchText] = useState("");
-  const textColor = useThemeColor({}, "text");
-  const cardBackground = useThemeColor({}, "cardBackground");
-  const borderColor = useThemeColor({}, "borderColor");
-
-  const filteredItems = React.useMemo(() => {
-    const items = type === 'film' ? films : developers;
-    if (!searchText.trim()) return items;
-    
-    return items.filter(item => {
-      if (type === 'film') {
-        const film = item as Film;
-        return film.name.toLowerCase().includes(searchText.toLowerCase()) ||
-               film.brand.toLowerCase().includes(searchText.toLowerCase());
-      } else {
-        const dev = item as Developer;
-        return dev.name.toLowerCase().includes(searchText.toLowerCase()) ||
-               dev.manufacturer.toLowerCase().includes(searchText.toLowerCase());
-      }
-    });
-  }, [type, films, developers, searchText]);
-
-  const handleSelect = (item: Film | Developer) => {
-    if (type === 'film') {
-      onFilmSelect(item as Film);
-    } else {
-      onDeveloperSelect(item as Developer);
-    }
-    setSearchText("");
-    onClose();
-  };
-
-  const renderItem = ({ item }: { item: Film | Developer }) => (
-    <TouchableOpacity
-      style={[styles.selectionItem, { borderBottomColor: borderColor }]}
-      onPress={() => handleSelect(item)}
-    >
-      <VStack space="xs">
-        <Text style={[styles.selectionItemTitle, { color: textColor }]}>
-          {type === 'film' ? (item as Film).name : (item as Developer).name}
-        </Text>
-        <Text style={[styles.selectionItemSubtitle, { color: textColor, opacity: 0.7 }]}>
-          {type === 'film' ? (item as Film).brand : (item as Developer).manufacturer}
-        </Text>
-      </VStack>
-    </TouchableOpacity>
-  );
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} size="full">
-      <ModalBackdrop />
-      <ModalContent style={{ backgroundColor: cardBackground, margin: 0, marginTop: 40, maxHeight: '100%', flex: 1 }}>
-        <SafeAreaView style={{ flex: 1 }}>
-          {/* Header */}
-          <Box style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
-            <Text style={[styles.modalTitle, { color: textColor }]}>
-              Select {type === 'film' ? 'Film' : 'Developer'}
-            </Text>
-            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
-              <X size={24} color={textColor} />
-            </TouchableOpacity>
-          </Box>
-          
-          {/* Sticky Search Box */}
-          <Box style={[styles.modalSearchContainer, { 
-            borderBottomColor: borderColor,
-            backgroundColor: cardBackground,
-            zIndex: 1000,
-          }]}>
-            <Search size={20} color={textColor} style={styles.modalSearchIcon} />
-            <TextInput
-              style={[styles.modalSearchInput, { color: textColor, borderColor }]}
-              value={searchText}
-              onChangeText={setSearchText}
-              placeholder={`Search ${type === 'film' ? 'films' : 'developers'}...`}
-              placeholderTextColor={textColor + '80'}
-              autoFocus
-              returnKeyType="search"
-            />
-            {searchText.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchText("")} style={styles.modalClearButton}>
-                <X size={20} color={textColor} />
-              </TouchableOpacity>
-            )}
-          </Box>
-
-          {/* Results List */}
-          <FlatList
-            data={filteredItems}
-            renderItem={renderItem}
-            keyExtractor={(item) => item.uuid}
-            style={{ flex: 1 }}
-            contentContainerStyle={{ flexGrow: 1 }}
-            showsVerticalScrollIndicator={false}
-            ItemSeparatorComponent={() => <Box style={{ height: 1, backgroundColor: borderColor, opacity: 0.3 }} />}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-          />
-        </SafeAreaView>
-      </ModalContent>
-    </Modal>
-  );
-}
-
-interface MobileSelectButtonProps {
-  label: string;
-  selectedItem: Film | Developer | null;
-  onPress: () => void;
-  type: 'film' | 'developer';
-}
-
-function MobileSelectButton({ label, selectedItem, onPress, type }: MobileSelectButtonProps) {
-  const textColor = useThemeColor({}, "text");
-  const cardBackground = useThemeColor({}, "cardBackground");
-  const borderColor = useThemeColor({}, "borderColor");
-  const developmentTint = useThemeColor({}, "developmentRecipesTint");
-
-  const getDisplayText = () => {
-    if (!selectedItem) return `Select ${label}`;
-    
-    if (type === 'film') {
-      const film = selectedItem as Film;
-      return `${film.brand} ${film.name}`;
-    } else {
-      const dev = selectedItem as Developer;
-      return `${dev.manufacturer} ${dev.name}`;
-    }
-  };
-
-  return (
-    <TouchableOpacity
-      style={[
-        styles.mobileSelectButton,
-        {
-          backgroundColor: cardBackground,
-          borderColor: selectedItem ? developmentTint : borderColor,
-          borderWidth: selectedItem ? 2 : 1,
-        }
-      ]}
-      onPress={onPress}
-    >
-      <VStack space="xs" style={{ flex: 1 }}>
-        <Text style={[styles.mobileSelectLabel, { color: textColor, opacity: 0.7 }]}>
-          {label}
-        </Text>
-        <Text 
-          style={[
-            styles.mobileSelectText, 
-            { color: selectedItem ? developmentTint : textColor }
-          ]} 
-          numberOfLines={1}
-        >
-          {getDisplayText()}
-        </Text>
-      </VStack>
-      <ChevronDown size={20} color={selectedItem ? developmentTint : textColor} />
-    </TouchableOpacity>
-  );
-}
 
 interface TableHeaderProps {
   title: string;
@@ -314,9 +100,8 @@ function RecipeRow({ combination, film, developer, onPress, isEven }: RecipeRowP
     ? ` ${combination.pushPull > 0 ? `+${combination.pushPull}` : combination.pushPull}`
     : null;
     
-  const developerName = developer ? 
-    (isMobile ? developer.name : `${developer.manufacturer} ${developer.name}`) : 
-    "Unknown Developer";
+  const developerName = developer ? developer.name : "Unknown Developer";
+
 
   // Get dilution info
   const dilutionInfo = formatDilution(
@@ -329,7 +114,7 @@ function RecipeRow({ combination, film, developer, onPress, isEven }: RecipeRowP
   const tempDisplay = `${combination.temperatureF}°F`;
   
   // Debug logging for temperature display
-  console.log('[RecipeRow] Rendering row for combination:', JSON.stringify({ 
+  debugLog('[RecipeRow] Rendering row for combination:', JSON.stringify({ 
     id: combination.id, 
     temperatureF: combination.temperatureF, 
     tempDisplay,
@@ -384,134 +169,6 @@ function RecipeRow({ combination, film, developer, onPress, isEven }: RecipeRowP
   );
 }
 
-interface RecipeCardProps {
-  combination: Combination;
-  film: Film | undefined;
-  developer: Developer | undefined;
-  onPress: () => void;
-  isCustomRecipe: boolean;
-}
-
-function RecipeCard({ combination, film, developer, onPress, isCustomRecipe }: RecipeCardProps) {
-  const textColor = useThemeColor({}, "text");
-  const developmentTint = useThemeColor({}, "developmentRecipesTint");
-  const cardBackground = useThemeColor({}, "cardBackground");
-  const borderColor = useThemeColor({}, "borderColor");
-  const resultRowBackground = useThemeColor({}, "resultRowBackground");
-  const { width } = useWindowDimensions();
-  const isMobile = Platform.OS !== "web" || width <= 768;
-  
-  // Calculate card width based on screen size
-  const getCardWidth = () => {
-    if (isMobile) {
-      return '46%'; // 2 cards per row on mobile with more space
-    } else if (width > 1600) {
-      return '23%'; // 4 cards per row on very large desktop
-    } else if (width > 1200) {
-      return '30%'; // 3 cards per row on large desktop
-    } else {
-      return '47%'; // 2 cards per row on medium desktop
-    }
-  };
-
-  const filmName = film ? 
-    (isMobile ? film.name : `${film.brand} ${film.name}`) : 
-    "Unknown Film";
-  
-  // Check if shooting ISO is different from film stock ISO
-  const isNonStandardISO = film && combination.shootingIso !== film.isoSpeed;
-  
-  // Format push/pull value if present
-  const pushPullDisplay = combination.pushPull !== 0 
-    ? ` ${combination.pushPull > 0 ? `+${combination.pushPull}` : combination.pushPull}`
-    : null;
-    
-  const developerName = developer ? 
-    (isMobile ? developer.name : `${developer.manufacturer} ${developer.name}`) : 
-    "Unknown Developer";
-
-  // Get dilution info
-  const dilutionInfo = formatDilution(
-    combination.customDilution || 
-    (developer?.dilutions.find(d => d.id === combination.dilutionId)?.dilution) || 
-    "Stock"
-  );
-
-  // Check if temperature is non-standard (not 68°F)
-  const isNonStandardTemp = combination.temperatureF !== 68;
-  const tempDisplay = `${combination.temperatureF}°F`;
-
-  return (
-    <TouchableOpacity onPress={onPress} style={[styles.cardTouchable, { width: getCardWidth() }]}>
-      <Box style={[
-        styles.recipeCard, 
-        { 
-          backgroundColor: cardBackground,
-          borderColor: borderColor,
-        }
-      ]}>
-        {/* Header with Film and ISO */}
-        <Box style={styles.cardHeader}>
-          <Text style={[styles.cardFilmName, { color: textColor }]} numberOfLines={1}>
-            {filmName}
-            {isNonStandardISO && (
-              <Text style={[styles.cardISO, { color: developmentTint }]}>
-                {' @ '}{combination.shootingIso} ISO
-              </Text>
-            )}
-            {!isNonStandardISO && (
-              <Text style={[styles.cardISO, { color: textColor }]}>
-                {' @ '}{combination.shootingIso} ISO
-              </Text>
-            )}
-            {pushPullDisplay && (
-              <Text style={{ color: developmentTint }}>
-                {pushPullDisplay}
-              </Text>
-            )}
-          </Text>
-          {isCustomRecipe && (
-            <Box style={[styles.customBadge, { backgroundColor: developmentTint }]}>
-              <Text style={styles.customBadgeText}>●</Text>
-            </Box>
-          )}
-        </Box>
-        
-        {/* Developer */}
-        <Text style={[styles.cardDeveloper, { color: textColor }]} numberOfLines={1}>
-          <Text style={{ fontStyle: 'italic' }}>Developer: </Text>
-          {developerName}
-        </Text>
-        
-        {/* Divider */}
-        <Box style={[styles.cardDivider, { borderBottomColor: borderColor }]} />
-        
-        {/* Parameters */}
-        <Box style={styles.cardParams}>
-          <Box style={[styles.paramBox, { backgroundColor: resultRowBackground }]}>
-            <Text style={[styles.cardParam, { color: textColor }]}>
-              Time: {formatTime(combination.timeMinutes)}
-            </Text>
-          </Box>
-          <Box style={[styles.paramBox, { backgroundColor: resultRowBackground }]}>
-            <Text style={[
-              styles.cardParam, 
-              { color: isNonStandardTemp ? developmentTint : textColor }
-            ]}>
-              Temperature: {tempDisplay}{isNonStandardTemp && ' ⚠'}
-            </Text>
-          </Box>
-          <Box style={[styles.paramBox, { backgroundColor: resultRowBackground }]}>
-            <Text style={[styles.cardParam, { color: textColor }]}>
-              Dilution: {dilutionInfo}
-            </Text>
-          </Box>
-        </Box>
-      </Box>
-    </TouchableOpacity>
-  );
-}
-
 export default function DevelopmentRecipes() {
   const {
     // State
@@ -549,7 +206,7 @@ export default function DevelopmentRecipes() {
   } = useDevelopmentRecipes();
 
   const { customRecipes, forceRefresh, stateVersion } = useCustomRecipes();
-  console.log('[DevelopmentRecipes] Component render - customRecipes count:', customRecipes.length);
+  debugLog('[DevelopmentRecipes] Component render - customRecipes count:', customRecipes.length);
 
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCombination, setSelectedCombination] = useState<Combination | null>(null);
@@ -558,25 +215,31 @@ export default function DevelopmentRecipes() {
   const [editingCustomRecipe, setEditingCustomRecipe] = useState<CustomRecipe | undefined>(undefined);
   const [showCustomRecipes, setShowCustomRecipes] = useState(true);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
-  const [temperatureFilter, setTemperatureFilter] = useState("68");
   const [showMobileFilmModal, setShowMobileFilmModal] = useState(false);
   const [showMobileDeveloperModal, setShowMobileDeveloperModal] = useState(false);
+  const [isFilmSearchFocused, setIsFilmSearchFocused] = useState(false);
+  const [isDeveloperSearchFocused, setIsDeveloperSearchFocused] = useState(false);
   
+  // Add refs and position state for dynamic positioning
+  const filmSearchRef = React.useRef<any>(null);
+  const developerSearchRef = React.useRef<any>(null);
+  const [filmSearchPosition, setFilmSearchPosition] = useState<{top: number, left: number, width: number} | null>(null);
+  const [developerSearchPosition, setDeveloperSearchPosition] = useState<{top: number, left: number, width: number} | null>(null);
+
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
   const textColor = useThemeColor({}, "text");
   const developmentTint = useThemeColor({}, "developmentRecipesTint");
-  const outline = useThemeColor({}, "outline");
 
   // Convert custom recipes to combination-like format for display
   const customRecipesAsCombinations = React.useMemo(() => {
-    console.log('[DevelopmentRecipes] customRecipesAsCombinations useMemo triggered');
-    console.log('[DevelopmentRecipes] Converting custom recipes to combinations, count:', customRecipes.length);
-    console.log('[DevelopmentRecipes] customRecipes reference check:', customRecipes);
-    console.log('[DevelopmentRecipes] customRecipes dateModified values:', customRecipes.map(r => ({ id: r.id, dateModified: r.dateModified })));
+    debugLog('[DevelopmentRecipes] customRecipesAsCombinations useMemo triggered');
+    debugLog('[DevelopmentRecipes] Converting custom recipes to combinations, count:', customRecipes.length);
+    debugLog('[DevelopmentRecipes] customRecipes reference check:', customRecipes);
+    debugLog('[DevelopmentRecipes] customRecipes dateModified values:', customRecipes.map(r => ({ id: r.id, dateModified: r.dateModified })));
     
     const combinations = customRecipes.map((recipe): Combination => {
-      console.log('[DevelopmentRecipes] Converting recipe to combination:', JSON.stringify({ 
+      debugLog('[DevelopmentRecipes] Converting recipe to combination:', JSON.stringify({ 
         id: recipe.id, 
         temperatureF: recipe.temperatureF, 
         dateModified: recipe.dateModified 
@@ -600,21 +263,21 @@ export default function DevelopmentRecipes() {
         dilutionId: undefined,
       };
     });
-    console.log('[DevelopmentRecipes] Converted to combinations:', combinations.length);
-    console.log('[DevelopmentRecipes] Combination temperature values:', combinations.map(c => ({ id: c.id, temperatureF: c.temperatureF })));
+    debugLog('[DevelopmentRecipes] Converted to combinations:', combinations.length);
+    debugLog('[DevelopmentRecipes] Combination temperature values:', combinations.map(c => ({ id: c.id, temperatureF: c.temperatureF })));
     return combinations;
   }, [customRecipes, stateVersion]); // stateVersion is intentionally included to force re-computation
 
   // Combined API + custom recipes for display
   const allCombinations = React.useMemo(() => {
-    console.log('[DevelopmentRecipes] allCombinations useMemo triggered');
-    console.log('[DevelopmentRecipes] Recalculating allCombinations, showCustomRecipes:', showCustomRecipes, 'customRecipes.length:', customRecipes.length);
-    console.log('[DevelopmentRecipes] filteredCombinations.length:', filteredCombinations.length);
-    console.log('[DevelopmentRecipes] customRecipesAsCombinations.length:', customRecipesAsCombinations.length);
-    console.log('[DevelopmentRecipes] stateVersion:', stateVersion);
+    debugLog('[DevelopmentRecipes] allCombinations useMemo triggered');
+    debugLog('[DevelopmentRecipes] Recalculating allCombinations, showCustomRecipes:', showCustomRecipes, 'customRecipes.length:', customRecipes.length);
+    debugLog('[DevelopmentRecipes] filteredCombinations.length:', filteredCombinations.length);
+    debugLog('[DevelopmentRecipes] customRecipesAsCombinations.length:', customRecipesAsCombinations.length);
+    debugLog('[DevelopmentRecipes] stateVersion:', stateVersion);
     
     if (!showCustomRecipes) {
-      console.log('[DevelopmentRecipes] Not showing custom recipes, returning only API recipes');
+      debugLog('[DevelopmentRecipes] Not showing custom recipes, returning only API recipes');
       return filteredCombinations;
     }
     
@@ -672,7 +335,7 @@ export default function DevelopmentRecipes() {
       return true;
     });
     
-    console.log('[DevelopmentRecipes] Filtered custom combinations:', filteredCustomCombinations.length);
+    debugLog('[DevelopmentRecipes] Filtered custom combinations:', filteredCustomCombinations.length);
     
     // Sort custom recipes by creation date (newest first) to show recently added ones at the top
     filteredCustomCombinations.sort((a, b) => {
@@ -684,21 +347,9 @@ export default function DevelopmentRecipes() {
     
     // Combine custom recipes (newest first) with API recipes
     const combined = [...filteredCustomCombinations, ...filteredCombinations];
-    console.log('[DevelopmentRecipes] Final combined count:', combined.length, '(custom:', filteredCustomCombinations.length, 'api:', filteredCombinations.length, ')');
+    debugLog('[DevelopmentRecipes] Final combined count:', combined.length, '(custom:', filteredCustomCombinations.length, 'api:', filteredCombinations.length, ')');
     return combined;
   }, [filteredCombinations, customRecipesAsCombinations, showCustomRecipes, selectedFilm, selectedDeveloper, filmSearch, developerSearch, getFilmById, getDeveloperById, customRecipes, stateVersion]);
-
-  // Apply temperature filtering to all combinations
-  const temperatureFilteredCombinations = React.useMemo(() => {
-    if (temperatureFilter === "all") return allCombinations;
-    
-    return allCombinations.filter(combination => {
-      if (temperatureFilter === "other") {
-        return ![68, 70, 72, 75].includes(combination.temperatureF);
-      }
-      return combination.temperatureF === parseInt(temperatureFilter);
-    });
-  }, [allCombinations, temperatureFilter]);
 
   // Custom recipe helpers
   const getCustomRecipeFilm = (recipeId: string): Film | undefined => {
@@ -768,66 +419,30 @@ export default function DevelopmentRecipes() {
     return currentVersion || selectedCustomRecipe; // Fallback to original if not found
   }, [selectedCustomRecipe, customRecipes, stateVersion]); // stateVersion ensures fresh data
 
-  // Dynamic sort options based on current filters
-  const availableSortOptions = React.useMemo(() => {
-    const options = [
-      { label: "Film Name", value: "filmName" },
-      { label: "Development Time", value: "timeMinutes" },
-      { label: "Temperature", value: "temperatureF" },
-    ];
-
-    // If no specific developer selected, allow sorting by developer
-    if (!selectedDeveloper) {
-      options.push({ label: "Developer", value: "developerName" });
-    }
-
-    // If specific developer selected, allow sorting by dilution
-    if (selectedDeveloper) {
-      options.push({ label: "Dilution", value: "dilution" });
-    }
-
-    // If specific film selected, allow sorting by ISO
-    if (selectedFilm) {
-      options.push({ label: "ISO", value: "shootingIso" });
-    }
-
-    return options;
-  }, [selectedFilm, selectedDeveloper]);
-
-  // Temperature filter options
-  const temperatureOptions = React.useMemo(() => [
-    { label: "All Temperatures", value: "all" },
-    { label: "68°F (Standard)", value: "68" },
-    { label: "70°F", value: "70" },
-    { label: "72°F", value: "72" },
-    { label: "75°F", value: "75" },
-    { label: "Other", value: "other" },
-  ], []);
-
   const handleCustomRecipePress = (recipe: CustomRecipe) => {
-    console.log('[DevelopmentRecipes] handleCustomRecipePress called for recipe:', recipe.id);
+    debugLog('[DevelopmentRecipes] handleCustomRecipePress called for recipe:', recipe.id);
     setSelectedCustomRecipe(recipe);
     setSelectedCombination(null); // Clear API recipe selection
   };
 
   const handleEditCustomRecipe = (recipe: CustomRecipe) => {
-    console.log('[DevelopmentRecipes] ===== handleEditCustomRecipe called =====');
-    console.log('[DevelopmentRecipes] Recipe to edit:', recipe.id, recipe.name);
-    console.log('[DevelopmentRecipes] Full recipe object:', JSON.stringify(recipe, null, 2));
-    console.log('[DevelopmentRecipes] Setting editingCustomRecipe and showing form...');
+    debugLog('[DevelopmentRecipes] ===== handleEditCustomRecipe called =====');
+    debugLog('[DevelopmentRecipes] Recipe to edit:', recipe.id, recipe.name);
+    debugLog('[DevelopmentRecipes] Full recipe object:', JSON.stringify(recipe, null, 2));
+    debugLog('[DevelopmentRecipes] Setting editingCustomRecipe and showing form...');
     setEditingCustomRecipe(recipe);
     setShowCustomRecipeForm(true);
-    console.log('[DevelopmentRecipes] State updated - editingCustomRecipe set and form shown');
+    debugLog('[DevelopmentRecipes] State updated - editingCustomRecipe set and form shown');
   };
 
   const handleNewCustomRecipe = () => {
-    console.log('[DevelopmentRecipes] handleNewCustomRecipe called');
+    debugLog('[DevelopmentRecipes] handleNewCustomRecipe called');
     setEditingCustomRecipe(undefined);
     setShowCustomRecipeForm(true);
   };
 
   const handleCustomRecipeFormClose = () => {
-    console.log('[DevelopmentRecipes] handleCustomRecipeFormClose called');
+    debugLog('[DevelopmentRecipes] handleCustomRecipeFormClose called');
     
     // Force refresh to ensure any recipe deletions are reflected in the UI
     forceRefresh();
@@ -840,7 +455,7 @@ export default function DevelopmentRecipes() {
   };
 
   const handleCustomRecipeDelete = () => {
-    console.log('[DevelopmentRecipes] handleCustomRecipeDelete called');
+    debugLog('[DevelopmentRecipes] handleCustomRecipeDelete called');
     
     // Force refresh to ensure the deletion is reflected in the UI
     forceRefresh();
@@ -850,31 +465,31 @@ export default function DevelopmentRecipes() {
   };
 
   const handleCustomRecipeSave = async (recipeId: string) => {
-    console.log('[DevelopmentRecipes] handleCustomRecipeSave called for recipe:', recipeId);
-    console.log('[DevelopmentRecipes] Current customRecipes count before refresh:', customRecipes.length);
+    debugLog('[DevelopmentRecipes] handleCustomRecipeSave called for recipe:', recipeId);
+    debugLog('[DevelopmentRecipes] Current customRecipes count before refresh:', customRecipes.length);
     
     // Force immediate refresh to ensure updated data is displayed
     // This is critical for both saves AND deletes
-    console.log('[DevelopmentRecipes] Calling forceRefresh to update recipe list...');
+    debugLog('[DevelopmentRecipes] Calling forceRefresh to update recipe list...');
     await forceRefresh();
-    console.log('[DevelopmentRecipes] forceRefresh completed');
+    debugLog('[DevelopmentRecipes] forceRefresh completed');
     
     // Check if the recipe still exists (it won't if it was deleted)
     const recipeStillExists = customRecipes.some(r => r.id === recipeId);
-    console.log('[DevelopmentRecipes] Recipe still exists after refresh:', recipeStillExists);
+    debugLog('[DevelopmentRecipes] Recipe still exists after refresh:', recipeStillExists);
     
     // If recipe was deleted, clear any selections that might reference it
     if (!recipeStillExists) {
-      console.log('[DevelopmentRecipes] Recipe was deleted, clearing selections...');
+      debugLog('[DevelopmentRecipes] Recipe was deleted, clearing selections...');
       setSelectedCustomRecipe(null);
     }
     
-    console.log('[DevelopmentRecipes] Updated customRecipes count after refresh:', customRecipes.length);
+    debugLog('[DevelopmentRecipes] Updated customRecipes count after refresh:', customRecipes.length);
     
     // Close the form modal
     setShowCustomRecipeForm(false);
     setEditingCustomRecipe(undefined);
-    console.log('[DevelopmentRecipes] handleCustomRecipeSave completed');
+    debugLog('[DevelopmentRecipes] handleCustomRecipeSave completed');
   };
 
   // Handle duplicating a recipe (either API or custom)
@@ -913,27 +528,85 @@ export default function DevelopmentRecipes() {
     setSelectedCustomRecipe(null);
   };
 
-  // Film suggestions for search
-  const filmSuggestions = React.useMemo(() => {
-    if (!filmSearch.trim()) return [];
-    return allFilms
-      .filter(film =>
-        film.name.toLowerCase().includes(filmSearch.toLowerCase()) ||
-        film.brand.toLowerCase().includes(filmSearch.toLowerCase())
-      )
-      .slice(0, 5);
-  }, [allFilms, filmSearch]);
+  // Film and developer lists for desktop search dropdown
+  const filteredFilms = React.useMemo(() => {
+    if (!isFilmSearchFocused) return [];
+    if (!filmSearch.trim()) return allFilms;
+    return allFilms.filter(film =>
+      film.name.toLowerCase().includes(filmSearch.toLowerCase()) ||
+      film.brand.toLowerCase().includes(filmSearch.toLowerCase())
+    );
+  }, [allFilms, filmSearch, isFilmSearchFocused]);
 
-  // Developer suggestions for search
-  const developerSuggestions = React.useMemo(() => {
-    if (!developerSearch.trim()) return [];
-    return allDevelopers
-      .filter(dev =>
-        dev.name.toLowerCase().includes(developerSearch.toLowerCase()) ||
-        dev.manufacturer.toLowerCase().includes(developerSearch.toLowerCase())
-      )
-      .slice(0, 5);
-  }, [allDevelopers, developerSearch]);
+  const filteredDevelopers = React.useMemo(() => {
+    if (!isDeveloperSearchFocused) return [];
+    if (!developerSearch.trim()) return allDevelopers;
+    return allDevelopers.filter(dev =>
+      dev.name.toLowerCase().includes(developerSearch.toLowerCase()) ||
+      dev.manufacturer.toLowerCase().includes(developerSearch.toLowerCase())
+    );
+  }, [allDevelopers, developerSearch, isDeveloperSearchFocused]);
+
+  // Convert to SearchDropdownItem format
+  const filmDropdownItems = React.useMemo(() => 
+    filteredFilms.map(film => ({
+      id: film.uuid,
+      title: film.name,
+      subtitle: film.brand
+    }))
+  , [filteredFilms]);
+
+  const developerDropdownItems = React.useMemo(() => 
+    filteredDevelopers.map(developer => ({
+      id: developer.uuid,
+      title: developer.name,
+      subtitle: developer.manufacturer
+    }))
+  , [filteredDevelopers]);
+
+  // Handle dropdown item selection
+  const handleFilmDropdownSelect = (item: { id: string; title: string; subtitle: string }) => {
+    const film = allFilms.find(f => f.uuid === item.id);
+    if (film) {
+      setSelectedFilm(film);
+      setFilmSearch('');
+      setIsFilmSearchFocused(false);
+    }
+  };
+
+  const handleDeveloperDropdownSelect = (item: { id: string; title: string; subtitle: string }) => {
+    const developer = allDevelopers.find(d => d.uuid === item.id);
+    if (developer) {
+      setSelectedDeveloper(developer);
+      setDeveloperSearch('');
+      setIsDeveloperSearchFocused(false);
+    }
+  };
+
+  // Add layout handlers for dynamic positioning
+  const handleFilmSearchLayout = () => {
+    if (filmSearchRef.current && isDesktop) {
+      filmSearchRef.current.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
+        setFilmSearchPosition({
+          top: pageY + height,
+          left: pageX,
+          width: width
+        });
+      });
+    }
+  };
+
+  const handleDeveloperSearchLayout = () => {
+    if (developerSearchRef.current && isDesktop) {
+      developerSearchRef.current.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
+        setDeveloperSearchPosition({
+          top: pageY + height,
+          left: pageX,
+          width: width
+        });
+      });
+    }
+  };
 
   const infoSection = (
     <InfoSection title="About Development Recipes">
@@ -1008,89 +681,86 @@ export default function DevelopmentRecipes() {
         <Box style={styles.leftPanel}>
           {/* Search and Filter Section */}
           <FormSection>
-        <VStack space="md">
-          {/* Search Fields */}
+        <VStack space="md" style={{ overflow: 'visible' }}>
+          {/* Search/Selection Fields */}
           <Box>
-            <Text style={[styles.sectionLabel, { color: textColor }]}>Search</Text>
+            <Text style={[styles.sectionLabel, { color: textColor }]}>
+              {isDesktop ? "Search" : "Select Film & Developer"}
+            </Text>
             
-            {!isDesktop ? (
-              // Mobile: Show selection buttons
-              <VStack space="md">
-                <MobileSelectButton
-                  label="Film"
-                  selectedItem={selectedFilm}
-                  onPress={() => setShowMobileFilmModal(true)}
-                  type="film"
-                />
-                <MobileSelectButton
-                  label="Developer"
-                  selectedItem={selectedDeveloper}
-                  onPress={() => setShowMobileDeveloperModal(true)}
-                  type="developer"
-                />
-              </VStack>
-            ) : (
-              // Desktop: Show traditional search inputs
-              <Box style={[styles.searchFieldsContainer, styles.searchFieldsDesktop]}>
-                <Box style={[styles.searchField, styles.searchFieldDesktop]}>
+            <Box style={[
+              styles.searchFieldsContainer, 
+              isDesktop && styles.searchFieldsDesktop,
+              { overflow: 'visible', zIndex: 999999, position: 'relative' }
+            ]}>
+              <Box 
+                ref={filmSearchRef}
+                style={[
+                  styles.searchField, 
+                  isDesktop && styles.searchFieldDesktop,
+                  { overflow: 'visible', zIndex: 999999, position: 'relative' }
+                ]}
+                onLayout={handleFilmSearchLayout}
+              >
+                <Box style={styles.searchDropdownContainer}>
                   <SearchInput
-                    value={filmSearch}
-                    onChangeText={setFilmSearch}
+                    variant={isDesktop ? 'desktop' : 'mobile'}
+                    type="film"
                     placeholder="Type to search films..."
-                    onClear={() => setFilmSearch('')}
+                    {...(isDesktop ? {
+                      value: filmSearch,
+                      onChangeText: setFilmSearch,
+                      onClear: () => setFilmSearch(''),
+                      onFocus: () => {
+                        setIsFilmSearchFocused(true);
+                        handleFilmSearchLayout();
+                      },
+                      onBlur: () => {
+                        // Delay hiding to allow item selection
+                        setTimeout(() => setIsFilmSearchFocused(false), 150);
+                      }
+                    } : {
+                      selectedItem: selectedFilm,
+                      onPress: () => setShowMobileFilmModal(true)
+                    })}
                   />
-                  
-                  {/* Film suggestions */}
-                  {filmSuggestions.length > 0 && (
-                    <Box style={styles.suggestionsContainer}>
-                      {filmSuggestions.map((film) => (
-                        <TouchableOpacity
-                          key={film.uuid}
-                          style={styles.suggestionItem}
-                          onPress={() => {
-                            setSelectedFilm(film);
-                            setFilmSearch('');
-                          }}
-                        >
-                          <Text style={[styles.suggestionText, { color: textColor }]}>
-                            {film.brand} {film.name}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </Box>
-                  )}
-                </Box>
-
-                <Box style={[styles.searchField, styles.searchFieldDesktop]}>
-                  <SearchInput
-                    value={developerSearch}
-                    onChangeText={setDeveloperSearch}
-                    placeholder="Type to search developers..."
-                    onClear={() => setDeveloperSearch('')}
-                  />
-                  
-                  {/* Developer suggestions */}
-                  {developerSuggestions.length > 0 && (
-                    <Box style={styles.suggestionsContainer}>
-                      {developerSuggestions.map((developer) => (
-                        <TouchableOpacity
-                          key={developer.uuid}
-                          style={styles.suggestionItem}
-                          onPress={() => {
-                            setSelectedDeveloper(developer);
-                            setDeveloperSearch('');
-                          }}
-                        >
-                          <Text style={[styles.suggestionText, { color: textColor }]}>
-                            {developer.manufacturer} {developer.name}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </Box>
-                  )}
                 </Box>
               </Box>
-            )}
+
+              <Box 
+                ref={developerSearchRef}
+                style={[
+                  styles.searchField, 
+                  isDesktop && styles.searchFieldDesktop,
+                  { overflow: 'visible', zIndex: 999999, position: 'relative' }
+                ]}
+                onLayout={handleDeveloperSearchLayout}
+              >
+                <Box style={styles.searchDropdownContainer}>
+                  <SearchInput
+                    variant={isDesktop ? 'desktop' : 'mobile'}
+                    type="developer"
+                    placeholder="Type to search developers..."
+                    {...(isDesktop ? {
+                      value: developerSearch,
+                      onChangeText: setDeveloperSearch,
+                      onClear: () => setDeveloperSearch(''),
+                      onFocus: () => {
+                        setIsDeveloperSearchFocused(true);
+                        handleDeveloperSearchLayout();
+                      },
+                      onBlur: () => {
+                        // Delay hiding to allow item selection
+                        setTimeout(() => setIsDeveloperSearchFocused(false), 150);
+                      }
+                    } : {
+                      selectedItem: selectedDeveloper,
+                      onPress: () => setShowMobileDeveloperModal(true)
+                    })}
+                  />
+                </Box>
+              </Box>
+            </Box>
           </Box>
 
           {/* Selected Items Display */}
@@ -1141,26 +811,6 @@ export default function DevelopmentRecipes() {
           {/* Filters */}
           {showFilters && (
             <VStack space="sm">
-              {/* Sort By */}
-              <FormGroup label="Sort By">
-                <ThemedSelect
-                  selectedValue={sortBy}
-                  onValueChange={handleSort}
-                  items={availableSortOptions}
-                  placeholder="Select sort option"
-                />
-              </FormGroup>
-
-              {/* Temperature Filter */}
-              <FormGroup label="Temperature">
-                <ThemedSelect
-                  selectedValue={temperatureFilter}
-                  onValueChange={setTemperatureFilter}
-                  items={temperatureOptions}
-                  placeholder="Select temperature"
-                />
-              </FormGroup>
-
               {/* Developer Type Filter - only show when no specific developer is selected */}
               {!selectedDeveloper && (
                 <FormGroup label="Developer Type">
@@ -1200,89 +850,98 @@ export default function DevelopmentRecipes() {
 
       {/* Results Section */}
       <Box style={styles.resultsSection}>
-        <HStack style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <Text style={[styles.resultsHeader, { color: textColor }]}>
-            {temperatureFilteredCombinations.length} Development Recipe{temperatureFilteredCombinations.length !== 1 ? 's' : ''} 
-            {customRecipes.length > 0 && showCustomRecipes && (
-              <Text style={{ fontSize: 14, fontWeight: 'normal', color: textColor, opacity: 0.7 }}>
-                {' '}({customRecipes.length} custom)
-              </Text>
-            )}
-          </Text>
-          
-          <HStack style={{ gap: 8, alignItems: 'center' }}>
-            {isDesktop && (
+        {/* Title */}
+        <Text style={[styles.resultsHeader, { color: textColor, textAlign: isDesktop ? 'left' : 'center' }]}>
+          {allCombinations.length} Development Recipe{allCombinations.length !== 1 ? 's' : ''} 
+          {customRecipes.length > 0 && showCustomRecipes && (
+            <Text style={{ fontSize: 14, fontWeight: 'normal', color: textColor, opacity: 0.7 }}>
+              {' '}({customRecipes.length} custom)
+            </Text>
+          )}
+        </Text>
+
+        {/* Buttons - Different layouts for mobile vs desktop */}
+        {isDesktop ? (
+          /* Desktop: Buttons in top right */
+          <Box style={styles.desktopButtonsContainer}>
+            <HStack style={{ gap: 8, alignItems: 'center' }}>
               <TouchableOpacity 
                 onPress={() => setViewMode(viewMode === 'cards' ? 'table' : 'cards')}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 8,
-                  borderRadius: 6,
-                  backgroundColor: 'transparent',
-                  borderWidth: 1,
-                  borderColor: developmentTint,
-                }}
+                style={styles.desktopButton}
               >
                 {viewMode === 'cards' ? (
                   <Table size={14} color={developmentTint} />
                 ) : (
                   <Grid3X3 size={14} color={developmentTint} />
                 )}
-                <Text style={{
-                  fontSize: 12,
-                  color: developmentTint,
-                  fontWeight: '500',
-                  marginLeft: 4,
-                }}>
+                <Text style={[styles.desktopButtonText, { color: developmentTint }]}>
                   {viewMode === 'cards' ? 'Table' : 'Cards'}
                 </Text>
               </TouchableOpacity>
-            )}
-            
-            {customRecipes.length > 0 && (
+              
+              {customRecipes.length > 0 && (
+                <TouchableOpacity 
+                  onPress={() => setShowCustomRecipes(!showCustomRecipes)}
+                  style={[
+                    styles.desktopButton,
+                    { backgroundColor: showCustomRecipes ? developmentTint : 'transparent' }
+                  ]}
+                >
+                  <Text style={[
+                    styles.desktopButtonText,
+                    { color: showCustomRecipes ? '#fff' : developmentTint }
+                  ]}>
+                    My Recipes
+                  </Text>
+                </TouchableOpacity>
+              )}
+              
               <TouchableOpacity 
-                onPress={() => setShowCustomRecipes(!showCustomRecipes)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 8,
-                  borderRadius: 6,
-                  backgroundColor: showCustomRecipes ? developmentTint : 'transparent',
-                  borderWidth: 1,
-                  borderColor: developmentTint,
-                }}
+                onPress={handleNewCustomRecipe}
+                style={[styles.desktopButton, { backgroundColor: developmentTint }]}
               >
-                <Text style={{
-                  fontSize: 12,
-                  color: showCustomRecipes ? '#fff' : developmentTint,
-                  fontWeight: '500'
-                }}>
-                  My Recipes
+                <Plus size={14} color="#fff" />
+                <Text style={[styles.desktopButtonText, { color: '#fff' }]}>
+                  Add Recipe
                 </Text>
               </TouchableOpacity>
-            )}
-            
-            <TouchableOpacity 
-              onPress={handleNewCustomRecipe}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                padding: 8,
-                borderRadius: 6,
-                backgroundColor: developmentTint,
-                gap: 4,
-              }}
-            >
-              <Plus size={14} color="#fff" />
-              <Text style={{ fontSize: 12, color: '#fff', fontWeight: '500' }}>
-                Add Recipe
-              </Text>
-            </TouchableOpacity>
-          </HStack>
-        </HStack>
+            </HStack>
+          </Box>
+        ) : (
+          /* Mobile: Buttons centered below title */
+          <Box style={styles.mobileButtonsContainer}>
+            <HStack style={styles.mobileButtonsRow}>
+              {customRecipes.length > 0 && (
+                <TouchableOpacity 
+                  onPress={() => setShowCustomRecipes(!showCustomRecipes)}
+                  style={[
+                    styles.mobileButton,
+                    { backgroundColor: showCustomRecipes ? developmentTint : 'transparent' }
+                  ]}
+                >
+                  <Text style={[
+                    styles.mobileButtonText,
+                    { color: showCustomRecipes ? '#fff' : developmentTint }
+                  ]}>
+                    My Recipes
+                  </Text>
+                </TouchableOpacity>
+              )}
+              
+              <TouchableOpacity 
+                onPress={handleNewCustomRecipe}
+                style={[styles.mobileButton, { backgroundColor: developmentTint }]}
+              >
+                <Plus size={16} color="#fff" />
+                <Text style={[styles.mobileButtonText, { color: '#fff' }]}>
+                  Add Recipe
+                </Text>
+              </TouchableOpacity>
+            </HStack>
+          </Box>
+        )}
 
-        {temperatureFilteredCombinations.length === 0 ? (
+        {allCombinations.length === 0 ? (
           <Box style={styles.noResultsContainer}>
             <Text style={[styles.noResultsText, { color: textColor }]}>
               No development recipes found.
@@ -1292,107 +951,79 @@ export default function DevelopmentRecipes() {
             </Text>
           </Box>
         ) : (
-          // Determine if we should show cards or table
-          ((!isDesktop) || (isDesktop && viewMode === 'cards')) ? (
-            // Cards View
-            <ScrollView style={styles.cardsContainer} showsVerticalScrollIndicator={false}>
-              <Box style={styles.cardsGrid}>
-                {temperatureFilteredCombinations.map((combination) => {
-                  const isCustomRecipe = customRecipes.some(r => r.id === combination.id);
-                  const customRecipe = isCustomRecipe ? customRecipes.find(r => r.id === combination.id) : undefined;
-                  
-                  const film = isCustomRecipe && customRecipe 
-                    ? getCustomRecipeFilm(customRecipe.id)
-                    : getFilmById(combination.filmStockId);
+          // Cards or Table View
+          <>
+            {isDesktop && viewMode === 'table' ? (
+              // Table view for desktop
+              <Box style={styles.tableContainer}>
+                <Box style={styles.tableHeaderRow}>
+                  <TableHeader title="Film" sortKey="filmName" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                  <TableHeader title="Developer" sortKey="developerName" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                  <TableHeader title="Time" sortKey="timeMinutes" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                  <TableHeader title="Temp" sortKey="temperatureF" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                  <TableHeader title="ISO" sortKey="shootingIso" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                  <TableHeader title="Dilution" sortKey="dilution" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                </Box>
+                
+                <ScrollView style={styles.tableScrollView}>
+                  {allCombinations.map((combination, index) => {
+                    const isCustom = customRecipes.some(r => r.id === combination.id);
+                    const film = isCustom ? getCustomRecipeFilm(combination.id) : getFilmById(combination.filmStockId);
+                    const developer = isCustom ? getCustomRecipeDeveloper(combination.id) : getDeveloperById(combination.developerId);
                     
-                  const developer = isCustomRecipe && customRecipe
-                    ? getCustomRecipeDeveloper(customRecipe.id) 
-                    : getDeveloperById(combination.developerId);
-
-                  // Generate a stable key that includes modification timestamp for custom recipes
-                  const recipeKey = isCustomRecipe && customRecipe 
-                    ? `${combination.uuid}_${customRecipe.dateModified}` 
-                    : combination.uuid;
-
+                    return (
+                      <RecipeRow
+                        key={combination.uuid}
+                        combination={combination}
+                        film={film}
+                        developer={developer}
+                        onPress={() => {
+                          if (isCustom) {
+                            const customRecipe = customRecipes.find(r => r.id === combination.id);
+                            if (customRecipe) {
+                              handleCustomRecipePress(customRecipe);
+                            }
+                          } else {
+                            setSelectedCombination(combination);
+                          }
+                        }}
+                        isEven={index % 2 === 0}
+                      />
+                    );
+                  })}
+                </ScrollView>
+              </Box>
+            ) : (
+              // Cards view (default for mobile, optional for desktop)
+              <Box style={styles.cardsContainer}>
+                {allCombinations.map((combination) => {
+                  const isCustom = customRecipes.some(r => r.id === combination.id);
+                  const film = isCustom ? getCustomRecipeFilm(combination.id) : getFilmById(combination.filmStockId);
+                  const developer = isCustom ? getCustomRecipeDeveloper(combination.id) : getDeveloperById(combination.developerId);
+                  
                   return (
                     <RecipeCard
-                      key={recipeKey}
-                      combination={combination}
-                      film={film}
-                      developer={developer}
-                      isCustomRecipe={isCustomRecipe}
-                      onPress={() => {
-                        if (isCustomRecipe && customRecipe) {
-                          handleCustomRecipePress(customRecipe);
-                        } else {
-                          setSelectedCombination(combination);
-                          setSelectedCustomRecipe(null);
-                        }
-                      }}
-                    />
-                  );
-                })}
-              </Box>
-            </ScrollView>
-          ) : (
-            // Table View (Desktop only)
-            <Box style={styles.tableContainer}>
-              {/* Table Header */}
-              <Box style={[styles.tableHeaderRow, { borderBottomColor: outline }]}>
-                <TableHeader title="Film" sortKey="filmName" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
-                <TableHeader title="Developer" sortKey="developerName" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
-                <TableHeader title="Time" sortKey="timeMinutes" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
-                <TableHeader title="Temp" sortKey="temperatureF" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
-                <TableHeader title="ISO" sortKey="shootingIso" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
-                <TableHeader 
-                  title="Dilution" 
-                  sortKey="dilution" 
-                  currentSort={sortBy} 
-                  sortDirection={sortDirection} 
-                  onSort={handleSort} 
-                />
-              </Box>
-              
-              {/* Table Body */}
-              <ScrollView style={styles.tableScrollView} showsVerticalScrollIndicator={false}>
-                {temperatureFilteredCombinations.map((combination, index) => {
-                  const isCustomRecipe = customRecipes.some(r => r.id === combination.id);
-                  const customRecipe = isCustomRecipe ? customRecipes.find(r => r.id === combination.id) : undefined;
-                  
-                  const film = isCustomRecipe && customRecipe 
-                    ? getCustomRecipeFilm(customRecipe.id)
-                    : getFilmById(combination.filmStockId);
-                    
-                  const developer = isCustomRecipe && customRecipe
-                    ? getCustomRecipeDeveloper(customRecipe.id) 
-                    : getDeveloperById(combination.developerId);
-
-                  // Generate a stable key that includes modification timestamp for custom recipes
-                  const recipeKey = isCustomRecipe && customRecipe 
-                    ? `${combination.uuid}_${customRecipe.dateModified}` 
-                    : combination.uuid;
-
-                  return (
-                    <RecipeRow
-                      key={recipeKey}
+                      key={combination.uuid}
                       combination={combination}
                       film={film}
                       developer={developer}
                       onPress={() => {
-                        if (isCustomRecipe && customRecipe) {
-                          handleCustomRecipePress(customRecipe);
+                        if (isCustom) {
+                          const customRecipe = customRecipes.find(r => r.id === combination.id);
+                          if (customRecipe) {
+                            handleCustomRecipePress(customRecipe);
+                          }
                         } else {
                           setSelectedCombination(combination);
-                          setSelectedCustomRecipe(null);
                         }
                       }}
-                      isEven={index % 2 === 0}
+                      isCustomRecipe={isCustom}
                     />
                   );
                 })}
-              </ScrollView>
-            </Box>
-          )
+              </Box>
+            )}
+          </>
         )}
         </Box>
       </Box>
@@ -1510,32 +1141,60 @@ export default function DevelopmentRecipes() {
         </ModalContent>
       </Modal>
 
-      {/* Mobile Selection Modals */}
-      <MobileSelectionModal
-        isOpen={showMobileFilmModal}
-        onClose={() => setShowMobileFilmModal(false)}
-        type="film"
-        films={allFilms}
-        developers={allDevelopers}
-        onFilmSelect={(film) => {
-          setSelectedFilm(film);
-          setFilmSearch(''); // Clear search when selecting from modal
-        }}
-        onDeveloperSelect={() => {}} // Not used for film modal
-      />
+      {/* Film Search Dropdown - Desktop only */}
+      {isDesktop && (
+        <SearchDropdown
+          variant="desktop"
+          isOpen={isFilmSearchFocused}
+          onClose={() => setIsFilmSearchFocused(false)}
+          items={filmDropdownItems}
+          onItemSelect={handleFilmDropdownSelect}
+          position="left"
+          dynamicPosition={filmSearchPosition}
+        />
+      )}
 
-      <MobileSelectionModal
-        isOpen={showMobileDeveloperModal}
-        onClose={() => setShowMobileDeveloperModal(false)}
-        type="developer"
-        films={allFilms}
-        developers={allDevelopers}
-        onFilmSelect={() => {}} // Not used for developer modal
-        onDeveloperSelect={(developer) => {
-          setSelectedDeveloper(developer);
-          setDeveloperSearch(''); // Clear search when selecting from modal
-        }}
-      />
+      {/* Developer Search Dropdown - Desktop only */}
+      {isDesktop && (
+        <SearchDropdown
+          variant="desktop"
+          isOpen={isDeveloperSearchFocused}
+          onClose={() => setIsDeveloperSearchFocused(false)}
+          items={developerDropdownItems}
+          onItemSelect={handleDeveloperDropdownSelect}
+          position="right"
+          dynamicPosition={developerSearchPosition}
+        />
+      )}
+
+      {/* Mobile Selection Modals - handled by SearchInput component now */}
+      {!isDesktop && (
+        <>
+          <SearchDropdown
+            variant="mobile"
+            type="film"
+            isOpen={showMobileFilmModal}
+            onClose={() => setShowMobileFilmModal(false)}
+            films={allFilms}
+            onFilmSelect={(film) => {
+              setSelectedFilm(film);
+            }}
+            onItemSelect={() => {}} // Not used for mobile variant
+          />
+          
+          <SearchDropdown
+            variant="mobile"
+            type="developer"
+            isOpen={showMobileDeveloperModal}
+            onClose={() => setShowMobileDeveloperModal(false)}
+            developers={allDevelopers}
+            onDeveloperSelect={(developer) => {
+              setSelectedDeveloper(developer);
+            }}
+            onItemSelect={() => {}} // Not used for mobile variant
+          />
+        </>
+      )}
       </Box>
     </CalculatorLayout>
   );
@@ -1545,175 +1204,20 @@ const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     width: '100%',
+    overflow: 'visible',
   },
   leftPanel: {
     flex: 1,
+    overflow: 'visible',
   },
   
-  // Cards Layout Styles
+  // Cards Container - Minimal layout container for cards
   cardsContainer: {
     flex: 1,
-  },
-  cardsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    paddingVertical: 8,
     justifyContent: 'center',
-  },
-  cardTouchable: {
-    minWidth: 320,
-    maxWidth: 500,
-  },
-  recipeCard: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-    minHeight: 24,
-  },
-  cardFilmName: {
-    fontSize: 16,
-    fontWeight: '600',
-    flex: 1,
-    lineHeight: 22,
-    marginRight: 8,
-  },
-  cardISO: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  customBadge: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginLeft: 8,
-    marginTop: 6,
-  },
-  customBadgeText: {
-    fontSize: 6,
-    color: '#fff',
-    textAlign: 'center',
-    lineHeight: 8,
-  },
-  cardDeveloper: {
-    fontSize: 14,
-    marginBottom: 12,
-    lineHeight: 18,
-  },
-  cardDivider: {
-    borderBottomWidth: 1,
-    marginBottom: 12,
-  },
-  cardParams: {
-    gap: 6,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  paramBox: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    minWidth: '30%',
-    alignItems: 'center',
-  },
-  cardParam: {
-    fontSize: 12,
-    lineHeight: 14,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-
-  // Mobile Selection Styles
-  mobileSelectButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  mobileSelectLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  mobileSelectText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  modalCloseButton: {
-    padding: 8,
-  },
-  modalSearchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    position: 'relative',
-    elevation: 5, // Android shadow
-    shadowColor: '#000', // iOS shadow
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  modalSearchIcon: {
-    position: 'absolute',
-    left: 24,
-    zIndex: 1,
-  },
-  modalSearchInput: {
-    flex: 1,
-    height: 44,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingLeft: 40,
-    paddingRight: 40,
-    fontSize: 16,
-  },
-  modalClearButton: {
-    position: 'absolute',
-    right: 24,
-    zIndex: 1,
-    padding: 4,
-  },
-  selectionItem: {
-    padding: 16,
-    borderBottomWidth: 1,
-  },
-  selectionItemTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  selectionItemSubtitle: {
-    fontSize: 14,
-    fontWeight: '400',
+    paddingVertical: 8,
   },
 
   sectionLabel: {
@@ -1738,47 +1242,10 @@ const styles = StyleSheet.create({
     minWidth: 0, // Allows flex items to shrink below content size
   },
   
-  // Search Input Styles
-  searchContainer: {
-    position: "relative",
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  searchIcon: {
-    position: "absolute",
-    left: 10,
-    zIndex: 1,
-  },
-  searchInput: {
-    height: 44,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingLeft: 36,
-    paddingRight: 36,
-    fontSize: 12,
-    flex: 1,
-  },
-  clearButton: {
-    position: "absolute",
-    right: 10,
-    zIndex: 1,
-    padding: 4,
-  },
   
-  // Suggestions Styles
-  suggestionsContainer: {
-    marginTop: 4,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  suggestionItem: {
-    padding: 12,
-    backgroundColor: "rgba(0,0,0,0.05)",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.1)",
-  },
-  suggestionText: {
-    fontSize: 14,
+  // Search Dropdown Styles (for desktop)
+  searchDropdownContainer: {
+    position: 'relative',
   },
   
   // Selected Items Styles
@@ -1824,11 +1291,12 @@ const styles = StyleSheet.create({
   resultsSection: {
     flex: 1,
     marginTop: 16,
+    position: 'relative',
   },
   resultsHeader: {
     fontSize: 18,
     fontWeight: "600",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   // Table Styles
   tableContainer: {
@@ -1963,5 +1431,55 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
   },
+
+  // Desktop Button Styles
+  desktopButtonsContainer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    zIndex: 1,
+  },
+  desktopButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 6,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'currentColor',
+    gap: 4,
+  },
+  desktopButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  
+  // Mobile Button Styles
+  mobileButtonsContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  mobileButtonsRow: {
+    gap: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mobileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'currentColor',
+    gap: 6,
+    minWidth: 120,
+    justifyContent: 'center',
+  },
+  mobileButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
 
 });

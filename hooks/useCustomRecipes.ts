@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { debugLog } from '@/utils/debugLogger';
 import type { CustomRecipe, CustomRecipeFormData } from '@/types/customRecipeTypes';
 
 const STORAGE_KEY = 'customRecipes';
@@ -11,11 +12,11 @@ export const useCustomRecipes = () => {
 
   // Simple function to load recipes from storage
   const loadRecipes = useCallback(async () => {
-    console.log('[useCustomRecipes] Loading recipes from storage...');
+    debugLog('[useCustomRecipes] Loading recipes from storage...');
     try {
       const json = await AsyncStorage.getItem(STORAGE_KEY);
       const recipes = json ? JSON.parse(json) : [];
-      console.log('[useCustomRecipes] Loaded recipes from storage:', recipes.length, 'recipes');
+      debugLog('[useCustomRecipes] Loaded recipes from storage:', recipes.length, 'recipes');
       setCustomRecipes(recipes);
       setStateVersion(prev => prev + 1); // Increment version to force re-renders
       return recipes;
@@ -29,10 +30,10 @@ export const useCustomRecipes = () => {
 
   // Simple function to save recipes to storage
   const saveRecipes = useCallback(async (recipes: CustomRecipe[]) => {
-    console.log('[useCustomRecipes] Saving recipes to storage:', recipes.length, 'recipes');
+    debugLog('[useCustomRecipes] Saving recipes to storage:', recipes.length, 'recipes');
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
-      console.log('[useCustomRecipes] Successfully saved recipes to storage');
+      debugLog('[useCustomRecipes] Successfully saved recipes to storage');
     } catch (error) {
       console.error('[useCustomRecipes] Error saving recipes:', error);
       throw error;
@@ -46,7 +47,7 @@ export const useCustomRecipes = () => {
 
   // Add a new custom recipe
   const addCustomRecipe = useCallback(async (formData: CustomRecipeFormData): Promise<string> => {
-    console.log('[useCustomRecipes] Adding new recipe');
+    debugLog('[useCustomRecipes] Adding new recipe');
     setIsLoading(true);
     
     try {
@@ -75,7 +76,7 @@ export const useCustomRecipes = () => {
         isPublic: formData.isPublic,
       };
 
-      console.log('[useCustomRecipes] Created new recipe:', newRecipe.id);
+      debugLog('[useCustomRecipes] Created new recipe:', newRecipe.id);
 
       // Add to recipes and save
       const updatedRecipes = [...currentRecipes, newRecipe];
@@ -84,7 +85,7 @@ export const useCustomRecipes = () => {
       // Reload from storage to ensure state consistency
       await loadRecipes();
       
-      console.log('[useCustomRecipes] Successfully added recipe:', newRecipe.id);
+      debugLog('[useCustomRecipes] Successfully added recipe:', newRecipe.id);
       return newRecipe.id;
     } catch (error) {
       console.error('[useCustomRecipes] Error adding recipe:', error);
@@ -96,7 +97,7 @@ export const useCustomRecipes = () => {
 
   // Update an existing custom recipe
   const updateCustomRecipe = useCallback(async (id: string, formData: CustomRecipeFormData): Promise<void> => {
-    console.log('[useCustomRecipes] Updating recipe:', id);
+    debugLog('[useCustomRecipes] Updating recipe:', id);
     setIsLoading(true);
     
     try {
@@ -129,7 +130,7 @@ export const useCustomRecipes = () => {
         dateModified: new Date().toISOString(),
       };
 
-      console.log('[useCustomRecipes] Updated recipe data:', {
+      debugLog('[useCustomRecipes] Updated recipe data:', {
         id: updatedRecipe.id,
         temperatureF: updatedRecipe.temperatureF,
         dateModified: updatedRecipe.dateModified
@@ -145,7 +146,7 @@ export const useCustomRecipes = () => {
       // Reload from storage to ensure state consistency
       await loadRecipes();
       
-      console.log('[useCustomRecipes] Successfully updated recipe:', id);
+      debugLog('[useCustomRecipes] Successfully updated recipe:', id);
     } catch (error) {
       console.error('[useCustomRecipes] Error updating recipe:', error);
       throw error;
@@ -156,18 +157,18 @@ export const useCustomRecipes = () => {
 
   // Delete a custom recipe
   const deleteCustomRecipe = useCallback(async (id: string): Promise<void> => {
-    console.log('[useCustomRecipes] Deleting recipe:', id);
+    debugLog('[useCustomRecipes] Deleting recipe:', id);
     setIsLoading(true);
     
     try {
       // Load current recipes from storage
-      console.log('[useCustomRecipes] Loading current recipes from storage...');
+      debugLog('[useCustomRecipes] Loading current recipes from storage...');
       const currentRecipes = await loadRecipes();
-      console.log('[useCustomRecipes] Loaded', currentRecipes.length, 'recipes from storage');
+      debugLog('[useCustomRecipes] Loaded', currentRecipes.length, 'recipes from storage');
       
       // Check if recipe exists before deletion
       const recipeExists = currentRecipes.some((recipe: CustomRecipe) => recipe.id === id);
-      console.log('[useCustomRecipes] Recipe exists before deletion:', recipeExists);
+      debugLog('[useCustomRecipes] Recipe exists before deletion:', recipeExists);
       
       if (!recipeExists) {
         console.warn('[useCustomRecipes] Recipe not found for deletion:', id);
@@ -176,19 +177,19 @@ export const useCustomRecipes = () => {
       
       // Filter out the recipe to delete
       const updatedRecipes = currentRecipes.filter((recipe: CustomRecipe) => recipe.id !== id);
-      console.log('[useCustomRecipes] Filtered recipes, count reduced from', currentRecipes.length, 'to', updatedRecipes.length);
+      debugLog('[useCustomRecipes] Filtered recipes, count reduced from', currentRecipes.length, 'to', updatedRecipes.length);
       
       // Save updated recipes
-      console.log('[useCustomRecipes] Saving updated recipes to storage...');
+      debugLog('[useCustomRecipes] Saving updated recipes to storage...');
       await saveRecipes(updatedRecipes);
-      console.log('[useCustomRecipes] Successfully saved updated recipes to storage');
+      debugLog('[useCustomRecipes] Successfully saved updated recipes to storage');
       
       // Reload from storage to update component state
-      console.log('[useCustomRecipes] Reloading recipes from storage to update state...');
+      debugLog('[useCustomRecipes] Reloading recipes from storage to update state...');
       await loadRecipes();
-      console.log('[useCustomRecipes] Successfully reloaded recipes from storage');
+      debugLog('[useCustomRecipes] Successfully reloaded recipes from storage');
       
-      console.log('[useCustomRecipes] Successfully deleted recipe:', id);
+      debugLog('[useCustomRecipes] Successfully deleted recipe:', id);
     } catch (error) {
       console.error('[useCustomRecipes] Error deleting recipe:', error);
       throw error;
@@ -199,13 +200,13 @@ export const useCustomRecipes = () => {
 
   // Clear all custom recipes
   const clearAllCustomRecipes = useCallback(async (): Promise<void> => {
-    console.log('[useCustomRecipes] Clearing all recipes');
+    debugLog('[useCustomRecipes] Clearing all recipes');
     setIsLoading(true);
     
     try {
       await saveRecipes([]);
       await loadRecipes();
-      console.log('[useCustomRecipes] Successfully cleared all recipes');
+      debugLog('[useCustomRecipes] Successfully cleared all recipes');
     } catch (error) {
       console.error('[useCustomRecipes] Error clearing recipes:', error);
       throw error;
@@ -216,14 +217,14 @@ export const useCustomRecipes = () => {
 
   // Force refresh - just reload from storage
   const forceRefresh = useCallback(async () => {
-    console.log('[useCustomRecipes] Force refresh triggered - reloading all recipes from storage');
+    debugLog('[useCustomRecipes] Force refresh triggered - reloading all recipes from storage');
     const recipes = await loadRecipes();
-    console.log('[useCustomRecipes] Force refresh completed - loaded', recipes.length, 'recipes');
+    debugLog('[useCustomRecipes] Force refresh completed - loaded', recipes.length, 'recipes');
     return recipes;
   }, [loadRecipes]);
 
-  console.log('[useCustomRecipes] Hook render - returning:', customRecipes.length, 'recipes');
-  console.log('[useCustomRecipes] Detailed recipes data:', customRecipes.map((recipe: CustomRecipe) => ({
+  debugLog('[useCustomRecipes] Hook render - returning:', customRecipes.length, 'recipes');
+  debugLog('[useCustomRecipes] Detailed recipes data:', customRecipes.map((recipe: CustomRecipe) => ({
     id: recipe.id,
     name: recipe.name,
     temperatureF: recipe.temperatureF,
