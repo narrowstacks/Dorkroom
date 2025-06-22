@@ -1,6 +1,7 @@
 import React from 'react';
-import { Text, Input, InputField, HStack, VStack, Switch, Textarea, TextareaInput } from '@gluestack-ui/themed';
+import { Text, HStack, VStack, Switch, Textarea, TextareaInput } from '@gluestack-ui/themed';
 import { FormGroup } from '@/components/ui/forms/FormSection';
+import { TextInput } from '@/components/ui/forms';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { normalizeDilution } from '@/utils/dilutionUtils';
 import type { CustomRecipeFormData } from '@/types/customRecipeTypes';
@@ -38,14 +39,13 @@ export function FinalDetailsStep({
           ? `Dilution (${selectedDilution})` 
           : "Custom Dilution (Optional)"
       }>
-        <Input>
-          <InputField
-            value={formData.customDilution}
-            onChangeText={(value) => updateFormData({ customDilution: normalizeDilution(value) })}
-            placeholder="e.g., 1+1, 1+9, Stock"
-            editable={!selectedDilution || selectedDilution === 'custom'}
-          />
-        </Input>
+        <TextInput
+          value={formData.customDilution}
+          onChangeText={(value: string) => updateFormData({ customDilution: normalizeDilution(value) })}
+          placeholder="e.g., 1+1, 1+9, Stock"
+          inputTitle="Enter Custom Dilution"
+          editable={!selectedDilution || selectedDilution === 'custom'}
+        />
       </FormGroup>
       
       <FormGroup label="Agitation Schedule (Optional)">

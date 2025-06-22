@@ -22,18 +22,23 @@ export function DevelopmentParamsStep({
   isDesktop = false
 }: DevelopmentParamsStepProps) {
 
-  // Local state for raw shooting ISO input
+  // Local state for raw inputs
+  const [temperatureInput, setTemperatureInput] = useState<string>(String(formData.temperatureF));
+  const [timeInput, setTimeInput] = useState<string>(String(formData.timeMinutes));
   const [shootingIsoInput, setShootingIsoInput] = useState<string>(String(formData.shootingIso));
 
-  // Resync local input when film selection, film ISO source, or committed shootingIso changes
+  // Resync local inputs when formData changes from parent
+  useEffect(() => {
+    setTemperatureInput(String(formData.temperatureF));
+  }, [formData.temperatureF]);
+
+  useEffect(() => {
+    setTimeInput(String(formData.timeMinutes));
+  }, [formData.timeMinutes]);
+
   useEffect(() => {
     setShootingIsoInput(String(formData.shootingIso));
-  }, [
-    formData.useExistingFilm,
-    formData.selectedFilmId,
-    formData.customFilm?.isoSpeed,
-    formData.shootingIso,            // ← added here to satisfy ESLint
-  ]);
+  }, [formData.shootingIso]);
 
   const getFilmIso = useCallback((): number => {
     if (formData.useExistingFilm && formData.selectedFilmId) {
@@ -60,11 +65,29 @@ export function DevelopmentParamsStep({
   };
 
   // Update only the local text while typing
-  const handleShootingIsoChange = (value: string) => {
-    setShootingIsoInput(value);
-  };
+  const handleTemperatureChange = (value: string) => setTemperatureInput(value);
+  const handleTimeChange = (value: string) => setTimeInput(value);
+  const handleShootingIsoChange = (value: string) => setShootingIsoInput(value);
 
   // Commit to formData when the input loses focus
+  const commitTemperature = () => {
+    const numValue = parseFloat(temperatureInput);
+    if (!isNaN(numValue) && numValue > 0) {
+      updateFormData({ temperatureF: numValue });
+    } else {
+      setTemperatureInput(String(formData.temperatureF));
+    }
+  };
+
+  const commitTime = () => {
+    const numValue = parseFloat(timeInput);
+    if (!isNaN(numValue) && numValue > 0) {
+      updateFormData({ timeMinutes: numValue });
+    } else {
+      setTimeInput(String(formData.timeMinutes));
+    }
+  };
+
   const commitShootingIso = () => {
     const numValue = parseFloat(shootingIsoInput);
     if (!isNaN(numValue) && numValue >= 0 && numValue <= 12800) {
@@ -87,7 +110,6 @@ export function DevelopmentParamsStep({
     formData.customFilm?.isoSpeed,
     formData.useExistingFilm,
     formData.pushPull,
-    getFilmIso,
     updateFormData,
   ]);
 
@@ -95,17 +117,23 @@ export function DevelopmentParamsStep({
     <VStack space="lg">
       <FormGroup label={`Temperature (°F) - ${fahrenheitToCelsius(formData.temperatureF)}°C`}>
         <NumberInput
-          value={String(formData.temperatureF)}
-          onChangeText={v => updateFormData({ temperatureF: parseFloat(v) || 68 })}
+          value={temperatureInput}
+          onChangeText={handleTemperatureChange}
+          onBlur={commitTemperature}
           placeholder="68"
+          inputTitle="Enter Temperature (°F)"
+          step={1}
         />
       </FormGroup>
 
       <FormGroup label="Development Time (minutes)">
         <NumberInput
-          value={String(formData.timeMinutes)}
-          onChangeText={v => updateFormData({ timeMinutes: parseFloat(v) || 7 })}
+          value={timeInput}
+          onChangeText={handleTimeChange}
+          onBlur={commitTime}
           placeholder="7"
+          inputTitle="Enter Development Time (minutes)"
+          step={0.5}
         />
       </FormGroup>
 
@@ -115,6 +143,8 @@ export function DevelopmentParamsStep({
           onChangeText={handleShootingIsoChange}
           onBlur={commitShootingIso}
           placeholder={String(getFilmIso())}
+          inputTitle="Enter Shooting ISO"
+          step={50}
         />
       </FormGroup>
 

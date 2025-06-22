@@ -6,12 +6,11 @@ import {
   Button,
   ButtonText,
   HStack,
-  Input,
-  InputField,
 } from "@gluestack-ui/themed";
 import { CalculatorLayout } from "@/components/ui/layout/CalculatorLayout";
 import { ResultsSection, ResultRow } from "@/components/ui/calculator/ResultsSection";
 import { FormSection, FormGroup } from "@/components/ui/forms/FormSection";
+import { NumberInput } from "@/components/ui/forms";
 import { InfoSection, InfoText, InfoSubtitle } from "@/components/ui/calculator/InfoSection";
 
 export default function ExposureCalculator() {
@@ -108,55 +107,32 @@ export default function ExposureCalculator() {
 
       <FormSection>
         <FormGroup label="Original Exposure Time (seconds)">
-          <Input
-            variant="outline"
-            size="md"
-            className="w-full border rounded-xl"
-            style={{
-              backgroundColor: inputBackground,
-              borderColor,
-            }}
-          >
-            <InputField
-              value={originalTime}
-              onChangeText={setOriginalTime}
-              keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
-              placeholder="Enter time"
-              maxLength={6}
-              className="text-base px-4 py-3"
-              style={{ color: textColor }}
-            />
-          </Input>
+          <NumberInput
+            value={originalTime}
+            onChangeText={setOriginalTime}
+            placeholder="Enter time"
+            inputTitle="Enter Original Exposure Time"
+            step={0.1}
+          />
         </FormGroup>
 
           <FormGroup label="Stop Adjustment">
-          <HStack space="sm" className="items-center justify-center gap-2 my-2" alignItems="center" justifyContent="center">
-            <HStack space="xs" className="items-center gap-1">
+          <HStack space="lg" className="items-center justify-center gap-2 my-2" alignItems="center" justifyContent="center">
+            <HStack space="lg" className="items-center gap-1">
               {renderStopButton("-1", -1)}
               {renderStopButton("-1/2", -0.5)}
               {renderStopButton("-1/3", -1 / 3)}
             </HStack>
 
-            <Input
-              variant="outline"
-              size="md"
-              className="border rounded-lg"
-              style={{
-                width: 60,
-                backgroundColor: inputBackground,
-                borderColor,
-              }}
-            >
-              <InputField
-                value={stops}
-                onChangeText={setStops}
-                keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
-                placeholder="1"
-                className="text-center"
-              />
-            </Input>
+            <NumberInput
+              value={stops}
+              onChangeText={setStops}
+              placeholder="1"
+              inputTitle="Enter Stop Adjustment"
+              step={0.1}
+            />
 
-            <HStack space="xs" className="items-center gap-1">
+            <HStack space="lg" className="items-center gap-1">
               {renderStopButton("+1/3", 1 / 3)}
               {renderStopButton("+1/2", 0.5)}
               {renderStopButton("+1", 1)}

@@ -7,12 +7,11 @@ import {
   HStack,
   Button,
   ButtonText,
-  Input,
-  InputField,
 } from "@gluestack-ui/themed";
 import { Beaker, RotateCcw } from "lucide-react-native";
 
 import { FormGroup } from "@/components/ui/forms/FormSection";
+import { TextInput } from "@/components/ui/forms";
 import { StyledSelect } from "@/components/ui/select/StyledSelect";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useChemistryCalculator } from "@/hooks/useChemistryCalculator";
@@ -81,26 +80,24 @@ export function ChemistryCalculator({
             </FormGroup>
             
             <FormGroup label="Number of Rolls">
-              <Input style={styles.input}>
-                <InputField
-                  value={chemistry.numberOfRolls}
-                  onChangeText={chemistry.setNumberOfRolls}
-                  placeholder="1"
-                  keyboardType="numeric"
-                />
-              </Input>
+              <TextInput
+                value={chemistry.numberOfRolls}
+                onChangeText={chemistry.setNumberOfRolls}
+                placeholder="1"
+                keyboardType="numeric"
+                inputTitle="Enter Number of Rolls"
+              />
             </FormGroup>
           </>
         ) : (
           <FormGroup label={`Total Volume (${chemistry.unit})`}>
-            <Input style={styles.input}>
-              <InputField
-                value={chemistry.totalVolume}
-                onChangeText={chemistry.setTotalVolume}
-                placeholder={chemistry.unit === 'ml' ? '500' : '16.9'}
-                keyboardType="numeric"
-              />
-            </Input>
+            <TextInput
+              value={chemistry.totalVolume}
+              onChangeText={chemistry.setTotalVolume}
+              placeholder={chemistry.unit === 'ml' ? '500' : '16.9'}
+              keyboardType="numeric"
+              inputTitle={`Enter Total Volume (${chemistry.unit})`}
+            />
           </FormGroup>
         )}
 

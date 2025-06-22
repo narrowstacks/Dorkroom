@@ -63,8 +63,6 @@ export function CustomRecipeForm({
   const cardBackground = useThemeColor({}, "cardBackground");
   const outline = useThemeColor({}, "outline");
   
-
-  
   const { allFilms, allDevelopers, getFilmById, getDeveloperById } = useDevelopmentRecipes();
   const { addCustomRecipe, updateCustomRecipe, deleteCustomRecipe, forceRefresh } = useCustomRecipes();
   
@@ -135,10 +133,12 @@ export function CustomRecipeForm({
   // Film and developer options for selects
   const filmOptions = [
     { label: "Select a film...", value: "" },
-    ...allFilms.map(film => ({
-      label: `${film.brand} ${film.name}`,
-      value: film.uuid
-    }))
+    ...allFilms
+      .filter(film => film.colorType === 'bw') // Only show black and white films
+      .map(film => ({
+        label: `${film.brand} ${film.name}`,
+        value: film.uuid
+      }))
   ];
 
 
@@ -583,7 +583,7 @@ export function CustomRecipeForm({
         />
       </Box>
 
-      {/* Content area - properly scrollable with native mobile adjustments and keyboard avoidance */}
+      {/* Content area - properly scrollable with native mobile adjustments */}
       <Box style={{ 
         flex: 1, 
         minHeight: 0 // Critical for proper flex scrolling
@@ -591,14 +591,15 @@ export function CustomRecipeForm({
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ 
+            flexGrow: 1, 
             padding: 16,
-            paddingBottom: Platform.OS !== 'web' ? 200 : 80 // Large bottom padding for mobile to prevent keyboard overlap
+            // For native mobile, ensure comfortable spacing for modal bottom sheet
+            ...(Platform.OS !== 'web' && {
+              paddingBottom: 24
+            })
           }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          automaticallyAdjustContentInsets={false}
-          contentInsetAdjustmentBehavior="never"
-          scrollEventThrottle={16}
         >
           {renderCurrentStep()}
         </ScrollView>

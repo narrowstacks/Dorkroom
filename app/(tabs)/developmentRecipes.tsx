@@ -442,7 +442,7 @@ export default function DevelopmentRecipes() {
 
   const handleForceRefresh = async () => {
     debugLog('[DevelopmentRecipes] handleForceRefresh called');
-    console.log('[DevelopmentRecipes] Force refresh button clicked, isLoading:', isLoading);
+    debugLog('[DevelopmentRecipes] Force refresh button clicked, isLoading:', isLoading);
     try {
       await forceRefreshData();
       debugLog('[DevelopmentRecipes] Force refresh completed successfully');
@@ -738,6 +738,7 @@ export default function DevelopmentRecipes() {
                       placeholder="Type to search films..."
                       selectedItem={selectedFilm}
                       onPress={() => setShowMobileFilmModal(true)}
+                      onClear={() => setSelectedFilm(null)}
                     />
                   )}
                 </Box>
@@ -777,6 +778,7 @@ export default function DevelopmentRecipes() {
                       placeholder="Type to search developers..."
                       selectedItem={selectedDeveloper}
                       onPress={() => setShowMobileDeveloperModal(true)}
+                      onClear={() => setSelectedDeveloper(null)}
                     />
                   )}
                 </Box>
@@ -784,8 +786,8 @@ export default function DevelopmentRecipes() {
             </Box>
           </Box>
 
-          {/* Selected Items Display */}
-          {(selectedFilm || selectedDeveloper) && (
+          {/* Selected Items Display - Desktop only */}
+          {isDesktop && (selectedFilm || selectedDeveloper) && (
             <Box style={styles.selectedItemsContainer}>
               <HStack space="sm" style={styles.selectedItemsHeader}>
                 <Text style={[styles.sectionLabel, { color: textColor }]}>Selected:</Text>

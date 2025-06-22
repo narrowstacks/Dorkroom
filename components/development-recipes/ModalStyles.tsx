@@ -23,7 +23,7 @@ export function getModalConfiguration(
         size: isDesktop ? 'md' : 'full',
         className: isDesktop ? 'max-w-2xl' : 'h-full',
         style: Platform.OS !== 'web' && !isDesktop ? {
-          maxHeight: '75%',
+          maxHeight: '65%',
           marginTop: 'auto',
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,

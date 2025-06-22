@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { TouchableOpacity } from 'react-native';
-import { Box, Text, Input, InputField, HStack, VStack, Switch } from '@gluestack-ui/themed';
+import { Box, Text, HStack, VStack, Switch } from '@gluestack-ui/themed';
 import { FormGroup } from '@/components/ui/forms/FormSection';
-import { StyledSelect } from '@/components/ui/select/StyledSelect';
-import { NumberInput } from '@/components/ui/forms/NumberInput';
+import { NumberInput, TextInput } from '@/components/ui/forms';
 import { SearchInput, SearchDropdown } from '@/components/ui/search';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
@@ -19,11 +18,7 @@ interface RecipeIdentityStepProps {
   isDesktop?: boolean;
 }
 
-const FILM_COLOR_TYPES = [
-  { label: "Black & White", value: "bw" },
-  { label: "Color Negative", value: "color" },
-  { label: "Color Slide", value: "slide" },
-];
+
 
 /**
  * RecipeIdentityStep Component
@@ -58,6 +53,13 @@ export function RecipeIdentityStep({
   
   // Get selected film object
   const selectedFilm = allFilms.find(film => film.uuid === formData.selectedFilmId) || null;
+  
+  // Ensure custom film is always black and white
+  React.useEffect(() => {
+    if (!formData.useExistingFilm && formData.customFilm && formData.customFilm.colorType !== 'bw') {
+      updateCustomFilm({ colorType: 'bw' });
+    }
+  }, [formData.useExistingFilm, formData.customFilm, updateCustomFilm]);
   
   // Film suggestions for desktop search dropdown
   const filteredFilms = React.useMemo(() => {
@@ -105,13 +107,12 @@ export function RecipeIdentityStep({
     <VStack space="lg">
       {/* Recipe Name */}
       <FormGroup label="Recipe Name">
-        <Input>
-          <InputField
-            value={formData.name}
-            onChangeText={(value) => updateFormData({ name: value })}
-            placeholder="Enter recipe name (e.g., 'Tri-X in D-76')"
-          />
-        </Input>
+        <TextInput
+          value={formData.name}
+          onChangeText={(value: string) => updateFormData({ name: value })}
+          placeholder="Enter recipe name (e.g., 'Tri-X in D-76')"
+          inputTitle="Enter Recipe Name"
+        />
       </FormGroup>
 
       {/* Film Section */}
@@ -161,6 +162,7 @@ export function RecipeIdentityStep({
                   placeholder="Type to search films..."
                   selectedItem={selectedFilm}
                   onPress={() => setIsFilmSearchFocused(true)}
+                  onClear={() => updateFormData({ selectedFilmId: undefined })}
                 />
               )}
               
@@ -193,62 +195,44 @@ export function RecipeIdentityStep({
             }}>
               <Box style={{ flex: isDesktop ? 1 : undefined }}>
                 <FormGroup label="Film Brand">
-                  <Input>
-                    <InputField
-                      value={formData.customFilm?.brand || ''}
-                      onChangeText={(value) => updateCustomFilm({ brand: value })}
-                      placeholder="e.g., Kodak, Fujifilm, Ilford"
-                    />
-                  </Input>
+                  <TextInput
+                    value={formData.customFilm?.brand || ''}
+                    onChangeText={(value: string) => updateCustomFilm({ brand: value })}
+                    placeholder="e.g., Kodak, Fujifilm, Ilford"
+                    inputTitle="Enter Film Brand"
+                  />
                 </FormGroup>
               </Box>
               
               <Box style={{ flex: isDesktop ? 1 : undefined }}>
                 <FormGroup label="Film Name">
-                  <Input>
-                    <InputField
-                      value={formData.customFilm?.name || ''}
-                      onChangeText={(value) => updateCustomFilm({ name: value })}
-                      placeholder="e.g., Tri-X 400, HP5 Plus"
-                    />
-                  </Input>
+                  <TextInput
+                    value={formData.customFilm?.name || ''}
+                    onChangeText={(value: string) => updateCustomFilm({ name: value })}
+                    placeholder="e.g., Tri-X 400, HP5 Plus"
+                    inputTitle="Enter Film Name"
+                  />
                 </FormGroup>
               </Box>
             </Box>
             
-            <Box style={{ 
-              flexDirection: isDesktop ? 'row' : 'column', 
-              gap: isDesktop ? 12 : 8 
-            }}>
-              <Box style={{ flex: isDesktop ? 1 : undefined }}>
-                <FormGroup label="Film Type">
-                  <StyledSelect
-                    value={formData.customFilm?.colorType || 'bw'}
-                    onValueChange={(value) => updateCustomFilm({ colorType: value as 'bw' | 'color' | 'slide' })}
-                    items={FILM_COLOR_TYPES}
-                  />
-                </FormGroup>
-              </Box>
-              
-              <Box style={{ flex: isDesktop ? 1 : undefined }}>
-                <FormGroup label="Box Speed (ISO)">
-                  <NumberInput
-                    value={String(formData.customFilm?.isoSpeed || 400)}
-                    onChangeText={(value) => updateCustomFilm({ isoSpeed: parseFloat(value) || 400 })}
-                    placeholder="400"
-                  />
-                </FormGroup>
-              </Box>
-            </Box>
+            <FormGroup label="Box Speed (ISO)">
+              <NumberInput
+                value={String(formData.customFilm?.isoSpeed || 400)}
+                onChangeText={(value) => updateCustomFilm({ isoSpeed: parseFloat(value) || 400 })}
+                placeholder="400"
+                inputTitle="Enter Film ISO Speed"
+                step={25}
+              />
+            </FormGroup>
             
             <FormGroup label="Grain Structure (Optional)">
-              <Input>
-                <InputField
-                  value={formData.customFilm?.grainStructure || ''}
-                  onChangeText={(value) => updateCustomFilm({ grainStructure: value })}
-                  placeholder="e.g., Fine, Medium, Coarse"
-                />
-              </Input>
+              <TextInput
+                value={formData.customFilm?.grainStructure || ''}
+                onChangeText={(value: string) => updateCustomFilm({ grainStructure: value })}
+                placeholder="e.g., Fine, Medium, Coarse"
+                inputTitle="Enter Grain Structure"
+              />
             </FormGroup>
           </VStack>
         )}

@@ -1,12 +1,9 @@
 // Constants for Development Recipes
 
-// Filter options for film types
+// Filter options for film types (restricted to black and white only)
 export const FILM_COLOR_TYPES = [
   { label: "All Films", value: "" },
-  { label: "Black & White", value: "B&W" },
-  { label: "Color Negative", value: "Color Negative" },
-  { label: "Color Positive", value: "Color Positive" },
-  { label: "Slide", value: "Slide" },
+  { label: "Black & White", value: "bw" },
 ];
 
 // Filter options for developer types

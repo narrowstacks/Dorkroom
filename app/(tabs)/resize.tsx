@@ -73,6 +73,8 @@ const DimensionInputGroup = ({
         value={firstValue}
         onChangeText={onFirstChange}
         placeholder={firstPlaceholder}
+        inputTitle={`Enter ${firstLabel}`}
+        step={0.1}
       />
       <Text minWidth={30} textAlign="left">{unit}</Text>
     </HStack>
@@ -82,6 +84,8 @@ const DimensionInputGroup = ({
         value={secondValue}
         onChangeText={onSecondChange}
         placeholder={secondPlaceholder}
+        inputTitle={`Enter ${secondLabel}`}
+        step={0.1}
       />
       <Text minWidth={30} textAlign="left">{unit}</Text>
     </HStack>
@@ -261,6 +265,8 @@ export default function ResizeScreen() {
               value={originalTime}
               onChangeText={setOriginalTime}
               placeholder="10"
+              inputTitle="Enter Exposure Time"
+              step={0.5}
             />
             <Text minWidth={60} textAlign="left">seconds</Text>
           </HStack>

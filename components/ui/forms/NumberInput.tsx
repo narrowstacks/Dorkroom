@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   TextInput,
@@ -7,73 +7,221 @@ import {
   Platform,
   TextInputProps,
 } from "react-native";
+import { 
+  Text, 
+  HStack, 
+} from "@gluestack-ui/themed";
+import { Minus, Plus } from "lucide-react-native";
 import { ThemedText } from "@/components/ui/core/ThemedText";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { 
+  useMobileInputDetection, 
+  MobileInputTrigger, 
+  MobileInputModal, 
+  modalInputStyles 
+} from './MobileInputShared';
 
 interface NumberInputProps extends TextInputProps {
   value: string;
   onChangeText: (text: string) => void;
   placeholder: string;
+  inputTitle?: string; // Custom title for the modal
+  step?: number; // Custom increment/decrement step
 }
+
+// Number input stepper buttons component for modal
+const NumberStepperButtons: React.FC<{
+  tempValue: string;
+  step: number;
+  onIncrement: () => void;
+  onDecrement: () => void;
+}> = ({ tempValue, step, onIncrement, onDecrement }) => {
+  const textColor = useThemeColor({}, "text");
+  const borderColor = useThemeColor({}, "icon");
+
+  const formatStepLabel = (step: number) => {
+    if (step < 1) {
+      return `±${step.toFixed(1)}`;
+    }
+    return `±${step}`;
+  };
+
+  return (
+    <HStack space="md" style={{ alignItems: 'center' }}>
+      <TouchableOpacity 
+        onPress={onDecrement}
+        style={[styles.stepperButton, { borderColor: borderColor }]}
+      >
+        <Minus size={20} color={textColor} />
+      </TouchableOpacity>
+      
+      <Text style={[styles.stepperLabel, { color: textColor }]}>
+        {formatStepLabel(step)}
+      </Text>
+      
+      <TouchableOpacity 
+        onPress={onIncrement}
+        style={[styles.stepperButton, { borderColor: borderColor }]}
+      >
+        <Plus size={20} color={textColor} />
+      </TouchableOpacity>
+    </HStack>
+  );
+};
 
 export const NumberInput = ({
   value,
   onChangeText,
   placeholder,
+  inputTitle = "Enter Value",
+  step = 0.1,
   ...rest
 }: NumberInputProps) => {
+  const [modalVisible, setModalVisible] = useState(false);
+  const [tempValue, setTempValue] = useState(value);
   const textColor = useThemeColor({}, "text");
   const borderColor = useThemeColor({}, "icon");
-  const placeholderTextColor = useThemeColor({}, "tabIconDefault"); // Or another subtle color
+  const placeholderTextColor = useThemeColor({}, "tabIconDefault");
+  const inputRef = useRef<TextInput>(null);
+  const isMobile = useMobileInputDetection();
+
+  useEffect(() => {
+    if (modalVisible) {
+      setTempValue(value);
+      // Auto-focus with slight delay for modal animation
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [modalVisible, value]);
 
   const increment = () => {
     let numValue = parseFloat(value);
-    if (isNaN(numValue)) numValue = 0; // Handle NaN case
-    const newValue = (numValue + 0.1).toFixed(1);
+    if (isNaN(numValue)) numValue = 0;
+    const newValue = (numValue + step).toFixed(step < 1 ? 1 : 0);
     onChangeText(newValue);
   };
 
   const decrement = () => {
     let numValue = parseFloat(value);
-     if (isNaN(numValue)) numValue = 0.1; // Handle NaN case, default to 0.1 to avoid going below 0
-    const newValue = (numValue - 0.1).toFixed(1);
-    // Allow zero but not negative numbers
+    if (isNaN(numValue)) numValue = step;
+    const newValue = (numValue - step).toFixed(step < 1 ? 1 : 0);
     if (parseFloat(newValue) >= 0) {
       onChangeText(newValue);
     } else {
-       onChangeText("0.0"); // Set to 0 if decrement goes below 0
+      onChangeText("0" + (step < 1 ? ".0" : ""));
+    }
+  };
+
+  const modalIncrement = () => {
+    let numValue = parseFloat(tempValue);
+    if (isNaN(numValue)) numValue = 0;
+    const newValue = (numValue + step).toFixed(step < 1 ? 1 : 0);
+    setTempValue(newValue);
+  };
+
+  const modalDecrement = () => {
+    let numValue = parseFloat(tempValue);
+    if (isNaN(numValue)) numValue = step;
+    const newValue = (numValue - step).toFixed(step < 1 ? 1 : 0);
+    if (parseFloat(newValue) >= 0) {
+      setTempValue(newValue);
+    } else {
+      setTempValue("0" + (step < 1 ? ".0" : ""));
     }
   };
 
   const handleTextChange = (text: string) => {
     // Allow only numbers and a single decimal point
     // Allow empty string for clearing input
-     if (text === '' || /^\d*\.?\d*$/.test(text)) {
-       onChangeText(text);
-     }
+    if (text === '' || /^\d*\.?\d*$/.test(text)) {
+      onChangeText(text);
+    }
   };
 
+  const handleModalTextChange = (text: string) => {
+    // Allow only numbers and a single decimal point
+    // Allow empty string for clearing input
+    if (text === '' || /^\d*\.?\d*$/.test(text)) {
+      setTempValue(text);
+    }
+  };
+
+  const handleConfirm = () => {
+    onChangeText(tempValue);
+    setModalVisible(false);
+  };
+
+  const handleCancel = () => {
+    setTempValue(value); // Reset to original value
+    setModalVisible(false);
+  };
+
+  // Mobile: Show button that opens modal
+  if (isMobile) {
+    return (
+      <>
+        <MobileInputTrigger
+          value={value}
+          placeholder={placeholder}
+          onPress={() => setModalVisible(true)}
+          accessibilityLabel={`Current value: ${value || placeholder}. Tap to edit.`}
+        />
+
+        <MobileInputModal
+          visible={modalVisible}
+          inputTitle={inputTitle}
+          onClose={handleCancel}
+          onConfirm={handleConfirm}
+          extraContent={
+            <NumberStepperButtons
+              tempValue={tempValue}
+              step={step}
+              onIncrement={modalIncrement}
+              onDecrement={modalDecrement}
+            />
+          }
+        >
+          <TextInput
+            ref={inputRef}
+            style={[modalInputStyles.modalInput, { 
+              color: textColor, 
+              borderColor: borderColor,
+            }]}
+            value={tempValue}
+            onChangeText={handleModalTextChange}
+            keyboardType="decimal-pad"
+            placeholder={placeholder}
+            placeholderTextColor={placeholderTextColor}
+            selectTextOnFocus={true}
+            returnKeyType="done"
+            onSubmitEditing={handleConfirm}
+          />
+        </MobileInputModal>
+      </>
+    );
+  }
+
+  // Desktop Web: Show inline input with spinners (original behavior)
   return (
     <View style={styles.numberInputContainer}>
       <TextInput
         style={[styles.input, { color: textColor, borderColor: borderColor }]}
         value={value}
-        onChangeText={handleTextChange} // Use the validated change handler
+        onChangeText={handleTextChange}
         keyboardType="decimal-pad"
         placeholder={placeholder}
         placeholderTextColor={placeholderTextColor}
         {...rest}
       />
-      {Platform.OS === "web" && (
-        <View style={[styles.spinnerButtons, { borderLeftColor: borderColor }]}>
-          <TouchableOpacity style={styles.spinnerButton} onPress={increment}>
-            <ThemedText style={styles.spinnerButtonText}>▲</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.spinnerButton} onPress={decrement}>
-            <ThemedText style={styles.spinnerButtonText}>▼</ThemedText>
-          </TouchableOpacity>
-        </View>
-      )}
+      <View style={[styles.spinnerButtons, { borderLeftColor: borderColor }]}>
+        <TouchableOpacity style={styles.spinnerButton} onPress={increment}>
+          <ThemedText style={styles.spinnerButtonText}>▲</ThemedText>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.spinnerButton} onPress={decrement}>
+          <ThemedText style={styles.spinnerButtonText}>▼</ThemedText>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -82,45 +230,49 @@ const styles = StyleSheet.create({
   numberInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    position: "relative", // Needed for absolute positioning of spinner
+    position: "relative",
   },
   input: {
     borderWidth: 1,
     borderRadius: 5,
     paddingVertical: 8,
-    paddingHorizontal: 10, // Adjusted padding
-    width: 65, // Slightly wider to accommodate spinner space better
+    paddingHorizontal: 10,
+    width: 65,
     textAlign: "center",
-    ...(Platform.OS === "web"
-      ? {
-          paddingRight: 25, // Make room for spinner buttons
-          appearance: "textfield", // Standard appearance for number input
-          MozAppearance: "textfield", // Firefox specific
-          WebkitAppearance: "none", // Remove default spinner on Webkit
-        }
-      : {}),
+    paddingRight: 25,
   },
   spinnerButtons: {
     position: "absolute",
-    right: 1, // Position inside the border
-    top: 1, // Position inside the border
-    bottom: 1, // Position inside the border
+    right: 1,
+    top: 1,
+    bottom: 1,
     width: 20,
-    justifyContent: "space-evenly", // Evenly space buttons
+    justifyContent: "space-evenly",
     alignItems: "center",
     borderLeftWidth: 1,
-    backgroundColor: 'transparent', // Or a subtle background
+    backgroundColor: 'transparent',
   },
   spinnerButton: {
     width: "100%",
     height: "50%",
     justifyContent: "center",
     alignItems: "center",
-    // backgroundColor: 'rgba(0,0,0,0.05)', // Subtle background for hit area
-    // borderRadius: 2, // Optional rounding
   },
   spinnerButtonText: {
     fontSize: 8,
-    lineHeight: 8, // Ensure text is vertically centered
+    lineHeight: 8,
+  },
+  stepperButton: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stepperLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    minWidth: 40,
+    textAlign: 'center',
   },
 }); 

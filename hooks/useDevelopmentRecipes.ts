@@ -103,9 +103,15 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
     try {
       await client.loadAll();
       
-      const films = client.getAllFilms();
-      const developers = client.getAllDevelopers();
+      const allFilmsData = client.getAllFilms();
+      const allDevelopersData = client.getAllDevelopers();
       const combinations = client.getAllCombinations();
+      
+      // Filter films to only show black and white films
+      const films = allFilmsData.filter(film => film.colorType === 'bw');
+      
+      // Filter developers to only show those for film development (not paper)
+      const developers = allDevelopersData.filter(developer => developer.filmOrPaper === 'film');
       
       setAllFilms(films);
       setAllDevelopers(developers);
@@ -130,12 +136,18 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
     
     try {
       // Add minimum loading time to ensure spinner is visible
-      const [, films, developers, combinations] = await Promise.all([
+      const [, allFilmsData, allDevelopersData, combinations] = await Promise.all([
         new Promise(resolve => setTimeout(resolve, 500)), // Minimum 500ms loading
         client.forceReload().then(() => client.getAllFilms()),
         client.getAllDevelopers(),
         client.getAllCombinations(),
       ]);
+      
+      // Filter films to only show black and white films
+      const films = allFilmsData.filter(film => film.colorType === 'bw');
+      
+      // Filter developers to only show those for film development (not paper)
+      const developers = allDevelopersData.filter(developer => developer.filmOrPaper === 'film');
       
       console.log('[useDevelopmentRecipes] Data refreshed:', {
         films: films.length,

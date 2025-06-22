@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform } from "react-native";
+import { StyleSheet, TextInput, TouchableOpacity, SafeAreaView } from "react-native";
 import { Box, Text, VStack, Modal, ModalBackdrop, ModalContent, FlatList } from "@gluestack-ui/themed";
 import { Search, X } from "lucide-react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
@@ -119,67 +119,61 @@ export function MobileSelectionModal({
       <ModalBackdrop />
       <ModalContent style={{ backgroundColor: cardBackground, margin: 0, marginTop: 80, maxHeight: '100%', flex: 1 }}>
         <SafeAreaView style={{ flex: 1 }}>
-          <KeyboardAvoidingView 
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-          >
-            {/* Search Box with Close Button */}
-            <Box style={[styles.modalSearchContainer, { 
-              borderBottomColor: borderColor,
-              backgroundColor: cardBackground,
-              zIndex: 1000,
-            }]}>
-              <Box style={styles.modalSearchInputContainer}>
-                <Search size={20} color={textColor} style={styles.modalSearchIcon} />
-                <TextInput
-                  style={[styles.modalSearchInput, { color: textColor, borderColor }]}
-                  value={searchText}
-                  onChangeText={setSearchText}
-                  placeholder={`Search ${type === 'film' ? 'films' : type === 'developer' ? 'developers' : 'dilutions'}...`}
-                  placeholderTextColor={textColor + '80'}
-                  autoFocus
-                  returnKeyType="search"
-                />
-                <TouchableOpacity 
-                  onPress={() => setSearchText("")} 
-                  style={[
-                    styles.modalClearButton, 
-                    { 
-                      backgroundColor: textColor + '40',
-                      opacity: searchText.length > 0 ? 1 : 0,
-                      pointerEvents: searchText.length > 0 ? 'auto' : 'none'
-                    }
-                  ]}
-                >
-                  <Text style={[styles.modalClearButtonText, { color: textColor }]}>
-                    Clear
-                  </Text>
-                </TouchableOpacity>
-              </Box>
-              <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
-                <X size={22} color={textColor} />
+          {/* Search Box with Close Button */}
+          <Box style={[styles.modalSearchContainer, { 
+            borderBottomColor: borderColor,
+            backgroundColor: cardBackground,
+            zIndex: 1000,
+          }]}>
+            <Box style={styles.modalSearchInputContainer}>
+              <Search size={20} color={textColor} style={styles.modalSearchIcon} />
+              <TextInput
+                style={[styles.modalSearchInput, { color: textColor, borderColor }]}
+                value={searchText}
+                onChangeText={setSearchText}
+                placeholder={`Search ${type === 'film' ? 'films' : type === 'developer' ? 'developers' : 'dilutions'}...`}
+                placeholderTextColor={textColor + '80'}
+                autoFocus
+                returnKeyType="search"
+              />
+              <TouchableOpacity 
+                onPress={() => setSearchText("")} 
+                style={[
+                  styles.modalClearButton, 
+                  { 
+                    backgroundColor: textColor + '40',
+                    opacity: searchText.length > 0 ? 1 : 0,
+                    pointerEvents: searchText.length > 0 ? 'auto' : 'none'
+                  }
+                ]}
+              >
+                <Text style={[styles.modalClearButtonText, { color: textColor }]}>
+                  Clear
+                </Text>
               </TouchableOpacity>
             </Box>
+            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+              <X size={22} color={textColor} />
+            </TouchableOpacity>
+          </Box>
 
-            {/* Results List */}
-            <FlatList
-              data={filteredItems}
-              renderItem={renderItem}
-              keyExtractor={(item) => {
-                if (type === 'dilution') {
-                  return (item as DilutionOption).value;
-                }
-                return (item as Film | Developer).uuid;
-              }}
-              style={{ flex: 1 }}
-              contentContainerStyle={{ flexGrow: 1 }}
-              showsVerticalScrollIndicator={false}
-              ItemSeparatorComponent={() => <Box style={{ height: 1, backgroundColor: borderColor, opacity: 0.3 }} />}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-            />
-          </KeyboardAvoidingView>
+          {/* Results List */}
+          <FlatList
+            data={filteredItems}
+            renderItem={renderItem}
+            keyExtractor={(item) => {
+              if (type === 'dilution') {
+                return (item as DilutionOption).value;
+              }
+              return (item as Film | Developer).uuid;
+            }}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+            ItemSeparatorComponent={() => <Box style={{ height: 1, backgroundColor: borderColor, opacity: 0.3 }} />}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+          />
         </SafeAreaView>
       </ModalContent>
     </Modal>

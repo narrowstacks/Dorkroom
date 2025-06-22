@@ -1,7 +1,7 @@
 import React from 'react';
 import { Platform } from 'react-native';
 import { Box, Text } from '@gluestack-ui/themed';
-import { StyledTextInput } from './StyledTextInput';
+import { TextInput } from './TextInput';
 
 interface DimensionInputGroupProps {
   widthValue: string;
@@ -32,20 +32,22 @@ export const DimensionInputGroup = ({
     <Box sx={{ flexDirection: 'row', alignItems: 'center', gap: 16, mt: 8 }}>
       <Box sx={{ flex: 1, gap: 4 }}>
         <Text sx={{ fontSize: 16, mb: Platform.OS === 'web' ? 0 : 4 }}>{widthLabel}</Text>
-        <StyledTextInput 
+        <TextInput 
           value={widthValue} 
           onChangeText={onWidthChange} 
           placeholder={widthPlaceholder} 
-          defaultValue={widthDefault} 
+          defaultValue={widthDefault}
+          inputTitle={`Enter ${widthLabel}`}
         />
       </Box>
       <Box sx={{ flex: 1, gap: 4 }}>
         <Text sx={{ fontSize: 16, mb: Platform.OS === 'web' ? 0 : 4 }}>{heightLabel}</Text>
-        <StyledTextInput 
+        <TextInput 
           value={heightValue} 
           onChangeText={onHeightChange} 
           placeholder={heightPlaceholder} 
-          defaultValue={heightDefault} 
+          defaultValue={heightDefault}
+          inputTitle={`Enter ${heightLabel}`}
         />
       </Box>
     </Box>

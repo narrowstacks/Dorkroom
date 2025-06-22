@@ -1,7 +1,7 @@
 import React from 'react';
 import { Platform } from 'react-native';
 // UI Components
-import { LabeledSliderInput, StyledTextInput, DimensionInputGroup, ToggleSwitch } from '@/components/ui/forms';
+import { LabeledSliderInput, TextInput, DimensionInputGroup, ToggleSwitch } from '@/components/ui/forms';
 import { WarningAlert } from '@/components/ui/feedback';
 import { ResultRow } from '@/components/ui/calculator';
 // Border Calculator Specific Components
@@ -225,11 +225,12 @@ export default function BorderCalculator() {
           </ModalHeader>
           <ModalBody>
             <Text>To share these settings, you must first save them as a named preset.</Text>
-            <StyledTextInput
+            <TextInput
               value={presetName}
               onChangeText={setPresetName}
               placeholder="Enter Preset Name"
-              style={{ marginTop: 16, color: textColor, backgroundColor: cardBackground, borderColor: outline, borderWidth: 1, borderRadius: 8, padding: 16 }}
+              inputTitle="Enter Preset Name"
+              style={{ marginTop: 16 }}
             />
           </ModalBody>
           <ModalFooter>
@@ -331,7 +332,12 @@ export default function BorderCalculator() {
               {(isEditingPreset || presetDirty) && (
                 <>
                   <Text sx={{ fontSize: 20 }}>Preset Name</Text>
-                  <StyledTextInput value={presetName} onChangeText={setPresetName} placeholder="Preset Name" />
+                  <TextInput 
+                    value={presetName} 
+                    onChangeText={setPresetName} 
+                    placeholder="Preset Name"
+                    inputTitle="Enter Preset Name"
+                  />
                   <HStack style={{ gap: 8, justifyContent: 'space-between' }}>
                     <Button onPress={savePreset} variant="solid" action="positive" size="md"><ButtonIcon as={Check} /><ButtonText style={{ marginLeft: 5, fontSize: 18 }}>Save</ButtonText></Button>
                     <Button onPress={updatePresetHandler} variant="solid" action="primary" size="md" isDisabled={!selectedPresetId}><ButtonIcon as={ArrowUp} /><ButtonText style={{ marginLeft: 5, fontSize: 18 }}>Update</ButtonText></Button>

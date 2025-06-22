@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Platform, TouchableOpacity } from 'react-native';
-import { Box, Text, Input, InputField, HStack, VStack, Switch, Button, ButtonText } from '@gluestack-ui/themed';
+import { Box, Text, HStack, VStack, Switch, Button, ButtonText } from '@gluestack-ui/themed';
 import { Plus, Trash2 } from 'lucide-react-native';
 import { FormGroup } from '@/components/ui/forms/FormSection';
 import { StyledSelect } from '@/components/ui/select/StyledSelect';
-import { NumberInput } from '@/components/ui/forms/NumberInput';
+import { NumberInput, TextInput } from '@/components/ui/forms';
 import { SearchInput, SearchDropdown } from '@/components/ui/search';
 import { MobileSelectButton } from '@/components/ui/select/MobileSelectButton';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -30,8 +30,6 @@ interface DeveloperSetupStepProps {
 
 const FILM_OR_PAPER_TYPES = [
   { label: "Film", value: "film" },
-  { label: "Paper", value: "paper" },
-  { label: "Both", value: "both" },
 ];
 
 /**
@@ -174,6 +172,7 @@ export function DeveloperSetupStep({
                     placeholder="Type to search developers..."
                     selectedItem={selectedDeveloper}
                     onPress={() => setIsDeveloperSearchFocused(true)}
+                    onClear={() => updateFormData({ selectedDeveloperId: undefined })}
                   />
                 )}
                 
@@ -229,25 +228,23 @@ export function DeveloperSetupStep({
             }}>
               <Box style={{ flex: isDesktop ? 1 : undefined }}>
                 <FormGroup label="Developer Manufacturer">
-                  <Input>
-                    <InputField
-                      value={formData.customDeveloper?.manufacturer || ''}
-                      onChangeText={(value) => updateCustomDeveloper({ manufacturer: value })}
-                      placeholder="e.g., Kodak, Ilford, Adox"
-                    />
-                  </Input>
+                  <TextInput
+                    value={formData.customDeveloper?.manufacturer || ''}
+                    onChangeText={(value: string) => updateCustomDeveloper({ manufacturer: value })}
+                    placeholder="e.g., Kodak, Ilford, Adox"
+                    inputTitle="Enter Developer Manufacturer"
+                  />
                 </FormGroup>
               </Box>
               
               <Box style={{ flex: isDesktop ? 1 : undefined }}>
                 <FormGroup label="Developer Name">
-                  <Input>
-                    <InputField
-                      value={formData.customDeveloper?.name || ''}
-                      onChangeText={(value) => updateCustomDeveloper({ name: value })}
-                      placeholder="e.g., D-76, ID-11, Rodinal"
-                    />
-                  </Input>
+                  <TextInput
+                    value={formData.customDeveloper?.name || ''}
+                    onChangeText={(value: string) => updateCustomDeveloper({ name: value })}
+                    placeholder="e.g., D-76, ID-11, Rodinal"
+                    inputTitle="Enter Developer Name"
+                  />
                 </FormGroup>
               </Box>
             </Box>
@@ -287,6 +284,8 @@ export function DeveloperSetupStep({
                     value={String(formData.customDeveloper?.workingLifeHours || '')}
                     onChangeText={(value) => updateCustomDeveloper({ workingLifeHours: parseInt(value) || undefined })}
                     placeholder="24"
+                    inputTitle="Enter Working Life (Hours)"
+                    step={1}
                   />
                 </FormGroup>
               </Box>
@@ -297,6 +296,8 @@ export function DeveloperSetupStep({
                     value={String(formData.customDeveloper?.stockLifeMonths || '')}
                     onChangeText={(value) => updateCustomDeveloper({ stockLifeMonths: parseInt(value) || undefined })}
                     placeholder="6"
+                    inputTitle="Enter Stock Life (Months)"
+                    step={1}
                   />
                 </FormGroup>
               </Box>
@@ -311,22 +312,20 @@ export function DeveloperSetupStep({
                 {formData.customDeveloper?.dilutions.map((dilution, index) => (
                   <HStack key={index} style={{ alignItems: 'center', gap: 8 }}>
                     <Box style={{ flex: 1 }}>
-                      <Input>
-                        <InputField
-                          value={dilution.name}
-                          onChangeText={(value) => updateDilution(index, 'name', value)}
-                          placeholder="e.g., Stock, 1+1, 1+9"
-                        />
-                      </Input>
+                      <TextInput
+                        value={dilution.name}
+                        onChangeText={(value: string) => updateDilution(index, 'name', value)}
+                        placeholder="e.g., Stock, 1+1, 1+9"
+                        inputTitle="Enter Dilution Name"
+                      />
                     </Box>
                     <Box style={{ flex: 1 }}>
-                      <Input>
-                        <InputField
-                          value={dilution.dilution}
-                          onChangeText={(value) => updateDilution(index, 'dilution', value)}
-                          placeholder="e.g., Stock, 1+1, 1+9"
-                        />
-                      </Input>
+                      <TextInput
+                        value={dilution.dilution}
+                        onChangeText={(value: string) => updateDilution(index, 'dilution', value)}
+                        placeholder="e.g., Stock, 1+1, 1+9"
+                        inputTitle="Enter Dilution Ratio"
+                      />
                     </Box>
                     {formData.customDeveloper?.dilutions.length! > 1 && (
                       <TouchableOpacity onPress={() => removeDilution(index)}>
@@ -352,39 +351,33 @@ export function DeveloperSetupStep({
             {/* Optional fields */}
             <VStack space="sm">
               <FormGroup label="Mixing Instructions (Optional)">
-                <Input>
-                  <InputField
-                    value={formData.customDeveloper?.mixingInstructions || ''}
-                    onChangeText={(value) => updateCustomDeveloper({ mixingInstructions: value })}
-                    placeholder="e.g., Dissolve chemicals in order at 125°F"
-                    multiline
-                    numberOfLines={3}
-                  />
-                </Input>
+                <TextInput
+                  value={formData.customDeveloper?.mixingInstructions || ''}
+                  onChangeText={(value: string) => updateCustomDeveloper({ mixingInstructions: value })}
+                  placeholder="e.g., Dissolve chemicals in order at 125°F"
+                  inputTitle="Enter Mixing Instructions"
+                  multiline
+                />
               </FormGroup>
               
               <FormGroup label="Safety Notes (Optional)">
-                <Input>
-                  <InputField
-                    value={formData.customDeveloper?.safetyNotes || ''}
-                    onChangeText={(value) => updateCustomDeveloper({ safetyNotes: value })}
-                    placeholder="e.g., Use in well-ventilated area, avoid skin contact"
-                    multiline
-                    numberOfLines={3}
-                  />
-                </Input>
+                <TextInput
+                  value={formData.customDeveloper?.safetyNotes || ''}
+                  onChangeText={(value: string) => updateCustomDeveloper({ safetyNotes: value })}
+                  placeholder="e.g., Use in well-ventilated area, avoid skin contact"
+                  inputTitle="Enter Safety Notes"
+                  multiline
+                />
               </FormGroup>
               
               <FormGroup label="General Notes (Optional)">
-                <Input>
-                  <InputField
-                    value={formData.customDeveloper?.notes || ''}
-                    onChangeText={(value) => updateCustomDeveloper({ notes: value })}
-                    placeholder="Additional notes about the developer"
-                    multiline
-                    numberOfLines={3}
-                  />
-                </Input>
+                <TextInput
+                  value={formData.customDeveloper?.notes || ''}
+                  onChangeText={(value: string) => updateCustomDeveloper({ notes: value })}
+                  placeholder="Additional notes about the developer"
+                  inputTitle="Enter General Notes"
+                  multiline
+                />
               </FormGroup>
             </VStack>
           </VStack>

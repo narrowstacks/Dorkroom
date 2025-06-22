@@ -9,8 +9,6 @@ import {
   HStack,
   Button,
   ButtonText,
-  Input,
-  InputField,
   useToast,
   Toast,
   ToastTitle,
@@ -18,6 +16,7 @@ import {
 import { X, Calculator, Beaker, Edit3, Copy, Trash2 } from "lucide-react-native";
 
 import { FormGroup } from "@/components/ui/forms/FormSection";
+import { TextInput } from "@/components/ui/forms";
 import { StyledSelect } from "@/components/ui/select/StyledSelect";
 import { ChemistryCalculator } from "@/components/development-recipes/ChemistryCalculator";
 import { showConfirmAlert } from "@/components/ui/layout/ConfirmAlert";
@@ -430,26 +429,24 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
                   </FormGroup>
                   
                   <FormGroup label="Number of Rolls">
-                    <Input style={styles.input}>
-                      <InputField
-                        value={chemistry.numberOfRolls}
-                        onChangeText={chemistry.setNumberOfRolls}
-                        placeholder="1"
-                        keyboardType="numeric"
-                      />
-                    </Input>
+                    <TextInput
+                      value={chemistry.numberOfRolls}
+                      onChangeText={chemistry.setNumberOfRolls}
+                      placeholder="1"
+                      keyboardType="numeric"
+                      inputTitle="Enter Number of Rolls"
+                    />
                   </FormGroup>
                 </>
               ) : (
                 <FormGroup label={`Total Volume (${chemistry.unit})`}>
-                  <Input style={styles.input}>
-                    <InputField
-                      value={chemistry.totalVolume}
-                      onChangeText={chemistry.setTotalVolume}
-                      placeholder={chemistry.unit === 'ml' ? '500' : '16.9'}
-                      keyboardType="numeric"
-                    />
-                  </Input>
+                  <TextInput
+                    value={chemistry.totalVolume}
+                    onChangeText={chemistry.setTotalVolume}
+                    placeholder={chemistry.unit === 'ml' ? '500' : '16.9'}
+                    keyboardType="numeric"
+                    inputTitle={`Enter Total Volume (${chemistry.unit})`}
+                  />
                 </FormGroup>
               )}
 

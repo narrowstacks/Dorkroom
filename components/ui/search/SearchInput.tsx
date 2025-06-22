@@ -1,6 +1,6 @@
 import React from "react";
 import { Platform, StyleSheet, TextInput, TouchableOpacity } from "react-native";
-import { Box } from "@gluestack-ui/themed";
+import { Box, HStack } from "@gluestack-ui/themed";
 import { Search, X } from "lucide-react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
@@ -25,6 +25,7 @@ interface MobileSearchInputProps extends BaseSearchInputProps {
   variant: 'mobile';
   selectedItem?: Film | Developer | null;
   onPress: () => void;
+  onClear?: () => void;
 }
 
 type SearchInputProps = DesktopSearchInputProps | MobileSearchInputProps;
@@ -44,13 +45,27 @@ export function SearchInput(props: SearchInputProps) {
   
   if (variant === 'mobile') {
     const mobileProps = props as MobileSearchInputProps;
+    const hasSelection = !!mobileProps.selectedItem;
+    
     return (
-      <MobileSelectButton
-        label={mobileProps.type === 'film' ? 'Film' : 'Developer'}
-        selectedItem={mobileProps.selectedItem}
-        onPress={mobileProps.onPress}
-        type={mobileProps.type}
-      />
+      <HStack space="sm" style={styles.mobileContainer}>
+        <Box style={styles.mobileSelectContainer}>
+          <MobileSelectButton
+            label={mobileProps.type === 'film' ? 'Film' : 'Developer'}
+            selectedItem={mobileProps.selectedItem}
+            onPress={mobileProps.onPress}
+            type={mobileProps.type}
+          />
+        </Box>
+        {hasSelection && mobileProps.onClear && (
+          <TouchableOpacity 
+            style={[styles.mobileClearButton, { backgroundColor: 'white' }]}
+            onPress={mobileProps.onClear}
+          >
+            <X size={20} color="#000" />
+          </TouchableOpacity>
+        )}
+      </HStack>
     );
   }
 
@@ -110,5 +125,26 @@ const styles = StyleSheet.create({
     right: 10,
     zIndex: 1,
     padding: 4,
+  },
+  mobileContainer: {
+    alignItems: "center",
+  },
+  mobileSelectContainer: {
+    flex: 1,
+  },
+  mobileClearButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });
