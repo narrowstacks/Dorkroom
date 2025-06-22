@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Platform } from 'react-native';
+import { Platform, TouchableOpacity } from 'react-native';
 import { Box, ScrollView, VStack, Text, HStack } from '@gluestack-ui/themed';
 import { 
   Drawer, 
@@ -7,7 +7,7 @@ import {
   DrawerContent, 
   DrawerHeader, 
   DrawerBody 
-} from '@gluestack-ui/themed';
+} from '@/components/ui/drawer/index';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { WarningAlert } from '@/components/ui/feedback';
 
@@ -15,12 +15,12 @@ import { WarningAlert } from '@/components/ui/feedback';
 import { 
   BladeResultsDisplay, 
   CompactPreview, 
-  SettingsButton, 
-  ActionButtons,
+  SettingsButton,
 } from './index';
 
 // Inline sections instead of modals
 import {
+  SectionWrapper,
   PaperSizeSection,
   BorderSizeSection,
   PositionOffsetsSection,
@@ -36,7 +36,8 @@ import {
   RotateCcw,
   Eye,
   EyeOff,
-  BookOpen
+  BookOpen,
+  Share
 } from 'lucide-react-native';
 
 // Border calculator functionality
@@ -45,7 +46,7 @@ import { Button, ButtonText, ButtonIcon } from '@gluestack-ui/themed';
 import type { BorderPreset, BorderPresetSettings } from '@/types/borderPresetTypes';
 
 // Active section type
-type ActiveSection = 'main' | 'paperSize' | 'borderSize' | 'positionOffsets' | 'presets';
+type ActiveSection = 'paperSize' | 'borderSize' | 'positionOffsets' | 'presets';
 
 interface MobileBorderCalculatorProps {
   // This component will use the same hooks as the desktop version
@@ -55,8 +56,9 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
   const backgroundColor = useThemeColor({}, 'background');
   const outline = useThemeColor({}, 'outline');
 
-  // Active section state
-  const [activeSection, setActiveSection] = useState<ActiveSection>('main');
+  // Drawer state
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<ActiveSection>('paperSize');
   const [currentPreset, setCurrentPreset] = useState<BorderPreset | null>(null);
 
   // Border calculator hooks
@@ -148,7 +150,8 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
   };
 
   const getPresetsDisplayValue = () => {
-    return currentPreset ? `Preset: ${currentPreset.name}` : 'Presets';
+    if (!currentPreset) return 'Presets';
+    return currentPreset.name.length > 10 ? currentPreset.name : `Preset: ${currentPreset.name}`;
   };
 
   // Action handlers
@@ -164,11 +167,18 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
 
   const handleSavePreset = () => {
     setActiveSection('presets');
+    setIsDrawerOpen(true);
   };
 
-  // Close section handler
-  const closeSectionToMain = () => {
-    setActiveSection('main');
+  // Open drawer handlers
+  const openDrawerSection = (section: ActiveSection) => {
+    setActiveSection(section);
+    setIsDrawerOpen(true);
+  };
+
+  // Close drawer handler
+  const closeDrawer = () => {
+    setIsDrawerOpen(false);
   };
 
   if (!calculation) {
@@ -204,171 +214,191 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
           {paperSizeWarning && <WarningAlert message={paperSizeWarning} action="warning" />}
           {offsetWarning && <WarningAlert message={offsetWarning} action="warning" />}
 
-          {/* Main Settings or Active Section */}
-          {activeSection === 'main' && (
-            <>
-              {/* Settings Buttons */}
-              <VStack space="xs" style={{ marginTop: 5 }}>
-                <SettingsButton 
-                  label="Paper and Image Size"
-                  value={`${getAspectRatioDisplayValue()} on ${getPaperSizeDisplayValue()}`}
-                  onPress={() => setActiveSection('paperSize')}
-                  icon={ImageIcon}
-                />
+          {/* Settings Buttons */}
+          <VStack space="xs" style={{ marginTop: 5 }}>
+            <SettingsButton 
+              label="Paper and Image Size"
+              value={`${getAspectRatioDisplayValue()} on ${getPaperSizeDisplayValue()}`}
+              onPress={() => openDrawerSection('paperSize')}
+              icon={ImageIcon}
+            />
 
-                <SettingsButton 
-                  label="Border Size"
-                  value={getBorderSizeDisplayValue()}
-                  onPress={() => setActiveSection('borderSize')}
-                  icon={RulerIcon}
-                />
+            <SettingsButton 
+              label="Border Size"
+              value={getBorderSizeDisplayValue()}
+              onPress={() => openDrawerSection('borderSize')}
+              icon={RulerIcon}
+            />
 
-                <SettingsButton 
-                  label="Position & Offsets"
-                  value={getPositionDisplayValue()}
-                  onPress={() => setActiveSection('positionOffsets')}
-                  icon={MoveIcon}
-                />
-                <HStack space="lg" style={{ flex: 1 }}>
-                <Box style={{ flex: 1 }}>
-                  <SettingsButton 
-                    label="Show Blades"
-                    onPress={() => setShowBlades(!showBlades)}
-                    icon={showBlades ? Eye : EyeOff}
-                    showChevron={false}
-                    centerLabel={true}
-                  />
-                </Box>
-
-                <Box style={{ flex: 1 }}>
-                  <SettingsButton 
-                    value={getPresetsDisplayValue()}
-                    onPress={() => setActiveSection('presets')}
-                    icon={BookOpen}
-                  />
-                </Box>
-                </HStack>
-              </VStack>
-
-              {/* Reset Button */}
-              <Button 
-                onPress={resetToDefaults} 
-                variant="solid" 
-                action="negative" 
-                size="md" 
-                style={{ marginTop: 4 }}
-              >
-                <ButtonIcon as={RotateCcw} />
-                <ButtonText style={{ marginLeft: 8 }}>Reset to Defaults</ButtonText>
-              </Button>
-
-              {/* Action Buttons */}
-              <ActionButtons 
-                onCopyResults={handleCopyResults}
-                onShare={handleShare}
-                onSavePreset={handleSavePreset}
+            <SettingsButton 
+              label="Position & Offsets"
+              value={getPositionDisplayValue()}
+              onPress={() => openDrawerSection('positionOffsets')}
+              icon={MoveIcon}
+            />
+            <HStack space="lg" style={{ flex: 1 }}>
+            <Box style={{ flex: 1 }}>
+              <SettingsButton 
+                label="Show Blades"                onPress={() => setShowBlades(!showBlades)}
+                icon={showBlades ? Eye : EyeOff}
+                showChevron={false}
+                centerLabel={true}
               />
-            </>
-          )}
+            </Box>
 
-          {/* Inline Sections */}
-          {activeSection === 'paperSize' && (
-            <PaperSizeSection 
-              onClose={closeSectionToMain}
-              aspectRatio={aspectRatio}
-              setAspectRatio={setAspectRatio}
-              customAspectWidth={customAspectWidth}
-              setCustomAspectWidth={setCustomAspectWidth}
-              customAspectHeight={customAspectHeight}
-              setCustomAspectHeight={setCustomAspectHeight}
-              paperSize={paperSize}
-              setPaperSize={setPaperSize}
-              customPaperWidth={customPaperWidth}
-              setCustomPaperWidth={setCustomPaperWidth}
-              customPaperHeight={customPaperHeight}
-              setCustomPaperHeight={setCustomPaperHeight}
-              isLandscape={isLandscape}
-              setIsLandscape={setIsLandscape}
-              isRatioFlipped={isRatioFlipped}
-              setIsRatioFlipped={setIsRatioFlipped}
-            />
-          )}
+            <Box style={{ flex: 1 }}>
+              <SettingsButton 
+                value={getPresetsDisplayValue()}
+                onPress={() => openDrawerSection('presets')}
+                icon={BookOpen}
+              />
+            </Box>
 
-          {activeSection === 'borderSize' && (
-            <BorderSizeSection 
-              onClose={closeSectionToMain}
-              minBorder={(() => {
-                const parsed = parseFloat(String(minBorder));
-                return isNaN(parsed) ? 0 : parsed;
-              })()}
-              setMinBorder={(value: number) => setMinBorder(String(value))}
-              minBorderWarning={minBorderWarning}
-            />
-          )}
+            <Box style={{ flex: 0.3 }}>
+              <TouchableOpacity onPress={handleShare} activeOpacity={0.7}>
+                <Box
+                  style={{
+                    backgroundColor: '#10B981',
+                    borderRadius: 12,
+                    padding: 16,
+                    marginBottom: 12,
+                    minHeight: 56,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Share size={20} color="white" />
+                </Box>
+              </TouchableOpacity>
+            </Box>
+            </HStack>
+          </VStack>
 
-          {activeSection === 'positionOffsets' && (
-            <PositionOffsetsSection 
-              onClose={closeSectionToMain}
-              enableOffset={enableOffset}
-              setEnableOffset={setEnableOffset}
-              ignoreMinBorder={ignoreMinBorder}
-              setIgnoreMinBorder={setIgnoreMinBorder}
-              horizontalOffset={(() => {
-                const parsed = parseFloat(String(horizontalOffset));
-                return isNaN(parsed) ? 0 : parsed;
-              })()}
-              setHorizontalOffset={(value: number) => setHorizontalOffset(String(value))}
-              verticalOffset={(() => {
-                const parsed = parseFloat(String(verticalOffset));
-                return isNaN(parsed) ? 0 : parsed;
-              })()}
-              setVerticalOffset={(value: number) => setVerticalOffset(String(value))}
-              offsetWarning={offsetWarning}
-            />
-          )}
+          {/* Reset Button */}
+          <Button 
+            onPress={resetToDefaults} 
+            variant="solid" 
+            action="negative" 
+            size="md" 
+            style={{ marginTop: 4 }}
+          >
+            <ButtonIcon as={RotateCcw} />
+            <ButtonText style={{ marginLeft: 8 }}>Reset to Defaults</ButtonText>
+          </Button>
 
-          {activeSection === 'presets' && (
-            <PresetsSection 
-              onClose={closeSectionToMain}
-              presets={presets}
-              currentPreset={currentPreset}
-              onApplyPreset={(preset) => {
-                applyPreset(preset.settings);
-                setCurrentPreset(preset);
-              }}
-              onSavePreset={(name, settings) => {
-                const newPreset: BorderPreset = {
-                  id: Date.now().toString(),
-                  name,
-                  settings,
-                };
-                addPreset(newPreset);
-                setCurrentPreset(newPreset);
-              }}
-              onDeletePreset={(id) => {
-                removePreset(id);
-                if (currentPreset?.id === id) {
-                  setCurrentPreset(null);
-                }
-              }}
-              getCurrentSettings={() => ({
-                aspectRatio,
-                paperSize,
-                customAspectWidth: parseFloat(String(customAspectWidth)) || 0,
-                customAspectHeight: parseFloat(String(customAspectHeight)) || 0,
-                customPaperWidth: parseFloat(String(customPaperWidth)) || 0,
-                customPaperHeight: parseFloat(String(customPaperHeight)) || 0,
-                minBorder: parseFloat(String(minBorder)) || 0,
-                enableOffset,
-                ignoreMinBorder,
-                horizontalOffset: parseFloat(String(horizontalOffset)) || 0,
-                verticalOffset: parseFloat(String(verticalOffset)) || 0,
-                showBlades,
-                isLandscape,
-                isRatioFlipped,
-              })}
-            />
-          )}
+
+
+          {/* Bottom Drawer */}
+          <Drawer 
+            isOpen={isDrawerOpen}
+            onClose={closeDrawer}
+            size="md"
+            anchor="bottom"
+          >
+            <DrawerContent style={{ flex: 1, backgroundColor }}>
+              <DrawerBody style={{ flex: 1, backgroundColor, padding: 0 }}>
+                {activeSection === 'paperSize' && (
+                  <PaperSizeSection 
+                    onClose={closeDrawer}
+                    aspectRatio={aspectRatio}
+                    setAspectRatio={setAspectRatio}
+                    customAspectWidth={customAspectWidth}
+                    setCustomAspectWidth={setCustomAspectWidth}
+                    customAspectHeight={customAspectHeight}
+                    setCustomAspectHeight={setCustomAspectHeight}
+                    paperSize={paperSize}
+                    setPaperSize={setPaperSize}
+                    customPaperWidth={customPaperWidth}
+                    setCustomPaperWidth={setCustomPaperWidth}
+                    customPaperHeight={customPaperHeight}
+                    setCustomPaperHeight={setCustomPaperHeight}
+                    isLandscape={isLandscape}
+                    setIsLandscape={setIsLandscape}
+                    isRatioFlipped={isRatioFlipped}
+                    setIsRatioFlipped={setIsRatioFlipped}
+                  />
+                )}
+
+                {activeSection === 'borderSize' && (
+                  <BorderSizeSection 
+                    onClose={closeDrawer}
+                    minBorder={(() => {
+                      const parsed = parseFloat(String(minBorder));
+                      return isNaN(parsed) ? 0 : parsed;
+                    })()}
+                    setMinBorder={(value: number) => setMinBorder(String(value))}
+                    minBorderWarning={minBorderWarning}
+                  />
+                )}
+
+                {activeSection === 'positionOffsets' && (
+                  <PositionOffsetsSection 
+                    onClose={closeDrawer}
+                    enableOffset={enableOffset}
+                    setEnableOffset={setEnableOffset}
+                    ignoreMinBorder={ignoreMinBorder}
+                    setIgnoreMinBorder={setIgnoreMinBorder}
+                    horizontalOffset={(() => {
+                      const parsed = parseFloat(String(horizontalOffset));
+                      return isNaN(parsed) ? 0 : parsed;
+                    })()}
+                    setHorizontalOffset={(value: number) => setHorizontalOffset(String(value))}
+                    verticalOffset={(() => {
+                      const parsed = parseFloat(String(verticalOffset));
+                      return isNaN(parsed) ? 0 : parsed;
+                    })()}
+                    setVerticalOffset={(value: number) => setVerticalOffset(String(value))}
+                    offsetWarning={offsetWarning}
+                  />
+                )}
+
+                {activeSection === 'presets' && (
+                  <PresetsSection 
+                    onClose={closeDrawer}
+                    presets={presets}
+                    currentPreset={currentPreset}
+                    onApplyPreset={(preset) => {
+                      applyPreset(preset.settings);
+                      setCurrentPreset(preset);
+                      closeDrawer();
+                    }}
+                    onSavePreset={(name, settings) => {
+                      const newPreset: BorderPreset = {
+                        id: Date.now().toString(),
+                        name,
+                        settings,
+                      };
+                      addPreset(newPreset);
+                      setCurrentPreset(newPreset);
+                      closeDrawer();
+                    }}
+                    onDeletePreset={(id) => {
+                      removePreset(id);
+                      if (currentPreset?.id === id) {
+                        setCurrentPreset(null);
+                      }
+                    }}
+                    getCurrentSettings={() => ({
+                      aspectRatio,
+                      paperSize,
+                      customAspectWidth: parseFloat(String(customAspectWidth)) || 0,
+                      customAspectHeight: parseFloat(String(customAspectHeight)) || 0,
+                      customPaperWidth: parseFloat(String(customPaperWidth)) || 0,
+                      customPaperHeight: parseFloat(String(customPaperHeight)) || 0,
+                      minBorder: parseFloat(String(minBorder)) || 0,
+                      enableOffset,
+                      ignoreMinBorder,
+                      horizontalOffset: parseFloat(String(horizontalOffset)) || 0,
+                      verticalOffset: parseFloat(String(verticalOffset)) || 0,
+                      showBlades,
+                      isLandscape,
+                      isRatioFlipped,
+                    })}
+                  />
+                )}
+              </DrawerBody>
+            </DrawerContent>
+          </Drawer>
         </VStack>
       </Box>
     </ScrollView>

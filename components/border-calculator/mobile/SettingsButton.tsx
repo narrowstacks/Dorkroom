@@ -6,7 +6,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface SettingsButtonProps {
   label?: string | null;
-  value: string;
+  value?: string | null;
   onPress: () => void;
   icon?: React.ComponentType<any>;
   showChevron?: boolean;

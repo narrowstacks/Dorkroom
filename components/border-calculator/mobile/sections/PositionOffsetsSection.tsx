@@ -1,9 +1,9 @@
 import React from 'react';
-import { Box, VStack, HStack, Text, Heading, Button, ButtonIcon } from '@gluestack-ui/themed';
+import { VStack, Text } from '@gluestack-ui/themed';
 import { LabeledSliderInput, ToggleSwitch } from '@/components/ui/forms';
 import { WarningAlert } from '@/components/ui/feedback';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { X } from 'lucide-react-native';
+import { SectionWrapper } from './SectionWrapper';
 import {
   OFFSET_SLIDER_MIN,
   OFFSET_SLIDER_MAX,
@@ -36,104 +36,83 @@ export const PositionOffsetsSection: React.FC<PositionOffsetsSectionProps> = ({
   setVerticalOffset,
   offsetWarning,
 }) => {
-  const backgroundColor = useThemeColor({}, 'background');
-  const borderColor = useThemeColor({}, 'outline');
   const textColor = useThemeColor({}, 'text');
   const iconColor = useThemeColor({}, 'icon');
   const tintColor = useThemeColor({}, 'tint');
 
   return (
-    <Box 
-      style={{ 
-        backgroundColor,
-        borderTopWidth: 1,
-        borderTopColor: borderColor,
-        padding: 16,
-        borderRadius: 8,
-        marginTop: 16
-      }}
-    >
-      {/* Header with close button */}
-      <HStack style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <Heading size="lg">Position & Offsets</Heading>
-        <Button onPress={onClose} variant="outline" size="sm">
-          <ButtonIcon as={X} />
-        </Button>
-      </HStack>
+    <SectionWrapper title="Position & Offsets" onClose={onClose}>
+      <Text style={{ fontSize: 16, color: textColor, textAlign: 'center' }}>
+        Control image positioning and offset behavior
+      </Text>
       
-      <VStack space="lg">
-        <Text style={{ fontSize: 16, color: textColor, textAlign: 'center' }}>
-          Control image positioning and offset behavior
-        </Text>
-        
-        {/* Enable Offsets Toggle */}
-        <ToggleSwitch 
-          label="Enable Offsets:" 
-          value={enableOffset} 
-          onValueChange={setEnableOffset} 
-        />
+      {/* Enable Offsets Toggle */}
+      <ToggleSwitch 
+        label="Enable Offsets:" 
+        value={enableOffset} 
+        onValueChange={setEnableOffset} 
+      />
 
-        {enableOffset && (
-          <VStack space="lg">
-            {/* Ignore Min Border */}
-            <VStack space="sm">
-              <ToggleSwitch 
-                label="Ignore Min Border:" 
-                value={ignoreMinBorder} 
-                onValueChange={setIgnoreMinBorder} 
-              />
-              {ignoreMinBorder && (
-                <Text style={{ fontSize: 14, color: textColor, lineHeight: 20 }}>
-                  Print can be positioned freely but will stay within paper edges
-                </Text>
-              )}
-            </VStack>
-
-            {/* Offset Controls */}
-            <VStack space="md">
-              <LabeledSliderInput 
-                label="Horizontal Offset:" 
-                value={horizontalOffset} 
-                onChange={(v) => {
-                  const parsed = parseFloat(v);
-                  setHorizontalOffset(isNaN(parsed) ? 0 : parsed);
-                }} 
-                min={OFFSET_SLIDER_MIN} 
-                max={OFFSET_SLIDER_MAX} 
-                step={OFFSET_SLIDER_STEP} 
-                labels={OFFSET_SLIDER_LABELS} 
-                textColor={textColor} 
-                borderColor={iconColor} 
-                tintColor={tintColor} 
-                warning={!!offsetWarning} 
-                continuousUpdate={true} 
-              />
-              
-              <LabeledSliderInput 
-                label="Vertical Offset:" 
-                value={verticalOffset} 
-                onChange={(v) => {
-                  const parsed = parseFloat(v);
-                  setVerticalOffset(isNaN(parsed) ? 0 : parsed);
-                }} 
-                min={OFFSET_SLIDER_MIN} 
-                max={OFFSET_SLIDER_MAX} 
-                step={OFFSET_SLIDER_STEP} 
-                labels={OFFSET_SLIDER_LABELS} 
-                textColor={textColor} 
-                borderColor={iconColor} 
-                tintColor={tintColor} 
-                warning={!!offsetWarning} 
-                continuousUpdate={true} 
-              />
-            </VStack>
-
-            {offsetWarning && (
-              <WarningAlert message={offsetWarning} action="warning" />
+      {enableOffset && (
+        <VStack space="lg">
+          {/* Ignore Min Border */}
+          <VStack space="sm">
+            <ToggleSwitch 
+              label="Ignore Min Border:" 
+              value={ignoreMinBorder} 
+              onValueChange={setIgnoreMinBorder} 
+            />
+            {ignoreMinBorder && (
+              <Text style={{ fontSize: 14, color: textColor, lineHeight: 20 }}>
+                Print can be positioned freely but will stay within paper edges
+              </Text>
             )}
           </VStack>
-        )}
-      </VStack>
-    </Box>
+
+          {/* Offset Controls */}
+          <VStack space="md">
+            <LabeledSliderInput 
+              label="Horizontal Offset:" 
+              value={horizontalOffset} 
+              onChange={(v) => {
+                const parsed = parseFloat(v);
+                setHorizontalOffset(isNaN(parsed) ? 0 : parsed);
+              }} 
+              min={OFFSET_SLIDER_MIN} 
+              max={OFFSET_SLIDER_MAX} 
+              step={OFFSET_SLIDER_STEP} 
+              labels={OFFSET_SLIDER_LABELS} 
+              textColor={textColor} 
+              borderColor={iconColor} 
+              tintColor={tintColor} 
+              warning={!!offsetWarning} 
+              continuousUpdate={true} 
+            />
+            
+            <LabeledSliderInput 
+              label="Vertical Offset:" 
+              value={verticalOffset} 
+              onChange={(v) => {
+                const parsed = parseFloat(v);
+                setVerticalOffset(isNaN(parsed) ? 0 : parsed);
+              }} 
+              min={OFFSET_SLIDER_MIN} 
+              max={OFFSET_SLIDER_MAX} 
+              step={OFFSET_SLIDER_STEP} 
+              labels={OFFSET_SLIDER_LABELS} 
+              textColor={textColor} 
+              borderColor={iconColor} 
+              tintColor={tintColor} 
+              warning={!!offsetWarning} 
+              continuousUpdate={true} 
+            />
+          </VStack>
+
+          {offsetWarning && (
+            <WarningAlert message={offsetWarning} action="warning" />
+          )}
+        </VStack>
+      )}
+    </SectionWrapper>
   );
 }; 
