@@ -5,10 +5,12 @@ import { ChevronRight } from 'lucide-react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface SettingsButtonProps {
-  label: string;
+  label?: string | null;
   value: string;
   onPress: () => void;
   icon?: React.ComponentType<any>;
+  showChevron?: boolean;
+  centerLabel?: boolean;
 }
 
 export const SettingsButton: React.FC<SettingsButtonProps> = ({
@@ -16,6 +18,8 @@ export const SettingsButton: React.FC<SettingsButtonProps> = ({
   value,
   onPress,
   icon: IconComponent,
+  showChevron = true,
+  centerLabel = false,
 }) => {
   const cardBackground = useThemeColor({}, 'cardBackground');
   const textColor = useThemeColor({}, 'text');
@@ -33,7 +37,6 @@ export const SettingsButton: React.FC<SettingsButtonProps> = ({
           padding: 16,
           marginBottom: 12,
           minHeight: 56,
-          justifyContent: 'center',
         }}
       >
         <HStack style={{ justifyContent: 'space-between', alignItems: 'center' }}>
@@ -44,7 +47,7 @@ export const SettingsButton: React.FC<SettingsButtonProps> = ({
                 color={tintColor} 
               />
             )}
-            <Text style={{ fontSize: 16, fontWeight: '500', color: textColor }}>
+            <Text style={{ fontSize: 16, fontWeight: '500', color: textColor, textAlign: centerLabel ? 'center' : 'left', flex: centerLabel ? 1 : 0 }}>
               {label}
             </Text>
           </HStack>
@@ -61,7 +64,7 @@ export const SettingsButton: React.FC<SettingsButtonProps> = ({
             >
               {value}
             </Text>
-            <ChevronRight size={20} color={tintColor} />
+            {showChevron && <ChevronRight size={20} color={tintColor} />}
           </HStack>
         </HStack>
       </Box>

@@ -261,7 +261,35 @@ export default function BorderCalculator() {
         <Box sx={{ width: '100%', ...(Platform.OS === 'web' && isDesktop && { flexDirection: 'row', gap: 32, alignItems: 'flex-start' }) }}>
           {calculation && (
             <Box sx={{ gap: 16, alignItems: 'center', width: '100%', mb: Platform.OS === 'web' ? 0 : 32, ...(Platform.OS === 'web' && isDesktop && { flex: 1, alignSelf: 'flex-start', mb: 0 }) }}>
-              <AnimatedPreview calculation={calculation} showBlades={showBlades} borderColor={borderColor} />
+              {/* Fixed-size preview container to prevent layout shifts */}
+              <Box sx={{ 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                width: '100%'
+              }}>
+                <Box sx={{ 
+                  width: isDesktop ? 400 : 320,
+                  height: isDesktop ? 300 : 240,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  backgroundColor: 'transparent'
+                }}>
+                  <Box sx={{
+                    transform: [{ 
+                      scale: Math.min(
+                        (isDesktop ? 400 : 320) / (calculation.previewWidth || 1),
+                        (isDesktop ? 300 : 240) / (calculation.previewHeight || 1),
+                        1
+                      )
+                    }],
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <AnimatedPreview calculation={calculation} showBlades={showBlades} borderColor={borderColor} />
+                  </Box>
+                </Box>
+              </Box>
 
               {!shouldUseMobileLayout && (
                 Platform.OS === 'web' && isDesktop ? (

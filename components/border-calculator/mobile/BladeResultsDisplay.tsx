@@ -28,10 +28,10 @@ const BladeResultBox: React.FC<BladeResultBoxProps> = ({ label, value, tintColor
       alignItems: 'center',
     }}
   >
-    <Text style={{ fontSize: 14, fontWeight: '500', color: textColor, marginBottom: 8 }}>
+    <Text style={{ fontSize: 20, fontWeight: '800', color: textColor, marginBottom: 8 }}>
       {label}
     </Text>
-    <Text style={{ fontSize: 20, fontWeight: 'bold', color: textColor }}>
+    <Text style={{ fontSize: 18, fontWeight: 'bold', color: textColor }}>
       {value.toFixed(2)}&quot;
     </Text>
   </Box>

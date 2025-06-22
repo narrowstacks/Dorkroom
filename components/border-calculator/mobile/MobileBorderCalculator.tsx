@@ -1,6 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Platform } from 'react-native';
-import { Box, ScrollView, VStack, Text } from '@gluestack-ui/themed';
+import { Box, ScrollView, VStack, Text, HStack } from '@gluestack-ui/themed';
+import { 
+  Drawer, 
+  DrawerBackdrop, 
+  DrawerContent, 
+  DrawerHeader, 
+  DrawerBody 
+} from '@gluestack-ui/themed';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { WarningAlert } from '@/components/ui/feedback';
 
@@ -17,7 +24,7 @@ import {
   PaperSizeSection,
   BorderSizeSection,
   PositionOffsetsSection,
-  AdvancedOptionsSection,
+  PresetsSection,
 } from './sections';
 
 // Icons
@@ -26,15 +33,19 @@ import {
   RulerIcon, 
   MoveIcon, 
   SettingsIcon,
-  RotateCcw
+  RotateCcw,
+  Eye,
+  EyeOff,
+  BookOpen
 } from 'lucide-react-native';
 
 // Border calculator functionality
 import { useBorderCalculator, useBorderPresets } from '@/hooks/borderCalculator';
 import { Button, ButtonText, ButtonIcon } from '@gluestack-ui/themed';
+import type { BorderPreset, BorderPresetSettings } from '@/types/borderPresetTypes';
 
 // Active section type
-type ActiveSection = 'main' | 'paperSize' | 'borderSize' | 'positionOffsets' | 'advancedOptions';
+type ActiveSection = 'main' | 'paperSize' | 'borderSize' | 'positionOffsets' | 'presets';
 
 interface MobileBorderCalculatorProps {
   // This component will use the same hooks as the desktop version
@@ -46,6 +57,7 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
 
   // Active section state
   const [activeSection, setActiveSection] = useState<ActiveSection>('main');
+  const [currentPreset, setCurrentPreset] = useState<BorderPreset | null>(null);
 
   // Border calculator hooks
   const {
@@ -69,12 +81,49 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
     applyPreset 
   } = useBorderCalculator();
 
-  const { presets } = useBorderPresets();
+  const { presets, addPreset, removePreset } = useBorderPresets();
+
+  // Reset current preset when settings change
+  useEffect(() => {
+    if (currentPreset) {
+      // Check if current settings still match the preset
+      const currentSettings = {
+        aspectRatio,
+        paperSize,
+        customAspectWidth: parseFloat(String(customAspectWidth)) || 0,
+        customAspectHeight: parseFloat(String(customAspectHeight)) || 0,
+        customPaperWidth: parseFloat(String(customPaperWidth)) || 0,
+        customPaperHeight: parseFloat(String(customPaperHeight)) || 0,
+        minBorder: parseFloat(String(minBorder)) || 0,
+        enableOffset,
+        ignoreMinBorder,
+        horizontalOffset: parseFloat(String(horizontalOffset)) || 0,
+        verticalOffset: parseFloat(String(verticalOffset)) || 0,
+        showBlades,
+        isLandscape,
+        isRatioFlipped,
+      };
+      
+      const settingsMatch = Object.keys(currentSettings).every(
+        key => currentSettings[key as keyof typeof currentSettings] === 
+               currentPreset.settings[key as keyof typeof currentPreset.settings]
+      );
+      
+      if (!settingsMatch) {
+        setCurrentPreset(null);
+      }
+    }
+  }, [
+    aspectRatio, paperSize, customAspectWidth, customAspectHeight,
+    customPaperWidth, customPaperHeight, minBorder, enableOffset,
+    ignoreMinBorder, horizontalOffset, verticalOffset, showBlades,
+    isLandscape, isRatioFlipped, currentPreset
+  ]);
 
   // Helper functions for display values
   const getPaperSizeDisplayValue = () => {
     if (paperSize === 'custom') {
-      return `${customPaperWidth}&quot; × ${customPaperHeight}&quot;`;
+      return `${customPaperWidth}" × ${customPaperHeight}"`;
     }
     return paperSize;
   };
@@ -88,7 +137,7 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
 
   const getBorderSizeDisplayValue = () => {
     const borderValue = parseFloat(String(minBorder));
-    return `${(isNaN(borderValue) ? 0 : borderValue).toFixed(2)}&quot;`;
+    return `${(isNaN(borderValue) ? 0 : borderValue).toFixed(2)}"`;
   };
 
   const getPositionDisplayValue = () => {
@@ -98,8 +147,8 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
     return `H:${(isNaN(hOffset) ? 0 : hOffset).toFixed(1)} V:${(isNaN(vOffset) ? 0 : vOffset).toFixed(1)}`;
   };
 
-  const getAdvancedDisplayValue = () => {
-    return showBlades ? 'Blades On' : 'Blades Off';
+  const getPresetsDisplayValue = () => {
+    return currentPreset ? `Preset: ${currentPreset.name}` : 'Presets';
   };
 
   // Action handlers
@@ -114,8 +163,7 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
   };
 
   const handleSavePreset = () => {
-    // TODO: Implement save preset functionality
-    console.log('Save preset');
+    setActiveSection('presets');
   };
 
   // Close section handler
@@ -181,13 +229,25 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
                   onPress={() => setActiveSection('positionOffsets')}
                   icon={MoveIcon}
                 />
+                <HStack space="lg" style={{ flex: 1 }}>
+                <Box style={{ flex: 1 }}>
+                  <SettingsButton 
+                    label="Show Blades"
+                    onPress={() => setShowBlades(!showBlades)}
+                    icon={showBlades ? Eye : EyeOff}
+                    showChevron={false}
+                    centerLabel={true}
+                  />
+                </Box>
 
-                <SettingsButton 
-                  label="Advanced Options"
-                  value={getAdvancedDisplayValue()}
-                  onPress={() => setActiveSection('advancedOptions')}
-                  icon={SettingsIcon}
-                />
+                <Box style={{ flex: 1 }}>
+                  <SettingsButton 
+                    value={getPresetsDisplayValue()}
+                    onPress={() => setActiveSection('presets')}
+                    icon={BookOpen}
+                  />
+                </Box>
+                </HStack>
               </VStack>
 
               {/* Reset Button */}
@@ -267,11 +327,46 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
             />
           )}
 
-          {activeSection === 'advancedOptions' && (
-            <AdvancedOptionsSection 
+          {activeSection === 'presets' && (
+            <PresetsSection 
               onClose={closeSectionToMain}
-              showBlades={showBlades}
-              setShowBlades={setShowBlades}
+              presets={presets}
+              currentPreset={currentPreset}
+              onApplyPreset={(preset) => {
+                applyPreset(preset.settings);
+                setCurrentPreset(preset);
+              }}
+              onSavePreset={(name, settings) => {
+                const newPreset: BorderPreset = {
+                  id: Date.now().toString(),
+                  name,
+                  settings,
+                };
+                addPreset(newPreset);
+                setCurrentPreset(newPreset);
+              }}
+              onDeletePreset={(id) => {
+                removePreset(id);
+                if (currentPreset?.id === id) {
+                  setCurrentPreset(null);
+                }
+              }}
+              getCurrentSettings={() => ({
+                aspectRatio,
+                paperSize,
+                customAspectWidth: parseFloat(String(customAspectWidth)) || 0,
+                customAspectHeight: parseFloat(String(customAspectHeight)) || 0,
+                customPaperWidth: parseFloat(String(customPaperWidth)) || 0,
+                customPaperHeight: parseFloat(String(customPaperHeight)) || 0,
+                minBorder: parseFloat(String(minBorder)) || 0,
+                enableOffset,
+                ignoreMinBorder,
+                horizontalOffset: parseFloat(String(horizontalOffset)) || 0,
+                verticalOffset: parseFloat(String(verticalOffset)) || 0,
+                showBlades,
+                isLandscape,
+                isRatioFlipped,
+              })}
             />
           )}
         </VStack>
