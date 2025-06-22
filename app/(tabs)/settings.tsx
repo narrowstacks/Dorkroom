@@ -1,30 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, Pressable, Platform, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, View, Text, Pressable, Platform } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { debugLog } from '@/utils/debugLogger';
 
-// Add window dimension hook
-const useWindowDimensions = () => {
-  const [dimensions, setDimensions] = useState(() => Dimensions.get('window'));
 
-  useEffect(() => {
-    const subscription = Dimensions.addEventListener('change', ({ window }) => {
-      setDimensions(window);
-    });
-
-    return () => subscription?.remove();
-  }, []);
-
-  return dimensions;
-};
 
 export default function SettingsScreen() {
   const [selectedTheme, setSelectedTheme] = useState('system');
   const [selectedLengthUnit, setSelectedLengthUnit] = useState('inches');
   const [selectedVolumeUnit, setSelectedVolumeUnit] = useState('ml');
 
-  const { width } = useWindowDimensions();
-  const isDesktop = Platform.OS === 'web' && width > 768;
+
 
   // Placeholder functions for settings changes
   const handleThemeChange = (value: string) => {

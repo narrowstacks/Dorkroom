@@ -150,7 +150,7 @@ export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
       <Box style={styles.sliderLabels}>
         {labels.map((lbl) => (
           <Text key={lbl} style={[styles.sliderLabel, { color: textColor }]}> 
-            {lbl}"{/* inches symbol */}
+            {lbl}&quot;{/* inches symbol */}
           </Text>
         ))}
       </Box>

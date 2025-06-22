@@ -7,7 +7,7 @@ import {
   Platform,
   TextInputProps,
 } from "react-native";
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/components/ui/core/ThemedText";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
 interface NumberInputProps extends TextInputProps {

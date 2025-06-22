@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Platform, ScrollView, Linking } from 'react-native';
 import {
   Box,
@@ -10,7 +10,7 @@ import {
 import { X } from 'lucide-react-native';
 
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { showAlert, showConfirmAlert } from '@/components/ConfirmAlert';
+import { showAlert, showConfirmAlert } from '@/components/ui/layout/ConfirmAlert';
 import { useDevelopmentRecipes } from '@/hooks/useDevelopmentRecipes';
 import { useCustomRecipes } from '@/hooks/useCustomRecipes';
 import { createRecipeIssue, createIssueUrl } from '@/utils/githubIssueGenerator';
@@ -27,7 +27,7 @@ import {
   DevelopmentParamsStep, 
   FinalDetailsStep,
   SaveSubmitStep
-} from '@/components/recipe-steps';
+} from './recipe-steps';
 
 interface CustomRecipeFormProps {
   recipe?: CustomRecipe; // For editing existing recipes
@@ -231,9 +231,9 @@ export function CustomRecipeForm({
   };
 
   // Form data update functions
-  const updateFormData = (updates: Partial<CustomRecipeFormData>) => {
+  const updateFormData = useCallback((updates: Partial<CustomRecipeFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
-  };
+  }, []);
 
   const updateCustomFilm = (updates: Partial<CustomFilmData>) => {
     if (formData.customFilm) {
@@ -461,7 +461,7 @@ export function CustomRecipeForm({
     } else {
       try {
         await Linking.openURL(githubUrl);
-      } catch (error) {
+      } catch {
         showAlert("Error", "Could not open GitHub in browser");
       }
     }

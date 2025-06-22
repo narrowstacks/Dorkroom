@@ -3,7 +3,7 @@ import { Platform, StyleSheet, ScrollView, TouchableOpacity } from "react-native
 import { Box, Text, Modal } from "@gluestack-ui/themed";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
-import { MobileSelectionModal } from "./MobileSelectionModal";
+import { MobileSelectionModal } from "../select/MobileSelectionModal";
 import type { Film, Developer } from "@/api/dorkroom/types";
 
 export interface SearchDropdownItem {
@@ -31,11 +31,14 @@ interface DesktopSearchDropdownProps extends BaseSearchDropdownProps {
 
 interface MobileSearchDropdownProps extends BaseSearchDropdownProps {
   variant: 'mobile';
-  type: 'film' | 'developer';
+  type: 'film' | 'developer' | 'dilution';
   films?: Film[];
   developers?: Developer[];
+  dilutionOptions?: { label: string; value: string }[];
+  selectedDilution?: string;
   onFilmSelect?: (film: Film) => void;
   onDeveloperSelect?: (developer: Developer) => void;
+  onDilutionSelect?: (value: string) => void;
 }
 
 type SearchDropdownProps = DesktopSearchDropdownProps | MobileSearchDropdownProps;
@@ -61,6 +64,7 @@ export function SearchDropdown(props: SearchDropdownProps) {
         type={mobileProps.type}
         films={mobileProps.films}
         developers={mobileProps.developers}
+        dilutionOptions={mobileProps.dilutionOptions}
         onFilmSelect={(film) => {
           if (mobileProps.onFilmSelect) {
             mobileProps.onFilmSelect(film);
@@ -82,6 +86,18 @@ export function SearchDropdown(props: SearchDropdownProps) {
               id: developer.uuid,
               title: developer.name,
               subtitle: developer.manufacturer
+            });
+          }
+        }}
+        onDilutionSelect={(dilution) => {
+          if (mobileProps.onDilutionSelect) {
+            mobileProps.onDilutionSelect(dilution.value);
+          } else {
+            // Convert to SearchDropdownItem format
+            props.onItemSelect({
+              id: dilution.value,
+              title: dilution.label,
+              subtitle: dilution.value
             });
           }
         }}

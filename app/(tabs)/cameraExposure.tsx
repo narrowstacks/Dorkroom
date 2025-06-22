@@ -6,11 +6,11 @@ import {
 } from "@/hooks/useCameraExposureCalculator";
 import { APERTURE_VALUES, ISO_VALUES, SHUTTER_SPEED_VALUES } from "@/constants/exposure";
 import { Box, Text } from "@gluestack-ui/themed";
-import { CalculatorLayout } from "@/components/CalculatorLayout";
-import { ResultsSection, ResultRow } from "@/components/ResultsSection";
-import { FormSection, FormGroup } from "@/components/FormSection";
-import { InfoSection, InfoText, InfoSubtitle } from "@/components/InfoSection";
-import { PlatformSelect } from "@/components/PlatformSelect";
+import { CalculatorLayout } from "@/components/ui/layout/CalculatorLayout";
+import { ResultsSection, ResultRow } from "@/components/ui/calculator/ResultsSection";
+import { FormSection, FormGroup } from "@/components/ui/forms/FormSection";
+import { InfoSection, InfoText, InfoSubtitle } from "@/components/ui/calculator/InfoSection";
+import { PlatformSelect } from "@/components/ui/select/PlatformSelect";
 
 export default function CameraExposureCalculator() {
   const isMobile = Platform.OS === "ios" || Platform.OS === "android";

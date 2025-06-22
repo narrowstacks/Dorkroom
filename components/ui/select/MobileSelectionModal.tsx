@@ -39,7 +39,7 @@ export function MobileSelectionModal({
   const borderColor = useThemeColor({}, "borderColor");
 
   const filteredItems = React.useMemo(() => {
-    let items: any[];
+    let items: (Film | Developer | DilutionOption)[];
     if (type === 'film') {
       items = films;
     } else if (type === 'developer') {
@@ -79,7 +79,7 @@ export function MobileSelectionModal({
     onClose();
   };
 
-  const renderItem = ({ item }: { item: Film | Developer | DilutionOption }) => {
+  const renderItem = ({ item }: { item: any }) => {
     let title: string;
     let subtitle: string;
     

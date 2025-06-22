@@ -1,26 +1,25 @@
 import { Tabs , useRouter, useSegments } from "expo-router";
 import React, { useState, useEffect } from "react";
-import { Platform, View, TouchableOpacity, Text, StyleSheet, Dimensions, Modal, Animated } from "react-native";
+import { Platform, View, TouchableOpacity, Text, StyleSheet, Dimensions, Animated } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Colors } from "@/constants/Colors";
 import * as Haptics from 'expo-haptics';
 
-import { HapticTab } from "@/components/HapticTab";
+import { HapticTab } from "@/components/ui/feedback/HapticTab";
 import { 
   Home,
   Crop,
   Move,
   Timer,
-  Camera,
   Clock,
   Settings,
   Menu,
   Aperture,
   FlaskConical
 } from 'lucide-react-native';
-import TabBarBackground from "@/components/ui/TabBarBackground";
+import TabBarBackground from "@/components/ui/core/TabBarBackground";
 
 // Navigation items configuration
 const navigationItems = [

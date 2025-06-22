@@ -31,7 +31,6 @@ export function StyledSelect({
   const textColor = useThemeColor({}, "text");
   const backgroundColor = useThemeColor({}, "background");
   const borderColor = useThemeColor({}, "borderColor");
-  const iconColor = useThemeColor({}, "icon");
   const placeholderTextColor = useThemeColor({}, "tabIconDefault");
   
   // Dropdown specific background for better contrast

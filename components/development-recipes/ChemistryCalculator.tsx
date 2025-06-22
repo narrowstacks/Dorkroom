@@ -12,8 +12,8 @@ import {
 } from "@gluestack-ui/themed";
 import { Beaker, RotateCcw } from "lucide-react-native";
 
-import { FormGroup } from "@/components/FormSection";
-import { StyledSelect } from "@/components/StyledSelect";
+import { FormGroup } from "@/components/ui/forms/FormSection";
+import { StyledSelect } from "@/components/ui/select/StyledSelect";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useChemistryCalculator } from "@/hooks/useChemistryCalculator";
 

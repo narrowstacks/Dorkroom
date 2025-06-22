@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, Input, InputField, HStack, VStack, Switch, Textarea, TextareaInput } from '@gluestack-ui/themed';
-import { FormGroup } from '@/components/FormSection';
+import { FormGroup } from '@/components/ui/forms/FormSection';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { normalizeDilution } from '@/utils/dilutionUtils';
 import type { CustomRecipeFormData } from '@/types/customRecipeTypes';

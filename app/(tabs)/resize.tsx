@@ -3,7 +3,6 @@ import {
   Text,
   Link,
   LinkText,
-  VStack,
   HStack,
   Alert,
   AlertIcon,
@@ -15,11 +14,11 @@ import {
   FormControlLabelText,
 } from "@gluestack-ui/themed";
 import { useResizeCalculator } from "@/hooks/useResizeCalculator";
-import { NumberInput } from "@/components/NumberInput";
-import { CalculatorLayout } from "@/components/CalculatorLayout";
-import { ResultsSection, ResultRow } from "@/components/ResultsSection";
-import { FormSection, FormGroup } from "@/components/FormSection";
-import { InfoSection, InfoText, InfoSubtitle, InfoList, InfoFormula } from "@/components/InfoSection";
+import { NumberInput } from "@/components/ui/forms/NumberInput";
+import { CalculatorLayout } from "@/components/ui/layout/CalculatorLayout";
+import { ResultsSection, ResultRow } from "@/components/ui/calculator/ResultsSection";
+import { FormSection, FormGroup } from "@/components/ui/forms/FormSection";
+import { InfoSection, InfoText, InfoSubtitle, InfoList, InfoFormula } from "@/components/ui/calculator/InfoSection";
 
 // --- Helper Components ---
 

@@ -23,13 +23,12 @@ export const useBorderCalculator = () => {
   const {
     paperEntry,
     paperSizeWarning,
-    ratioEntry,
     orientedDimensions,
     minBorderData,
   } = useDimensionCalculations(state);
 
   // Geometry calculations
-  const { calculation, previewScale } = useGeometryCalculations(
+  const { calculation } = useGeometryCalculations(
     state,
     orientedDimensions,
     minBorderData,
@@ -131,4 +130,5 @@ export { useGeometryCalculations } from './useGeometryCalculations';
 export { useWarningSystem } from './useWarningSystem';
 export { useImageHandling } from './useImageHandling';
 export { useInputHandlers } from './useInputHandlers';
+export { useBorderPresets } from './useBorderPresets';
 export * from './types'; 

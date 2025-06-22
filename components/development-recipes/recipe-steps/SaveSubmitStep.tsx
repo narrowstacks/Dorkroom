@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform } from 'react-native';
+
 import { Text, Button, ButtonText, VStack, HStack, Box } from '@gluestack-ui/themed';
 import { Save, Github, Trash2, CheckCircle } from 'lucide-react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';

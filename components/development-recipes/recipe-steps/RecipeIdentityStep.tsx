@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { Platform, TouchableOpacity } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 import { Box, Text, Input, InputField, HStack, VStack, Switch } from '@gluestack-ui/themed';
-import { FormGroup } from '@/components/FormSection';
-import { StyledSelect } from '@/components/StyledSelect';
-import { NumberInput } from '@/components/NumberInput';
-import { SearchInput } from '@/components/SearchInput';
-import { SearchDropdown } from '@/components/SearchDropdown';
+import { FormGroup } from '@/components/ui/forms/FormSection';
+import { StyledSelect } from '@/components/ui/select/StyledSelect';
+import { NumberInput } from '@/components/ui/forms/NumberInput';
+import { SearchInput, SearchDropdown } from '@/components/ui/search';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { useWindowDimensions } from '@/hooks/useWindowDimensions';
+
 import type { CustomRecipeFormData, CustomFilmData } from '@/types/customRecipeTypes';
 import type { Film } from '@/api/dorkroom/types';
 
@@ -48,7 +47,6 @@ export function RecipeIdentityStep({
   isDesktop = false
 }: RecipeIdentityStepProps) {
   const textColor = useThemeColor({}, "text");
-  const { width } = useWindowDimensions();
   
   // State for film search and dropdown
   const [filmSearch, setFilmSearch] = useState("");

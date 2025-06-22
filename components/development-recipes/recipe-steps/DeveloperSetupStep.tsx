@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import { Platform, TouchableOpacity } from 'react-native';
 import { Box, Text, Input, InputField, HStack, VStack, Switch, Button, ButtonText } from '@gluestack-ui/themed';
 import { Plus, Trash2 } from 'lucide-react-native';
-import { FormGroup } from '@/components/FormSection';
-import { StyledSelect } from '@/components/StyledSelect';
-import { NumberInput } from '@/components/NumberInput';
-import { SearchInput } from '@/components/SearchInput';
-import { SearchDropdown } from '@/components/SearchDropdown';
-import { MobileSelectButton } from '@/components/MobileSelectButton';
+import { FormGroup } from '@/components/ui/forms/FormSection';
+import { StyledSelect } from '@/components/ui/select/StyledSelect';
+import { NumberInput } from '@/components/ui/forms/NumberInput';
+import { SearchInput, SearchDropdown } from '@/components/ui/search';
+import { MobileSelectButton } from '@/components/ui/select/MobileSelectButton';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useWindowDimensions } from '@/hooks/useWindowDimensions';
 import { DEVELOPER_TYPES } from '@/constants/developmentRecipes';
@@ -76,6 +75,9 @@ export function DeveloperSetupStep({
   const [developerSearch, setDeveloperSearch] = useState("");
   const [isDeveloperSearchFocused, setIsDeveloperSearchFocused] = useState(false);
   const [developerSearchPosition, setDeveloperSearchPosition] = useState<{top: number, left: number, width: number} | null>(null);
+  
+  // State for mobile dilution selection
+  const [showMobileDilutionModal, setShowMobileDilutionModal] = useState(false);
   
   // Add refs for position tracking
   const developerSearchRef = React.useRef<any>(null);
@@ -413,6 +415,19 @@ export function DeveloperSetupStep({
           onDeveloperSelect={(developer) => {
             updateFormData({ selectedDeveloperId: developer.uuid });
           }}
+          onItemSelect={() => {}} // Not used for mobile variant
+        />
+      )}
+
+      {/* Mobile Dilution Selection Modal */}
+      {!isDesktop && (
+        <SearchDropdown
+          variant="mobile"
+          type="dilution"
+          isOpen={showMobileDilutionModal}
+          onClose={() => setShowMobileDilutionModal(false)}
+          dilutionOptions={dilutionOptions}
+          onDilutionSelect={handleDilutionChange}
           onItemSelect={() => {}} // Not used for mobile variant
         />
       )}

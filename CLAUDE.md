@@ -37,7 +37,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Project Structure
 
-```
+```structure
 app/(tabs)/           # Tab-based navigation screens
   _layout.tsx         # Complex responsive navigation (mobile tabs, desktop top nav, mobile web sidebar)
   index.tsx           # Home screen

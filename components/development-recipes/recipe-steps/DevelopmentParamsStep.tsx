@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { VStack, Text } from '@gluestack-ui/themed';
-import { FormGroup } from '@/components/FormSection';
-import { NumberInput } from '@/components/NumberInput';
+import { FormGroup } from '@/components/ui/forms/FormSection';
+import { NumberInput } from '@/components/ui/forms/NumberInput';
 import { fahrenheitToCelsius } from '@/utils/githubIssueGenerator';
 import type { CustomRecipeFormData } from '@/types/customRecipeTypes';
 import type { Film } from '@/api/dorkroom/types';
@@ -45,7 +45,7 @@ export function DevelopmentParamsStep({
   /**
    * Get the ISO speed of the currently selected or custom film
    */
-  const getFilmIso = (): number => {
+  const getFilmIso = useCallback((): number => {
     if (formData.useExistingFilm && formData.selectedFilmId) {
       const film = getFilmById(formData.selectedFilmId);
       return film?.isoSpeed || 400;
@@ -53,7 +53,7 @@ export function DevelopmentParamsStep({
       return formData.customFilm.isoSpeed || 400;
     }
     return 400; // Default fallback
-  };
+  }, [formData.useExistingFilm, formData.selectedFilmId, formData.customFilm, getFilmById]);
 
   /**
    * Calculate push/pull in stops based on shooting ISO vs film ISO

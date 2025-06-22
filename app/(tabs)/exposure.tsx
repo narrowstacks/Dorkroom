@@ -9,10 +9,10 @@ import {
   Input,
   InputField,
 } from "@gluestack-ui/themed";
-import { CalculatorLayout } from "@/components/CalculatorLayout";
-import { ResultsSection, ResultRow } from "@/components/ResultsSection";
-import { FormSection, FormGroup } from "@/components/FormSection";
-import { InfoSection, InfoText, InfoSubtitle } from "@/components/InfoSection";
+import { CalculatorLayout } from "@/components/ui/layout/CalculatorLayout";
+import { ResultsSection, ResultRow } from "@/components/ui/calculator/ResultsSection";
+import { FormSection, FormGroup } from "@/components/ui/forms/FormSection";
+import { InfoSection, InfoText, InfoSubtitle } from "@/components/ui/calculator/InfoSection";
 
 export default function ExposureCalculator() {
   const textColor = useThemeColor({}, "text");

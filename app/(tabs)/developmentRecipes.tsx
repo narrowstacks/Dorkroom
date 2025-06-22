@@ -3,20 +3,17 @@ import { Platform, StyleSheet, ScrollView, TouchableOpacity } from "react-native
 import { Box, Text, Button, ButtonText, VStack, HStack, Modal, ModalBackdrop, ModalContent, ModalCloseButton, ModalHeader, ModalBody } from "@gluestack-ui/themed";
 import { X, Filter, RefreshCw, ChevronDown, ChevronUp, Plus, Grid3X3, Table } from "lucide-react-native";
 
-import { CalculatorLayout } from "@/components/CalculatorLayout";
-import { FormSection, FormGroup } from "@/components/FormSection";
-import { InfoSection, InfoText, InfoSubtitle, InfoList } from "@/components/InfoSection";
-import { StyledSelect } from "@/components/StyledSelect";
-import { RecipeDetail } from "@/components/RecipeDetail";
-import { CustomRecipeForm } from "@/components/CustomRecipeForm";
-import { RecipeCard } from "@/components/RecipeCard";
-import { SearchInput } from "@/components/SearchInput";
-import { SearchDropdown } from "@/components/SearchDropdown";
+import { CalculatorLayout } from "@/components/ui/layout/CalculatorLayout";
+import { FormSection, FormGroup } from "@/components/ui/forms/FormSection";
+import { InfoSection, InfoText, InfoSubtitle, InfoList } from "@/components/ui/calculator/InfoSection";
+import { StyledSelect } from "@/components/ui/select/StyledSelect";
+import { SearchInput, SearchDropdown } from "@/components/ui/search";
+import { RecipeDetail, CustomRecipeForm, RecipeCard } from "@/components/development-recipes";
 import { 
   getRecipeDetailModalConfig, 
   getCustomRecipeDetailModalConfig, 
   getRecipeFormModalConfig 
-} from "@/components/ui/ModalStyles";
+} from "@/components/development-recipes/ModalStyles";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useDevelopmentRecipes } from "@/hooks/useDevelopmentRecipes";
 import { useCustomRecipes } from "@/hooks/useCustomRecipes";
@@ -266,7 +263,7 @@ export default function DevelopmentRecipes() {
     debugLog('[DevelopmentRecipes] Converted to combinations:', combinations.length);
     debugLog('[DevelopmentRecipes] Combination temperature values:', combinations.map(c => ({ id: c.id, temperatureF: c.temperatureF })));
     return combinations;
-  }, [customRecipes, stateVersion]); // stateVersion is intentionally included to force re-computation
+  }, [customRecipes]);
 
   // Combined API + custom recipes for display
   const allCombinations = React.useMemo(() => {
@@ -417,7 +414,7 @@ export default function DevelopmentRecipes() {
     // Find the current version from the customRecipes array
     const currentVersion = customRecipes.find(r => r.id === selectedCustomRecipe.id);
     return currentVersion || selectedCustomRecipe; // Fallback to original if not found
-  }, [selectedCustomRecipe, customRecipes, stateVersion]); // stateVersion ensures fresh data
+  }, [selectedCustomRecipe, customRecipes]);
 
   const handleCustomRecipePress = (recipe: CustomRecipe) => {
     debugLog('[DevelopmentRecipes] handleCustomRecipePress called for recipe:', recipe.id);
@@ -703,27 +700,32 @@ export default function DevelopmentRecipes() {
                 onLayout={handleFilmSearchLayout}
               >
                 <Box style={styles.searchDropdownContainer}>
-                  <SearchInput
-                    variant={isDesktop ? 'desktop' : 'mobile'}
-                    type="film"
-                    placeholder="Type to search films..."
-                    {...(isDesktop ? {
-                      value: filmSearch,
-                      onChangeText: setFilmSearch,
-                      onClear: () => setFilmSearch(''),
-                      onFocus: () => {
+                  {isDesktop ? (
+                    <SearchInput
+                      variant="desktop"
+                      type="film"
+                      placeholder="Type to search films..."
+                      value={filmSearch}
+                      onChangeText={setFilmSearch}
+                      onClear={() => setFilmSearch('')}
+                      onFocus={() => {
                         setIsFilmSearchFocused(true);
                         handleFilmSearchLayout();
-                      },
-                      onBlur: () => {
+                      }}
+                      onBlur={() => {
                         // Delay hiding to allow item selection
                         setTimeout(() => setIsFilmSearchFocused(false), 150);
-                      }
-                    } : {
-                      selectedItem: selectedFilm,
-                      onPress: () => setShowMobileFilmModal(true)
-                    })}
-                  />
+                      }}
+                    />
+                  ) : (
+                    <SearchInput
+                      variant="mobile"
+                      type="film"
+                      placeholder="Type to search films..."
+                      selectedItem={selectedFilm}
+                      onPress={() => setShowMobileFilmModal(true)}
+                    />
+                  )}
                 </Box>
               </Box>
 
@@ -737,27 +739,32 @@ export default function DevelopmentRecipes() {
                 onLayout={handleDeveloperSearchLayout}
               >
                 <Box style={styles.searchDropdownContainer}>
-                  <SearchInput
-                    variant={isDesktop ? 'desktop' : 'mobile'}
-                    type="developer"
-                    placeholder="Type to search developers..."
-                    {...(isDesktop ? {
-                      value: developerSearch,
-                      onChangeText: setDeveloperSearch,
-                      onClear: () => setDeveloperSearch(''),
-                      onFocus: () => {
+                  {isDesktop ? (
+                    <SearchInput
+                      variant="desktop"
+                      type="developer"
+                      placeholder="Type to search developers..."
+                      value={developerSearch}
+                      onChangeText={setDeveloperSearch}
+                      onClear={() => setDeveloperSearch('')}
+                      onFocus={() => {
                         setIsDeveloperSearchFocused(true);
                         handleDeveloperSearchLayout();
-                      },
-                      onBlur: () => {
+                      }}
+                      onBlur={() => {
                         // Delay hiding to allow item selection
                         setTimeout(() => setIsDeveloperSearchFocused(false), 150);
-                      }
-                    } : {
-                      selectedItem: selectedDeveloper,
-                      onPress: () => setShowMobileDeveloperModal(true)
-                    })}
-                  />
+                      }}
+                    />
+                  ) : (
+                    <SearchInput
+                      variant="mobile"
+                      type="developer"
+                      placeholder="Type to search developers..."
+                      selectedItem={selectedDeveloper}
+                      onPress={() => setShowMobileDeveloperModal(true)}
+                    />
+                  )}
                 </Box>
               </Box>
             </Box>
@@ -1176,7 +1183,7 @@ export default function DevelopmentRecipes() {
             isOpen={showMobileFilmModal}
             onClose={() => setShowMobileFilmModal(false)}
             films={allFilms}
-            onFilmSelect={(film) => {
+            onFilmSelect={(film: Film) => {
               setSelectedFilm(film);
             }}
             onItemSelect={() => {}} // Not used for mobile variant
@@ -1188,7 +1195,7 @@ export default function DevelopmentRecipes() {
             isOpen={showMobileDeveloperModal}
             onClose={() => setShowMobileDeveloperModal(false)}
             developers={allDevelopers}
-            onDeveloperSelect={(developer) => {
+            onDeveloperSelect={(developer: Developer) => {
               setSelectedDeveloper(developer);
             }}
             onItemSelect={() => {}} // Not used for mobile variant

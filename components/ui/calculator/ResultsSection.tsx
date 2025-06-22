@@ -41,7 +41,6 @@ export function ResultsSection({ title = "Result", children, show = true }: Resu
   const isDesktop = Platform.OS === "web" && width > 768;
   const cardBackground = useThemeColor({}, "cardBackground");
   const shadowColor = useThemeColor({}, "shadowColor");
-  const resultRowBackground = useThemeColor({}, "resultRowBackground");
 
   if (!show) return null;
 

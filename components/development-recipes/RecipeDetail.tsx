@@ -17,10 +17,10 @@ import {
 } from "@gluestack-ui/themed";
 import { X, Calculator, Beaker, Edit3, Copy, Trash2 } from "lucide-react-native";
 
-import { FormGroup } from "@/components/FormSection";
-import { StyledSelect } from "@/components/StyledSelect";
-import { ChemistryCalculator } from "@/components/ChemistryCalculator";
-import { showConfirmAlert } from "@/components/ConfirmAlert";
+import { FormGroup } from "@/components/ui/forms/FormSection";
+import { StyledSelect } from "@/components/ui/select/StyledSelect";
+import { ChemistryCalculator } from "@/components/development-recipes/ChemistryCalculator";
+import { showConfirmAlert } from "@/components/ui/layout/ConfirmAlert";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useChemistryCalculator } from "@/hooks/useChemistryCalculator";
 import { useCustomRecipes } from "@/hooks/useCustomRecipes";
