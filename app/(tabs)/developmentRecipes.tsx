@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Platform, StyleSheet, ScrollView, TextInput, TouchableOpacity } from "react-native";
-import { Box, Text, Button, ButtonText, VStack, HStack, Modal, ModalBackdrop, ModalContent, ModalCloseButton, ModalHeader, ModalBody } from "@gluestack-ui/themed";
+import { Box, Text, Button, ButtonText, VStack, HStack, Modal, ModalBackdrop, ModalContent, ModalCloseButton, ModalHeader, ModalBody, FlatList } from "@gluestack-ui/themed";
 import { Search, X, Filter, RefreshCw, ChevronDown, ChevronUp, Plus, Grid3X3, Table } from "lucide-react-native";
 
 import { CalculatorLayout } from "@/components/CalculatorLayout";
@@ -63,6 +63,177 @@ function SearchInput({ value, onChangeText, placeholder, onClear }: SearchInputP
         </TouchableOpacity>
       )}
     </Box>
+  );
+}
+
+interface MobileSelectionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  type: 'film' | 'developer';
+  films: Film[];
+  developers: Developer[];
+  onFilmSelect: (film: Film) => void;
+  onDeveloperSelect: (developer: Developer) => void;
+}
+
+function MobileSelectionModal({ 
+  isOpen, 
+  onClose, 
+  type, 
+  films, 
+  developers, 
+  onFilmSelect, 
+  onDeveloperSelect 
+}: MobileSelectionModalProps) {
+  const [searchText, setSearchText] = useState("");
+  const textColor = useThemeColor({}, "text");
+  const cardBackground = useThemeColor({}, "cardBackground");
+  const borderColor = useThemeColor({}, "borderColor");
+
+  const filteredItems = React.useMemo(() => {
+    const items = type === 'film' ? films : developers;
+    if (!searchText.trim()) return items;
+    
+    return items.filter(item => {
+      if (type === 'film') {
+        const film = item as Film;
+        return film.name.toLowerCase().includes(searchText.toLowerCase()) ||
+               film.brand.toLowerCase().includes(searchText.toLowerCase());
+      } else {
+        const dev = item as Developer;
+        return dev.name.toLowerCase().includes(searchText.toLowerCase()) ||
+               dev.manufacturer.toLowerCase().includes(searchText.toLowerCase());
+      }
+    });
+  }, [type, films, developers, searchText]);
+
+  const handleSelect = (item: Film | Developer) => {
+    if (type === 'film') {
+      onFilmSelect(item as Film);
+    } else {
+      onDeveloperSelect(item as Developer);
+    }
+    setSearchText("");
+    onClose();
+  };
+
+  const renderItem = ({ item }: { item: Film | Developer }) => (
+    <TouchableOpacity
+      style={[styles.selectionItem, { borderBottomColor: borderColor }]}
+      onPress={() => handleSelect(item)}
+    >
+      <VStack space="xs">
+        <Text style={[styles.selectionItemTitle, { color: textColor }]}>
+          {type === 'film' ? (item as Film).name : (item as Developer).name}
+        </Text>
+        <Text style={[styles.selectionItemSubtitle, { color: textColor, opacity: 0.7 }]}>
+          {type === 'film' ? (item as Film).brand : (item as Developer).manufacturer}
+        </Text>
+      </VStack>
+    </TouchableOpacity>
+  );
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} size="full">
+      <ModalBackdrop />
+      <ModalContent style={{ backgroundColor: cardBackground, margin: 0, maxHeight: '100%', flex: 1 }}>
+        {/* Header */}
+        <Box style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
+          <Text style={[styles.modalTitle, { color: textColor }]}>
+            Select {type === 'film' ? 'Film' : 'Developer'}
+          </Text>
+          <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+            <X size={24} color={textColor} />
+          </TouchableOpacity>
+        </Box>
+        
+        {/* Search Box */}
+        <Box style={[styles.modalSearchContainer, { borderBottomColor: borderColor }]}>
+          <Search size={20} color={textColor} style={styles.modalSearchIcon} />
+          <TextInput
+            style={[styles.modalSearchInput, { color: textColor, borderColor }]}
+            value={searchText}
+            onChangeText={setSearchText}
+            placeholder={`Search ${type === 'film' ? 'films' : 'developers'}...`}
+            placeholderTextColor={textColor + '80'}
+            autoFocus
+            returnKeyType="search"
+          />
+          {searchText.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchText("")} style={styles.modalClearButton}>
+              <X size={20} color={textColor} />
+            </TouchableOpacity>
+          )}
+        </Box>
+
+        {/* Results List */}
+        <FlatList
+          data={filteredItems}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.uuid}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <Box style={{ height: 1, backgroundColor: borderColor, opacity: 0.3 }} />}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+interface MobileSelectButtonProps {
+  label: string;
+  selectedItem: Film | Developer | null;
+  onPress: () => void;
+  type: 'film' | 'developer';
+}
+
+function MobileSelectButton({ label, selectedItem, onPress, type }: MobileSelectButtonProps) {
+  const textColor = useThemeColor({}, "text");
+  const cardBackground = useThemeColor({}, "cardBackground");
+  const borderColor = useThemeColor({}, "borderColor");
+  const developmentTint = useThemeColor({}, "developmentRecipesTint");
+
+  const getDisplayText = () => {
+    if (!selectedItem) return `Select ${label}`;
+    
+    if (type === 'film') {
+      const film = selectedItem as Film;
+      return `${film.brand} ${film.name}`;
+    } else {
+      const dev = selectedItem as Developer;
+      return `${dev.manufacturer} ${dev.name}`;
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.mobileSelectButton,
+        {
+          backgroundColor: cardBackground,
+          borderColor: selectedItem ? developmentTint : borderColor,
+          borderWidth: selectedItem ? 2 : 1,
+        }
+      ]}
+      onPress={onPress}
+    >
+      <VStack space="xs" style={{ flex: 1 }}>
+        <Text style={[styles.mobileSelectLabel, { color: textColor, opacity: 0.7 }]}>
+          {label}
+        </Text>
+        <Text 
+          style={[
+            styles.mobileSelectText, 
+            { color: selectedItem ? developmentTint : textColor }
+          ]} 
+          numberOfLines={1}
+        >
+          {getDisplayText()}
+        </Text>
+      </VStack>
+      <ChevronDown size={20} color={selectedItem ? developmentTint : textColor} />
+    </TouchableOpacity>
   );
 }
 
@@ -380,6 +551,8 @@ export default function DevelopmentRecipes() {
   const [showCustomRecipes, setShowCustomRecipes] = useState(true);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [temperatureFilter, setTemperatureFilter] = useState("68");
+  const [showMobileFilmModal, setShowMobileFilmModal] = useState(false);
+  const [showMobileDeveloperModal, setShowMobileDeveloperModal] = useState(false);
   
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
@@ -832,65 +1005,84 @@ export default function DevelopmentRecipes() {
           <Box>
             <Text style={[styles.sectionLabel, { color: textColor }]}>Search</Text>
             
-            <Box style={[styles.searchFieldsContainer, isDesktop && styles.searchFieldsDesktop]}>
-              <Box style={[styles.searchField, isDesktop && styles.searchFieldDesktop]}>
-                <SearchInput
-                  value={filmSearch}
-                  onChangeText={setFilmSearch}
-                  placeholder="Type to search films..."
-                  onClear={() => setFilmSearch('')}
+            {!isDesktop ? (
+              // Mobile: Show selection buttons
+              <VStack space="md">
+                <MobileSelectButton
+                  label="Film"
+                  selectedItem={selectedFilm}
+                  onPress={() => setShowMobileFilmModal(true)}
+                  type="film"
                 />
-                
-                {/* Film suggestions */}
-                {filmSuggestions.length > 0 && (
-                  <Box style={styles.suggestionsContainer}>
-                    {filmSuggestions.map((film) => (
-                      <TouchableOpacity
-                        key={film.uuid}
-                        style={styles.suggestionItem}
-                        onPress={() => {
-                          setSelectedFilm(film);
-                          setFilmSearch('');
-                        }}
-                      >
-                        <Text style={[styles.suggestionText, { color: textColor }]}>
-                          {film.brand} {film.name}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </Box>
-                )}
-              </Box>
+                <MobileSelectButton
+                  label="Developer"
+                  selectedItem={selectedDeveloper}
+                  onPress={() => setShowMobileDeveloperModal(true)}
+                  type="developer"
+                />
+              </VStack>
+            ) : (
+              // Desktop: Show traditional search inputs
+              <Box style={[styles.searchFieldsContainer, styles.searchFieldsDesktop]}>
+                <Box style={[styles.searchField, styles.searchFieldDesktop]}>
+                  <SearchInput
+                    value={filmSearch}
+                    onChangeText={setFilmSearch}
+                    placeholder="Type to search films..."
+                    onClear={() => setFilmSearch('')}
+                  />
+                  
+                  {/* Film suggestions */}
+                  {filmSuggestions.length > 0 && (
+                    <Box style={styles.suggestionsContainer}>
+                      {filmSuggestions.map((film) => (
+                        <TouchableOpacity
+                          key={film.uuid}
+                          style={styles.suggestionItem}
+                          onPress={() => {
+                            setSelectedFilm(film);
+                            setFilmSearch('');
+                          }}
+                        >
+                          <Text style={[styles.suggestionText, { color: textColor }]}>
+                            {film.brand} {film.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </Box>
+                  )}
+                </Box>
 
-              <Box style={[styles.searchField, isDesktop && styles.searchFieldDesktop]}>
-                <SearchInput
-                  value={developerSearch}
-                  onChangeText={setDeveloperSearch}
-                  placeholder="Type to search developers..."
-                  onClear={() => setDeveloperSearch('')}
-                />
-                
-                {/* Developer suggestions */}
-                {developerSuggestions.length > 0 && (
-                  <Box style={styles.suggestionsContainer}>
-                    {developerSuggestions.map((developer) => (
-                      <TouchableOpacity
-                        key={developer.uuid}
-                        style={styles.suggestionItem}
-                        onPress={() => {
-                          setSelectedDeveloper(developer);
-                          setDeveloperSearch('');
-                        }}
-                      >
-                        <Text style={[styles.suggestionText, { color: textColor }]}>
-                          {developer.manufacturer} {developer.name}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </Box>
-                )}
+                <Box style={[styles.searchField, styles.searchFieldDesktop]}>
+                  <SearchInput
+                    value={developerSearch}
+                    onChangeText={setDeveloperSearch}
+                    placeholder="Type to search developers..."
+                    onClear={() => setDeveloperSearch('')}
+                  />
+                  
+                  {/* Developer suggestions */}
+                  {developerSuggestions.length > 0 && (
+                    <Box style={styles.suggestionsContainer}>
+                      {developerSuggestions.map((developer) => (
+                        <TouchableOpacity
+                          key={developer.uuid}
+                          style={styles.suggestionItem}
+                          onPress={() => {
+                            setSelectedDeveloper(developer);
+                            setDeveloperSearch('');
+                          }}
+                        >
+                          <Text style={[styles.suggestionText, { color: textColor }]}>
+                            {developer.manufacturer} {developer.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </Box>
+                  )}
+                </Box>
               </Box>
-            </Box>
+            )}
           </Box>
 
           {/* Selected Items Display */}
@@ -1309,6 +1501,33 @@ export default function DevelopmentRecipes() {
           </ModalBody>
         </ModalContent>
       </Modal>
+
+      {/* Mobile Selection Modals */}
+      <MobileSelectionModal
+        isOpen={showMobileFilmModal}
+        onClose={() => setShowMobileFilmModal(false)}
+        type="film"
+        films={allFilms}
+        developers={allDevelopers}
+        onFilmSelect={(film) => {
+          setSelectedFilm(film);
+          setFilmSearch(''); // Clear search when selecting from modal
+        }}
+        onDeveloperSelect={() => {}} // Not used for film modal
+      />
+
+      <MobileSelectionModal
+        isOpen={showMobileDeveloperModal}
+        onClose={() => setShowMobileDeveloperModal(false)}
+        type="developer"
+        films={allFilms}
+        developers={allDevelopers}
+        onFilmSelect={() => {}} // Not used for developer modal
+        onDeveloperSelect={(developer) => {
+          setSelectedDeveloper(developer);
+          setDeveloperSearch(''); // Clear search when selecting from modal
+        }}
+      />
       </Box>
     </CalculatorLayout>
   );
@@ -1410,6 +1629,76 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
   },
+
+  // Mobile Selection Styles
+  mobileSelectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  mobileSelectLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  mobileSelectText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  modalCloseButton: {
+    padding: 8,
+  },
+  modalSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  modalSearchIcon: {
+    position: 'absolute',
+    left: 24,
+    zIndex: 1,
+  },
+  modalSearchInput: {
+    flex: 1,
+    height: 44,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingLeft: 40,
+    paddingRight: 40,
+    fontSize: 16,
+  },
+  modalClearButton: {
+    position: 'absolute',
+    right: 24,
+    zIndex: 1,
+    padding: 4,
+  },
+  selectionItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  selectionItemTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  selectionItemSubtitle: {
+    fontSize: 14,
+    fontWeight: '400',
+  },
+
   sectionLabel: {
     fontSize: 16,
     fontWeight: "600",
