@@ -6,6 +6,7 @@ import { WarningAlert } from '@/components/ui/feedback';
 import { ResultRow } from '@/components/ui/calculator';
 // Border Calculator Specific Components
 import { AnimatedPreview, BorderInfoSection } from '@/components/border-calculator';
+import { MobileBorderCalculator, useResponsiveDetection } from '@/components/border-calculator/mobile';
 
 import {
   DESKTOP_BREAKPOINT,
@@ -70,6 +71,7 @@ import {
 export default function BorderCalculator() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width > DESKTOP_BREAKPOINT;
+  const { shouldUseMobileLayout } = useResponsiveDetection();
   const backgroundColor = useThemeColor({}, 'background');
   const cardBackground = useThemeColor({}, 'cardBackground');
   const textColor = useThemeColor({}, 'text');
@@ -212,6 +214,11 @@ export default function BorderCalculator() {
     sharePreset(newPreset);
   };
 
+  // Use mobile layout for mobile devices
+  if (shouldUseMobileLayout) {
+    return <MobileBorderCalculator />;
+  }
+
   return (
     <ScrollView sx={{ flex: 1, bg: backgroundColor }} contentContainerStyle={{ flexGrow: 1, paddingBottom: Platform.OS === 'ios' || Platform.OS === 'android' ? 100 : 80 }}>
       <Modal isOpen={isShareModalVisible} onClose={() => setShareModalVisible(false)}>
@@ -256,7 +263,8 @@ export default function BorderCalculator() {
             <Box sx={{ gap: 16, alignItems: 'center', width: '100%', mb: Platform.OS === 'web' ? 0 : 32, ...(Platform.OS === 'web' && isDesktop && { flex: 1, alignSelf: 'flex-start', mb: 0 }) }}>
               <AnimatedPreview calculation={calculation} showBlades={showBlades} borderColor={borderColor} />
 
-                {Platform.OS === 'web' && isDesktop ? (
+              {!shouldUseMobileLayout && (
+                Platform.OS === 'web' && isDesktop ? (
                   <HStack sx={{ flex: 1, justifyContent: 'space-between', gap: 12 }}>
                     <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="md">
                       <ButtonIcon as={RotateCwSquare} size="md"/>
@@ -278,6 +286,7 @@ export default function BorderCalculator() {
                     <ButtonText style={{ fontSize: 18}}>Flip Aspect Ratio</ButtonText>
                   </Button>
                 </VStack>
+                )
               )}
 
               <Box className="p-5 rounded-2xl mt-1 mb-4 border shadow-sm" style={{ 
