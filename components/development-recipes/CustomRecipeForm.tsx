@@ -586,17 +586,19 @@ export function CustomRecipeForm({
         <KeyboardAvoidingView 
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 40}
+          enabled={true}
         >
           <ScrollView
             style={{ flex: 1 }}
             contentContainerStyle={{ 
-              flexGrow: 1, 
               padding: 16,
-              paddingBottom: 24
+              paddingBottom: 100 // Extra padding to ensure content doesn't get cut off
             }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
+            bounces={true}
+            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           >
             {renderCurrentStep()}
           </ScrollView>

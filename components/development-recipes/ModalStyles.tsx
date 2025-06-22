@@ -23,7 +23,7 @@ export function getModalConfiguration(
         size: isDesktop ? 'md' : 'full',
         className: isDesktop ? 'max-w-2xl' : 'h-full',
         style: Platform.OS !== 'web' && !isDesktop ? {
-          maxHeight: '65%',
+          maxHeight: '85%',
           marginTop: 'auto',
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
@@ -79,4 +79,4 @@ export const getCustomRecipeDetailModalConfig = (isDesktop: boolean): ModalConfi
   getModalConfiguration(ModalSize.SMALL, isDesktop);
 
 export const getRecipeFormModalConfig = (isDesktop: boolean): ModalConfiguration => 
-  getModalConfiguration(ModalSize.SMALL, isDesktop); 
+  getModalConfiguration(ModalSize.MEDIUM, isDesktop); 
