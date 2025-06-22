@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Platform, StyleSheet, ScrollView, TextInput, TouchableOpacity } from "react-native";
 import { Box, Text, Button, ButtonText, VStack, HStack, Modal, ModalBackdrop, ModalContent, ModalCloseButton, ModalHeader, ModalBody } from "@gluestack-ui/themed";
-import { Search, X, Filter, RefreshCw, ChevronDown, ChevronUp, Plus } from "lucide-react-native";
+import { Search, X, Filter, RefreshCw, ChevronDown, ChevronUp, Plus, Grid3X3, Table } from "lucide-react-native";
 
 import { CalculatorLayout } from "@/components/CalculatorLayout";
 import { FormSection, FormGroup } from "@/components/FormSection";
@@ -204,6 +204,125 @@ function RecipeRow({ combination, film, developer, onPress, isEven }: RecipeRowP
   );
 }
 
+interface RecipeCardProps {
+  combination: Combination;
+  film: Film | undefined;
+  developer: Developer | undefined;
+  onPress: () => void;
+  isCustomRecipe: boolean;
+}
+
+function RecipeCard({ combination, film, developer, onPress, isCustomRecipe }: RecipeCardProps) {
+  const textColor = useThemeColor({}, "text");
+  const developmentTint = useThemeColor({}, "developmentRecipesTint");
+  const cardBackground = useThemeColor({}, "cardBackground");
+  const borderColor = useThemeColor({}, "borderColor");
+  const { width } = useWindowDimensions();
+  const isMobile = Platform.OS !== "web" || width <= 768;
+  
+  // Calculate card width based on screen size
+  const getCardWidth = () => {
+    if (isMobile) {
+      return '48%'; // 2 cards per row on mobile
+    } else if (width > 1200) {
+      return '23%'; // 4 cards per row on large desktop
+    } else {
+      return '30%'; // 3 cards per row on medium desktop
+    }
+  };
+
+  const filmName = film ? 
+    (isMobile ? film.name : `${film.brand} ${film.name}`) : 
+    "Unknown Film";
+  
+  // Check if shooting ISO is different from film stock ISO
+  const isNonStandardISO = film && combination.shootingIso !== film.isoSpeed;
+  
+  // Format push/pull value if present
+  const pushPullDisplay = combination.pushPull !== 0 
+    ? ` ${combination.pushPull > 0 ? `+${combination.pushPull}` : combination.pushPull}`
+    : null;
+    
+  const developerName = developer ? 
+    (isMobile ? developer.name : `${developer.manufacturer} ${developer.name}`) : 
+    "Unknown Developer";
+
+  // Get dilution info
+  const dilutionInfo = formatDilution(
+    combination.customDilution || 
+    (developer?.dilutions.find(d => d.id === combination.dilutionId)?.dilution) || 
+    "Stock"
+  );
+
+  // Check if temperature is non-standard (not 68°F)
+  const isNonStandardTemp = combination.temperatureF !== 68;
+  const tempDisplay = `${combination.temperatureF}°F`;
+
+  return (
+    <TouchableOpacity onPress={onPress} style={[styles.cardTouchable, { width: getCardWidth() }]}>
+      <Box style={[
+        styles.recipeCard, 
+        { 
+          backgroundColor: cardBackground,
+          borderColor: borderColor,
+        }
+      ]}>
+        {/* Header with Film and ISO */}
+        <Box style={styles.cardHeader}>
+          <Text style={[styles.cardFilmName, { color: textColor }]} numberOfLines={1}>
+            {filmName}
+            {isNonStandardISO && (
+              <Text style={[styles.cardISO, { color: developmentTint }]}>
+                {' @ '}{combination.shootingIso} ISO
+              </Text>
+            )}
+            {!isNonStandardISO && (
+              <Text style={[styles.cardISO, { color: textColor }]}>
+                {' @ '}{combination.shootingIso} ISO
+              </Text>
+            )}
+            {pushPullDisplay && (
+              <Text style={{ color: developmentTint }}>
+                {pushPullDisplay}
+              </Text>
+            )}
+          </Text>
+          {isCustomRecipe && (
+            <Box style={[styles.customBadge, { backgroundColor: developmentTint }]}>
+              <Text style={styles.customBadgeText}>●</Text>
+            </Box>
+          )}
+        </Box>
+        
+        {/* Developer */}
+        <Text style={[styles.cardDeveloper, { color: textColor }]} numberOfLines={1}>
+          <Text style={{ fontStyle: 'italic' }}>Developer: </Text>
+          {developerName}
+        </Text>
+        
+        {/* Divider */}
+        <Box style={[styles.cardDivider, { borderBottomColor: borderColor }]} />
+        
+        {/* Parameters */}
+        <Box style={styles.cardParams}>
+          <Text style={[styles.cardParam, { color: textColor }]}>
+            Time: {formatTime(combination.timeMinutes)}
+          </Text>
+          <Text style={[
+            styles.cardParam, 
+            { color: isNonStandardTemp ? developmentTint : textColor }
+          ]}>
+            {tempDisplay}{isNonStandardTemp && ' ⚠'}
+          </Text>
+          <Text style={[styles.cardParam, { color: textColor }]}>
+            Dilution: {dilutionInfo}
+          </Text>
+        </Box>
+      </Box>
+    </TouchableOpacity>
+  );
+}
+
 export default function DevelopmentRecipes() {
   const {
     // State
@@ -249,6 +368,7 @@ export default function DevelopmentRecipes() {
   const [showCustomRecipeForm, setShowCustomRecipeForm] = useState(false);
   const [editingCustomRecipe, setEditingCustomRecipe] = useState<CustomRecipe | undefined>(undefined);
   const [showCustomRecipes, setShowCustomRecipes] = useState(true);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
@@ -835,6 +955,35 @@ export default function DevelopmentRecipes() {
               </TouchableOpacity>
             )}
             
+            {isDesktop && (
+              <TouchableOpacity 
+                onPress={() => setViewMode(viewMode === 'cards' ? 'table' : 'cards')}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 8,
+                  borderRadius: 6,
+                  backgroundColor: 'transparent',
+                  borderWidth: 1,
+                  borderColor: developmentTint,
+                }}
+              >
+                {viewMode === 'cards' ? (
+                  <Table size={14} color={developmentTint} />
+                ) : (
+                  <Grid3X3 size={14} color={developmentTint} />
+                )}
+                <Text style={{
+                  fontSize: 12,
+                  color: developmentTint,
+                  fontWeight: '500',
+                  marginLeft: 4,
+                }}>
+                  {viewMode === 'cards' ? 'Table' : 'Cards'}
+                </Text>
+              </TouchableOpacity>
+            )}
+            
             <TouchableOpacity 
               onPress={handleNewCustomRecipe}
               style={{
@@ -864,72 +1013,107 @@ export default function DevelopmentRecipes() {
             </Text>
           </Box>
         ) : (
-          <Box style={styles.tableContainer}>
-            {/* Table Header */}
-            <Box style={[styles.tableHeaderRow, { borderBottomColor: outline }]}>
-              <TableHeader title="Film" sortKey="filmName" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
-              <TableHeader title="Developer" sortKey="developerName" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
-              <TableHeader title="Time" sortKey="timeMinutes" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
-              <TableHeader title="Temp" sortKey="temperatureF" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
-              <TableHeader title="ISO" sortKey="shootingIso" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
-              <TableHeader 
-                title={Platform.OS !== "web" || width <= 768 ? "Dil" : "Dilution"} 
-                sortKey="dilution" 
-                currentSort={sortBy} 
-                sortDirection={sortDirection} 
-                onSort={handleSort} 
-              />
-            </Box>
-            
-            {/* Table Body */}
-            <ScrollView style={styles.tableScrollView} showsVerticalScrollIndicator={false}>
-              {allCombinations.map((combination, index) => {
-                const isCustomRecipe = customRecipes.some(r => r.id === combination.id);
-                const customRecipe = isCustomRecipe ? customRecipes.find(r => r.id === combination.id) : undefined;
-                
-                const film = isCustomRecipe && customRecipe 
-                  ? getCustomRecipeFilm(customRecipe.id)
-                  : getFilmById(combination.filmStockId);
+          // Determine if we should show cards or table
+          ((!isDesktop) || (isDesktop && viewMode === 'cards')) ? (
+            // Cards View
+            <ScrollView style={styles.cardsContainer} showsVerticalScrollIndicator={false}>
+              <Box style={styles.cardsGrid}>
+                {allCombinations.map((combination) => {
+                  const isCustomRecipe = customRecipes.some(r => r.id === combination.id);
+                  const customRecipe = isCustomRecipe ? customRecipes.find(r => r.id === combination.id) : undefined;
                   
-                const developer = isCustomRecipe && customRecipe
-                  ? getCustomRecipeDeveloper(customRecipe.id) 
-                  : getDeveloperById(combination.developerId);
+                  const film = isCustomRecipe && customRecipe 
+                    ? getCustomRecipeFilm(customRecipe.id)
+                    : getFilmById(combination.filmStockId);
+                    
+                  const developer = isCustomRecipe && customRecipe
+                    ? getCustomRecipeDeveloper(customRecipe.id) 
+                    : getDeveloperById(combination.developerId);
 
-                // Generate a stable key that includes modification timestamp for custom recipes
-                const recipeKey = isCustomRecipe && customRecipe 
-                  ? `${combination.uuid}_${customRecipe.dateModified}` 
-                  : combination.uuid;
+                  // Generate a stable key that includes modification timestamp for custom recipes
+                  const recipeKey = isCustomRecipe && customRecipe 
+                    ? `${combination.uuid}_${customRecipe.dateModified}` 
+                    : combination.uuid;
 
-                // Debug logging for key generation
-                console.log('[DevelopmentRecipes] Rendering row:', JSON.stringify({
-                  id: combination.id,
-                  isCustomRecipe,
-                  recipeKey,
-                  combinationTemp: combination.temperatureF,
-                  customRecipeTemp: customRecipe?.temperatureF,
-                  dateModified: customRecipe?.dateModified
-                }));
-
-                return (
-                  <RecipeRow
-                    key={recipeKey}
-                    combination={combination}
-                    film={film}
-                    developer={developer}
-                    onPress={() => {
-                      if (isCustomRecipe && customRecipe) {
-                        handleCustomRecipePress(customRecipe);
-                      } else {
-                        setSelectedCombination(combination);
-                        setSelectedCustomRecipe(null);
-                      }
-                    }}
-                    isEven={index % 2 === 0}
-                  />
-                );
-              })}
+                  return (
+                    <RecipeCard
+                      key={recipeKey}
+                      combination={combination}
+                      film={film}
+                      developer={developer}
+                      isCustomRecipe={isCustomRecipe}
+                      onPress={() => {
+                        if (isCustomRecipe && customRecipe) {
+                          handleCustomRecipePress(customRecipe);
+                        } else {
+                          setSelectedCombination(combination);
+                          setSelectedCustomRecipe(null);
+                        }
+                      }}
+                    />
+                  );
+                })}
+              </Box>
             </ScrollView>
-          </Box>
+          ) : (
+            // Table View (Desktop only)
+            <Box style={styles.tableContainer}>
+              {/* Table Header */}
+              <Box style={[styles.tableHeaderRow, { borderBottomColor: outline }]}>
+                <TableHeader title="Film" sortKey="filmName" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                <TableHeader title="Developer" sortKey="developerName" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                <TableHeader title="Time" sortKey="timeMinutes" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                <TableHeader title="Temp" sortKey="temperatureF" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                <TableHeader title="ISO" sortKey="shootingIso" currentSort={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                <TableHeader 
+                  title="Dilution" 
+                  sortKey="dilution" 
+                  currentSort={sortBy} 
+                  sortDirection={sortDirection} 
+                  onSort={handleSort} 
+                />
+              </Box>
+              
+              {/* Table Body */}
+              <ScrollView style={styles.tableScrollView} showsVerticalScrollIndicator={false}>
+                {allCombinations.map((combination, index) => {
+                  const isCustomRecipe = customRecipes.some(r => r.id === combination.id);
+                  const customRecipe = isCustomRecipe ? customRecipes.find(r => r.id === combination.id) : undefined;
+                  
+                  const film = isCustomRecipe && customRecipe 
+                    ? getCustomRecipeFilm(customRecipe.id)
+                    : getFilmById(combination.filmStockId);
+                    
+                  const developer = isCustomRecipe && customRecipe
+                    ? getCustomRecipeDeveloper(customRecipe.id) 
+                    : getDeveloperById(combination.developerId);
+
+                  // Generate a stable key that includes modification timestamp for custom recipes
+                  const recipeKey = isCustomRecipe && customRecipe 
+                    ? `${combination.uuid}_${customRecipe.dateModified}` 
+                    : combination.uuid;
+
+                  return (
+                    <RecipeRow
+                      key={recipeKey}
+                      combination={combination}
+                      film={film}
+                      developer={developer}
+                      onPress={() => {
+                        if (isCustomRecipe && customRecipe) {
+                          handleCustomRecipePress(customRecipe);
+                        } else {
+                          setSelectedCombination(combination);
+                          setSelectedCustomRecipe(null);
+                        }
+                      }}
+                      isEven={index % 2 === 0}
+                    />
+                  );
+                })}
+              </ScrollView>
+            </Box>
+          )
         )}
         </Box>
       </Box>
@@ -1058,6 +1242,80 @@ const styles = StyleSheet.create({
   },
   leftPanel: {
     flex: 1,
+  },
+  
+  // Cards Layout Styles
+  cardsContainer: {
+    flex: 1,
+  },
+  cardsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    paddingVertical: 8,
+  },
+  cardTouchable: {
+    minWidth: 280,
+    maxWidth: 400,
+  },
+  recipeCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  cardFilmName: {
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
+    lineHeight: 20,
+  },
+  cardISO: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  customBadge: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: 8,
+    marginTop: 6,
+  },
+  customBadgeText: {
+    fontSize: 6,
+    color: '#fff',
+    textAlign: 'center',
+    lineHeight: 8,
+  },
+  cardDeveloper: {
+    fontSize: 14,
+    marginBottom: 12,
+    lineHeight: 18,
+  },
+  cardDivider: {
+    borderBottomWidth: 1,
+    marginBottom: 12,
+  },
+  cardParams: {
+    gap: 4,
+  },
+  cardParam: {
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '500',
   },
   sectionLabel: {
     fontSize: 16,
