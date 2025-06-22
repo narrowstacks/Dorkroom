@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Platform } from 'react-native';
 import { Box, ScrollView, VStack, Text } from '@gluestack-ui/themed';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -10,16 +10,15 @@ import {
   CompactPreview, 
   SettingsButton, 
   ActionButtons,
-  useMobileModalState 
 } from './index';
 
-// Modals
+// Inline sections instead of modals
 import {
-  PaperSizeModal,
-  BorderSizeModal,
-  PositionOffsetsModal,
-  AdvancedOptionsModal,
-} from './modals';
+  PaperSizeSection,
+  BorderSizeSection,
+  PositionOffsetsSection,
+  AdvancedOptionsSection,
+} from './sections';
 
 // Icons
 import { 
@@ -34,6 +33,9 @@ import {
 import { useBorderCalculator, useBorderPresets } from '@/hooks/borderCalculator';
 import { Button, ButtonText, ButtonIcon } from '@gluestack-ui/themed';
 
+// Active section type
+type ActiveSection = 'main' | 'paperSize' | 'borderSize' | 'positionOffsets' | 'advancedOptions';
+
 interface MobileBorderCalculatorProps {
   // This component will use the same hooks as the desktop version
 }
@@ -41,6 +43,9 @@ interface MobileBorderCalculatorProps {
 export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () => {
   const backgroundColor = useThemeColor({}, 'background');
   const outline = useThemeColor({}, 'outline');
+
+  // Active section state
+  const [activeSection, setActiveSection] = useState<ActiveSection>('main');
 
   // Border calculator hooks
   const {
@@ -65,18 +70,6 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
   } = useBorderCalculator();
 
   const { presets } = useBorderPresets();
-
-  // Modal state management
-  const {
-    paperSizeModalVisible,
-    setBorderSizeModalVisible,
-    setPositionOffsetsModalVisible,
-    setAdvancedOptionsModalVisible,
-    setPaperSizeModalVisible,
-    borderSizeModalVisible,
-    positionOffsetsModalVisible,
-    advancedOptionsModalVisible,
-  } = useMobileModalState();
 
   // Helper functions for display values
   const getPaperSizeDisplayValue = () => {
@@ -125,6 +118,11 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
     console.log('Save preset');
   };
 
+  // Close section handler
+  const closeSectionToMain = () => {
+    setActiveSection('main');
+  };
+
   if (!calculation) {
     return null;
   }
@@ -138,8 +136,6 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
       }}
     >
       <Box style={{ flex: 1, padding: 16 }}>
-
-
         <VStack space="lg">
           {/* Hero Section - Blade Results */}
           <BladeResultsDisplay 
@@ -160,116 +156,125 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
           {paperSizeWarning && <WarningAlert message={paperSizeWarning} action="warning" />}
           {offsetWarning && <WarningAlert message={offsetWarning} action="warning" />}
 
-          {/* Settings Buttons */}
-          <VStack space="xs" style={{ marginTop: 40 }}>
-            <SettingsButton 
-              label="Paper and Image Size"
-              value={`${getAspectRatioDisplayValue()} on ${getPaperSizeDisplayValue()}`}
-              onPress={() => setPaperSizeModalVisible(true)}
-              icon={ImageIcon}
+          {/* Main Settings or Active Section */}
+          {activeSection === 'main' && (
+            <>
+              {/* Settings Buttons */}
+              <VStack space="xs" style={{ marginTop: 5 }}>
+                <SettingsButton 
+                  label="Paper and Image Size"
+                  value={`${getAspectRatioDisplayValue()} on ${getPaperSizeDisplayValue()}`}
+                  onPress={() => setActiveSection('paperSize')}
+                  icon={ImageIcon}
+                />
+
+                <SettingsButton 
+                  label="Border Size"
+                  value={getBorderSizeDisplayValue()}
+                  onPress={() => setActiveSection('borderSize')}
+                  icon={RulerIcon}
+                />
+
+                <SettingsButton 
+                  label="Position & Offsets"
+                  value={getPositionDisplayValue()}
+                  onPress={() => setActiveSection('positionOffsets')}
+                  icon={MoveIcon}
+                />
+
+                <SettingsButton 
+                  label="Advanced Options"
+                  value={getAdvancedDisplayValue()}
+                  onPress={() => setActiveSection('advancedOptions')}
+                  icon={SettingsIcon}
+                />
+              </VStack>
+
+              {/* Reset Button */}
+              <Button 
+                onPress={resetToDefaults} 
+                variant="solid" 
+                action="negative" 
+                size="md" 
+                style={{ marginTop: 4 }}
+              >
+                <ButtonIcon as={RotateCcw} />
+                <ButtonText style={{ marginLeft: 8 }}>Reset to Defaults</ButtonText>
+              </Button>
+
+              {/* Action Buttons */}
+              <ActionButtons 
+                onCopyResults={handleCopyResults}
+                onShare={handleShare}
+                onSavePreset={handleSavePreset}
+              />
+            </>
+          )}
+
+          {/* Inline Sections */}
+          {activeSection === 'paperSize' && (
+            <PaperSizeSection 
+              onClose={closeSectionToMain}
+              aspectRatio={aspectRatio}
+              setAspectRatio={setAspectRatio}
+              customAspectWidth={customAspectWidth}
+              setCustomAspectWidth={setCustomAspectWidth}
+              customAspectHeight={customAspectHeight}
+              setCustomAspectHeight={setCustomAspectHeight}
+              paperSize={paperSize}
+              setPaperSize={setPaperSize}
+              customPaperWidth={customPaperWidth}
+              setCustomPaperWidth={setCustomPaperWidth}
+              customPaperHeight={customPaperHeight}
+              setCustomPaperHeight={setCustomPaperHeight}
+              isLandscape={isLandscape}
+              setIsLandscape={setIsLandscape}
+              isRatioFlipped={isRatioFlipped}
+              setIsRatioFlipped={setIsRatioFlipped}
             />
+          )}
 
-            <SettingsButton 
-              label="Border Size"
-              value={getBorderSizeDisplayValue()}
-              onPress={() => setBorderSizeModalVisible(true)}
-              icon={RulerIcon}
+          {activeSection === 'borderSize' && (
+            <BorderSizeSection 
+              onClose={closeSectionToMain}
+              minBorder={(() => {
+                const parsed = parseFloat(String(minBorder));
+                return isNaN(parsed) ? 0 : parsed;
+              })()}
+              setMinBorder={(value: number) => setMinBorder(String(value))}
+              minBorderWarning={minBorderWarning}
             />
+          )}
 
-            <SettingsButton 
-              label="Position & Offsets"
-              value={getPositionDisplayValue()}
-              onPress={() => setPositionOffsetsModalVisible(true)}
-              icon={MoveIcon}
+          {activeSection === 'positionOffsets' && (
+            <PositionOffsetsSection 
+              onClose={closeSectionToMain}
+              enableOffset={enableOffset}
+              setEnableOffset={setEnableOffset}
+              ignoreMinBorder={ignoreMinBorder}
+              setIgnoreMinBorder={setIgnoreMinBorder}
+              horizontalOffset={(() => {
+                const parsed = parseFloat(String(horizontalOffset));
+                return isNaN(parsed) ? 0 : parsed;
+              })()}
+              setHorizontalOffset={(value: number) => setHorizontalOffset(String(value))}
+              verticalOffset={(() => {
+                const parsed = parseFloat(String(verticalOffset));
+                return isNaN(parsed) ? 0 : parsed;
+              })()}
+              setVerticalOffset={(value: number) => setVerticalOffset(String(value))}
+              offsetWarning={offsetWarning}
             />
+          )}
 
-            <SettingsButton 
-              label="Advanced Options"
-              value={getAdvancedDisplayValue()}
-              onPress={() => setAdvancedOptionsModalVisible(true)}
-              icon={SettingsIcon}
+          {activeSection === 'advancedOptions' && (
+            <AdvancedOptionsSection 
+              onClose={closeSectionToMain}
+              showBlades={showBlades}
+              setShowBlades={setShowBlades}
             />
-          </VStack>
-
-          {/* Reset Button */}
-          <Button 
-            onPress={resetToDefaults} 
-            variant="solid" 
-            action="negative" 
-            size="md" 
-            style={{ marginTop: 16 }}
-          >
-            <ButtonIcon as={RotateCcw} />
-            <ButtonText style={{ marginLeft: 8 }}>Reset to Defaults</ButtonText>
-          </Button>
-
-          {/* Action Buttons */}
-          <ActionButtons 
-            onCopyResults={handleCopyResults}
-            onShare={handleShare}
-            onSavePreset={handleSavePreset}
-          />
+          )}
         </VStack>
-
-        {/* Modals */}
-        <PaperSizeModal 
-          isVisible={paperSizeModalVisible}
-          onClose={() => setPaperSizeModalVisible(false)}
-          aspectRatio={aspectRatio}
-          setAspectRatio={setAspectRatio}
-          customAspectWidth={customAspectWidth}
-          setCustomAspectWidth={setCustomAspectWidth}
-          customAspectHeight={customAspectHeight}
-          setCustomAspectHeight={setCustomAspectHeight}
-          paperSize={paperSize}
-          setPaperSize={setPaperSize}
-          customPaperWidth={customPaperWidth}
-          setCustomPaperWidth={setCustomPaperWidth}
-          customPaperHeight={customPaperHeight}
-          setCustomPaperHeight={setCustomPaperHeight}
-          isLandscape={isLandscape}
-          setIsLandscape={setIsLandscape}
-          isRatioFlipped={isRatioFlipped}
-          setIsRatioFlipped={setIsRatioFlipped}
-        />
-
-        <BorderSizeModal 
-          isVisible={borderSizeModalVisible}
-          onClose={() => setBorderSizeModalVisible(false)}
-          minBorder={(() => {
-            const parsed = parseFloat(String(minBorder));
-            return isNaN(parsed) ? 0 : parsed;
-          })()}
-          setMinBorder={(value: number) => setMinBorder(String(value))}
-          minBorderWarning={minBorderWarning}
-        />
-
-        <PositionOffsetsModal 
-          isVisible={positionOffsetsModalVisible}
-          onClose={() => setPositionOffsetsModalVisible(false)}
-          enableOffset={enableOffset}
-          setEnableOffset={setEnableOffset}
-          ignoreMinBorder={ignoreMinBorder}
-          setIgnoreMinBorder={setIgnoreMinBorder}
-          horizontalOffset={(() => {
-            const parsed = parseFloat(String(horizontalOffset));
-            return isNaN(parsed) ? 0 : parsed;
-          })()}
-          setHorizontalOffset={(value: number) => setHorizontalOffset(String(value))}
-          verticalOffset={(() => {
-            const parsed = parseFloat(String(verticalOffset));
-            return isNaN(parsed) ? 0 : parsed;
-          })()}
-          setVerticalOffset={(value: number) => setVerticalOffset(String(value))}
-          offsetWarning={offsetWarning}
-        />
-
-        <AdvancedOptionsModal 
-          isVisible={advancedOptionsModalVisible}
-          onClose={() => setAdvancedOptionsModalVisible(false)}
-          showBlades={showBlades}
-          setShowBlades={setShowBlades}
-        />
       </Box>
     </ScrollView>
   );

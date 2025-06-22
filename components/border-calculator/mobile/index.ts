@@ -6,7 +6,6 @@ export { MobileBorderCalculator } from './MobileBorderCalculator';
 
 // Hooks
 export { useResponsiveDetection } from './hooks/useResponsiveDetection';
-export { useMobileModalState } from './hooks/useMobileModalState';
 
-// Modals
-export * from './modals'; 
+// Sections
+export * from './sections'; 
