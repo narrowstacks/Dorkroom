@@ -236,7 +236,7 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
               onPress={() => openDrawerSection('positionOffsets')}
               icon={MoveIcon}
             />
-            <HStack space="lg" style={{ flex: 1 }}>
+            <HStack space="sm" style={{ flex: 1 }}>
             <Box style={{ flex: 1 }}>
               <SettingsButton 
                 label="Show Blades"                onPress={() => setShowBlades(!showBlades)}

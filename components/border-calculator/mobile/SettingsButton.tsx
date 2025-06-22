@@ -37,6 +37,8 @@ export const SettingsButton: React.FC<SettingsButtonProps> = ({
           padding: 16,
           marginBottom: 12,
           minHeight: 56,
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         <HStack style={{ justifyContent: 'space-between', alignItems: 'center' }}>
