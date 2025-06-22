@@ -217,17 +217,20 @@ function RecipeCard({ combination, film, developer, onPress, isCustomRecipe }: R
   const developmentTint = useThemeColor({}, "developmentRecipesTint");
   const cardBackground = useThemeColor({}, "cardBackground");
   const borderColor = useThemeColor({}, "borderColor");
+  const resultRowBackground = useThemeColor({}, "resultRowBackground");
   const { width } = useWindowDimensions();
   const isMobile = Platform.OS !== "web" || width <= 768;
   
   // Calculate card width based on screen size
   const getCardWidth = () => {
     if (isMobile) {
-      return '48%'; // 2 cards per row on mobile
+      return '46%'; // 2 cards per row on mobile with more space
+    } else if (width > 1600) {
+      return '23%'; // 4 cards per row on very large desktop
     } else if (width > 1200) {
-      return '23%'; // 4 cards per row on large desktop
+      return '30%'; // 3 cards per row on large desktop
     } else {
-      return '30%'; // 3 cards per row on medium desktop
+      return '47%'; // 2 cards per row on medium desktop
     }
   };
 
@@ -305,18 +308,24 @@ function RecipeCard({ combination, film, developer, onPress, isCustomRecipe }: R
         
         {/* Parameters */}
         <Box style={styles.cardParams}>
-          <Text style={[styles.cardParam, { color: textColor }]}>
-            Time: {formatTime(combination.timeMinutes)}
-          </Text>
-          <Text style={[
-            styles.cardParam, 
-            { color: isNonStandardTemp ? developmentTint : textColor }
-          ]}>
-            {tempDisplay}{isNonStandardTemp && ' ⚠'}
-          </Text>
-          <Text style={[styles.cardParam, { color: textColor }]}>
-            Dilution: {dilutionInfo}
-          </Text>
+          <Box style={[styles.paramBox, { backgroundColor: resultRowBackground }]}>
+            <Text style={[styles.cardParam, { color: textColor }]}>
+              Time: {formatTime(combination.timeMinutes)}
+            </Text>
+          </Box>
+          <Box style={[styles.paramBox, { backgroundColor: resultRowBackground }]}>
+            <Text style={[
+              styles.cardParam, 
+              { color: isNonStandardTemp ? developmentTint : textColor }
+            ]}>
+              Temperature: {tempDisplay}{isNonStandardTemp && ' ⚠'}
+            </Text>
+          </Box>
+          <Box style={[styles.paramBox, { backgroundColor: resultRowBackground }]}>
+            <Text style={[styles.cardParam, { color: textColor }]}>
+              Dilution: {dilutionInfo}
+            </Text>
+          </Box>
         </Box>
       </Box>
     </TouchableOpacity>
@@ -932,29 +941,6 @@ export default function DevelopmentRecipes() {
           </Text>
           
           <HStack style={{ gap: 8, alignItems: 'center' }}>
-            {customRecipes.length > 0 && (
-              <TouchableOpacity 
-                onPress={() => setShowCustomRecipes(!showCustomRecipes)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 8,
-                  borderRadius: 6,
-                  backgroundColor: showCustomRecipes ? developmentTint : 'transparent',
-                  borderWidth: 1,
-                  borderColor: developmentTint,
-                }}
-              >
-                <Text style={{
-                  fontSize: 12,
-                  color: showCustomRecipes ? '#fff' : developmentTint,
-                  fontWeight: '500'
-                }}>
-                  My Recipes
-                </Text>
-              </TouchableOpacity>
-            )}
-            
             {isDesktop && (
               <TouchableOpacity 
                 onPress={() => setViewMode(viewMode === 'cards' ? 'table' : 'cards')}
@@ -980,6 +966,29 @@ export default function DevelopmentRecipes() {
                   marginLeft: 4,
                 }}>
                   {viewMode === 'cards' ? 'Table' : 'Cards'}
+                </Text>
+              </TouchableOpacity>
+            )}
+            
+            {customRecipes.length > 0 && (
+              <TouchableOpacity 
+                onPress={() => setShowCustomRecipes(!showCustomRecipes)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 8,
+                  borderRadius: 6,
+                  backgroundColor: showCustomRecipes ? developmentTint : 'transparent',
+                  borderWidth: 1,
+                  borderColor: developmentTint,
+                }}
+              >
+                <Text style={{
+                  fontSize: 12,
+                  color: showCustomRecipes ? '#fff' : developmentTint,
+                  fontWeight: '500'
+                }}>
+                  My Recipes
                 </Text>
               </TouchableOpacity>
             )}
@@ -1253,10 +1262,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
     paddingVertical: 8,
+    justifyContent: 'center',
   },
   cardTouchable: {
-    minWidth: 280,
-    maxWidth: 400,
+    minWidth: 320,
+    maxWidth: 500,
   },
   recipeCard: {
     borderRadius: 12,
@@ -1276,12 +1286,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 8,
+    minHeight: 24,
   },
   cardFilmName: {
     fontSize: 16,
     fontWeight: '600',
     flex: 1,
-    lineHeight: 20,
+    lineHeight: 22,
+    marginRight: 8,
   },
   cardISO: {
     fontSize: 14,
@@ -1310,12 +1322,23 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cardParams: {
-    gap: 4,
+    gap: 6,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  paramBox: {
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    minWidth: '30%',
+    alignItems: 'center',
   },
   cardParam: {
-    fontSize: 13,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 14,
     fontWeight: '500',
+    textAlign: 'center',
   },
   sectionLabel: {
     fontSize: 16,
