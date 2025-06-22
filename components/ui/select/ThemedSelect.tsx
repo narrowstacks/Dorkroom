@@ -1,11 +1,9 @@
 import React from "react";
-import { Platform } from "react-native";
 import {
   Select,
   SelectTrigger,
   SelectInput,
   SelectIcon,
-  Icon,
   ChevronDownIcon,
   SelectPortal,
   SelectBackdrop,

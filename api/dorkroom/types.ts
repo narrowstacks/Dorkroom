@@ -134,6 +134,10 @@ export interface DorkroomClientConfig {
   maxRetries?: number;
   /** Custom logger instance */
   logger?: Logger;
+  /** Cache TTL in milliseconds (default: 5 minutes) */
+  cacheTTL?: number;
+  /** Debounce delay for search requests in milliseconds (default: 300ms) */
+  searchDebounceMs?: number;
 }
 
 /**

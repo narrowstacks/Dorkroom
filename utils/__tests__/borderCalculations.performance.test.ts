@@ -3,6 +3,7 @@
    -------------------------------------------------------------
    Performance tests for optimized border calculations
 \* ------------------------------------------------------------------ */
+import { debugLog } from "@/utils/debugLogger";
 
 import { performance } from 'perf_hooks';
 import { 
@@ -37,7 +38,7 @@ describe('Border Calculations Performance', () => {
     const end = performance.now();
     const timePerCall = (end - start) / (iterations * 2);
     
-    console.log(`Average time per findCenteringOffsets call: ${timePerCall.toFixed(3)}ms`);
+    debugLog(`Average time per findCenteringOffsets call: ${timePerCall.toFixed(3)}ms`);
     
     // Should be very fast due to memoization (less than 0.1ms per call)
     expect(timePerCall).toBeLessThan(0.1);
@@ -61,7 +62,7 @@ describe('Border Calculations Performance', () => {
     const end = performance.now();
     const timePerCall = (end - start) / iterations;
     
-    console.log(`Average time per calculateOptimalMinBorder call: ${timePerCall.toFixed(3)}ms`);
+    debugLog(`Average time per calculateOptimalMinBorder call: ${timePerCall.toFixed(3)}ms`);
     
     // Should complete within reasonable time (less than 5ms per call)
     expect(timePerCall).toBeLessThan(5);
@@ -90,9 +91,9 @@ describe('Border Calculations Performance', () => {
     const end2 = performance.now();
     const secondCallTime = end2 - start2;
 
-    console.log(`First call time: ${firstCallTime.toFixed(3)}ms`);
-    console.log(`Second call time (cached): ${secondCallTime.toFixed(3)}ms`);
-    console.log(`Performance improvement: ${((firstCallTime - secondCallTime) / firstCallTime * 100).toFixed(1)}%`);
+    debugLog(`First call time: ${firstCallTime.toFixed(3)}ms`);
+    debugLog(`Second call time (cached): ${secondCallTime.toFixed(3)}ms`);
+    debugLog(`Performance improvement: ${((firstCallTime - secondCallTime) / firstCallTime * 100).toFixed(1)}%`);
 
     // Cached calls should be significantly faster
     expect(secondCallTime).toBeLessThan(firstCallTime);
@@ -132,8 +133,8 @@ describe('Border Calculations Performance', () => {
     const totalTime = end - start;
     const timePerBatch = totalTime / batchSize;
     
-    console.log(`Batch processing time: ${totalTime.toFixed(3)}ms for ${batchSize} operations`);
-    console.log(`Average time per operation: ${timePerBatch.toFixed(3)}ms`);
+    debugLog(`Batch processing time: ${totalTime.toFixed(3)}ms for ${batchSize} operations`);
+    debugLog(`Average time per operation: ${timePerBatch.toFixed(3)}ms`);
     
     // Batch operations should be efficient
     expect(totalTime).toBeLessThan(100); // Total time under 100ms

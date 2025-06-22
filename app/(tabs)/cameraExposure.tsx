@@ -6,11 +6,11 @@ import {
 } from "@/hooks/useCameraExposureCalculator";
 import { APERTURE_VALUES, ISO_VALUES, SHUTTER_SPEED_VALUES } from "@/constants/exposure";
 import { Box, Text } from "@gluestack-ui/themed";
-import { CalculatorLayout } from "@/components/CalculatorLayout";
-import { ResultsSection, ResultRow } from "@/components/ResultsSection";
-import { FormSection, FormGroup } from "@/components/FormSection";
-import { InfoSection, InfoText, InfoSubtitle } from "@/components/InfoSection";
-import { StyledSelect } from "@/components/StyledSelect";
+import { CalculatorLayout } from "@/components/ui/layout/CalculatorLayout";
+import { ResultsSection, ResultRow } from "@/components/ui/calculator/ResultsSection";
+import { FormSection, FormGroup } from "@/components/ui/forms/FormSection";
+import { InfoSection, InfoText, InfoSubtitle } from "@/components/ui/calculator/InfoSection";
+import { PlatformSelect } from "@/components/ui/select/PlatformSelect";
 
 export default function CameraExposureCalculator() {
   const isMobile = Platform.OS === "ios" || Platform.OS === "android";
@@ -134,7 +134,7 @@ export default function CameraExposureCalculator() {
             </Text>
 
             <FormGroup label="Aperture">
-              <StyledSelect
+              <PlatformSelect
                 value={aperture}
                 onValueChange={setAperture}
                 items={APERTURE_VALUES}
@@ -142,7 +142,7 @@ export default function CameraExposureCalculator() {
             </FormGroup>
 
             <FormGroup label="ISO">
-              <StyledSelect
+              <PlatformSelect
                 value={iso}
                 onValueChange={setIso}
                 items={ISO_VALUES}
@@ -150,7 +150,7 @@ export default function CameraExposureCalculator() {
             </FormGroup>
 
             <FormGroup label="Shutter Speed">
-              <StyledSelect
+              <PlatformSelect
                 value={shutterSpeed}
                 onValueChange={setShutterSpeed}
                 items={SHUTTER_SPEED_VALUES}
@@ -164,7 +164,7 @@ export default function CameraExposureCalculator() {
             </Text>
 
             <FormGroup label="Setting to Change">
-              <StyledSelect
+              <PlatformSelect
                 value={settingToChange}
                 onValueChange={setSettingToChange as (value: string) => void}
                 items={settingOptions}
@@ -172,7 +172,7 @@ export default function CameraExposureCalculator() {
             </FormGroup>
 
             <FormGroup label="New Value">
-              <StyledSelect
+              <PlatformSelect
                 value={newValue}
                 onValueChange={setNewValue}
                 items={getNewValueOptions()}

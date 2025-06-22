@@ -31,21 +31,21 @@ async function example() {
   
   // Search for films
   const films = client.searchFilms('tri-x');
-  console.log(films);
+  debugLog(films);
   
   // Fuzzy search for better results
   const fuzzyFilms = client.fuzzySearchFilms('trix', { limit: 5 });
-  console.log(fuzzyFilms);
+  debugLog(fuzzyFilms);
   
   // Get specific film by ID
   const film = client.getFilm('kodak-tri-x-400');
   if (film) {
-    console.log(`${film.brand} ${film.name} - ISO ${film.iso_speed}`);
+    debugLog(`${film.brand} ${film.name} - ISO ${film.iso_speed}`);
   }
   
   // Find development combinations for a film
   const combinations = client.getCombinationsForFilm('kodak-tri-x-400');
-  console.log(`Found ${combinations.length} development combinations`);
+  debugLog(`Found ${combinations.length} development combinations`);
 }
 ```
 
@@ -80,6 +80,7 @@ interface DorkroomClientConfig {
 #### Methods
 
 ##### `loadAll(): Promise<void>`
+
 Loads all data from the API. **Must be called before using other methods.**
 
 ```typescript
@@ -87,6 +88,7 @@ await client.loadAll();
 ```
 
 ##### `getFilm(filmId: string): Film | undefined`
+
 Get a specific film by its ID.
 
 ```typescript
@@ -94,6 +96,7 @@ const film = client.getFilm('kodak-tri-x-400');
 ```
 
 ##### `getDeveloper(developerId: string): Developer | undefined`
+
 Get a specific developer by its ID.
 
 ```typescript
@@ -101,6 +104,7 @@ const developer = client.getDeveloper('kodak-d76');
 ```
 
 ##### `searchFilms(query: string, colorType?: string): Film[]`
+
 Search films by name or brand with optional color type filter.
 
 ```typescript
@@ -109,6 +113,7 @@ const colorFilms = client.searchFilms('portra', 'Color');
 ```
 
 ##### `fuzzySearchFilms(query: string, options?: FuzzySearchOptions): Film[]`
+
 Intelligent fuzzy search for films.
 
 ```typescript
@@ -119,6 +124,7 @@ const films = client.fuzzySearchFilms('trix', {
 ```
 
 ##### `getCombinationsForFilm(filmId: string): Combination[]`
+
 Get all development combinations for a specific film.
 
 ```typescript
@@ -126,6 +132,7 @@ const combinations = client.getCombinationsForFilm('kodak-tri-x-400');
 ```
 
 ##### `getCombinationsForDeveloper(developerId: string): Combination[]`
+
 Get all development combinations for a specific developer.
 
 ```typescript
@@ -135,6 +142,7 @@ const combinations = client.getCombinationsForDeveloper('kodak-d76');
 ### Data Types
 
 #### Film
+
 ```typescript
 interface Film {
   id: string;
@@ -151,6 +159,7 @@ interface Film {
 ```
 
 #### Developer
+
 ```typescript
 interface Developer {
   id: string;
@@ -170,6 +179,7 @@ interface Developer {
 ```
 
 #### Combination
+
 ```typescript
 interface Combination {
   id: string;
@@ -246,4 +256,4 @@ This client is part of the DorkroomReact project. When making changes:
 1. Follow the existing TypeScript patterns
 2. Update tests when adding new functionality
 3. Maintain backward compatibility
-4. Update this documentation for API changes 
+4. Update this documentation for API changes

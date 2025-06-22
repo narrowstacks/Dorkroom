@@ -1,12 +1,12 @@
-import React, { useRef, useEffect } from 'react';
-import {
-  Platform,
-  TextInput,
-  Switch,
-  Animated,
-} from 'react-native';
-// Shared slider/input component & constants
-import { LabeledSliderInput } from '@/components/LabeledSliderInput';
+import React from 'react';
+import { Platform } from 'react-native';
+// UI Components
+import { LabeledSliderInput, TextInput, DimensionInputGroup, ToggleSwitch } from '@/components/ui/forms';
+import { WarningAlert } from '@/components/ui/feedback';
+import { ResultRow } from '@/components/ui/calculator';
+// Border Calculator Specific Components
+import { AnimatedPreview, BorderInfoSection } from '@/components/border-calculator';
+
 import {
   DESKTOP_BREAKPOINT,
   SLIDER_MIN_BORDER,
@@ -20,13 +20,11 @@ import {
 } from '@/constants/borderCalc';
 
 import { useWindowDimensions } from '@/hooks/useWindowDimensions';
-import { useBorderCalculator } from '@/hooks/useBorderCalculator';
+import { useBorderCalculator, useBorderPresets } from '@/hooks/borderCalculator';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { getPlatformFont } from '@/styles/common';
 import { ASPECT_RATIOS, PAPER_SIZES } from '@/constants/border';
-import { ThemedSelect } from '@/components/ThemedSelect';
+import { ThemedSelect } from '@/components/ui/select/ThemedSelect';
 import { DEFAULT_BORDER_PRESETS } from '@/constants/borderPresets';
-import { useBorderPresets } from '@/hooks/useBorderPresets';
 import { 
   RotateCwSquare, 
   Proportions,
@@ -49,10 +47,6 @@ import {
   ScrollView,
   HStack,
   VStack,
-  Alert,
-  AlertIcon,
-  AlertText,
-  InfoIcon,
   Modal,
   ModalBackdrop,
   ModalContent,
@@ -71,158 +65,7 @@ import {
   ButtonText,
   ButtonIcon
 } from '@gluestack-ui/themed';
-import { InfoSection, InfoText, InfoSubtitle, InfoList } from '@/components/InfoSection';
 
-// --- Reusable Helper Components ---
-
-const StyledTextInput = (props: React.ComponentProps<typeof TextInput>) => {
-  const textColor = useThemeColor({}, 'text');
-  const borderColor = useThemeColor({}, 'icon');
-  return (
-    <TextInput
-      style={{
-        height: 40,
-        borderWidth: 1,
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        fontSize: 16,
-        marginBottom: 4,
-        color: textColor,
-        borderColor,
-      }}
-      placeholderTextColor={borderColor}
-      keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
-      {...props}
-    />
-  );
-};
-
-const DimensionInputGroup = ({ widthValue, onWidthChange, heightValue, onHeightChange, widthLabel, heightLabel, widthPlaceholder, heightPlaceholder, widthDefault, heightDefault }: { widthValue: string; onWidthChange: (text: string) => void; heightValue: string; onHeightChange: (text: string) => void; widthLabel: string; heightLabel: string; widthPlaceholder: string; heightPlaceholder: string; widthDefault: string; heightDefault: string; }) => (
-  <Box sx={{ gap: 8 }}>
-    <Box sx={{ flexDirection: 'row', alignItems: 'center', gap: 16, mt: 8 }}>
-      <Box sx={{ flex: 1, gap: 4 }}>
-        <Text sx={{ fontSize: 16, mb: Platform.OS === 'web' ? 0 : 4 }}>{widthLabel}</Text>
-        <StyledTextInput value={widthValue} onChangeText={onWidthChange} placeholder={widthPlaceholder} defaultValue={widthDefault} />
-      </Box>
-      <Box sx={{ flex: 1, gap: 4 }}>
-        <Text sx={{ fontSize: 16, mb: Platform.OS === 'web' ? 0 : 4 }}>{heightLabel}</Text>
-        <StyledTextInput value={heightValue} onChangeText={onHeightChange} placeholder={heightPlaceholder} defaultValue={heightDefault} />
-      </Box>
-    </Box>
-  </Box>
-);
-
-const ResultRow = ({ label, value }: { label: string; value: string }) => (
-  <Box sx={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', gap: 16 }}>
-    <Text sx={{ fontSize: 16, fontWeight: 'bold', textAlign: 'right', fontFamily: getPlatformFont(), flex: 1 }}>{label}</Text>
-    <Text sx={{ fontSize: 16, textAlign: 'left', fontFamily: getPlatformFont(), flex: 1 }}>{value}</Text>
-  </Box>
-);
-
-const WarningAlert = ({ message, action = 'error' }: { message: string; action?: 'error' | 'warning' }) => (
-  <Box style={{ marginTop: 8 }}>
-    <Alert action={action} variant="outline">
-      <AlertIcon as={InfoIcon} />
-      <AlertText>{message}</AlertText>
-    </Alert>
-  </Box>
-);
-
-const ToggleSwitch = ({ label, value, onValueChange }: { label: string; value: boolean; onValueChange: (value: boolean) => void }) => {
-    const borderColor = useThemeColor({}, 'icon');
-    const tintColor = useThemeColor({}, 'tint');
-    return (
-            <HStack sx={{ flexDirection: 'row', alignItems: 'center', gap: 16, mt: 8 }}>
-                <Text sx={{ fontSize: 14, mb: Platform.OS === 'web' ? 0 : 4 }}>{label}</Text>
-                <Switch value={value} onValueChange={onValueChange} trackColor={{ false: borderColor, true: tintColor }} thumbColor={value ? tintColor : '#f4f3f4'} />
-            </HStack>
-    );
-};
-
-const AnimatedBlade = ({ orientation, position, bladePositionValue, opacity, thickness, borderColor, }: { orientation: 'vertical' | 'horizontal'; position: 'left' | 'right' | 'top' | 'bottom'; bladePositionValue: Animated.Value; opacity: Animated.Value; thickness: number; borderColor: string; }) => {
-  const bladePosition = bladePositionValue.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
-  const commonStyle = { position: 'absolute' as const, boxShadow: '0px 2px 4px rgba(0,0,0,0.25)', elevation: 5, opacity, backgroundColor: borderColor };
-  const orientationStyle = orientation === 'vertical' ? { top: -1000, bottom: -1000, width: thickness } : { left: -1000, right: -1000, height: thickness };
-  const positionStyle = { [position]: bladePosition };
-  const transformStyle = { transform: position === 'left' ? [{ translateX: -thickness }] : position === 'right' ? [{ translateX: thickness }] : position === 'top' ? [{ translateY: -thickness }] : [{ translateY: thickness }] };
-  return <Animated.View style={[commonStyle, orientationStyle, positionStyle, transformStyle]} />;
-};
-
-// Animated Preview Component
-const AnimatedPreview = ({ calculation, showBlades, borderColor }: { calculation: any; showBlades: boolean; borderColor: string; }) => {
-  const animatedValues = useRef({
-    previewWidth: new Animated.Value(calculation?.previewWidth || 0),
-    previewHeight: new Animated.Value(calculation?.previewHeight || 0),
-    printLeft: new Animated.Value(calculation?.leftBorderPercent || 0),
-    printTop: new Animated.Value(calculation?.topBorderPercent || 0),
-    printWidth: new Animated.Value(calculation?.printWidthPercent || 0),
-    printHeight: new Animated.Value(calculation?.printHeightPercent || 0),
-    bladeOpacity: new Animated.Value(showBlades ? 1 : 0),
-    leftBladePosition: new Animated.Value(calculation?.leftBorderPercent || 0),
-    rightBladePosition: new Animated.Value(calculation?.rightBorderPercent || 0),
-    topBladePosition: new Animated.Value(calculation?.topBorderPercent || 0),
-    bottomBladePosition: new Animated.Value(calculation?.bottomBorderPercent || 0),
-  }).current;
-
-  useEffect(() => {
-    if (!calculation) return;
-    const animationConfig = { duration: 100, useNativeDriver: false };
-    Animated.parallel([
-      Animated.timing(animatedValues.previewWidth, { toValue: calculation.previewWidth, ...animationConfig }),
-      Animated.timing(animatedValues.previewHeight, { toValue: calculation.previewHeight, ...animationConfig }),
-      Animated.timing(animatedValues.printLeft, { toValue: calculation.leftBorderPercent, ...animationConfig }),
-      Animated.timing(animatedValues.printTop, { toValue: calculation.topBorderPercent, ...animationConfig }),
-      Animated.timing(animatedValues.printWidth, { toValue: calculation.printWidthPercent, ...animationConfig }),
-      Animated.timing(animatedValues.printHeight, { toValue: calculation.printHeightPercent, ...animationConfig }),
-      Animated.timing(animatedValues.leftBladePosition, { toValue: calculation.leftBorderPercent, ...animationConfig }),
-      Animated.timing(animatedValues.rightBladePosition, { toValue: calculation.rightBorderPercent, ...animationConfig }),
-      Animated.timing(animatedValues.topBladePosition, { toValue: calculation.topBorderPercent, ...animationConfig }),
-      Animated.timing(animatedValues.bottomBladePosition, { toValue: calculation.bottomBorderPercent, ...animationConfig }),
-    ]).start();
-  }, [calculation]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    Animated.timing(animatedValues.bladeOpacity, { toValue: showBlades ? 1 : 0, duration: 100, useNativeDriver: false }).start();
-  }, [showBlades]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (!calculation) return null;
-
-  const bladeProps = { opacity: animatedValues.bladeOpacity, thickness: calculation.bladeThickness, borderColor };
-
-  return (
-    <Animated.View style={{ position: 'relative', backgroundColor: 'transparent', overflow: 'hidden', width: animatedValues.previewWidth, height: animatedValues.previewHeight, borderColor }}>
-      <Animated.View style={{ position: 'relative', borderWidth: 1, backgroundColor: 'white', overflow: 'hidden', width: '100%', height: '100%', borderColor }}>
-        <Animated.View style={{ position: 'absolute', backgroundColor: 'grey', left: animatedValues.printLeft.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }), top: animatedValues.printTop.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }), width: animatedValues.printWidth.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }), height: animatedValues.printHeight.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }), }} />
-        <AnimatedBlade orientation="vertical" position="left" bladePositionValue={animatedValues.leftBladePosition} {...bladeProps} />
-        <AnimatedBlade orientation="vertical" position="right" bladePositionValue={animatedValues.rightBladePosition} {...bladeProps} />
-        <AnimatedBlade orientation="horizontal" position="top" bladePositionValue={animatedValues.topBladePosition} {...bladeProps} />
-        <AnimatedBlade orientation="horizontal" position="bottom" bladePositionValue={animatedValues.bottomBladePosition} {...bladeProps} />
-      </Animated.View>
-    </Animated.View>
-  );
-};
-
-const INFO_HOW_TO_USE = ['1. Select your desired aspect ratio (the ratio of your negative or image)', '2. Choose your paper size (the size of photo paper you\'re printing on)', '3. Set your minimum border width (at least 0.5" recommended)', '4. Optionally enable offsets to shift the image from center', '5. View the blade positions in the results section'];
-const INFO_TIPS = ['• Easels only provide markings for quarter-inch increments, so you are on your own for measuring the blade positions with a ruler.', '• For uniform borders, keep offsets at 0', '• The "flip paper orientation" button rotates the paper between portrait and landscape', '• The "flip aspect ratio" button swaps the width and height of your image'];
-
-const BorderInfoSection = () => (
-  <InfoSection title="About This Tool">
-    <InfoText>
-      The border calculator helps you determine the optimal placement of your enlarger easel blades when printing photos, ensuring consistent and aesthetically pleasing borders.
-    </InfoText>
-
-    <InfoSubtitle>How To Use:</InfoSubtitle>
-    <InfoList items={INFO_HOW_TO_USE} />
-
-    <InfoSubtitle>Blade Measurements:</InfoSubtitle>
-    <InfoText>
-      The measurements shown are distances from the edge of your enlarger baseboard to where each blade should be positioned. For non-standard paper sizes (sizes that don&apos;t have a standard easel slot), follow the instructions to place your paper in the appropriate easel slot.
-    </InfoText>
-
-    <InfoSubtitle>Tips:</InfoSubtitle>
-    <InfoList items={INFO_TIPS} />
-  </InfoSection>
-);
 
 export default function BorderCalculator() {
   const { width } = useWindowDimensions();
@@ -382,11 +225,12 @@ export default function BorderCalculator() {
           </ModalHeader>
           <ModalBody>
             <Text>To share these settings, you must first save them as a named preset.</Text>
-            <StyledTextInput
+            <TextInput
               value={presetName}
               onChangeText={setPresetName}
               placeholder="Enter Preset Name"
-              style={{ marginTop: 16, color: textColor, backgroundColor: cardBackground, borderColor: outline, borderWidth: 1, borderRadius: 8, padding: 16 }}
+              inputTitle="Enter Preset Name"
+              style={{ marginTop: 16 }}
             />
           </ModalBody>
           <ModalFooter>
@@ -488,7 +332,12 @@ export default function BorderCalculator() {
               {(isEditingPreset || presetDirty) && (
                 <>
                   <Text sx={{ fontSize: 20 }}>Preset Name</Text>
-                  <StyledTextInput value={presetName} onChangeText={setPresetName} placeholder="Preset Name" />
+                  <TextInput 
+                    value={presetName} 
+                    onChangeText={setPresetName} 
+                    placeholder="Preset Name"
+                    inputTitle="Enter Preset Name"
+                  />
                   <HStack style={{ gap: 8, justifyContent: 'space-between' }}>
                     <Button onPress={savePreset} variant="solid" action="positive" size="md"><ButtonIcon as={Check} /><ButtonText style={{ marginLeft: 5, fontSize: 18 }}>Save</ButtonText></Button>
                     <Button onPress={updatePresetHandler} variant="solid" action="primary" size="md" isDisabled={!selectedPresetId}><ButtonIcon as={ArrowUp} /><ButtonText style={{ marginLeft: 5, fontSize: 18 }}>Update</ButtonText></Button>

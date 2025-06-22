@@ -1,14 +1,12 @@
-import { Platform, Linking, Dimensions, Pressable, useColorScheme } from "react-native";
+import { Linking, Pressable, useColorScheme } from "react-native";
 import { Link } from "expo-router";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode } from "react";
 import {
   Box,
   VStack,
-  HStack,
   Text,
   Heading,
   ScrollView,
-  Card,
   Center,
 } from "@gluestack-ui/themed";
 import { 
@@ -19,27 +17,13 @@ import {
   ClockIcon,
   GitBranchIcon,
   HeartIcon,
-  CalculatorIcon,
   FlaskConicalIcon,
   ZapIcon,
 } from "lucide-react-native";
 import { Colors } from "@/constants/Colors";
 
 
-// Add window dimension hook
-const useWindowDimensions = () => {
-  const [dimensions, setDimensions] = useState(() => Dimensions.get("window"));
 
-  useEffect(() => {
-    const subscription = Dimensions.addEventListener("change", ({ window }) => {
-      setDimensions(window);
-    });
-
-    return () => subscription?.remove();
-  }, []);
-
-  return dimensions;
-};
 
 interface ModernLinkButtonProps {
   href: string;
@@ -128,8 +112,6 @@ const ModernLinkButton = ({
 };
 
 export default function HomeScreen() {
-  const { width } = useWindowDimensions();
-  const isDesktop = Platform.OS === "web" && width > 768;
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 

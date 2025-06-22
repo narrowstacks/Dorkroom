@@ -3,7 +3,6 @@ import {
   Text,
   Link,
   LinkText,
-  VStack,
   HStack,
   Alert,
   AlertIcon,
@@ -15,11 +14,11 @@ import {
   FormControlLabelText,
 } from "@gluestack-ui/themed";
 import { useResizeCalculator } from "@/hooks/useResizeCalculator";
-import { NumberInput } from "@/components/NumberInput";
-import { CalculatorLayout } from "@/components/CalculatorLayout";
-import { ResultsSection, ResultRow } from "@/components/ResultsSection";
-import { FormSection, FormGroup } from "@/components/FormSection";
-import { InfoSection, InfoText, InfoSubtitle, InfoList, InfoFormula } from "@/components/InfoSection";
+import { NumberInput } from "@/components/ui/forms/NumberInput";
+import { CalculatorLayout } from "@/components/ui/layout/CalculatorLayout";
+import { ResultsSection, ResultRow } from "@/components/ui/calculator/ResultsSection";
+import { FormSection, FormGroup } from "@/components/ui/forms/FormSection";
+import { InfoSection, InfoText, InfoSubtitle, InfoList, InfoFormula } from "@/components/ui/calculator/InfoSection";
 
 // --- Helper Components ---
 
@@ -74,6 +73,8 @@ const DimensionInputGroup = ({
         value={firstValue}
         onChangeText={onFirstChange}
         placeholder={firstPlaceholder}
+        inputTitle={`Enter ${firstLabel}`}
+        step={0.1}
       />
       <Text minWidth={30} textAlign="left">{unit}</Text>
     </HStack>
@@ -83,6 +84,8 @@ const DimensionInputGroup = ({
         value={secondValue}
         onChangeText={onSecondChange}
         placeholder={secondPlaceholder}
+        inputTitle={`Enter ${secondLabel}`}
+        step={0.1}
       />
       <Text minWidth={30} textAlign="left">{unit}</Text>
     </HStack>
@@ -262,6 +265,8 @@ export default function ResizeScreen() {
               value={originalTime}
               onChangeText={setOriginalTime}
               placeholder="10"
+              inputTitle="Enter Exposure Time"
+              step={0.5}
             />
             <Text minWidth={60} textAlign="left">seconds</Text>
           </HStack>

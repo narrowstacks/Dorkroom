@@ -6,6 +6,15 @@
 const tintColorLight = '#0a7ea4';
 const tintColorDark = '#fff';
 
+const pageTints = {
+  stopCalcTint: "#9C27B0",
+  resizeCalcTint: "#2196F3",
+  cameraExposureCalcTint: "#3F51B5",
+  reciprocityCalcTint: "#FF9800",
+  borderCalcTint: '#4CAF50',
+  developmentRecipesTint: '#ad1b1d',
+};
+
 type ColorScheme = {
   // general colors
   text: string;
@@ -52,6 +61,9 @@ type ColorScheme = {
   bladeShadowColor: string;
   paperColor: string;
   printPreviewColor: string;
+
+  // development recipes
+  developmentRecipesTint: string;
 };
 
 export const Colors: {
@@ -83,23 +95,26 @@ export const Colors: {
     surfaceVariant: 'rgba(255,255,255,0.6)',
     outline: 'rgba(0,0,0,0.05)',
     // stop exposure calculator
-    stopCalcTint: "#9C27B0",
+    stopCalcTint: pageTints.stopCalcTint,
 
     // resize calculator
-    resizeCalcTint: "#2196F3",
+    resizeCalcTint: pageTints.resizeCalcTint,
 
     // camera exposure calculator
-    cameraExposureCalcTint: "#3F51B5",
+    cameraExposureCalcTint: pageTints.cameraExposureCalcTint,
 
     // reciprocity calculator
-    reciprocityCalcTint: "#FF9800",
+    reciprocityCalcTint: pageTints.reciprocityCalcTint,
 
     // border calculator
-    borderCalcTint: '#4CAF50',
+    borderCalcTint: pageTints.borderCalcTint,
     bladeColor: '#2b2b2b',
     bladeShadowColor: '#151515',
     paperColor: '#ffffff',
     printPreviewColor: '#8b8b8b',
+
+    // development recipes
+    developmentRecipesTint: pageTints.developmentRecipesTint,
   },
   dark: {
     text: '#ECEDEE',
@@ -129,23 +144,26 @@ export const Colors: {
     surfaceVariant: 'rgba(30,30,30,0.6)',
 
     // stop exposure calculator
-    stopCalcTint: "#9C27B0",
+    stopCalcTint: pageTints.stopCalcTint,
 
     // resize calculator
-    resizeCalcTint: "#2196F3",
+    resizeCalcTint: pageTints.resizeCalcTint,
 
     // camera exposure calculator
-    cameraExposureCalcTint: "#3F51B5",
+    cameraExposureCalcTint: pageTints.cameraExposureCalcTint,
 
     // reciprocity calculator
-    reciprocityCalcTint: "#FF9800",
+    reciprocityCalcTint: pageTints.reciprocityCalcTint,
 
     // border calculator
-    borderCalcTint: '#4CAF50',
+    borderCalcTint: pageTints.borderCalcTint,
     bladeColor: '#393939',
     bladeShadowColor: '#151515',
     paperColor: '#5e5e5e',
     printPreviewColor: '#393939',
+
+    // development recipes
+    developmentRecipesTint: pageTints.developmentRecipesTint,
   },
   darkroom: {
     background: '#000000',
@@ -188,6 +206,9 @@ export const Colors: {
     bladeShadowColor: '#3a0000',
     paperColor: '#000000',
     printPreviewColor: '#ff0000',
+
+    // development recipes
+    developmentRecipesTint: "#8f0000",
   },
   eInk: {
     background: '#FFFFFF',
@@ -229,6 +250,9 @@ export const Colors: {
     bladeShadowColor: '#ffffff',
     paperColor: '#ffffff',
     printPreviewColor: '#7f7f7f',
+
+    // development recipes
+    developmentRecipesTint: "#000000",
   },
 };
 

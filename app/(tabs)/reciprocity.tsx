@@ -5,11 +5,11 @@ import { useReciprocityCalculator } from "@/hooks/useReciprocityCalculator";
 import { FILM_TYPES, EXPOSURE_PRESETS } from "@/constants/reciprocity";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { fonts } from "@/styles/common";
-import { CalculatorLayout } from "@/components/CalculatorLayout";
-import { ResultsSection, ResultRow } from "@/components/ResultsSection";
-import { FormSection, FormGroup } from "@/components/FormSection";
-import { InfoSection, InfoText } from "@/components/InfoSection";
-import { StyledSelect } from "@/components/StyledSelect";
+import { CalculatorLayout } from "@/components/ui/layout/CalculatorLayout";
+import { ResultsSection, ResultRow } from "@/components/ui/calculator/ResultsSection";
+import { FormSection, FormGroup } from "@/components/ui/forms/FormSection";
+import { InfoSection, InfoText } from "@/components/ui/calculator/InfoSection";
+import { StyledSelect } from "@/components/ui/select/StyledSelect";
 
 export default function ReciprocityCalculator() {
   const textColor = useThemeColor({}, "text");

@@ -1,25 +1,25 @@
 import { Tabs , useRouter, useSegments } from "expo-router";
 import React, { useState, useEffect } from "react";
-import { Platform, View, TouchableOpacity, Text, StyleSheet, Dimensions, Modal, Animated } from "react-native";
+import { Platform, View, TouchableOpacity, Text, StyleSheet, Dimensions, Animated } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Colors } from "@/constants/Colors";
 import * as Haptics from 'expo-haptics';
 
-import { HapticTab } from "@/components/HapticTab";
+import { HapticTab } from "@/components/ui/feedback/HapticTab";
 import { 
   Home,
   Crop,
   Move,
   Timer,
-  Camera,
   Clock,
   Settings,
   Menu,
-  Aperture
+  Aperture,
+  FlaskConical
 } from 'lucide-react-native';
-import TabBarBackground from "@/components/ui/TabBarBackground";
+import TabBarBackground from "@/components/ui/core/TabBarBackground";
 
 // Navigation items configuration
 const navigationItems = [
@@ -53,6 +53,11 @@ const navigationItems = [
     title: "Reciprocity",
     icon: Clock,
   },
+  {
+    name: "developmentRecipes",
+    title: "Development",
+    icon: FlaskConical,
+  },
   // {
   //   name: "settings",
   //   title: "Settings",
@@ -73,6 +78,8 @@ const getPageTintColor = (routeName: string, colors: typeof Colors.light) => {
       return colors.cameraExposureCalcTint;
     case "reciprocity":
       return colors.reciprocityCalcTint;
+    case "developmentRecipes":
+      return colors.developmentRecipesTint;
     case "index":
     case "settings":
     default:
@@ -533,6 +540,16 @@ export default function TabLayout() {
             tabBarActiveTintColor: getPageTintColor("reciprocity", colors),
             tabBarIcon: ({ color }) => (
               <Clock size={28} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="developmentRecipes"
+          options={{
+            title: "Development",
+            tabBarActiveTintColor: getPageTintColor("developmentRecipes", colors),
+            tabBarIcon: ({ color }) => (
+              <FlaskConical size={28} color={color} />
             ),
           }}
         />
