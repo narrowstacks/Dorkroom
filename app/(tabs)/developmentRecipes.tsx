@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Platform, StyleSheet, ScrollView, TextInput, TouchableOpacity } from "react-native";
+import { Platform, StyleSheet, ScrollView, TextInput, TouchableOpacity, SafeAreaView } from "react-native";
 import { Box, Text, Button, ButtonText, VStack, HStack, Modal, ModalBackdrop, ModalContent, ModalCloseButton, ModalHeader, ModalBody, FlatList } from "@gluestack-ui/themed";
 import { Search, X, Filter, RefreshCw, ChevronDown, ChevronUp, Plus, Grid3X3, Table } from "lucide-react-native";
 
@@ -136,46 +136,54 @@ function MobileSelectionModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="full">
       <ModalBackdrop />
-      <ModalContent style={{ backgroundColor: cardBackground, margin: 0, maxHeight: '100%', flex: 1 }}>
-        {/* Header */}
-        <Box style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
-          <Text style={[styles.modalTitle, { color: textColor }]}>
-            Select {type === 'film' ? 'Film' : 'Developer'}
-          </Text>
-          <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
-            <X size={24} color={textColor} />
-          </TouchableOpacity>
-        </Box>
-        
-        {/* Search Box */}
-        <Box style={[styles.modalSearchContainer, { borderBottomColor: borderColor }]}>
-          <Search size={20} color={textColor} style={styles.modalSearchIcon} />
-          <TextInput
-            style={[styles.modalSearchInput, { color: textColor, borderColor }]}
-            value={searchText}
-            onChangeText={setSearchText}
-            placeholder={`Search ${type === 'film' ? 'films' : 'developers'}...`}
-            placeholderTextColor={textColor + '80'}
-            autoFocus
-            returnKeyType="search"
-          />
-          {searchText.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchText("")} style={styles.modalClearButton}>
-              <X size={20} color={textColor} />
+      <ModalContent style={{ backgroundColor: cardBackground, margin: 0, marginTop: 40, maxHeight: '100%', flex: 1 }}>
+        <SafeAreaView style={{ flex: 1 }}>
+          {/* Header */}
+          <Box style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
+            <Text style={[styles.modalTitle, { color: textColor }]}>
+              Select {type === 'film' ? 'Film' : 'Developer'}
+            </Text>
+            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+              <X size={24} color={textColor} />
             </TouchableOpacity>
-          )}
-        </Box>
+          </Box>
+          
+          {/* Sticky Search Box */}
+          <Box style={[styles.modalSearchContainer, { 
+            borderBottomColor: borderColor,
+            backgroundColor: cardBackground,
+            zIndex: 1000,
+          }]}>
+            <Search size={20} color={textColor} style={styles.modalSearchIcon} />
+            <TextInput
+              style={[styles.modalSearchInput, { color: textColor, borderColor }]}
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholder={`Search ${type === 'film' ? 'films' : 'developers'}...`}
+              placeholderTextColor={textColor + '80'}
+              autoFocus
+              returnKeyType="search"
+            />
+            {searchText.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchText("")} style={styles.modalClearButton}>
+                <X size={20} color={textColor} />
+              </TouchableOpacity>
+            )}
+          </Box>
 
-        {/* Results List */}
-        <FlatList
-          data={filteredItems}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.uuid}
-          style={{ flex: 1 }}
-          contentContainerStyle={{ flexGrow: 1 }}
-          showsVerticalScrollIndicator={false}
-          ItemSeparatorComponent={() => <Box style={{ height: 1, backgroundColor: borderColor, opacity: 0.3 }} />}
-        />
+          {/* Results List */}
+          <FlatList
+            data={filteredItems}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.uuid}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+            ItemSeparatorComponent={() => <Box style={{ height: 1, backgroundColor: borderColor, opacity: 0.3 }} />}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+          />
+        </SafeAreaView>
       </ModalContent>
     </Modal>
   );
@@ -1665,6 +1673,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
+    position: 'relative',
+    elevation: 5, // Android shadow
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   modalSearchIcon: {
     position: 'absolute',
