@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Platform, ScrollView, Linking } from 'react-native';
+import { Platform, ScrollView, Linking, KeyboardAvoidingView } from 'react-native';
 import {
   Box,
   Text,
@@ -313,7 +313,7 @@ export function CustomRecipeForm({
     formData.useExistingFilm,
     formData.selectedFilmId,
     formData.customFilm?.isoSpeed,
-    formData.shootingIso,
+    // Removed formData.shootingIso to prevent auto-reset when user manually changes it
     getFilmById,
     updateFormData
   ]);
@@ -581,27 +581,44 @@ export function CustomRecipeForm({
         />
       </Box>
 
-      {/* Content area - properly scrollable with native mobile adjustments */}
-      <Box style={{ 
-        flex: 1, 
-        minHeight: 0 // Critical for proper flex scrolling
-      }}>
-        <ScrollView
+      {/* Content area - properly scrollable with native mobile adjustments and keyboard avoidance */}
+      {Platform.OS !== 'web' ? (
+        <KeyboardAvoidingView 
           style={{ flex: 1 }}
-          contentContainerStyle={{ 
-            flexGrow: 1, 
-            padding: 16,
-            // For native mobile, ensure comfortable spacing for modal bottom sheet
-            ...(Platform.OS !== 'web' && {
-              paddingBottom: 24
-            })
-          }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
-          {renderCurrentStep()}
-        </ScrollView>
-      </Box>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ 
+              flexGrow: 1, 
+              padding: 16,
+              paddingBottom: 24
+            }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {renderCurrentStep()}
+          </ScrollView>
+        </KeyboardAvoidingView>
+      ) : (
+        <Box style={{ 
+          flex: 1, 
+          minHeight: 0 // Critical for proper flex scrolling
+        }}>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ 
+              flexGrow: 1, 
+              padding: 16
+            }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {renderCurrentStep()}
+          </ScrollView>
+        </Box>
+      )}
 
       {/* Navigation footer - optimized for native mobile thumb access */}
       <Box style={{
