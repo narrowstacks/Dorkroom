@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Platform, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { Box, Text, Button, ButtonText, VStack, HStack, Modal, ModalBackdrop, ModalContent, ModalCloseButton, ModalHeader, ModalBody } from "@gluestack-ui/themed";
+import { Spinner } from "@/components/ui/spinner";
 import { X, Filter, RefreshCw, ChevronDown, ChevronUp, Plus, Grid3X3, Table } from "lucide-react-native";
 
 import { CalculatorLayout } from "@/components/ui/layout/CalculatorLayout";
@@ -195,6 +196,7 @@ export default function DevelopmentRecipes() {
     setSelectedFilm,
     setSelectedDeveloper,
     loadData,
+    forceRefresh: forceRefreshData,
     clearFilters,
     getFilmById,
     getDeveloperById,
@@ -438,6 +440,17 @@ export default function DevelopmentRecipes() {
     setShowCustomRecipeForm(true);
   };
 
+  const handleForceRefresh = async () => {
+    debugLog('[DevelopmentRecipes] handleForceRefresh called');
+    console.log('[DevelopmentRecipes] Force refresh button clicked, isLoading:', isLoading);
+    try {
+      await forceRefreshData();
+      debugLog('[DevelopmentRecipes] Force refresh completed successfully');
+    } catch (error) {
+      debugLog('[DevelopmentRecipes] Force refresh failed:', error);
+    }
+  };
+
   const handleCustomRecipeFormClose = () => {
     debugLog('[DevelopmentRecipes] handleCustomRecipeFormClose called');
     
@@ -663,6 +676,7 @@ export default function DevelopmentRecipes() {
     return (
       <CalculatorLayout title="Development Recipes" infoSection={infoSection}>
         <Box style={styles.loadingContainer}>
+          <Spinner size="large" color={developmentTint} style={{ marginBottom: 16 }} />
           <Text style={[styles.loadingText, { color: textColor }]}>
             Loading development data...
           </Text>
@@ -886,6 +900,21 @@ export default function DevelopmentRecipes() {
                 </Text>
               </TouchableOpacity>
               
+              <TouchableOpacity 
+                onPress={handleForceRefresh}
+                style={styles.desktopButton}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Spinner size="small" color={developmentTint} />
+                ) : (
+                  <RefreshCw size={14} color={developmentTint} />
+                )}
+                <Text style={[styles.desktopButtonText, { color: developmentTint, opacity: isLoading ? 0.5 : 1 }]}>
+                  {isLoading ? 'Loading...' : 'Refresh'}
+                </Text>
+              </TouchableOpacity>
+              
               {customRecipes.length > 0 && (
                 <TouchableOpacity 
                   onPress={() => setShowCustomRecipes(!showCustomRecipes)}
@@ -918,6 +947,21 @@ export default function DevelopmentRecipes() {
           /* Mobile: Buttons centered below title */
           <Box style={styles.mobileButtonsContainer}>
             <HStack style={styles.mobileButtonsRow}>
+              <TouchableOpacity 
+                onPress={handleForceRefresh}
+                style={styles.mobileButton}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Spinner size="small" color={developmentTint} />
+                ) : (
+                  <RefreshCw size={16} color={developmentTint} />
+                )}
+                <Text style={[styles.mobileButtonText, { color: developmentTint, opacity: isLoading ? 0.5 : 1 }]}>
+                  {isLoading ? 'Loading...' : 'Refresh'}
+                </Text>
+              </TouchableOpacity>
+              
               {customRecipes.length > 0 && (
                 <TouchableOpacity 
                   onPress={() => setShowCustomRecipes(!showCustomRecipes)}

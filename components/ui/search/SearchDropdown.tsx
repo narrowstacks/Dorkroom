@@ -47,12 +47,11 @@ export function SearchDropdown(props: SearchDropdownProps) {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
   
-  // Always call hooks at the top level
+  // Colors and theme
   const textColor = useThemeColor({}, "text");
   const borderColor = useThemeColor({}, "borderColor");
   const cardBackground = useThemeColor({}, "cardBackground");
   
-  // Auto-detect variant if not specified based on platform
   const variant = props.variant || (isDesktop ? 'desktop' : 'mobile');
   
   if (variant === 'mobile') {
@@ -69,7 +68,6 @@ export function SearchDropdown(props: SearchDropdownProps) {
           if (mobileProps.onFilmSelect) {
             mobileProps.onFilmSelect(film);
           } else {
-            // Convert to SearchDropdownItem format
             props.onItemSelect({
               id: film.uuid,
               title: film.name,
@@ -81,7 +79,6 @@ export function SearchDropdown(props: SearchDropdownProps) {
           if (mobileProps.onDeveloperSelect) {
             mobileProps.onDeveloperSelect(developer);
           } else {
-            // Convert to SearchDropdownItem format
             props.onItemSelect({
               id: developer.uuid,
               title: developer.name,
@@ -93,7 +90,6 @@ export function SearchDropdown(props: SearchDropdownProps) {
           if (mobileProps.onDilutionSelect) {
             mobileProps.onDilutionSelect(dilution.value);
           } else {
-            // Convert to SearchDropdownItem format
             props.onItemSelect({
               id: dilution.value,
               title: dilution.label,
@@ -107,13 +103,15 @@ export function SearchDropdown(props: SearchDropdownProps) {
 
   // Desktop variant
   const desktopProps = props as DesktopSearchDropdownProps;
+  // Sort items alphabetically by manufacturer (subtitle)
+  const sortedItems = desktopProps.items
+    .slice()
+    .sort((a, b) => a.subtitle.localeCompare(b.subtitle));
 
-  // Only show on desktop and if we have positioning data
-  if (!isDesktop || desktopProps.items.length === 0 || !desktopProps.dynamicPosition) {
+  if (!isDesktop || sortedItems.length === 0 || !desktopProps.dynamicPosition) {
     return null;
   }
 
-  // Create dynamic overlay style based on the position data
   const dynamicOverlayStyle = {
     position: 'absolute' as const,
     top: 0,
@@ -128,7 +126,6 @@ export function SearchDropdown(props: SearchDropdownProps) {
     paddingRight: 0,
   };
 
-  // Calculate dropdown width (same as search input)
   const dropdownWidth = desktopProps.dynamicPosition.width;
 
   return (
@@ -149,10 +146,10 @@ export function SearchDropdown(props: SearchDropdownProps) {
         }]}>
           <ScrollView 
             style={styles.dropdownScroll}
-            showsVerticalScrollIndicator={true}
+            showsVerticalScrollIndicator
             keyboardShouldPersistTaps="handled"
           >
-            {desktopProps.items.map((item) => (
+            {sortedItems.map((item) => (
               <TouchableOpacity
                 key={item.id}
                 style={[styles.dropdownItem, { borderBottomColor: borderColor }]}
@@ -180,10 +177,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
     maxHeight: 200,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 1000,

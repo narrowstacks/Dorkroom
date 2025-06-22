@@ -45,6 +45,7 @@ export interface DevelopmentRecipesActions {
   
   // Data actions
   loadData: () => Promise<void>;
+  forceRefresh: () => Promise<void>;
   clearFilters: () => void;
   
   // Helper functions
@@ -91,9 +92,10 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
   const [allDevelopers, setAllDevelopers] = useState<Developer[]>([]);
   const [allCombinations, setAllCombinations] = useState<Combination[]>([]);
 
-  // Load data from API
+  // Load data from API (respects 10-minute cache)
   const loadData = useCallback(async () => {
-    if (isLoaded || isLoading) return;
+    if (isLoading) return;
+    if (isLoaded && !client.isDataExpired()) return;
     
     setIsLoading(true);
     setError(null);
@@ -117,6 +119,43 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
       setIsLoading(false);
     }
   }, [isLoaded, isLoading]);
+
+  // Force refresh data bypassing cache
+  const forceRefresh = useCallback(async () => {
+    if (isLoading) return;
+    
+    console.log('[useDevelopmentRecipes] Force refresh started');
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Add minimum loading time to ensure spinner is visible
+      const [, films, developers, combinations] = await Promise.all([
+        new Promise(resolve => setTimeout(resolve, 500)), // Minimum 500ms loading
+        client.forceReload().then(() => client.getAllFilms()),
+        client.getAllDevelopers(),
+        client.getAllCombinations(),
+      ]);
+      
+      console.log('[useDevelopmentRecipes] Data refreshed:', {
+        films: films.length,
+        developers: developers.length,
+        combinations: combinations.length
+      });
+      
+      setAllFilms(films);
+      setAllDevelopers(developers);
+      setAllCombinations(combinations);
+      setIsLoaded(true);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh development data';
+      setError(errorMessage);
+      console.error('Failed to refresh development recipes data:', err);
+    } finally {
+      console.log('[useDevelopmentRecipes] Force refresh completed');
+      setIsLoading(false);
+    }
+  }, [isLoading]);
 
   // Auto-load data on first use
   useEffect(() => {
@@ -349,6 +388,7 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
     setSelectedFilm: setSelectedFilmAndClearISO,
     setSelectedDeveloper: setSelectedDeveloperAndClearDilution,
     loadData,
+    forceRefresh,
     clearFilters,
     getFilmById,
     getDeveloperById,

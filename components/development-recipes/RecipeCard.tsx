@@ -50,7 +50,7 @@ export function RecipeCard({ combination, film, developer, onPress, isCustomReci
     : null;
     
   const developerName = developer ? 
-    (isMobile ? developer.name : `${developer.manufacturer} ${developer.name}`) : 
+    (isMobile ? developer.name : `${developer.name}`) : 
     "Unknown Developer";
 
   // Get dilution info

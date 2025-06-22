@@ -120,11 +120,15 @@ export class DorkroomClient {
   private readonly logger: Logger;
   private readonly cacheTTL: number;
 
+  // Data cache TTL (10 minutes)
+  private static readonly DATA_CACHE_TTL = 600000;
+
   // Data storage
   private films: Film[] = [];
   private developers: Developer[] = [];
   private combinations: Combination[] = [];
   private loaded = false;
+  private lastLoadedTimestamp: number | null = null;
 
   // Indexes for O(1) lookup
   private filmIndex = new Map<string, Film>();
@@ -258,8 +262,33 @@ export class DorkroomClient {
    * Fetch and parse all JSON data, building internal indexes.
    * 
    * This method must be called before using any other client methods.
+   * Will only reload if data is expired (older than 10 minutes) or not loaded.
    */
   async loadAll(): Promise<void> {
+    // Check if data is already loaded and not expired
+    if (this.loaded && !this.isDataExpired()) {
+      this.logger.debug(
+        `Data cache still valid (age: ${Math.round(this.getCacheAge() / 1000)}s), ` +
+        `skipping reload`
+      );
+      return;
+    }
+
+    await this.performLoad();
+  }
+
+  /**
+   * Force reload all data from the API, bypassing cache.
+   */
+  async forceReload(): Promise<void> {
+    this.logger.info('Force reloading data from API');
+    await this.performLoad();
+  }
+
+  /**
+   * Internal method to perform the actual data loading.
+   */
+  private async performLoad(): Promise<void> {
     try {
       // Fetch all data in parallel
       const [rawFilms, rawDevelopers, rawCombinations] = await Promise.all([
@@ -280,6 +309,8 @@ export class DorkroomClient {
       this.buildIndexes();
 
       this.loaded = true;
+      this.lastLoadedTimestamp = Date.now();
+      
       this.logger.info(
         `Loaded ${this.films.length} films, ` +
         `${this.developers.length} developers, ` +
@@ -310,6 +341,26 @@ export class DorkroomClient {
     for (const combination of this.combinations) {
       this.combinationIndex.set(combination.uuid, combination);
     }
+  }
+
+  /**
+   * Check if the cached data has expired (older than 10 minutes).
+   */
+  isDataExpired(): boolean {
+    if (!this.loaded || this.lastLoadedTimestamp === null) {
+      return true;
+    }
+    return Date.now() - this.lastLoadedTimestamp > DorkroomClient.DATA_CACHE_TTL;
+  }
+
+  /**
+   * Get the age of cached data in milliseconds.
+   */
+  getCacheAge(): number {
+    if (!this.loaded || this.lastLoadedTimestamp === null) {
+      return 0;
+    }
+    return Date.now() - this.lastLoadedTimestamp;
   }
 
   /**
@@ -574,6 +625,7 @@ export class DorkroomClient {
     this.developerIndex.clear();
     this.combinationIndex.clear();
     this.loaded = false;
+    this.lastLoadedTimestamp = null;
     this.clearCache();
     
     // Reset transport layer if possible

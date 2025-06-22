@@ -14,18 +14,6 @@ interface DevelopmentParamsStepProps {
   isDesktop?: boolean;
 }
 
-/**
- * DevelopmentParamsStep Component
- * 
- * Third step of the recipe creation process. Handles core development parameters
- * including temperature, time, shooting ISO, and automatic push/pull calculation.
- * 
- * @param formData - Current form data state
- * @param updateFormData - Function to update form data
- * @param filmOptions - Available film options for selection
- * @param getFilmById - Function to get film data by ID
- * @param isDesktop - Whether running on desktop layout
- */
 export function DevelopmentParamsStep({
   formData,
   updateFormData,
@@ -34,17 +22,19 @@ export function DevelopmentParamsStep({
   isDesktop = false
 }: DevelopmentParamsStepProps) {
 
-  // Local state for raw shooting ISO input to preserve user typing
+  // Local state for raw shooting ISO input
   const [shootingIsoInput, setShootingIsoInput] = useState<string>(String(formData.shootingIso));
 
-  // Update local input state when formData changes (e.g., when loading existing recipe)
+  // Resync local input when film selection, film ISO source, or committed shootingIso changes
   useEffect(() => {
     setShootingIsoInput(String(formData.shootingIso));
-  }, [formData.shootingIso]);
+  }, [
+    formData.useExistingFilm,
+    formData.selectedFilmId,
+    formData.customFilm?.isoSpeed,
+    formData.shootingIso,            // ← added here to satisfy ESLint
+  ]);
 
-  /**
-   * Get the ISO speed of the currently selected or custom film
-   */
   const getFilmIso = useCallback((): number => {
     if (formData.useExistingFilm && formData.selectedFilmId) {
       const film = getFilmById(formData.selectedFilmId);
@@ -52,89 +42,86 @@ export function DevelopmentParamsStep({
     } else if (!formData.useExistingFilm && formData.customFilm) {
       return formData.customFilm.isoSpeed || 400;
     }
-    return 400; // Default fallback
+    return 400;
   }, [formData.useExistingFilm, formData.selectedFilmId, formData.customFilm, getFilmById]);
 
-  /**
-   * Calculate push/pull in stops based on shooting ISO vs film ISO
-   * Returns null if inputs are invalid to prevent calculations with bad data
-   */
   const calculatePushPull = (shootingIso: number, filmIso: number): number | null => {
     if (!shootingIso || !filmIso || shootingIso <= 0 || filmIso <= 0) {
-      return null; // Return null for invalid cases
+      return null;
     }
     const stops = Math.log2(shootingIso / filmIso);
-    // Round to nearest hundredth instead of thirds
     return Math.round(stops * 100) / 100;
   };
 
-  /**
-   * Format push/pull value for display
-   */
   const formatPushPull = (stops: number | null): string => {
     if (stops === null || stops === 0) return "Normal (0 stops)";
     if (stops > 0) return `Push +${stops} stop${stops === 1 ? '' : 's'}`;
     return `Pull ${stops} stop${stops === -1 ? '' : 's'}`;
   };
 
-  /**
-   * Handle shooting ISO input changes with improved validation
-   */
+  // Update only the local text while typing
   const handleShootingIsoChange = (value: string) => {
-    // Always update the display value to preserve user typing
     setShootingIsoInput(value);
-    
-    // Only update formData if we have a valid number within range
-    const numValue = parseFloat(value);
-    if (value === '' || (!isNaN(numValue) && numValue >= 0 && numValue <= 12800)) {
-      // Only update formData with valid numbers, not empty strings
-      if (value !== '' && !isNaN(numValue)) {
-        updateFormData({ shootingIso: numValue });
-      }
+  };
+
+  // Commit to formData when the input loses focus
+  const commitShootingIso = () => {
+    const numValue = parseFloat(shootingIsoInput);
+    if (!isNaN(numValue) && numValue >= 0 && numValue <= 12800) {
+      updateFormData({ shootingIso: numValue });
+    } else {
+      setShootingIsoInput(String(formData.shootingIso));
     }
   };
 
-  // Auto-calculate push/pull when shooting ISO or film selection changes
+  // Recalculate push/pull once shootingIso (committed) or film changes
   useEffect(() => {
     const filmIso = getFilmIso();
-    const calculatedPushPull = calculatePushPull(formData.shootingIso, filmIso);
-    
-    // Only update if we have a valid calculation and it differs from current
-    if (calculatedPushPull !== null && calculatedPushPull !== formData.pushPull) {
-      updateFormData({ pushPull: calculatedPushPull });
+    const calculated = calculatePushPull(formData.shootingIso, filmIso);
+    if (calculated !== null && calculated !== formData.pushPull) {
+      updateFormData({ pushPull: calculated });
     }
-  }, [formData.shootingIso, formData.selectedFilmId, formData.customFilm?.isoSpeed, formData.useExistingFilm, formData.pushPull, getFilmIso, updateFormData]);
+  }, [
+    formData.shootingIso,
+    formData.selectedFilmId,
+    formData.customFilm?.isoSpeed,
+    formData.useExistingFilm,
+    formData.pushPull,
+    getFilmIso,
+    updateFormData,
+  ]);
 
   return (
     <VStack space="lg">
       <FormGroup label={`Temperature (°F) - ${fahrenheitToCelsius(formData.temperatureF)}°C`}>
         <NumberInput
           value={String(formData.temperatureF)}
-          onChangeText={(value: string) => updateFormData({ temperatureF: parseFloat(value) || 68 })}
+          onChangeText={v => updateFormData({ temperatureF: parseFloat(v) || 68 })}
           placeholder="68"
         />
       </FormGroup>
-      
+
       <FormGroup label="Development Time (minutes)">
         <NumberInput
           value={String(formData.timeMinutes)}
-          onChangeText={(value: string) => updateFormData({ timeMinutes: parseFloat(value) || 7 })}
+          onChangeText={v => updateFormData({ timeMinutes: parseFloat(v) || 7 })}
           placeholder="7"
         />
       </FormGroup>
-      
+
       <FormGroup label="Shooting ISO">
         <NumberInput
           value={shootingIsoInput}
           onChangeText={handleShootingIsoChange}
+          onBlur={commitShootingIso}
           placeholder={String(getFilmIso())}
         />
       </FormGroup>
-      
+
       <FormGroup label={`Push/Pull - Film ISO: ${getFilmIso()}`}>
-        <Text 
-          style={{ 
-            fontSize: 16, 
+        <Text
+          style={{
+            fontSize: 16,
             fontWeight: '500',
             padding: 12,
             backgroundColor: '#f5f5f5',
@@ -147,4 +134,4 @@ export function DevelopmentParamsStep({
       </FormGroup>
     </VStack>
   );
-} 
+}
