@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Platform, ScrollView, Linking, KeyboardAvoidingView } from 'react-native';
+import { Platform, ScrollView, Linking } from 'react-native';
 import {
   Box,
   Text,
@@ -62,6 +62,8 @@ export function CustomRecipeForm({
   const textColor = useThemeColor({}, "text");
   const cardBackground = useThemeColor({}, "cardBackground");
   const outline = useThemeColor({}, "outline");
+  
+
   
   const { allFilms, allDevelopers, getFilmById, getDeveloperById } = useDevelopmentRecipes();
   const { addCustomRecipe, updateCustomRecipe, deleteCustomRecipe, forceRefresh } = useCustomRecipes();
@@ -582,45 +584,25 @@ export function CustomRecipeForm({
       </Box>
 
       {/* Content area - properly scrollable with native mobile adjustments and keyboard avoidance */}
-      {Platform.OS !== 'web' ? (
-        <KeyboardAvoidingView 
+      <Box style={{ 
+        flex: 1, 
+        minHeight: 0 // Critical for proper flex scrolling
+      }}>
+        <ScrollView
           style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 40}
-          enabled={true}
+          contentContainerStyle={{ 
+            padding: 16,
+            paddingBottom: Platform.OS !== 'web' ? 200 : 80 // Large bottom padding for mobile to prevent keyboard overlap
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          automaticallyAdjustContentInsets={false}
+          contentInsetAdjustmentBehavior="never"
+          scrollEventThrottle={16}
         >
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ 
-              padding: 16,
-              paddingBottom: 100 // Extra padding to ensure content doesn't get cut off
-            }}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            bounces={true}
-            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
-          >
-            {renderCurrentStep()}
-          </ScrollView>
-        </KeyboardAvoidingView>
-      ) : (
-        <Box style={{ 
-          flex: 1, 
-          minHeight: 0 // Critical for proper flex scrolling
-        }}>
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ 
-              flexGrow: 1, 
-              padding: 16
-            }}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {renderCurrentStep()}
-          </ScrollView>
-        </Box>
-      )}
+          {renderCurrentStep()}
+        </ScrollView>
+      </Box>
 
       {/* Navigation footer - optimized for native mobile thumb access */}
       <Box style={{
