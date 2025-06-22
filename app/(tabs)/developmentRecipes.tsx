@@ -7,6 +7,7 @@ import { CalculatorLayout } from "@/components/CalculatorLayout";
 import { FormSection, FormGroup } from "@/components/FormSection";
 import { InfoSection, InfoText, InfoSubtitle, InfoList } from "@/components/InfoSection";
 import { StyledSelect } from "@/components/StyledSelect";
+import { ThemedSelect } from "@/components/ThemedSelect";
 import { RecipeDetail } from "@/components/RecipeDetail";
 import { CustomRecipeForm } from "@/components/CustomRecipeForm";
 import { 
@@ -378,6 +379,7 @@ export default function DevelopmentRecipes() {
   const [editingCustomRecipe, setEditingCustomRecipe] = useState<CustomRecipe | undefined>(undefined);
   const [showCustomRecipes, setShowCustomRecipes] = useState(true);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [temperatureFilter, setTemperatureFilter] = useState("68");
   
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
@@ -505,6 +507,18 @@ export default function DevelopmentRecipes() {
     return combined;
   }, [filteredCombinations, customRecipesAsCombinations, showCustomRecipes, selectedFilm, selectedDeveloper, filmSearch, developerSearch, getFilmById, getDeveloperById, customRecipes, stateVersion]);
 
+  // Apply temperature filtering to all combinations
+  const temperatureFilteredCombinations = React.useMemo(() => {
+    if (temperatureFilter === "all") return allCombinations;
+    
+    return allCombinations.filter(combination => {
+      if (temperatureFilter === "other") {
+        return ![68, 70, 72, 75].includes(combination.temperatureF);
+      }
+      return combination.temperatureF === parseInt(temperatureFilter);
+    });
+  }, [allCombinations, temperatureFilter]);
+
   // Custom recipe helpers
   const getCustomRecipeFilm = (recipeId: string): Film | undefined => {
     const recipe = customRecipes.find(r => r.id === recipeId);
@@ -572,6 +586,42 @@ export default function DevelopmentRecipes() {
     const currentVersion = customRecipes.find(r => r.id === selectedCustomRecipe.id);
     return currentVersion || selectedCustomRecipe; // Fallback to original if not found
   }, [selectedCustomRecipe, customRecipes, stateVersion]); // stateVersion ensures fresh data
+
+  // Dynamic sort options based on current filters
+  const availableSortOptions = React.useMemo(() => {
+    const options = [
+      { label: "Film Name", value: "filmName" },
+      { label: "Development Time", value: "timeMinutes" },
+      { label: "Temperature", value: "temperatureF" },
+    ];
+
+    // If no specific developer selected, allow sorting by developer
+    if (!selectedDeveloper) {
+      options.push({ label: "Developer", value: "developerName" });
+    }
+
+    // If specific developer selected, allow sorting by dilution
+    if (selectedDeveloper) {
+      options.push({ label: "Dilution", value: "dilution" });
+    }
+
+    // If specific film selected, allow sorting by ISO
+    if (selectedFilm) {
+      options.push({ label: "ISO", value: "shootingIso" });
+    }
+
+    return options;
+  }, [selectedFilm, selectedDeveloper]);
+
+  // Temperature filter options
+  const temperatureOptions = React.useMemo(() => [
+    { label: "All Temperatures", value: "all" },
+    { label: "68°F (Standard)", value: "68" },
+    { label: "70°F", value: "70" },
+    { label: "72°F", value: "72" },
+    { label: "75°F", value: "75" },
+    { label: "Other", value: "other" },
+  ], []);
 
   const handleCustomRecipePress = (recipe: CustomRecipe) => {
     console.log('[DevelopmentRecipes] handleCustomRecipePress called for recipe:', recipe.id);
@@ -891,6 +941,26 @@ export default function DevelopmentRecipes() {
           {/* Filters */}
           {showFilters && (
             <VStack space="sm">
+              {/* Sort By */}
+              <FormGroup label="Sort By">
+                <ThemedSelect
+                  selectedValue={sortBy}
+                  onValueChange={handleSort}
+                  items={availableSortOptions}
+                  placeholder="Select sort option"
+                />
+              </FormGroup>
+
+              {/* Temperature Filter */}
+              <FormGroup label="Temperature">
+                <ThemedSelect
+                  selectedValue={temperatureFilter}
+                  onValueChange={setTemperatureFilter}
+                  items={temperatureOptions}
+                  placeholder="Select temperature"
+                />
+              </FormGroup>
+
               {/* Developer Type Filter - only show when no specific developer is selected */}
               {!selectedDeveloper && (
                 <FormGroup label="Developer Type">
@@ -932,7 +1002,7 @@ export default function DevelopmentRecipes() {
       <Box style={styles.resultsSection}>
         <HStack style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <Text style={[styles.resultsHeader, { color: textColor }]}>
-            {allCombinations.length} Development Recipe{allCombinations.length !== 1 ? 's' : ''} 
+            {temperatureFilteredCombinations.length} Development Recipe{temperatureFilteredCombinations.length !== 1 ? 's' : ''} 
             {customRecipes.length > 0 && showCustomRecipes && (
               <Text style={{ fontSize: 14, fontWeight: 'normal', color: textColor, opacity: 0.7 }}>
                 {' '}({customRecipes.length} custom)
@@ -1012,7 +1082,7 @@ export default function DevelopmentRecipes() {
           </HStack>
         </HStack>
 
-        {allCombinations.length === 0 ? (
+        {temperatureFilteredCombinations.length === 0 ? (
           <Box style={styles.noResultsContainer}>
             <Text style={[styles.noResultsText, { color: textColor }]}>
               No development recipes found.
@@ -1027,7 +1097,7 @@ export default function DevelopmentRecipes() {
             // Cards View
             <ScrollView style={styles.cardsContainer} showsVerticalScrollIndicator={false}>
               <Box style={styles.cardsGrid}>
-                {allCombinations.map((combination) => {
+                {temperatureFilteredCombinations.map((combination) => {
                   const isCustomRecipe = customRecipes.some(r => r.id === combination.id);
                   const customRecipe = isCustomRecipe ? customRecipes.find(r => r.id === combination.id) : undefined;
                   
@@ -1085,7 +1155,7 @@ export default function DevelopmentRecipes() {
               
               {/* Table Body */}
               <ScrollView style={styles.tableScrollView} showsVerticalScrollIndicator={false}>
-                {allCombinations.map((combination, index) => {
+                {temperatureFilteredCombinations.map((combination, index) => {
                   const isCustomRecipe = customRecipes.some(r => r.id === combination.id);
                   const customRecipe = isCustomRecipe ? customRecipes.find(r => r.id === combination.id) : undefined;
                   
