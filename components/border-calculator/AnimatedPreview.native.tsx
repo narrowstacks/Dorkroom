@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useMemo, useCallback } from 'react';
 import { Animated } from 'react-native';
 import { AnimatedBlade } from './AnimatedBlade.native';
+import { debugLogAnimationFrame, debugLogPerformance } from '@/utils/debugLogger';
 
 interface AnimatedPreviewProps {
   calculation: any;
@@ -34,9 +35,12 @@ export const AnimatedPreview = React.memo(({ calculation, showBlades, borderColo
   const rapidUpdatesCountRef = useRef<number>(0);
   const isInContinuousModeRef = useRef<boolean>(false);
   
-  // Additional performance refs for throttling
+  // Additional performance refs for throttling and FPS tracking
   const lastRenderTimeRef = useRef<number>(0);
   const throttleFrameRef = useRef<number | null>(null);
+  const frameCountRef = useRef<number>(0);
+  const lastFpsLogRef = useRef<number>(0);
+  const frameTimes = useRef<number[]>([]);
 
   // Get static dimensions for calculations
   const staticDimensions = useMemo(() => ({
@@ -124,6 +128,39 @@ export const AnimatedPreview = React.memo(({ calculation, showBlades, borderColo
   const updateValues = useCallback((values: NonNullable<typeof transformValues>, immediate = false) => {
     const now = Date.now();
     const timeSinceLastUpdate = now - lastUpdateTimeRef.current;
+    
+    // FPS tracking for legacy animations - track actual frame intervals
+    if (lastFpsLogRef.current > 0) {
+      const frameTime = now - lastFpsLogRef.current;
+      frameTimes.current.push(frameTime);
+      frameCountRef.current += 1;
+      
+      // Keep only last 60 frames for rolling average
+      if (frameTimes.current.length > 60) {
+        frameTimes.current.shift();
+      }
+      
+      // Log every 30 frames or every 1000ms, whichever comes first
+      if (frameCountRef.current >= 30 || (now - (lastFpsLogRef.current + 1000)) > 0) {
+        if (frameTimes.current.length > 0) {
+          const avgFrameTime = frameTimes.current.reduce((a, b) => a + b, 0) / frameTimes.current.length;
+          
+          debugLogAnimationFrame('Legacy Animation', avgFrameTime);
+          debugLogPerformance('Legacy Animation Stats', {
+            fps: parseFloat((1000 / avgFrameTime).toFixed(1)),
+            averageFrameTime: parseFloat(avgFrameTime.toFixed(2)),
+            totalFrames: frameCountRef.current,
+            animationEngine: 'legacy',
+            isInContinuousMode: isInContinuousModeRef.current,
+            sampleSize: frameTimes.current.length,
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        frameCountRef.current = 0;
+      }
+    }
+    lastFpsLogRef.current = now;
     
     // Track rapid updates to determine if we're in continuous mode (like slider dragging)
     if (timeSinceLastUpdate < 50) { // Updates within 50ms are considered rapid

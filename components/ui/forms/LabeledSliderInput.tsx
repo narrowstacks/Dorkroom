@@ -19,6 +19,7 @@ interface LabeledSliderInputProps {
   label: string;
   value: string | number;
   onChange: (v: string) => void;
+  onSliderChange?: (v: number) => void; // New optimized handler for slider values
   min: number;
   max: number;
   step: number;
@@ -40,12 +41,13 @@ interface LabeledSliderInputProps {
   sliderOnTop?: boolean;
 }
 
-const SLIDER_THROTTLE_MS = 30; // ~33 FPS for smooth but efficient updates
+const SLIDER_THROTTLE_MS = 16; // ~60 FPS for smooth updates
 
 export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
   label,
   value,
   onChange,
+  onSliderChange,
   min,
   max,
   step,
@@ -61,10 +63,14 @@ export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
   // Convert the incoming value to a number for Slider compatibility
   const numericValue = Number(value) || 0;
 
-  // Throttled onChange for continuous updates
+  // Throttled handlers for optimized performance
   const onChangeThrottled = useMemo(() =>
     throttle(onChange, SLIDER_THROTTLE_MS, { leading: true, trailing: true })
   , [onChange]);
+
+  const onSliderChangeThrottled = useMemo(() =>
+    onSliderChange ? throttle(onSliderChange, SLIDER_THROTTLE_MS, { leading: true, trailing: true }) : null
+  , [onSliderChange]);
 
   // Throttled haptic feedback to prevent overwhelming the Taptic Engine
   const lastHapticValue = useRef<number>(0);
@@ -76,9 +82,10 @@ export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
   useEffect(() => {
     return () => {
       onChangeThrottled.cancel();
+      onSliderChangeThrottled?.cancel();
       hapticThrottled.cancel();
     };
-  }, [onChangeThrottled, hapticThrottled]);
+  }, [onChangeThrottled, onSliderChangeThrottled, hapticThrottled]);
 
   // Handlers -------------------------------------------------
   const handleValueChange = useCallback((v: number) => {
@@ -89,18 +96,32 @@ export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
     }
     
     if (continuousUpdate) {
-      onChangeThrottled(v.toString());
+      // Use optimized numeric handler if available, otherwise fall back to string
+      if (onSliderChangeThrottled) {
+        onSliderChangeThrottled(v);
+      } else {
+        onChangeThrottled(v.toString());
+      }
     }
-  }, [continuousUpdate, onChangeThrottled, step, hapticThrottled]);
+  }, [continuousUpdate, onChangeThrottled, onSliderChangeThrottled, step, hapticThrottled]);
 
   const handleSlidingComplete = useCallback((v: number) => {
     if (!continuousUpdate) {
-      onChange(v.toString());
+      // Use optimized numeric handler if available, otherwise fall back to string
+      if (onSliderChange) {
+        onSliderChange(v);
+      } else {
+        onChange(v.toString());
+      }
     } else {
       // Ensure final value is set even with throttling
-      onChange(v.toString());
+      if (onSliderChange) {
+        onSliderChange(v);
+      } else {
+        onChange(v.toString());
+      }
     }
-  }, [continuousUpdate, onChange]);
+  }, [continuousUpdate, onChange, onSliderChange]);
 
   // Memoized components for better performance
   const inputField = useMemo(() => (

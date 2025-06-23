@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Platform, TouchableOpacity } from 'react-native';
-import { Box, ScrollView, VStack, HStack } from '@gluestack-ui/themed';
+import { Box, ScrollView, VStack, HStack , Button, ButtonText, ButtonIcon } from '@gluestack-ui/themed';
 import { 
   Drawer, 
   DrawerContent, 
@@ -8,6 +8,8 @@ import {
 } from '@/components/ui/drawer/index';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { WarningAlert } from '@/components/ui/feedback';
+import { useAnimationExperiment } from '@/hooks/useAnimationExperiment';
+import { debugLog } from '@/utils/debugLogger';
 
 // Mobile components
 import { 
@@ -33,12 +35,12 @@ import {
   Eye,
   EyeOff,
   BookOpen,
-  Share
+  Share,
+  Zap
 } from 'lucide-react-native';
 
 // Border calculator functionality
 import { useBorderCalculator, useBorderPresets } from '@/hooks/borderCalculator';
-import { Button, ButtonText, ButtonIcon } from '@gluestack-ui/themed';
 import type { BorderPreset } from '@/types/borderPresetTypes';
 
 // Active section type
@@ -48,6 +50,9 @@ interface MobileBorderCalculatorProps {}
 
 export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () => {
   const backgroundColor = useThemeColor({}, 'background');
+  
+  // Animation experiment hook for A/B testing
+  const { engine, setEngine, isLoading: isAnimationLoading } = useAnimationExperiment();
 
   // Drawer state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -160,6 +165,15 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
     setIsDrawerOpen(false);
   };
 
+  // Animation engine toggle handler (dev only)
+  const toggleAnimationEngine = () => {
+    if (!__DEV__) return;
+    
+    const newEngine = engine === 'legacy' ? 'reanimated' : 'legacy';
+    debugLog(`🔄 [DEV SWITCH] Switching animation engine from ${engine} to ${newEngine}`);
+    setEngine(newEngine);
+  };
+
   if (!calculation) {
     return null;
   }
@@ -252,6 +266,26 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
             </Box>
             </HStack>
           </VStack>
+
+          {/* Dev Only: Animation Engine Toggle */}
+          {__DEV__ && (
+            <Button 
+              onPress={toggleAnimationEngine} 
+              variant="outline" 
+              action="secondary" 
+              size="sm" 
+              style={{ 
+                marginTop: 8, 
+                opacity: isAnimationLoading ? 0.5 : 1 
+              }}
+              disabled={isAnimationLoading}
+            >
+              <ButtonIcon as={Zap} size="sm" />
+              <ButtonText style={{ marginLeft: 8, fontSize: 14 }}>
+                Animation: {engine === 'reanimated' ? 'Reanimated v3' : 'Legacy Animated'}
+              </ButtonText>
+            </Button>
+          )}
 
           {/* Reset Button */}
           <Button 

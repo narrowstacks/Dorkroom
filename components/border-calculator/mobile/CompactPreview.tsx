@@ -1,7 +1,10 @@
 import React, { useMemo } from 'react';
 import { Box } from '@gluestack-ui/themed';
 import { AnimatedPreview } from '@/components/border-calculator';
+import { AnimatedPreview as AnimatedPreviewReanimated } from '@/components/border-calculator/AnimatedPreview.reanimated';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useIsReanimatedEnabled } from '@/hooks/useAnimationExperiment';
+import { debugLog, debugLogPerformance } from '@/utils/debugLogger';
 import type { BorderCalculation } from '@/types/borderTypes';
 
 interface CompactPreviewProps {
@@ -14,6 +17,7 @@ export const CompactPreview: React.FC<CompactPreviewProps> = React.memo(({
   showBlades,
 }) => {
   const borderColor = useThemeColor({}, 'icon');
+  const isReanimatedEnabled = useIsReanimatedEnabled();
 
   // Fixed container dimensions that never change
   const CONTAINER_WIDTH = 780;
@@ -25,6 +29,21 @@ export const CompactPreview: React.FC<CompactPreviewProps> = React.memo(({
     const scaleY = CONTAINER_HEIGHT / (calculation.previewHeight || 1);
     return Math.min(scaleX, scaleY, 1); // Don't scale up, only down if needed
   }, [calculation.previewWidth, calculation.previewHeight]);
+
+  // Log which animation engine is being used
+  useMemo(() => {
+    const engine = isReanimatedEnabled ? 'Reanimated v3' : 'Legacy Animated';
+    debugLog(`🎭 [COMPACT PREVIEW] Using animation engine: ${engine}`);
+    debugLogPerformance('Animation Engine Selection', {
+      engine,
+      isReanimatedEnabled,
+      isDev: __DEV__,
+      timestamp: new Date().toISOString()
+    });
+  }, [isReanimatedEnabled]);
+
+  // Select the appropriate AnimatedPreview component
+  const AnimatedPreviewComponent = isReanimatedEnabled ? AnimatedPreviewReanimated : AnimatedPreview;
 
   return (
     <Box style={{ 
@@ -48,7 +67,7 @@ export const CompactPreview: React.FC<CompactPreviewProps> = React.memo(({
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <AnimatedPreview 
+          <AnimatedPreviewComponent 
             calculation={calculation} 
             showBlades={showBlades} 
             borderColor={borderColor} 

@@ -1,5 +1,7 @@
 import React from 'react';
 import { Platform } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { startContinuousFPSMonitoring, stopContinuousFPSMonitoring } from '@/utils/debugLogger';
 // UI Components
 import { LabeledSliderInput, TextInput, DimensionInputGroup, ToggleSwitch } from '@/components/ui/forms';
 import { WarningAlert } from '@/components/ui/feedback';
@@ -80,7 +82,7 @@ export default function BorderCalculator() {
   const outline = useThemeColor({}, 'outline');
   const shadowColor = useThemeColor({}, 'shadowColor');
 
-  const { aspectRatio, setAspectRatio, paperSize, setPaperSize, customAspectWidth, setCustomAspectWidth, customAspectHeight, setCustomAspectHeight, customPaperWidth, setCustomPaperWidth, customPaperHeight, setCustomPaperHeight, minBorder, setMinBorder, enableOffset, setEnableOffset, ignoreMinBorder, setIgnoreMinBorder, horizontalOffset, setHorizontalOffset, verticalOffset, setVerticalOffset, showBlades, setShowBlades, isLandscape, setIsLandscape, isRatioFlipped, setIsRatioFlipped, offsetWarning, bladeWarning, calculation, minBorderWarning, paperSizeWarning, resetToDefaults, applyPreset } = useBorderCalculator();
+  const { aspectRatio, setAspectRatio, paperSize, setPaperSize, customAspectWidth, setCustomAspectWidth, customAspectHeight, setCustomAspectHeight, customPaperWidth, setCustomPaperWidth, customPaperHeight, setCustomPaperHeight, minBorder, setMinBorder, setMinBorderSlider, enableOffset, setEnableOffset, ignoreMinBorder, setIgnoreMinBorder, horizontalOffset, setHorizontalOffset, setHorizontalOffsetSlider, verticalOffset, setVerticalOffset, setVerticalOffsetSlider, showBlades, setShowBlades, isLandscape, setIsLandscape, isRatioFlipped, setIsRatioFlipped, offsetWarning, bladeWarning, calculation, minBorderWarning, paperSizeWarning, resetToDefaults, applyPreset } = useBorderCalculator();
   const { presets, addPreset, updatePreset, removePreset } = useBorderPresets();
   const loadedPresetFromUrl = useSharedPresetLoader();
   const toast = useToast();
@@ -97,6 +99,16 @@ export default function BorderCalculator() {
   React.useEffect(() => {
     if (presetDirty) setIsEditingPreset(true);
   }, [presetDirty]);
+
+  // Start/stop continuous FPS monitoring when page is focused/unfocused
+  useFocusEffect(
+    React.useCallback(() => {
+      startContinuousFPSMonitoring('Border Calculator');
+      return () => {
+        stopContinuousFPSMonitoring();
+      };
+    }, [])
+  );
 
   React.useEffect(() => {
     if (loadedPresetFromUrl) {
@@ -390,7 +402,7 @@ export default function BorderCalculator() {
             <ThemedSelect label="Paper Size:" selectedValue={paperSize} onValueChange={setPaperSize} items={PAPER_SIZES as any} placeholder="Select Paper Size" />
             {paperSize === 'custom' && <DimensionInputGroup widthValue={String(customPaperWidth)} onWidthChange={setCustomPaperWidth} heightValue={String(customPaperHeight)} onHeightChange={setCustomPaperHeight} widthLabel="Width (inches):" heightLabel="Height (inches):" widthPlaceholder="Width" heightPlaceholder="Height" widthDefault="8" heightDefault="10" />}
 
-            <LabeledSliderInput label="Minimum Border (inches):" value={minBorder} onChange={setMinBorder} min={SLIDER_MIN_BORDER} max={SLIDER_MAX_BORDER} step={SLIDER_STEP_BORDER} labels={BORDER_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} inputWidth={Platform.OS === 'web' && isDesktop ? 80 : undefined} continuousUpdate={true} />
+            <LabeledSliderInput label="Minimum Border (inches):" value={minBorder} onChange={setMinBorder} onSliderChange={setMinBorderSlider} min={SLIDER_MIN_BORDER} max={SLIDER_MAX_BORDER} step={SLIDER_STEP_BORDER} labels={BORDER_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} inputWidth={Platform.OS === 'web' && isDesktop ? 80 : undefined} continuousUpdate={true} />
             
             <HStack sx={{ flexDirection: 'row', gap: 16, width: '100%' }}>
               <ToggleSwitch label="Enable Offsets:" value={enableOffset} onValueChange={setEnableOffset} />
@@ -406,10 +418,10 @@ export default function BorderCalculator() {
                 <Box sx={{ gap: 8 }}>
                   <Box sx={{ flexDirection: 'row', alignItems: 'flex-start', gap: 24, mt: 8 }}>
                     <Box sx={{ flex: 1, gap: 4 }}>
-                      <LabeledSliderInput label="Horizontal Offset:" value={horizontalOffset} onChange={setHorizontalOffset} min={OFFSET_SLIDER_MIN} max={OFFSET_SLIDER_MAX} step={OFFSET_SLIDER_STEP} labels={OFFSET_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} warning={!!offsetWarning} continuousUpdate={true} />
+                      <LabeledSliderInput label="Horizontal Offset:" value={horizontalOffset} onChange={setHorizontalOffset} onSliderChange={setHorizontalOffsetSlider} min={OFFSET_SLIDER_MIN} max={OFFSET_SLIDER_MAX} step={OFFSET_SLIDER_STEP} labels={OFFSET_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} warning={!!offsetWarning} continuousUpdate={true} />
                     </Box>
                     <Box sx={{ flex: 1, gap: 4 }}>
-                      <LabeledSliderInput label="Vertical Offset:" value={verticalOffset} onChange={setVerticalOffset} min={OFFSET_SLIDER_MIN} max={OFFSET_SLIDER_MAX} step={OFFSET_SLIDER_STEP} labels={OFFSET_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} warning={!!offsetWarning} continuousUpdate={true} />
+                      <LabeledSliderInput label="Vertical Offset:" value={verticalOffset} onChange={setVerticalOffset} onSliderChange={setVerticalOffsetSlider} min={OFFSET_SLIDER_MIN} max={OFFSET_SLIDER_MAX} step={OFFSET_SLIDER_STEP} labels={OFFSET_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} warning={!!offsetWarning} continuousUpdate={true} />
                     </Box>
                   </Box>
                   {offsetWarning && <WarningAlert message={offsetWarning} action="warning" />}

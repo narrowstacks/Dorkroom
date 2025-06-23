@@ -40,7 +40,8 @@ export const BorderSizeSection: React.FC<BorderSizeSectionProps> = ({
         onChange={(v) => {
           const parsed = parseFloat(v);
           setMinBorder(isNaN(parsed) ? 0 : parsed);
-        }} 
+        }}
+        onSliderChange={setMinBorder} 
         min={SLIDER_MIN_BORDER} 
         max={SLIDER_MAX_BORDER} 
         step={SLIDER_STEP_BORDER} 

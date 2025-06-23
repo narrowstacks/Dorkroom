@@ -9,32 +9,75 @@
 
 import { useCallback } from 'react';
 import { tryNumber, debounce } from '../utils/inputValidation';
+import { debugLogPerformance, debugLogTiming } from '@/utils/debugLogger';
 import type { BorderCalculatorState } from './types';
 
 export const useInputHandlers = (
   state: BorderCalculatorState,
   dispatch: (action: any) => void
 ) => {
-  // Debounced numeric field setter for better performance
+  // Debounced numeric field setter for text input only (not sliders)
   const debouncedNumericFieldSetter = useCallback(
     debounce((key: keyof BorderCalculatorState, v: string) => {
+      const startTime = debugLogTiming(`Border Calculator - ${key} Input Processing`);
       const num = tryNumber(v);
 
       if (num !== null) {
         // The user has entered a complete number – store it as a number.
+        debugLogPerformance(`Border Calculator - ${key} Value Change`, {
+          field: key,
+          oldValue: state[key],
+          newValue: num,
+          type: 'numeric',
+          timestamp: new Date().toISOString()
+        });
         dispatch({ type: 'SET_FIELD', key, value: num });
+        if (startTime) debugLogTiming(`Border Calculator - ${key} Input Processing`, startTime);
         return;
       }
 
       // Allow "in-progress" numeric strings such as "", "-", ".", "0.", "-."
       // so the user can keep typing without the input being overridden.
       if (/^-?\d*\.?$/.test(v)) {
+        debugLogPerformance(`Border Calculator - ${key} In-Progress Input`, {
+          field: key,
+          value: v,
+          type: 'in-progress',
+          timestamp: new Date().toISOString()
+        });
         dispatch({ type: 'SET_FIELD', key, value: v });
       }
-    }, 150), // 150ms debounce for better responsiveness
-    [dispatch]
+      if (startTime) debugLogTiming(`Border Calculator - ${key} Input Processing`, startTime);
+    }, 100), // Reduced to 100ms for better responsiveness
+    [dispatch, state]
   );
 
+  // Optimized slider input handler - no debouncing, direct numeric conversion
+  const setSliderField = useCallback((
+    key: keyof BorderCalculatorState,
+    v: string | number,
+  ) => {
+    const startTime = debugLogTiming(`Border Calculator - ${key} Slider Input`);
+    
+    // Convert to number directly since sliders always provide valid numeric values
+    const numericValue = typeof v === 'number' ? v : parseFloat(v);
+    
+    // Only update if the value actually changed to prevent unnecessary re-renders
+    if (state[key] !== numericValue) {
+      debugLogPerformance(`Border Calculator - ${key} Value Change`, {
+        field: key,
+        oldValue: state[key],
+        newValue: numericValue,
+        type: 'slider',
+        timestamp: new Date().toISOString()
+      });
+      dispatch({ type: 'SET_FIELD', key, value: numericValue });
+    }
+    
+    if (startTime) debugLogTiming(`Border Calculator - ${key} Slider Input`, startTime);
+  }, [dispatch, state]);
+
+  // Text input handler with debouncing
   const setNumericField = useCallback((
     key: keyof BorderCalculatorState,
     v: string,
@@ -61,11 +104,27 @@ export const useInputHandlers = (
   }, [dispatch]);
 
   // Basic field setters
-  const setAspectRatio = useCallback((v: string) =>
-    dispatch({ type: 'SET_ASPECT_RATIO', value: v }), [dispatch]);
+  const setAspectRatio = useCallback((v: string) => {
+    debugLogPerformance('Border Calculator - Aspect Ratio Change', {
+      field: 'aspectRatio',
+      oldValue: state.aspectRatio,
+      newValue: v,
+      type: 'selection',
+      timestamp: new Date().toISOString()
+    });
+    dispatch({ type: 'SET_ASPECT_RATIO', value: v });
+  }, [dispatch, state.aspectRatio]);
 
-  const setPaperSize = useCallback((v: string) =>
-    dispatch({ type: 'SET_PAPER_SIZE', value: v }), [dispatch]);
+  const setPaperSize = useCallback((v: string) => {
+    debugLogPerformance('Border Calculator - Paper Size Change', {
+      field: 'paperSize',
+      oldValue: state.paperSize,
+      newValue: v,
+      type: 'selection',
+      timestamp: new Date().toISOString()
+    });
+    dispatch({ type: 'SET_PAPER_SIZE', value: v });
+  }, [dispatch, state.paperSize]);
 
   // Custom dimension setters
   const setCustomAspectWidth = useCallback((v: string) =>
@@ -80,7 +139,7 @@ export const useInputHandlers = (
   const setCustomPaperHeight = useCallback((v: string) =>
     setCustomDimensionField('customPaperHeight', 'lastValidCustomPaperHeight', v), [setCustomDimensionField]);
 
-  // Numeric field setters
+  // Numeric field setters (for text inputs)
   const setMinBorder = useCallback((v: string) =>
     setNumericField('minBorder', v), [setNumericField]);
 
@@ -90,28 +149,94 @@ export const useInputHandlers = (
   const setVerticalOffset = useCallback((v: string) =>
     setNumericField('verticalOffset', v), [setNumericField]);
 
-  // Boolean field setters
-  const setEnableOffset = useCallback((v: boolean) =>
-    dispatch({ type: 'SET_FIELD', key: 'enableOffset', value: v }), [dispatch]);
+  // Slider field setters (optimized for continuous updates)
+  const setMinBorderSlider = useCallback((v: string | number) =>
+    setSliderField('minBorder', v), [setSliderField]);
 
-  const setIgnoreMinBorder = useCallback((v: boolean) =>
-    dispatch({ type: 'SET_FIELD', key: 'ignoreMinBorder', value: v }), [dispatch]);
+  const setHorizontalOffsetSlider = useCallback((v: string | number) =>
+    setSliderField('horizontalOffset', v), [setSliderField]);
 
-  const setShowBlades = useCallback((v: boolean) =>
-    dispatch({ type: 'SET_FIELD', key: 'showBlades', value: v }), [dispatch]);
+  const setVerticalOffsetSlider = useCallback((v: string | number) =>
+    setSliderField('verticalOffset', v), [setSliderField]);
 
-  const setIsLandscape = useCallback((v: boolean) =>
-    dispatch({ type: 'SET_FIELD', key: 'isLandscape', value: v }), [dispatch]);
+  // Boolean field setters with performance logging
+  const setEnableOffset = useCallback((v: boolean) => {
+    debugLogPerformance('Border Calculator - Enable Offset Toggle', {
+      field: 'enableOffset',
+      oldValue: state.enableOffset,
+      newValue: v,
+      type: 'boolean',
+      timestamp: new Date().toISOString()
+    });
+    dispatch({ type: 'SET_FIELD', key: 'enableOffset', value: v });
+  }, [dispatch, state.enableOffset]);
 
-  const setIsRatioFlipped = useCallback((v: boolean) =>
-    dispatch({ type: 'SET_FIELD', key: 'isRatioFlipped', value: v }), [dispatch]);
+  const setIgnoreMinBorder = useCallback((v: boolean) => {
+    debugLogPerformance('Border Calculator - Ignore Min Border Toggle', {
+      field: 'ignoreMinBorder',
+      oldValue: state.ignoreMinBorder,
+      newValue: v,
+      type: 'boolean',
+      timestamp: new Date().toISOString()
+    });
+    dispatch({ type: 'SET_FIELD', key: 'ignoreMinBorder', value: v });
+  }, [dispatch, state.ignoreMinBorder]);
 
-  // Utility actions
-  const applyPreset = useCallback((preset: Partial<BorderCalculatorState>) =>
-    dispatch({ type: 'BATCH_UPDATE', payload: preset }), [dispatch]);
+  const setShowBlades = useCallback((v: boolean) => {
+    debugLogPerformance('Border Calculator - Show Blades Toggle', {
+      field: 'showBlades',
+      oldValue: state.showBlades,
+      newValue: v,
+      type: 'boolean',
+      timestamp: new Date().toISOString()
+    });
+    dispatch({ type: 'SET_FIELD', key: 'showBlades', value: v });
+  }, [dispatch, state.showBlades]);
 
-  const resetToDefaults = useCallback(() =>
-    dispatch({ type: 'RESET' }), [dispatch]);
+  const setIsLandscape = useCallback((v: boolean) => {
+    debugLogPerformance('Border Calculator - Landscape Toggle', {
+      field: 'isLandscape',
+      oldValue: state.isLandscape,
+      newValue: v,
+      type: 'boolean',
+      timestamp: new Date().toISOString()
+    });
+    dispatch({ type: 'SET_FIELD', key: 'isLandscape', value: v });
+  }, [dispatch, state.isLandscape]);
+
+  const setIsRatioFlipped = useCallback((v: boolean) => {
+    debugLogPerformance('Border Calculator - Ratio Flipped Toggle', {
+      field: 'isRatioFlipped',
+      oldValue: state.isRatioFlipped,
+      newValue: v,
+      type: 'boolean',
+      timestamp: new Date().toISOString()
+    });
+    dispatch({ type: 'SET_FIELD', key: 'isRatioFlipped', value: v });
+  }, [dispatch, state.isRatioFlipped]);
+
+  // Utility actions with performance logging
+  const applyPreset = useCallback((preset: Partial<BorderCalculatorState>) => {
+    const startTime = debugLogTiming('Border Calculator - Apply Preset');
+    debugLogPerformance('Border Calculator - Preset Applied', {
+      action: 'applyPreset',
+      presetFields: Object.keys(preset),
+      fieldCount: Object.keys(preset).length,
+      timestamp: new Date().toISOString()
+    });
+    dispatch({ type: 'BATCH_UPDATE', payload: preset });
+    if (startTime) debugLogTiming('Border Calculator - Apply Preset', startTime);
+  }, [dispatch]);
+
+  const resetToDefaults = useCallback(() => {
+    const startTime = debugLogTiming('Border Calculator - Reset to Defaults');
+    debugLogPerformance('Border Calculator - Reset to Defaults', {
+      action: 'resetToDefaults',
+      timestamp: new Date().toISOString()
+    });
+    dispatch({ type: 'RESET' });
+    if (startTime) debugLogTiming('Border Calculator - Reset to Defaults', startTime);
+  }, [dispatch]);
 
   return {
     // Basic setters
@@ -124,10 +249,15 @@ export const useInputHandlers = (
     setCustomPaperWidth,
     setCustomPaperHeight,
 
-    // Numeric field setters
+    // Numeric field setters (for text inputs)
     setMinBorder,
     setHorizontalOffset,
     setVerticalOffset,
+
+    // Slider field setters (optimized, no debouncing)
+    setMinBorderSlider,
+    setHorizontalOffsetSlider,
+    setVerticalOffsetSlider,
 
     // Boolean field setters
     setEnableOffset,

@@ -77,7 +77,8 @@ export const PositionOffsetsSection: React.FC<PositionOffsetsSectionProps> = ({
               onChange={(v) => {
                 const parsed = parseFloat(v);
                 setHorizontalOffset(isNaN(parsed) ? 0 : parsed);
-              }} 
+              }}
+              onSliderChange={setHorizontalOffset} 
               min={OFFSET_SLIDER_MIN} 
               max={OFFSET_SLIDER_MAX} 
               step={OFFSET_SLIDER_STEP} 
@@ -95,7 +96,8 @@ export const PositionOffsetsSection: React.FC<PositionOffsetsSectionProps> = ({
               onChange={(v) => {
                 const parsed = parseFloat(v);
                 setVerticalOffset(isNaN(parsed) ? 0 : parsed);
-              }} 
+              }}
+              onSliderChange={setVerticalOffset} 
               min={OFFSET_SLIDER_MIN} 
               max={OFFSET_SLIDER_MAX} 
               step={OFFSET_SLIDER_STEP} 
