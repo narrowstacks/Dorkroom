@@ -37,6 +37,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e81d817d-4794-41d4-a2da-e1564e7147be"
+      }
+    },
+    "owner": "narrowstacks-org"
   }
 }
