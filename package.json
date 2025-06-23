@@ -10,7 +10,7 @@
     "web": "DARK_MODE=media expo start --web",
     "test": "bun test",
     "lint": "expo lint",
-    "dev": "expo start",
+    "dev": "expo start --go",
     "build": "expo export -p web",
     "clean": "rm -rf node_modules .expo dist",
     "web-export": "bunx expo export -p web",

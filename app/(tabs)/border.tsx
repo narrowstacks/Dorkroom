@@ -1,7 +1,7 @@
 import React from 'react';
 import { Platform } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { startContinuousFPSMonitoring, stopContinuousFPSMonitoring } from '@/utils/debugLogger';
+import { startContinuousFPSMonitoring, stopContinuousFPSMonitoring, debugLog } from '@/utils/debugLogger';
 // UI Components
 import { LabeledSliderInput, TextInput, DimensionInputGroup, ToggleSwitch } from '@/components/ui/forms';
 import { WarningAlert } from '@/components/ui/feedback';
@@ -86,7 +86,7 @@ export default function BorderCalculator() {
 
   const { aspectRatio, setAspectRatio, paperSize, setPaperSize, customAspectWidth, setCustomAspectWidth, customAspectHeight, setCustomAspectHeight, customPaperWidth, setCustomPaperWidth, customPaperHeight, setCustomPaperHeight, minBorder, setMinBorder, setMinBorderSlider, enableOffset, setEnableOffset, ignoreMinBorder, setIgnoreMinBorder, horizontalOffset, setHorizontalOffset, setHorizontalOffsetSlider, verticalOffset, setVerticalOffset, setVerticalOffsetSlider, showBlades, setShowBlades, isLandscape, setIsLandscape, isRatioFlipped, setIsRatioFlipped, offsetWarning, bladeWarning, calculation, minBorderWarning, paperSizeWarning, resetToDefaults, applyPreset } = useBorderCalculator();
   const { presets, addPreset, updatePreset, removePreset } = useBorderPresets();
-  const loadedPresetFromUrl = useSharedPresetLoader();
+  const { loadedPreset: loadedPresetFromUrl, clearLoadedPreset } = useSharedPresetLoader();
   const toast = useToast();
   const { showAppBanner, openInApp, dismissBanner, appMessage } = useAppDetection({ 
     hasSharedContent: !!loadedPresetFromUrl 
@@ -127,28 +127,41 @@ export default function BorderCalculator() {
   );
 
   React.useEffect(() => {
-    if (loadedPresetFromUrl) {
-      if (loadedPresetFromUrl) {
-        applyPreset(loadedPresetFromUrl.settings);
-        setPresetName(loadedPresetFromUrl.name);
-        // Create a temporary preset object to indicate it's loaded, but not saved yet
-        const tempPreset = { id: 'shared-' + Date.now(), name: loadedPresetFromUrl.name, settings: loadedPresetFromUrl.settings };
-        loadedPresetRef.current = tempPreset;
-        setSelectedPresetId(''); // It's not a saved preset yet
-        setIsEditingPreset(true); // Encourage user to save it
-        toast.show({
-            placement: "top",
-            render: ({ id }) => (
-                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                    <ToastVStack space="xs">
-                        <ToastTitle>Shared preset &quot;{loadedPresetFromUrl.name}&quot; loaded!</ToastTitle>
-                    </ToastVStack>
-                </Toast>
-            ),
-        });
+    debugLog('📋 [BORDER CALC] Desktop preset effect triggered, loadedPresetFromUrl:', loadedPresetFromUrl, 'shouldUseMobileLayout:', shouldUseMobileLayout);
+    if (loadedPresetFromUrl && !shouldUseMobileLayout) {
+      debugLog('📋 [BORDER CALC] Desktop applying preset:', loadedPresetFromUrl);
+      applyPreset(loadedPresetFromUrl.settings);
+      setPresetName(loadedPresetFromUrl.name);
+      // Create a temporary preset object to indicate it's loaded, but not saved yet
+      const tempPreset = { id: 'shared-' + Date.now(), name: loadedPresetFromUrl.name, settings: loadedPresetFromUrl.settings };
+      loadedPresetRef.current = tempPreset;
+      setSelectedPresetId(''); // It's not a saved preset yet
+      setIsEditingPreset(true); // Encourage user to save it
+      
+      // Determine the appropriate toast message
+      const isFromUrl = loadedPresetFromUrl.isFromUrl;
+      const toastTitle = isFromUrl 
+        ? `Shared preset "${loadedPresetFromUrl.name}" loaded!`
+        : `Last settings "${loadedPresetFromUrl.name}" loaded`;
+      
+      debugLog('📋 [BORDER CALC] Desktop showing toast, isFromUrl:', isFromUrl, 'title:', toastTitle);
+      toast.show({
+          placement: "top",
+          render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                  <ToastVStack space="xs">
+                      <ToastTitle>{toastTitle}</ToastTitle>
+                  </ToastVStack>
+              </Toast>
+          ),
+      });
+      
+      // Clear the preset after processing to prevent it from persisting
+      clearLoadedPreset();
+    } else if (loadedPresetFromUrl && shouldUseMobileLayout) {
+      debugLog('📋 [BORDER CALC] Mobile layout detected, skipping desktop preset application (mobile will handle it)');
     }
-    }
-  }, [loadedPresetFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadedPresetFromUrl, shouldUseMobileLayout, clearLoadedPreset]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Memoized preset items to avoid recreation on every render
   const presetItems = React.useMemo(() => [
@@ -259,6 +272,7 @@ export default function BorderCalculator() {
 
   // Use mobile layout for mobile devices
   if (shouldUseMobileLayout) {
+    debugLog('📋 [BORDER CALC] Using mobile layout, passing loadedPresetFromUrl:', loadedPresetFromUrl);
     return (
       <>
         <AppBanner 
@@ -267,7 +281,7 @@ export default function BorderCalculator() {
           onOpenApp={handleOpenInApp}
           onDismiss={dismissBanner}
         />
-        <MobileBorderCalculator />
+        <MobileBorderCalculator loadedPresetFromUrl={loadedPresetFromUrl} clearLoadedPreset={clearLoadedPreset} />
       </>
     );
   }

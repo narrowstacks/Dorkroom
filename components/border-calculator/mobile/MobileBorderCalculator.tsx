@@ -1,6 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Platform, TouchableOpacity } from 'react-native';
-import { Box, ScrollView, VStack, HStack , Button, ButtonText, ButtonIcon } from '@gluestack-ui/themed';
+import { 
+  Box, 
+  ScrollView, 
+  VStack, 
+  HStack, 
+  Button, 
+  ButtonText, 
+  ButtonIcon,
+  useToast,
+  Toast,
+  ToastTitle,
+  VStack as ToastVStack
+} from '@gluestack-ui/themed';
 import { 
   Drawer, 
   DrawerContent, 
@@ -18,6 +30,7 @@ import {
   SettingsButton,
 } from './index';
 import { ShareModal } from './ShareModal';
+import { SaveBeforeShareModal } from './SaveBeforeShareModal';
 
 // Inline sections instead of modals
 import {
@@ -52,11 +65,14 @@ if (__DEV__) {
 // Active section type
 type ActiveSection = 'paperSize' | 'borderSize' | 'positionOffsets' | 'presets';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface MobileBorderCalculatorProps {}
+interface MobileBorderCalculatorProps {
+  loadedPresetFromUrl?: { name: string, settings: any, isFromUrl?: boolean } | null;
+  clearLoadedPreset?: () => void;
+}
 
-export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () => {
+export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = ({ loadedPresetFromUrl, clearLoadedPreset }) => {
   const backgroundColor = useThemeColor({}, 'background');
+  const toast = useToast();
   
   // Animation experiment hook for A/B testing
   const { engine, setEngine, isLoading: isAnimationLoading } = useAnimationExperiment();
@@ -68,6 +84,11 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
   
   // Share modal state
   const [isShareModalVisible, setIsShareModalVisible] = useState(false);
+  const [isSaveBeforeShareModalVisible, setIsSaveBeforeShareModalVisible] = useState(false);
+  
+  // Track loaded preset to prevent infinite re-application
+  const [hasAppliedLoadedPreset, setHasAppliedLoadedPreset] = useState(false);
+  const [lastAppliedPresetId, setLastAppliedPresetId] = useState<string | null>(null);
 
   // Border calculator hooks
   const {
@@ -127,6 +148,62 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
     }
   }, [currentSettingsHash, presetSettingsHash, currentPreset]);
 
+  // Handle loaded preset from URL
+  useEffect(() => {
+    if (!loadedPresetFromUrl) {
+      debugLog('📱 [MOBILE CALC] No loadedPresetFromUrl, resetting applied state');
+      setHasAppliedLoadedPreset(false);
+      setLastAppliedPresetId(null);
+      return;
+    }
+
+    // Create a unique ID for this preset based on its content
+    const presetId = `${loadedPresetFromUrl.name}-${JSON.stringify(loadedPresetFromUrl.settings)}`;
+    
+    debugLog('📱 [MOBILE CALC] Mobile preset effect triggered, loadedPresetFromUrl:', loadedPresetFromUrl, 'hasAppliedLoadedPreset:', hasAppliedLoadedPreset, 'lastAppliedPresetId:', lastAppliedPresetId, 'currentPresetId:', presetId);
+    
+    // Check if this is a new preset (different from the last applied one)
+    if (presetId !== lastAppliedPresetId) {
+      debugLog('📱 [MOBILE CALC] New preset detected, applying:', loadedPresetFromUrl);
+      applyPreset(loadedPresetFromUrl.settings);
+      // Create a temporary preset object to indicate it's loaded
+      const tempPreset = { 
+        id: 'shared-' + Date.now(), 
+        name: loadedPresetFromUrl.name, 
+        settings: loadedPresetFromUrl.settings 
+      };
+      setCurrentPreset(tempPreset);
+      setHasAppliedLoadedPreset(true);
+      setLastAppliedPresetId(presetId);
+      
+      // Determine the appropriate toast message
+      const isFromUrl = loadedPresetFromUrl.isFromUrl;
+      const toastTitle = isFromUrl 
+        ? `Shared preset "${loadedPresetFromUrl.name}" loaded!`
+        : `Last settings "${loadedPresetFromUrl.name}" loaded`;
+      
+      debugLog('📱 [MOBILE CALC] Mobile showing toast, isFromUrl:', isFromUrl, 'title:', toastTitle);
+      
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+            <ToastVStack space="xs">
+              <ToastTitle>{toastTitle}</ToastTitle>
+            </ToastVStack>
+          </Toast>
+        ),
+      });
+      
+      // Clear the preset after processing to prevent it from persisting
+      if (clearLoadedPreset) {
+        clearLoadedPreset();
+      }
+    } else {
+      debugLog('📱 [MOBILE CALC] Same preset already applied, skipping');
+    }
+  }, [loadedPresetFromUrl, applyPreset, toast, lastAppliedPresetId, clearLoadedPreset]);
+
   // Memoized helper functions for display values to prevent parseFloat on every render
   const paperSizeDisplayValue = useMemo(() => {
     if (paperSize === 'custom') {
@@ -185,12 +262,35 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
   };
 
   const handleShare = () => {
-    setIsShareModalVisible(true);
+    // Check if the current settings match a saved preset
+    const matchedPreset = presets.find(p => JSON.stringify(p.settings) === JSON.stringify(currentSettings));
+
+    if (matchedPreset) {
+      // If it's a saved preset, share it directly
+      setIsShareModalVisible(true);
+    } else {
+      // If not saved, open the modal to force saving
+      setIsSaveBeforeShareModalVisible(true);
+    }
   };
 
   const handleSavePreset = () => {
     setActiveSection('presets');
     setIsDrawerOpen(true);
+  };
+
+  const handleSaveAndShare = (presetName: string) => {
+    // Create and save the new preset
+    const newPreset = { 
+      id: 'user-' + Date.now(), 
+      name: presetName, 
+      settings: currentSettings 
+    };
+    addPreset(newPreset);
+    setCurrentPreset(newPreset);
+    
+    // Now open the share modal
+    setIsShareModalVisible(true);
   };
 
   // Open drawer handlers
@@ -463,7 +563,15 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
             isVisible={isShareModalVisible}
             onClose={() => setIsShareModalVisible(false)}
             currentSettings={currentSettings}
-            presetName={currentPreset?.name || 'Border Settings'}
+            presetName={currentPreset?.name || 'Unnamed Preset'}
+          />
+
+          {/* Save Before Share Modal */}
+          <SaveBeforeShareModal
+            isVisible={isSaveBeforeShareModalVisible}
+            onClose={() => setIsSaveBeforeShareModalVisible(false)}
+            onSaveAndShare={handleSaveAndShare}
+            currentSettings={currentSettings}
           />
         </VStack>
       </Box>

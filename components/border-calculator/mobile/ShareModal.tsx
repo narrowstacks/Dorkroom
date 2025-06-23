@@ -22,11 +22,13 @@ import {
   ToastTitle,
   VStack as ToastVStack
 } from '@gluestack-ui/themed';
-import { Copy, Share2, ExternalLink, Smartphone } from 'lucide-react-native';
+import { Copy, Share2, ExternalLink, Smartphone, Clock } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
 import { encodePreset } from '@/utils/presetSharing';
 import { generateSharingUrls } from '@/utils/urlHelpers';
+import { isRunningOnMobileWeb, openInNativeApp } from '@/utils/appDetection';
+import { MOBILE_WEB_APP_CONFIG } from '@/constants/urls';
 import type { BorderPresetSettings } from '@/types/borderPresetTypes';
 
 interface ShareModalProps {
@@ -43,6 +45,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   presetName = 'Border Settings'
 }) => {
   const toast = useToast();
+  const isMobileWeb = isRunningOnMobileWeb();
 
   const shareData = React.useMemo(() => {
     const preset = { name: presetName, settings: currentSettings };
@@ -105,6 +108,48 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     }
   };
 
+  const handleOpenInApp = async () => {
+    if (!shareData) return;
+    
+    try {
+      const success = await openInNativeApp(shareData.nativeUrl);
+      if (success) {
+        toast.show({
+          placement: "top",
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+              <ToastVStack space="xs">
+                <ToastTitle>Opening in Dorkroom app...</ToastTitle>
+              </ToastVStack>
+            </Toast>
+          ),
+        });
+        onClose(); // Close the modal since we're switching to the app
+      } else {
+        toast.show({
+          placement: "top",
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="warning" variant="solid">
+              <ToastVStack space="xs">
+                <ToastTitle>Dorkroom app not installed</ToastTitle>
+              </ToastVStack>
+            </Toast>
+          ),
+        });
+      }
+    } catch (error) {
+      console.error('Failed to open in app:', error);
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>Failed to open in app</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
+  };
+
   if (!shareData) {
     return (
       <Modal isOpen={isVisible} onClose={onClose}>
@@ -143,16 +188,44 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           <VStack space="md">
             <Text>Choose how you&apos;d like to share your border calculator settings:</Text>
             
-            {/* Native Share Button */}
-            <Button 
-              onPress={shareViaSystem}
-              variant="solid" 
-              action="primary" 
-              size="lg"
-            >
-              <ButtonIcon as={Share2} size="sm" />
-              <ButtonText style={{ marginLeft: 8 }}>Share via...</ButtonText>
-            </Button>
+            {/* Mobile Web: Open in App Button or Coming Soon */}
+            {isMobileWeb && (
+              MOBILE_WEB_APP_CONFIG.ENABLE_APP_LINKS ? (
+                <Button 
+                  onPress={handleOpenInApp}
+                  variant="solid" 
+                  action="primary" 
+                  size="lg"
+                >
+                  <ButtonIcon as={Smartphone} size="sm" />
+                  <ButtonText style={{ marginLeft: 8 }}>Open in Dorkroom App</ButtonText>
+                </Button>
+              ) : (
+                <Button 
+                  variant="solid" 
+                  action="secondary" 
+                  size="lg"
+                  disabled={true}
+                  style={{ opacity: 0.6 }}
+                >
+                  <ButtonIcon as={Clock} size="sm" />
+                  <ButtonText style={{ marginLeft: 8 }}>Coming Soon!</ButtonText>
+                </Button>
+              )
+            )}
+
+            {/* Native Share Button - only show on native or if not mobile web */}
+            {!isMobileWeb && (
+              <Button 
+                onPress={shareViaSystem}
+                variant="solid" 
+                action="primary" 
+                size="lg"
+              >
+                <ButtonIcon as={Share2} size="sm" />
+                <ButtonText style={{ marginLeft: 8 }}>Share via...</ButtonText>
+              </Button>
+            )}
 
             {/* Web URL Section */}
             <VStack space="sm">
@@ -175,7 +248,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               </HStack>
             </VStack>
 
-            {/* Native App URI Section */}
+            {/* Native App URI Section - only show on native apps, not mobile web */}
             {Platform.OS !== 'web' && (
               <VStack space="sm">
                 <Text style={{ fontWeight: 'bold', fontSize: 16 }}>App Link</Text>

@@ -1,5 +1,6 @@
 // Tree-shakable debug logging - production builds will remove these entirely
 const DEBUG_ENABLED = __DEV__ || false;
+const PERF_MONITORING_ENABLED = false;
 
 // Use conditional compilation for better tree-shaking
 export const debugLog = DEBUG_ENABLED 
@@ -17,7 +18,7 @@ export const debugError = DEBUG_ENABLED
 // Performance timing utilities - only in debug mode
 const performanceTimers = DEBUG_ENABLED ? new Map<string, number>() : null;
 
-export const debugLogTiming = DEBUG_ENABLED 
+export const debugLogTiming = (DEBUG_ENABLED && PERF_MONITORING_ENABLED)
   ? (label: string, startTime?: number) => {
       if (startTime === undefined) {
         // Start timing
@@ -37,7 +38,7 @@ export const debugLogTiming = DEBUG_ENABLED
   : () => undefined;
 
 // Continuous FPS monitoring - only initialize in debug mode
-let fpsMonitoringState = DEBUG_ENABLED ? {
+let fpsMonitoringState = (DEBUG_ENABLED && PERF_MONITORING_ENABLED) ? {
   isActive: false,
   frameCount: 0,
   lastFrameTime: 0,
@@ -47,7 +48,7 @@ let fpsMonitoringState = DEBUG_ENABLED ? {
   logInterval: null as NodeJS.Timeout | null,
 } : {} as any;
 
-const measureFrame = DEBUG_ENABLED 
+const measureFrame = (DEBUG_ENABLED && PERF_MONITORING_ENABLED) 
   ? () => {
       if (!fpsMonitoringState.isActive) return;
       
@@ -69,7 +70,7 @@ const measureFrame = DEBUG_ENABLED
     }
   : () => {};
 
-export const startContinuousFPSMonitoring = DEBUG_ENABLED 
+export const startContinuousFPSMonitoring = (DEBUG_ENABLED && PERF_MONITORING_ENABLED) 
   ? (label: string = 'Page') => {
       if (fpsMonitoringState.isActive) return;
       
@@ -88,7 +89,7 @@ export const startContinuousFPSMonitoring = DEBUG_ENABLED
       fpsMonitoringState.logInterval = setInterval(() => {
         if (fpsMonitoringState.frameTimes.length > 0) {
           const frameTimes = fpsMonitoringState.frameTimes;
-          const avgFrameTime = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+          const avgFrameTime = frameTimes.reduce((a: number, b: number) => a + b, 0) / frameTimes.length;
           const minFrameTime = Math.min(...frameTimes);
           const maxFrameTime = Math.max(...frameTimes);
           const avgFPS = 1000 / avgFrameTime;
@@ -114,7 +115,7 @@ export const startContinuousFPSMonitoring = DEBUG_ENABLED
     }
   : () => {};
 
-export const stopContinuousFPSMonitoring = DEBUG_ENABLED 
+export const stopContinuousFPSMonitoring = (DEBUG_ENABLED && PERF_MONITORING_ENABLED) 
   ? () => {
       if (!fpsMonitoringState.isActive) return;
       
@@ -141,13 +142,13 @@ export const stopContinuousFPSMonitoring = DEBUG_ENABLED
     }
   : () => {};
 
-export const debugLogPerformance = DEBUG_ENABLED 
+export const debugLogPerformance = (DEBUG_ENABLED && PERF_MONITORING_ENABLED) 
   ? (label: string, data: Record<string, any>) => {
       console.log(`🚀 [PERFORMANCE] ${label}:`, data);
     }
   : () => {};
 
-export const debugLogAnimationFrame = DEBUG_ENABLED 
+export const debugLogAnimationFrame = (DEBUG_ENABLED && PERF_MONITORING_ENABLED) 
   ? (label: string, frameTime: number) => {
       // Only log if frameTime is reasonable (avoid division by zero or tiny values)
       if (frameTime > 0 && frameTime < 1000) {
@@ -168,7 +169,7 @@ export const debugLogAnimationFrame = DEBUG_ENABLED
     }
   : () => {};
 
-export const debugLogMemory = DEBUG_ENABLED 
+export const debugLogMemory = (DEBUG_ENABLED && PERF_MONITORING_ENABLED) 
   ? (label: string) => {
       if ((performance as any).memory) {
         const memory = (performance as any).memory;

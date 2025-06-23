@@ -5,6 +5,7 @@ import {
   openInNativeApp,
   createAppDetectionMessage 
 } from '@/utils/appDetection';
+import { MOBILE_WEB_APP_CONFIG } from '@/constants/urls';
 
 interface UseAppDetectionResult {
   isOnMobileWeb: boolean;
@@ -29,6 +30,12 @@ export const useAppDetection = (options: UseAppDetectionOptions = {}): UseAppDet
   const isOnMobileWeb = isRunningOnMobileWeb();
 
   useEffect(() => {
+    // Don't show banner if app functionality is disabled in production
+    if (!MOBILE_WEB_APP_CONFIG.SHOW_APP_BANNER) {
+      setShowAppBanner(false);
+      return;
+    }
+
     if (!isOnMobileWeb || !autoCheck) return;
 
     const checkApp = async () => {
@@ -37,7 +44,8 @@ export const useAppDetection = (options: UseAppDetectionOptions = {}): UseAppDet
         setIsAppAvailable(available);
         
         // Show banner if app is available and we have shared content or it's mobile web
-        if (available && (hasSharedContent || isOnMobileWeb)) {
+        // AND if the feature is enabled in configuration
+        if (available && (hasSharedContent || isOnMobileWeb) && MOBILE_WEB_APP_CONFIG.SHOW_APP_BANNER) {
           setShowAppBanner(true);
         }
       } catch (error) {
@@ -70,7 +78,7 @@ export const useAppDetection = (options: UseAppDetectionOptions = {}): UseAppDet
   return {
     isOnMobileWeb,
     isAppAvailable,
-    showAppBanner: showAppBanner && isOnMobileWeb && isAppAvailable === true,
+    showAppBanner: showAppBanner && isOnMobileWeb && isAppAvailable === true && MOBILE_WEB_APP_CONFIG.SHOW_APP_BANNER,
     openInApp,
     dismissBanner,
     appMessage,
