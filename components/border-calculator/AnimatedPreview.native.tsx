@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useMemo, useCallback } from 'react';
 import { Animated } from 'react-native';
-import { AnimatedBlade } from './AnimatedBlade';
+import { AnimatedBlade } from './AnimatedBlade.native';
 
 interface AnimatedPreviewProps {
   calculation: any;
