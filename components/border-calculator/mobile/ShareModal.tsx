@@ -209,7 +209,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                   style={{ opacity: 0.6 }}
                 >
                   <ButtonIcon as={Clock} size="sm" />
-                  <ButtonText style={{ marginLeft: 8 }}>Dorkroom App Coming Soon!</ButtonText>
+                  <ButtonText style={{ marginLeft: 8 }}>App Coming Soon!</ButtonText>
                 </Button>
               )
             )}
