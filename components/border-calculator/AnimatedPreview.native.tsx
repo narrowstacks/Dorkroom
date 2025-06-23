@@ -28,7 +28,7 @@ export const AnimatedPreview = React.memo(({ calculation, showBlades, borderColo
 
   // Animation control with debouncing to prevent excessive restarts
   const animationRef = useRef<Animated.CompositeAnimation | null>(null);
-  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const animationTimeoutRef = useRef<number | null>(null);
 
   // Get static dimensions for calculations
   const staticDimensions = useMemo(() => ({

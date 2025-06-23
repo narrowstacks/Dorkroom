@@ -305,9 +305,9 @@ export function CustomRecipeForm({
       filmIso = formData.customFilm.isoSpeed;
     }
 
-    // Update shooting ISO if we have a valid film ISO and it's different from current
-    if (filmIso && filmIso !== formData.shootingIso) {
-      debugLog('[CustomRecipeForm] Auto-updating shooting ISO from', formData.shootingIso, 'to', filmIso);
+    // Update shooting ISO if we have a valid film ISO
+    if (filmIso) {
+      debugLog('[CustomRecipeForm] Auto-updating shooting ISO to', filmIso);
       updateFormData({ shootingIso: filmIso });
     }
   }, [
@@ -315,7 +315,6 @@ export function CustomRecipeForm({
     formData.useExistingFilm,
     formData.selectedFilmId,
     formData.customFilm?.isoSpeed,
-    // Removed formData.shootingIso to prevent auto-reset when user manually changes it
     getFilmById,
     updateFormData
   ]);
