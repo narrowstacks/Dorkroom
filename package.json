@@ -2,6 +2,7 @@
   "name": "dorkroomreact",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "start": "expo start",
     "reset-project": "bun ./scripts/reset-project.js",
@@ -125,6 +126,7 @@
     "jscodeshift": "^0.15.2",
     "lint-staged": "^16.1.2",
     "prettier": "^3.6.0",
+    "prettier-plugin-tailwindcss": "^0.6.13",
     "react-test-renderer": "19.0.0",
     "typescript": "~5.8.3",
     "vercel": "^32.7.2"
