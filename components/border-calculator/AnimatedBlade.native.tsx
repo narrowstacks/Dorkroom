@@ -23,21 +23,26 @@ export const AnimatedBlade = React.memo(({
   containerHeight = 100
 }: AnimatedBladeProps) => {
   
-  // Memoize interpolation to prevent recreation on every render 
-  const transformValue = useMemo(() => 
-    bladePositionValue.interpolate({
+  // Optimized transform that minimizes interpolation overhead
+  const transformValue = useMemo(() => {
+    return bladePositionValue.interpolate({
       inputRange: [0, 100],
-      outputRange: orientation === 'vertical' 
-        ? [0, containerWidth] 
-        : [0, containerHeight]
-    }), 
-    [bladePositionValue, orientation, containerWidth, containerHeight]
-  );
+      outputRange: [0, orientation === 'vertical' ? containerWidth : containerHeight],
+      extrapolate: 'clamp', // Prevent values outside bounds
+    });
+  }, [bladePositionValue, orientation, containerWidth, containerHeight]);
   
   // Memoize common styles to prevent object recreation
   const commonStyle = useMemo(() => ({ 
     position: 'absolute' as const, 
     backgroundColor: borderColor,
+    // Native shadow properties for iOS
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    // Android elevation
+    elevation: 5,
   }), [borderColor]);
   
   // Memoize orientation-specific styles
@@ -60,13 +65,14 @@ export const AnimatedBlade = React.memo(({
   
   // Memoize transform calculation to prevent recalculation on every render
   const transform = useMemo(() => {
+    // Position-specific offset adjustments so blades are adjacent to print area
     const offsetTranslation = position === 'left' 
-      ? [{ translateX: -thickness }] 
+      ? [{ translateX: -thickness }] // Left blade: move left so right edge touches print area left edge
       : position === 'right' 
-        ? [{ translateX: thickness }] 
+        ? [{ translateX: 0 }] // Right blade: no offset so left edge touches print area right edge
         : position === 'top' 
-          ? [{ translateY: -thickness }] 
-          : [{ translateY: thickness }];
+          ? [{ translateY: -thickness }] // Top blade: move up so bottom edge touches print area top edge
+          : [{ translateY: 0 }]; // Bottom blade: no offset so top edge touches print area bottom edge
     
     // Combine position transform with offset transform
     if (orientation === 'vertical') {

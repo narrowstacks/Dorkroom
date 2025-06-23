@@ -26,13 +26,17 @@ export const AnimatedPreview = React.memo(({ calculation, showBlades, borderColo
   }).current;
 
   // Animation control refs for debouncing and cancellation
-  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   
   // Performance tracking for animation mode switching
   const lastUpdateTimeRef = useRef<number>(0);
   const rapidUpdatesCountRef = useRef<number>(0);
   const isInContinuousModeRef = useRef<boolean>(false);
+  
+  // Additional performance refs for throttling
+  const lastRenderTimeRef = useRef<number>(0);
+  const throttleFrameRef = useRef<number | null>(null);
 
   // Get static dimensions for calculations
   const staticDimensions = useMemo(() => ({
@@ -40,43 +44,84 @@ export const AnimatedPreview = React.memo(({ calculation, showBlades, borderColo
     height: calculation?.previewHeight || 0
   }), [calculation?.previewWidth, calculation?.previewHeight]);
 
-  // Memoize expensive transform calculations to prevent recalculation on every render
-  const transformValues = useMemo(() => {
+  // Smart change detection - track individual values instead of entire calculation object
+  const currentValues = useMemo(() => {
     if (!calculation) return null;
     
-    const containerWidth = calculation.previewWidth || 0;
-    const containerHeight = calculation.previewHeight || 0;
+    return {
+      previewWidth: calculation.previewWidth || 0,
+      previewHeight: calculation.previewHeight || 0,
+      printWidthPercent: calculation.printWidthPercent || 0,
+      printHeightPercent: calculation.printHeightPercent || 0,
+      leftBorderPercent: calculation.leftBorderPercent || 0,
+      rightBorderPercent: calculation.rightBorderPercent || 0,
+      topBorderPercent: calculation.topBorderPercent || 0,
+      bottomBorderPercent: calculation.bottomBorderPercent || 0,
+    };
+  }, [calculation]);
+
+  // Cache refs for smart change detection
+  const previousValuesRef = useRef<typeof currentValues>(null);
+  const cachedTransformRef = useRef<any>(null);
+
+  // Only recalculate transform values when meaningful changes occur  
+  const transformValues = useMemo(() => {
+    if (!currentValues) return null;
     
-    // Convert percentage sizes to scale values (0-1 range)
-    const printScaleX = calculation.printWidthPercent / 100;
-    const printScaleY = calculation.printHeightPercent / 100;
+    // Check if any actual values have changed
+    const hasChanged = !previousValuesRef.current || 
+      previousValuesRef.current.previewWidth !== currentValues.previewWidth ||
+      previousValuesRef.current.previewHeight !== currentValues.previewHeight ||
+      previousValuesRef.current.printWidthPercent !== currentValues.printWidthPercent ||
+      previousValuesRef.current.printHeightPercent !== currentValues.printHeightPercent ||
+      previousValuesRef.current.leftBorderPercent !== currentValues.leftBorderPercent ||
+      previousValuesRef.current.rightBorderPercent !== currentValues.rightBorderPercent ||
+      previousValuesRef.current.topBorderPercent !== currentValues.topBorderPercent ||
+      previousValuesRef.current.bottomBorderPercent !== currentValues.bottomBorderPercent;
     
-    // Calculate print area dimensions
-    const printWidth = (calculation.printWidthPercent / 100) * containerWidth;
-    const printHeight = (calculation.printHeightPercent / 100) * containerHeight;
+    // Return cached transform if no changes
+    if (!hasChanged && cachedTransformRef.current) {
+      return cachedTransformRef.current;
+    }
     
-    // Calculate position accounting for scale transform origin (center)
-    const printCenterX = (calculation.leftBorderPercent / 100) * containerWidth + printWidth / 2;
-    const printCenterY = (calculation.topBorderPercent / 100) * containerHeight + printHeight / 2;
+    // Calculate new transform values
+    const containerWidth = currentValues.previewWidth;
+    const containerHeight = currentValues.previewHeight;
     
-    // Translate to position the center of the scaled element
+    const printScaleX = currentValues.printWidthPercent / 100;
+    const printScaleY = currentValues.printHeightPercent / 100;
+    
+    const printWidth = (currentValues.printWidthPercent / 100) * containerWidth;
+    const printHeight = (currentValues.printHeightPercent / 100) * containerHeight;
+    
+    const printCenterX = (currentValues.leftBorderPercent / 100) * containerWidth + printWidth / 2;
+    const printCenterY = (currentValues.topBorderPercent / 100) * containerHeight + printHeight / 2;
+    
     const printTranslateX = printCenterX - containerWidth / 2;
     const printTranslateY = printCenterY - containerHeight / 2;
 
-    return {
+    // Fix blade positioning - right blade position should be inverted from rightBorderPercent
+    // Bottom blade position should be inverted from bottomBorderPercent
+    const result = {
       printTranslateX,
       printTranslateY,
       printScaleX,
       printScaleY,
-      leftBorderPercent: calculation.leftBorderPercent,
-      rightBorderPercent: calculation.rightBorderPercent,
-      topBorderPercent: calculation.topBorderPercent,
-      bottomBorderPercent: calculation.bottomBorderPercent,
+      leftBorderPercent: currentValues.leftBorderPercent,
+      rightBorderPercent: 100 - currentValues.rightBorderPercent, // Invert for correct positioning
+      topBorderPercent: currentValues.topBorderPercent,
+      bottomBorderPercent: 100 - currentValues.bottomBorderPercent, // Invert for correct positioning
     };
-  }, [calculation]);
+    
+    // Update caches
+    previousValuesRef.current = { ...currentValues };
+    cachedTransformRef.current = result;
+    
+    return result;
+  }, [currentValues]);
 
-  // Intelligent animation function that switches modes based on input frequency
-  const animateToValues = useCallback((values: NonNullable<typeof transformValues>, immediate = false) => {
+  // High-performance update function that bypasses animations during continuous input
+  const updateValues = useCallback((values: NonNullable<typeof transformValues>, immediate = false) => {
     const now = Date.now();
     const timeSinceLastUpdate = now - lastUpdateTimeRef.current;
     
@@ -96,54 +141,81 @@ export const AnimatedPreview = React.memo(({ calculation, showBlades, borderColo
     
     lastUpdateTimeRef.current = now;
 
-    // Cancel previous animation and timeout
+    // Cancel previous animation, timeout, and throttled frame
     if (currentAnimationRef.current) {
       currentAnimationRef.current.stop();
     }
     if (animationTimeoutRef.current) {
       clearTimeout(animationTimeoutRef.current);
     }
+    if (throttleFrameRef.current) {
+      cancelAnimationFrame(throttleFrameRef.current);
+    }
 
-    const executeAnimation = () => {
-      // Continuous mode: use minimal or no animation for performance
-      // Discrete mode: use smooth animations for better UX
+    const executeUpdate = () => {
       const isInContinuousMode = isInContinuousModeRef.current;
-      const nativeAnimationConfig = { 
-        duration: immediate ? 0 : (isInContinuousMode ? 16 : 100), // Very fast in continuous mode
-        useNativeDriver: true 
-      };
       
-      currentAnimationRef.current = Animated.parallel([
-        // Transform-based positioning and scaling (all native driver compatible)
-        Animated.timing(animatedValues.printTranslateX, { toValue: values.printTranslateX, ...nativeAnimationConfig }),
-        Animated.timing(animatedValues.printTranslateY, { toValue: values.printTranslateY, ...nativeAnimationConfig }),
-        Animated.timing(animatedValues.printScaleX, { toValue: values.printScaleX, ...nativeAnimationConfig }),
-        Animated.timing(animatedValues.printScaleY, { toValue: values.printScaleY, ...nativeAnimationConfig }),
+      if (immediate || isInContinuousMode) {
+        // PERFORMANCE MODE: Use direct value updates - no animations, no JS thread overhead
+        animatedValues.printTranslateX.setValue(values.printTranslateX);
+        animatedValues.printTranslateY.setValue(values.printTranslateY);
+        animatedValues.printScaleX.setValue(values.printScaleX);
+        animatedValues.printScaleY.setValue(values.printScaleY);
+        animatedValues.leftBladePosition.setValue(values.leftBorderPercent);
+        animatedValues.rightBladePosition.setValue(values.rightBorderPercent);
+        animatedValues.topBladePosition.setValue(values.topBorderPercent);
+        animatedValues.bottomBladePosition.setValue(values.bottomBorderPercent);
+      } else {
+        // SMOOTH MODE: Use animations for discrete changes
+        const nativeAnimationConfig = { 
+          duration: 100, 
+          useNativeDriver: true 
+        };
         
-        // Blade positions (native driver compatible) 
-        Animated.timing(animatedValues.leftBladePosition, { toValue: values.leftBorderPercent, ...nativeAnimationConfig }),
-        Animated.timing(animatedValues.rightBladePosition, { toValue: values.rightBorderPercent, ...nativeAnimationConfig }),
-        Animated.timing(animatedValues.topBladePosition, { toValue: values.topBorderPercent, ...nativeAnimationConfig }),
-        Animated.timing(animatedValues.bottomBladePosition, { toValue: values.bottomBorderPercent, ...nativeAnimationConfig }),
-      ]);
-      
-      currentAnimationRef.current.start();
+        currentAnimationRef.current = Animated.parallel([
+          Animated.timing(animatedValues.printTranslateX, { toValue: values.printTranslateX, ...nativeAnimationConfig }),
+          Animated.timing(animatedValues.printTranslateY, { toValue: values.printTranslateY, ...nativeAnimationConfig }),
+          Animated.timing(animatedValues.printScaleX, { toValue: values.printScaleX, ...nativeAnimationConfig }),
+          Animated.timing(animatedValues.printScaleY, { toValue: values.printScaleY, ...nativeAnimationConfig }),
+          Animated.timing(animatedValues.leftBladePosition, { toValue: values.leftBorderPercent, ...nativeAnimationConfig }),
+          Animated.timing(animatedValues.rightBladePosition, { toValue: values.rightBorderPercent, ...nativeAnimationConfig }),
+          Animated.timing(animatedValues.topBladePosition, { toValue: values.topBorderPercent, ...nativeAnimationConfig }),
+          Animated.timing(animatedValues.bottomBladePosition, { toValue: values.bottomBorderPercent, ...nativeAnimationConfig }),
+        ]);
+        
+        currentAnimationRef.current.start();
+      }
     };
 
     if (immediate) {
-      executeAnimation();
+      executeUpdate();
+    } else if (isInContinuousModeRef.current) {
+      // PERFORMANCE THROTTLING: Limit updates to 60fps during continuous mode
+      const now = performance.now();
+      if (now - lastRenderTimeRef.current >= 16.67) { // ~60fps
+        lastRenderTimeRef.current = now;
+        executeUpdate();
+      } else {
+        // Cancel previous throttled frame
+        if (throttleFrameRef.current) {
+          cancelAnimationFrame(throttleFrameRef.current);
+        }
+        // Schedule for next available frame
+        throttleFrameRef.current = requestAnimationFrame(() => {
+          lastRenderTimeRef.current = performance.now();
+          executeUpdate();
+        });
+      }
     } else {
-      // In continuous mode, use minimal debouncing to maintain responsiveness
-      // In discrete mode, use normal debouncing for smoothness
-      const debounceTime = isInContinuousModeRef.current ? 8 : 16;
-      animationTimeoutRef.current = setTimeout(executeAnimation, debounceTime);
+      // Minimal debouncing for discrete changes only
+      animationTimeoutRef.current = setTimeout(executeUpdate, 8);
     }
   }, [animatedValues]);
 
   useEffect(() => {
     if (!transformValues) return;
-    animateToValues(transformValues);
-  }, [transformValues, animateToValues]);
+    updateValues(transformValues);
+  }, [transformValues, updateValues]);
 
   useEffect(() => {
     Animated.timing(animatedValues.bladeOpacity, { 
@@ -161,6 +233,9 @@ export const AnimatedPreview = React.memo(({ calculation, showBlades, borderColo
       }
       if (animationTimeoutRef.current) {
         clearTimeout(animationTimeoutRef.current);
+      }
+      if (throttleFrameRef.current) {
+        cancelAnimationFrame(throttleFrameRef.current);
       }
     };
   }, []);
