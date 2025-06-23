@@ -41,58 +41,40 @@ export const useGeometryCalculations = (
 ) => {
   const { width: winW, height: winH } = useWindowDimensions();
   
-  // Calculation caches to prevent redundant work
-  const printSizeCache = React.useRef(new Map<string, PrintSize>());
-  const borderCache = React.useRef(new Map<string, Borders>());
-
-  // Preview scale calculation
+  // Optimized preview scale calculation with better caching
   const previewScale = useMemo(() => {
     const { w, h } = orientedDimensions.orientedPaper;
     if (!w || !h) return 1;
-    const maxW = Math.min(winW * 0.9, 400);
-    const maxH = Math.min(winH * 0.5, 400);
-    return Math.min(maxW / w, maxH / h);
-  }, [orientedDimensions.orientedPaper, winW, winH]);
+    
+    // Use more efficient calculations
+    const maxW = winW > 444 ? 400 : winW * 0.9; // Avoid Math.min for common case
+    const maxH = winH > 800 ? 400 : winH * 0.5;
+    
+    const scaleW = maxW / w;
+    const scaleH = maxH / h;
+    
+    return scaleW < scaleH ? scaleW : scaleH; // More efficient than Math.min
+  }, [orientedDimensions.orientedPaper.w, orientedDimensions.orientedPaper.h, winW, winH]);
 
-  // Print size calculation with performance logging and deduplication
+  // Optimized print size calculation with simpler memoization
   const printSize = useMemo((): PrintSize => {
-    const cacheKey = JSON.stringify([orientedDimensions, minBorderData]);
-    const cached = printSizeCache.current.get(cacheKey);
-    if (cached) {
-      debugLogPerformance('Border Calculator - Print Size Cache Hit', {
-        calculation: 'printSize',
-        cacheKey: cacheKey.substring(0, 50) + '...',
-        timestamp: new Date().toISOString()
-      });
-      return cached;
-    }
-
-    const startTime = debugLogTiming('Border Calculator - Print Size Calculation');
     const { orientedPaper, orientedRatio } = orientedDimensions;
     const { minBorder } = minBorderData;
 
-    const result = computePrintSize(
+    return computePrintSize(
       orientedPaper.w,
       orientedPaper.h,
       orientedRatio.w,
       orientedRatio.h,
       minBorder,
     );
-
-    printSizeCache.current.set(cacheKey, result);
-    
-    debugLogPerformance('Border Calculator - Print Size Computed', {
-      calculation: 'printSize',
-      paperDimensions: orientedPaper,
-      ratioDimensions: orientedRatio,
-      minBorder,
-      resultDimensions: { printW: result.printW, printH: result.printH },
-      timestamp: new Date().toISOString()
-    });
-
-    if (startTime) debugLogTiming('Border Calculator - Print Size Calculation', startTime);
-    return result;
-  }, [orientedDimensions, minBorderData]);
+  }, [
+    orientedDimensions.orientedPaper.w,
+    orientedDimensions.orientedPaper.h,
+    orientedDimensions.orientedRatio.w,
+    orientedDimensions.orientedRatio.h,
+    minBorderData.minBorder
+  ]);
 
   // Offset calculations
   const offsetData = useMemo((): OffsetData => {
@@ -112,35 +94,11 @@ export const useGeometryCalculations = (
     );
   }, [orientedDimensions, minBorderData, printSize, state.enableOffset, state.horizontalOffset, state.verticalOffset, state.ignoreMinBorder]);
 
-  // Border calculations with performance logging and caching
+  // Optimized border calculations without heavy caching overhead
   const borders = useMemo((): Borders => {
-    const cacheKey = JSON.stringify(offsetData);
-    const cached = borderCache.current.get(cacheKey);
-    if (cached) {
-      debugLogPerformance('Border Calculator - Border Cache Hit', {
-        calculation: 'borders',
-        cacheKey: cacheKey.substring(0, 50) + '...',
-        timestamp: new Date().toISOString()
-      });
-      return cached;
-    }
-
-    const startTime = debugLogTiming('Border Calculator - Border Calculation');
     const { halfW, halfH, h: offH, v: offV } = offsetData;
-    const result = bordersFromGaps(halfW, halfH, offH, offV);
-    
-    borderCache.current.set(cacheKey, result);
-    
-    debugLogPerformance('Border Calculator - Borders Computed', {
-      calculation: 'borders',
-      offsetData: { halfW, halfH, offH, offV },
-      resultBorders: result,
-      timestamp: new Date().toISOString()
-    });
-
-    if (startTime) debugLogTiming('Border Calculator - Border Calculation', startTime);
-    return result;
-  }, [offsetData]);
+    return bordersFromGaps(halfW, halfH, offH, offV);
+  }, [offsetData.halfW, offsetData.halfH, offsetData.h, offsetData.v]);
 
   // Easel fitting calculations
   const easelData = useMemo((): EaselData => {
@@ -190,16 +148,25 @@ export const useGeometryCalculations = (
     return { blades, bladeWarning };
   }, [printSize, offsetData, paperShift]);
 
-  // Final calculation assembly with performance logging
+  // Optimized final calculation assembly with reduced overhead
   const calculation = useMemo(() => {
-    const startTime = debugLogTiming('Border Calculator - Final Assembly');
     const { orientedPaper } = orientedDimensions;
     const { printW, printH } = printSize;
     const { h: offH, v: offV, warning: offsetWarning } = offsetData;
     const { easelSize, isNonStandardPaperSize } = easelData;
     const { blades, bladeWarning } = bladeData;
+    
+    // Cache paper dimensions to avoid repeated property access
+    const paperW = orientedPaper.w;
+    const paperH = orientedPaper.h;
+    const invPaperW = paperW ? 100 / paperW : 0; // Pre-calculate inverse for efficiency
+    const invPaperH = paperH ? 100 / paperH : 0;
+    
+    // Calculate preview dimensions once
+    const previewW = paperW * previewScale;
+    const previewH = paperH * previewScale;
 
-    const result = {
+    return {
       leftBorder: borders.left,
       rightBorder: borders.right,
       topBorder: borders.top,
@@ -207,27 +174,27 @@ export const useGeometryCalculations = (
 
       printWidth: printW,
       printHeight: printH,
-      paperWidth: orientedPaper.w,
-      paperHeight: orientedPaper.h,
+      paperWidth: paperW,
+      paperHeight: paperH,
 
-      printWidthPercent: orientedPaper.w ? (printW / orientedPaper.w) * 100 : 0,
-      printHeightPercent: orientedPaper.h ? (printH / orientedPaper.h) * 100 : 0,
-      leftBorderPercent: orientedPaper.w ? (borders.left / orientedPaper.w) * 100 : 0,
-      rightBorderPercent: orientedPaper.w ? (borders.right / orientedPaper.w) * 100 : 0,
-      topBorderPercent: orientedPaper.h ? (borders.top / orientedPaper.h) * 100 : 0,
-      bottomBorderPercent: orientedPaper.h ? (borders.bottom / orientedPaper.h) * 100 : 0,
+      printWidthPercent: printW * invPaperW,
+      printHeightPercent: printH * invPaperH,
+      leftBorderPercent: borders.left * invPaperW,
+      rightBorderPercent: borders.right * invPaperW,
+      topBorderPercent: borders.top * invPaperH,
+      bottomBorderPercent: borders.bottom * invPaperH,
 
       leftBladeReading: blades.left,
       rightBladeReading: blades.right,
       topBladeReading: blades.top,
       bottomBladeReading: blades.bottom,
-      bladeThickness: calculateBladeThickness(orientedPaper.w, orientedPaper.h),
+      bladeThickness: calculateBladeThickness(paperW, paperH),
 
       isNonStandardPaperSize: isNonStandardPaperSize && !paperSizeWarning,
 
       easelSize,
       easelSizeLabel:
-        (EASEL_SIZE_MAP[`${easelSize.width}×${easelSize.height}`]?.label) ??
+        EASEL_SIZE_MAP[`${easelSize.width}×${easelSize.height}`]?.label ??
         `${easelSize.width}×${easelSize.height}`,
 
       // Additional calculation data for warnings and offsets
@@ -242,34 +209,28 @@ export const useGeometryCalculations = (
       clampedVerticalOffset: offV,
 
       previewScale,
-      previewWidth: orientedPaper.w * previewScale,
-      previewHeight: orientedPaper.h * previewScale,
+      previewWidth: previewW,
+      previewHeight: previewH,
     };
-
-    debugLogPerformance('Border Calculator - Final Assembly Complete', {
-      calculation: 'finalAssembly',
-      printDimensions: { printW, printH },
-      paperDimensions: orientedPaper,
-      borders: borders,
-      bladeReadings: blades,
-      hasWarnings: !!(offsetWarning || bladeWarning || minBorderData.minBorderWarning || paperSizeWarning),
-      previewDimensions: {
-        width: orientedPaper.w * previewScale,
-        height: orientedPaper.h * previewScale
-      },
-      timestamp: new Date().toISOString()
-    });
-
-    if (startTime) debugLogTiming('Border Calculator - Final Assembly', startTime);
-    return result;
   }, [
-    orientedDimensions,
-    printSize,
-    offsetData,
-    easelData,
-    bladeData,
-    borders,
-    minBorderData,
+    orientedDimensions.orientedPaper.w,
+    orientedDimensions.orientedPaper.h,
+    printSize.printW,
+    printSize.printH,
+    offsetData.h,
+    offsetData.v,
+    offsetData.warning,
+    easelData.easelSize,
+    easelData.isNonStandardPaperSize,
+    bladeData.blades,
+    bladeData.bladeWarning,
+    borders.left,
+    borders.right,
+    borders.top,
+    borders.bottom,
+    minBorderData.minBorder,
+    minBorderData.minBorderWarning,
+    minBorderData.lastValid,
     paperSizeWarning,
     previewScale,
     state.minBorder,

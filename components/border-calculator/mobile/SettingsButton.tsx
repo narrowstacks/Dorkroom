@@ -41,33 +41,68 @@ export const SettingsButton: React.FC<SettingsButtonProps> = ({
           justifyContent: 'center',
         }}
       >
-        <HStack style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-          <HStack space="sm" style={{ alignItems: 'center', flex: 1 }}>
-            {IconComponent && (
-              <IconComponent 
-                size={20} 
-                color={tintColor} 
-              />
+        <HStack style={{ justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          {/* Left side - Icon */}
+          {IconComponent && (
+            <IconComponent 
+              size={20} 
+              color={tintColor} 
+              style={{ marginRight: 12 }}
+            />
+          )}
+          
+          {/* Center - Label and Value */}
+          <HStack style={{ 
+            flex: 1, 
+            paddingHorizontal: centerLabel ? 0 : 8,
+            justifyContent: centerLabel ? 'center' : 'space-between',
+            alignItems: 'center'
+          }}>
+            {label && (
+              <Text 
+                style={{ 
+                  fontSize: 16, 
+                  fontWeight: '500', 
+                  color: textColor, 
+                  textAlign: centerLabel ? 'center' : 'left',
+                  lineHeight: 20,
+                  flex: centerLabel ? 1 : 1,
+                  flexShrink: 1,
+                }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {label}
+              </Text>
             )}
-            <Text style={{ fontSize: 16, fontWeight: '500', color: textColor, textAlign: centerLabel ? 'center' : 'left', flex: centerLabel ? 1 : 0 }}>
-              {label}
-            </Text>
+            {value && !centerLabel && (
+              <Text 
+                style={{ 
+                  fontSize: 14, 
+                  color: tintColor, 
+                  fontWeight: '500',
+                  textAlign: 'right',
+                  lineHeight: 16,
+                  marginLeft: 8,
+                  flexShrink: 0,
+                  minWidth: 60,
+                }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {value}
+              </Text>
+            )}
           </HStack>
           
-          <HStack space="sm" style={{ alignItems: 'center' }}>
-            <Text 
-              style={{ 
-                fontSize: 14, 
-                color: tintColor, 
-                fontWeight: '500',
-                maxWidth: 120,
-              }}
-              numberOfLines={1}
-            >
-              {value}
-            </Text>
-            {showChevron && <ChevronRight size={20} color={tintColor} />}
-          </HStack>
+          {/* Right side - Chevron */}
+          {showChevron && (
+            <ChevronRight 
+              size={20} 
+              color={tintColor} 
+              style={{ marginLeft: 12 }}
+            />
+          )}
         </HStack>
       </Box>
     </TouchableOpacity>

@@ -9,8 +9,8 @@ interface AnimatedPreviewProps {
 }
 
 export const AnimatedPreview = React.memo(({ calculation, showBlades, borderColor }: AnimatedPreviewProps) => {
-  // Separate animated values: layout properties use different values than opacity
-  const layoutAnimatedValues = useRef({
+  // Simplified animated values structure
+  const animatedValues = useRef({
     previewWidth: new Animated.Value(calculation?.previewWidth || 0),
     previewHeight: new Animated.Value(calculation?.previewHeight || 0),
     printLeft: new Animated.Value(calculation?.leftBorderPercent || 0),
@@ -21,50 +21,56 @@ export const AnimatedPreview = React.memo(({ calculation, showBlades, borderColo
     rightBladePosition: new Animated.Value(calculation?.rightBorderPercent || 0),
     topBladePosition: new Animated.Value(calculation?.topBorderPercent || 0),
     bottomBladePosition: new Animated.Value(calculation?.bottomBorderPercent || 0),
+    bladeOpacity: new Animated.Value(showBlades ? 1 : 0),
   }).current;
 
-  // Separate animated value for opacity that can use native driver
-  const opacityAnimatedValue = useRef(new Animated.Value(showBlades ? 1 : 0)).current;
+  // Animation control
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
     if (!calculation) return;
     
-    // All layout animations must use native driver false (width, height, position properties)
-    const layoutAnimationConfig = { duration: 100, useNativeDriver: false };
+    // Cancel any running animation
+    if (animationRef.current) {
+      animationRef.current.stop();
+    }
     
-    Animated.parallel([
-      // Size animations - must use native driver false for width/height
-      Animated.timing(layoutAnimatedValues.previewWidth, { toValue: calculation.previewWidth, ...layoutAnimationConfig }),
-      Animated.timing(layoutAnimatedValues.previewHeight, { toValue: calculation.previewHeight, ...layoutAnimationConfig }),
+    // Unified animation configuration
+    const animationConfig = { duration: 150, useNativeDriver: false };
+    
+    animationRef.current = Animated.parallel([
+      // Size and position animations
+      Animated.timing(animatedValues.previewWidth, { toValue: calculation.previewWidth, ...animationConfig }),
+      Animated.timing(animatedValues.previewHeight, { toValue: calculation.previewHeight, ...animationConfig }),
+      Animated.timing(animatedValues.printLeft, { toValue: calculation.leftBorderPercent, ...animationConfig }),
+      Animated.timing(animatedValues.printTop, { toValue: calculation.topBorderPercent, ...animationConfig }),
+      Animated.timing(animatedValues.printWidth, { toValue: calculation.printWidthPercent, ...animationConfig }),
+      Animated.timing(animatedValues.printHeight, { toValue: calculation.printHeightPercent, ...animationConfig }),
       
-      // Layout animations - must use native driver false for interpolated position values
-      Animated.timing(layoutAnimatedValues.printLeft, { toValue: calculation.leftBorderPercent, ...layoutAnimationConfig }),
-      Animated.timing(layoutAnimatedValues.printTop, { toValue: calculation.topBorderPercent, ...layoutAnimationConfig }),
-      Animated.timing(layoutAnimatedValues.printWidth, { toValue: calculation.printWidthPercent, ...layoutAnimationConfig }),
-      Animated.timing(layoutAnimatedValues.printHeight, { toValue: calculation.printHeightPercent, ...layoutAnimationConfig }),
-      
-      // Blade position animations - must use native driver false for interpolated values
-      Animated.timing(layoutAnimatedValues.leftBladePosition, { toValue: calculation.leftBorderPercent, ...layoutAnimationConfig }),
-      Animated.timing(layoutAnimatedValues.rightBladePosition, { toValue: calculation.rightBorderPercent, ...layoutAnimationConfig }),
-      Animated.timing(layoutAnimatedValues.topBladePosition, { toValue: calculation.topBorderPercent, ...layoutAnimationConfig }),
-      Animated.timing(layoutAnimatedValues.bottomBladePosition, { toValue: calculation.bottomBorderPercent, ...layoutAnimationConfig }),
-    ]).start();
-  }, [calculation]); // eslint-disable-line react-hooks/exhaustive-deps
+      // Blade position animations
+      Animated.timing(animatedValues.leftBladePosition, { toValue: calculation.leftBorderPercent, ...animationConfig }),
+      Animated.timing(animatedValues.rightBladePosition, { toValue: calculation.rightBorderPercent, ...animationConfig }),
+      Animated.timing(animatedValues.topBladePosition, { toValue: calculation.topBorderPercent, ...animationConfig }),
+      Animated.timing(animatedValues.bottomBladePosition, { toValue: calculation.bottomBorderPercent, ...animationConfig }),
+    ]);
+    
+    animationRef.current.start();
+  }, [calculation, animatedValues]);
 
   useEffect(() => {
-    Animated.timing(opacityAnimatedValue, { 
+    Animated.timing(animatedValues.bladeOpacity, { 
       toValue: showBlades ? 1 : 0, 
-      duration: 100, 
-      useNativeDriver: true // Opacity can use native driver since it's separate
+      duration: 150, 
+      useNativeDriver: false // Consistent with other animations
     }).start();
-  }, [showBlades, opacityAnimatedValue]);
+  }, [showBlades, animatedValues.bladeOpacity]);
 
-  // Memoize blade props to prevent recreation on every render
+  // Memoized blade props
   const bladeProps = useMemo(() => ({ 
-    opacity: opacityAnimatedValue, 
+    opacity: animatedValues.bladeOpacity, 
     thickness: calculation?.bladeThickness, 
     borderColor 
-  }), [opacityAnimatedValue, calculation?.bladeThickness, borderColor]);
+  }), [animatedValues.bladeOpacity, calculation?.bladeThickness, borderColor]);
 
   if (!calculation) return null;
 
@@ -73,8 +79,8 @@ export const AnimatedPreview = React.memo(({ calculation, showBlades, borderColo
       position: 'relative', 
       backgroundColor: 'transparent', 
       overflow: 'hidden', 
-      width: layoutAnimatedValues.previewWidth, 
-      height: layoutAnimatedValues.previewHeight, 
+      width: animatedValues.previewWidth, 
+      height: animatedValues.previewHeight, 
       borderColor 
     }}>
       <Animated.View style={{ 
@@ -89,19 +95,19 @@ export const AnimatedPreview = React.memo(({ calculation, showBlades, borderColo
         <Animated.View style={{ 
           position: 'absolute', 
           backgroundColor: 'grey', 
-          left: layoutAnimatedValues.printLeft.interpolate({ 
+          left: animatedValues.printLeft.interpolate({ 
             inputRange: [0, 100], 
             outputRange: ['0%', '100%'] 
           }), 
-          top: layoutAnimatedValues.printTop.interpolate({ 
+          top: animatedValues.printTop.interpolate({ 
             inputRange: [0, 100], 
             outputRange: ['0%', '100%'] 
           }), 
-          width: layoutAnimatedValues.printWidth.interpolate({ 
+          width: animatedValues.printWidth.interpolate({ 
             inputRange: [0, 100], 
             outputRange: ['0%', '100%'] 
           }), 
-          height: layoutAnimatedValues.printHeight.interpolate({ 
+          height: animatedValues.printHeight.interpolate({ 
             inputRange: [0, 100], 
             outputRange: ['0%', '100%'] 
           }), 
@@ -109,25 +115,25 @@ export const AnimatedPreview = React.memo(({ calculation, showBlades, borderColo
         <AnimatedBlade 
           orientation="vertical" 
           position="left" 
-          bladePositionValue={layoutAnimatedValues.leftBladePosition} 
+          bladePositionValue={animatedValues.leftBladePosition} 
           {...bladeProps} 
         />
         <AnimatedBlade 
           orientation="vertical" 
           position="right" 
-          bladePositionValue={layoutAnimatedValues.rightBladePosition} 
+          bladePositionValue={animatedValues.rightBladePosition} 
           {...bladeProps} 
         />
         <AnimatedBlade 
           orientation="horizontal" 
           position="top" 
-          bladePositionValue={layoutAnimatedValues.topBladePosition} 
+          bladePositionValue={animatedValues.topBladePosition} 
           {...bladeProps} 
         />
         <AnimatedBlade 
           orientation="horizontal" 
           position="bottom" 
-          bladePositionValue={layoutAnimatedValues.bottomBladePosition} 
+          bladePositionValue={animatedValues.bottomBladePosition} 
           {...bladeProps} 
         />
       </Animated.View>

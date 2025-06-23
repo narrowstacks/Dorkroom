@@ -20,8 +20,31 @@ export const useSharedPresetLoader = () => {
         } else {
           // Native: If no fragment, parse as a deep link.
           const parsedUrl = Linking.parse(url);
-          if (parsedUrl.scheme === 'dorkroom' && parsedUrl.path?.startsWith('border/s/')) {
-            encodedData = parsedUrl.path.substring('border/s/'.length);
+          
+          // Handle custom app scheme (production)
+          if (parsedUrl.scheme === 'dorkroom' && parsedUrl.path?.startsWith('border')) {
+            // Check for query parameter first
+            if (parsedUrl.queryParams?.preset) {
+              encodedData = parsedUrl.queryParams.preset as string;
+            }
+            // Fallback to old path-based format for backwards compatibility
+            else if (parsedUrl.path?.startsWith('border/s/')) {
+              encodedData = parsedUrl.path.substring('border/s/'.length);
+            }
+          }
+          // Handle Expo Go development scheme
+          else if (parsedUrl.scheme === 'exp' && parsedUrl.path?.includes('/--/border')) {
+            // Check for query parameter first
+            if (parsedUrl.queryParams?.preset) {
+              encodedData = parsedUrl.queryParams.preset as string;
+            }
+            // Fallback to old path-based format for backwards compatibility
+            else {
+              const pathMatch = parsedUrl.path.match(/\/--\/border\/s\/(.+)$/);
+              if (pathMatch) {
+                encodedData = pathMatch[1];
+              }
+            }
           }
         }
 

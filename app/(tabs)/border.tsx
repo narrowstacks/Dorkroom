@@ -43,6 +43,8 @@ import * as Clipboard from 'expo-clipboard';
 import { encodePreset } from '@/utils/presetSharing';
 import { useSharedPresetLoader } from '@/hooks/useSharedPresetLoader';
 import { generateSharingUrls } from '@/utils/urlHelpers';
+import { useAppDetection } from '@/hooks/useAppDetection';
+import { AppBanner } from '@/components/ui/feedback/AppBanner';
 
 import {
   Box,
@@ -86,6 +88,9 @@ export default function BorderCalculator() {
   const { presets, addPreset, updatePreset, removePreset } = useBorderPresets();
   const loadedPresetFromUrl = useSharedPresetLoader();
   const toast = useToast();
+  const { showAppBanner, openInApp, dismissBanner, appMessage } = useAppDetection({ 
+    hasSharedContent: !!loadedPresetFromUrl 
+  });
 
   const [selectedPresetId, setSelectedPresetId] = React.useState('');
   const [presetName, setPresetName] = React.useState('');
@@ -93,7 +98,18 @@ export default function BorderCalculator() {
   const [isShareModalVisible, setShareModalVisible] = React.useState(false);
   const loadedPresetRef = React.useRef<BorderPreset | null>(null);
 
-  const currentSettings = React.useMemo(() => ({ aspectRatio, paperSize, customAspectWidth, customAspectHeight, customPaperWidth, customPaperHeight, minBorder, enableOffset, ignoreMinBorder, horizontalOffset, verticalOffset, showBlades, isLandscape, isRatioFlipped }), [aspectRatio, paperSize, customAspectWidth, customAspectHeight, customPaperWidth, customPaperHeight, minBorder, enableOffset, ignoreMinBorder, horizontalOffset, verticalOffset, showBlades, isLandscape, isRatioFlipped]);
+  // Optimized settings memoization - avoid object recreation
+  const currentSettings = React.useMemo(() => ({ 
+    aspectRatio, paperSize, customAspectWidth, customAspectHeight, 
+    customPaperWidth, customPaperHeight, minBorder, enableOffset, 
+    ignoreMinBorder, horizontalOffset, verticalOffset, showBlades, 
+    isLandscape, isRatioFlipped 
+  }), [
+    aspectRatio, paperSize, customAspectWidth, customAspectHeight, 
+    customPaperWidth, customPaperHeight, minBorder, enableOffset, 
+    ignoreMinBorder, horizontalOffset, verticalOffset, showBlades, 
+    isLandscape, isRatioFlipped
+  ]);
   const presetDirty = React.useMemo(() => loadedPresetRef.current && JSON.stringify(loadedPresetRef.current.settings) !== JSON.stringify(currentSettings), [currentSettings]);
 
   React.useEffect(() => {
@@ -134,7 +150,12 @@ export default function BorderCalculator() {
     }
   }, [loadedPresetFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const presetItems = [...presets.map(p => ({ label: p.name, value: p.id })), { label: '────────', value: '__divider__' }, ...DEFAULT_BORDER_PRESETS.map(p => ({ label: p.name, value: p.id }))];
+  // Memoized preset items to avoid recreation on every render
+  const presetItems = React.useMemo(() => [
+    ...presets.map(p => ({ label: p.name, value: p.id })), 
+    { label: '────────', value: '__divider__' }, 
+    ...DEFAULT_BORDER_PRESETS.map(p => ({ label: p.name, value: p.id }))
+  ], [presets]);
 
   const handleSelectPreset = (id: string) => {
     if (id === '__divider__') return;
@@ -226,13 +247,39 @@ export default function BorderCalculator() {
     sharePreset(newPreset);
   };
 
+  const handleOpenInApp = async () => {
+    if (loadedPresetFromUrl) {
+      const encoded = encodePreset(loadedPresetFromUrl);
+      if (encoded) {
+        const { nativeUrl } = generateSharingUrls(encoded);
+        await openInApp(nativeUrl);
+      }
+    }
+  };
+
   // Use mobile layout for mobile devices
   if (shouldUseMobileLayout) {
-    return <MobileBorderCalculator />;
+    return (
+      <>
+        <AppBanner 
+          isVisible={showAppBanner}
+          message={appMessage}
+          onOpenApp={handleOpenInApp}
+          onDismiss={dismissBanner}
+        />
+        <MobileBorderCalculator />
+      </>
+    );
   }
 
   return (
     <ScrollView sx={{ flex: 1, bg: backgroundColor }} contentContainerStyle={{ flexGrow: 1, paddingBottom: Platform.OS === 'ios' || Platform.OS === 'android' ? 100 : 80 }}>
+      <AppBanner 
+        isVisible={showAppBanner}
+        message={appMessage}
+        onOpenApp={handleOpenInApp}
+        onDismiss={dismissBanner}
+      />
       <Modal isOpen={isShareModalVisible} onClose={() => setShareModalVisible(false)}>
         <ModalBackdrop />
         <ModalContent>

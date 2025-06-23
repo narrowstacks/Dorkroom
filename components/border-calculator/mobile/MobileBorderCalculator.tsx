@@ -17,6 +17,7 @@ import {
   CompactPreview, 
   SettingsButton,
 } from './index';
+import { ShareModal } from './ShareModal';
 
 // Inline sections instead of modals
 import {
@@ -43,9 +44,15 @@ import {
 import { useBorderCalculator, useBorderPresets } from '@/hooks/borderCalculator';
 import type { BorderPreset } from '@/types/borderPresetTypes';
 
+// Debug helper (dev only)
+if (__DEV__) {
+  import('@/utils/deepLinkDebug');
+}
+
 // Active section type
 type ActiveSection = 'paperSize' | 'borderSize' | 'positionOffsets' | 'presets';
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface MobileBorderCalculatorProps {}
 
 export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () => {
@@ -58,6 +65,9 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<ActiveSection>('paperSize');
   const [currentPreset, setCurrentPreset] = useState<BorderPreset | null>(null);
+  
+  // Share modal state
+  const [isShareModalVisible, setIsShareModalVisible] = useState(false);
 
   // Border calculator hooks
   const {
@@ -81,11 +91,17 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
     applyPreset 
   } = useBorderCalculator();
 
-  const { presets, addPreset, removePreset } = useBorderPresets();
+  const { presets, addPreset, updatePreset, removePreset } = useBorderPresets();
 
-  // Optimized settings comparison - memoize current settings and use shallow comparison
+  // Optimized settings comparison using more efficient approach
   const currentSettingsHash = useMemo(() => {
-    return `${aspectRatio}-${paperSize}-${customAspectWidth}-${customAspectHeight}-${customPaperWidth}-${customPaperHeight}-${minBorder}-${enableOffset}-${ignoreMinBorder}-${horizontalOffset}-${verticalOffset}-${showBlades}-${isLandscape}-${isRatioFlipped}`;
+    // Use array join for better performance than string template
+    return [
+      aspectRatio, paperSize, customAspectWidth, customAspectHeight,
+      customPaperWidth, customPaperHeight, minBorder, enableOffset,
+      ignoreMinBorder, horizontalOffset, verticalOffset, showBlades,
+      isLandscape, isRatioFlipped
+    ].join('|');
   }, [
     aspectRatio, paperSize, customAspectWidth, customAspectHeight,
     customPaperWidth, customPaperHeight, minBorder, enableOffset,
@@ -96,7 +112,12 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
   const presetSettingsHash = useMemo(() => {
     if (!currentPreset) return null;
     const settings = currentPreset.settings;
-    return `${settings.aspectRatio}-${settings.paperSize}-${settings.customAspectWidth}-${settings.customAspectHeight}-${settings.customPaperWidth}-${settings.customPaperHeight}-${settings.minBorder}-${settings.enableOffset}-${settings.ignoreMinBorder}-${settings.horizontalOffset}-${settings.verticalOffset}-${settings.showBlades}-${settings.isLandscape}-${settings.isRatioFlipped}`;
+    return [
+      settings.aspectRatio, settings.paperSize, settings.customAspectWidth, settings.customAspectHeight,
+      settings.customPaperWidth, settings.customPaperHeight, settings.minBorder, settings.enableOffset,
+      settings.ignoreMinBorder, settings.horizontalOffset, settings.verticalOffset, settings.showBlades,
+      settings.isLandscape, settings.isRatioFlipped
+    ].join('|');
   }, [currentPreset]);
 
   // Reset current preset when settings change (much faster than deep object comparison)
@@ -135,8 +156,27 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
 
   const presetsDisplayValue = useMemo(() => {
     if (!currentPreset) return 'Presets';
-    return currentPreset.name.length > 10 ? currentPreset.name : `Preset: ${currentPreset.name}`;
+    return currentPreset.name.length > 10 ? currentPreset.name : `${currentPreset.name}`;
   }, [currentPreset]);
+
+  // Current settings for sharing
+  const currentSettings = useMemo(() => ({
+    aspectRatio, paperSize, 
+    customAspectWidth: parseFloat(String(customAspectWidth)) || 0,
+    customAspectHeight: parseFloat(String(customAspectHeight)) || 0,
+    customPaperWidth: parseFloat(String(customPaperWidth)) || 0,
+    customPaperHeight: parseFloat(String(customPaperHeight)) || 0,
+    minBorder: parseFloat(String(minBorder)) || 0,
+    enableOffset, ignoreMinBorder,
+    horizontalOffset: parseFloat(String(horizontalOffset)) || 0,
+    verticalOffset: parseFloat(String(verticalOffset)) || 0,
+    showBlades, isLandscape, isRatioFlipped,
+  }), [
+    aspectRatio, paperSize, customAspectWidth, customAspectHeight,
+    customPaperWidth, customPaperHeight, minBorder, enableOffset,
+    ignoreMinBorder, horizontalOffset, verticalOffset, showBlades,
+    isLandscape, isRatioFlipped
+  ]);
 
   // Action handlers
   const handleCopyResults = () => {
@@ -145,8 +185,7 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
   };
 
   const handleShare = () => {
-    // TODO: Implement share functionality  
-    console.log('Share');
+    setIsShareModalVisible(true);
   };
 
   const handleSavePreset = () => {
@@ -385,6 +424,12 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
                       setCurrentPreset(newPreset);
                       closeDrawer();
                     }}
+                    onUpdatePreset={(id, name, settings) => {
+                      updatePreset(id, { name, settings });
+                      if (currentPreset?.id === id) {
+                        setCurrentPreset({ ...currentPreset, name, settings });
+                      }
+                    }}
                     onDeletePreset={(id) => {
                       removePreset(id);
                       if (currentPreset?.id === id) {
@@ -412,6 +457,14 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
               </DrawerBody>
             </DrawerContent>
           </Drawer>
+
+          {/* Share Modal */}
+          <ShareModal
+            isVisible={isShareModalVisible}
+            onClose={() => setIsShareModalVisible(false)}
+            currentSettings={currentSettings}
+            presetName={currentPreset?.name || 'Border Settings'}
+          />
         </VStack>
       </Box>
     </ScrollView>

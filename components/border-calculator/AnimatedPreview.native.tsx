@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useMemo, useCallback } from 'react';
 import { Animated } from 'react-native';
 import { AnimatedBlade } from './AnimatedBlade.native';
-import { debugLogAnimationFrame, debugLogPerformance } from '@/utils/debugLogger';
+// Removed debug imports - no longer needed with simplified animation system
 
 interface AnimatedPreviewProps {
   calculation: any;
@@ -26,21 +26,9 @@ export const AnimatedPreview = React.memo(({ calculation, showBlades, borderColo
     bottomBladePosition: new Animated.Value(calculation?.bottomBorderPercent || 0),
   }).current;
 
-  // Animation control refs for debouncing and cancellation
-  const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const currentAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
-  
-  // Performance tracking for animation mode switching
-  const lastUpdateTimeRef = useRef<number>(0);
-  const rapidUpdatesCountRef = useRef<number>(0);
-  const isInContinuousModeRef = useRef<boolean>(false);
-  
-  // Additional performance refs for throttling and FPS tracking
-  const lastRenderTimeRef = useRef<number>(0);
-  const throttleFrameRef = useRef<number | null>(null);
-  const frameCountRef = useRef<number>(0);
-  const lastFpsLogRef = useRef<number>(0);
-  const frameTimes = useRef<number[]>([]);
+  // Animation control with debouncing to prevent excessive restarts
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get static dimensions for calculations
   const staticDimensions = useMemo(() => ({
@@ -124,129 +112,39 @@ export const AnimatedPreview = React.memo(({ calculation, showBlades, borderColo
     return result;
   }, [currentValues]);
 
-  // High-performance update function that bypasses animations during continuous input
-  const updateValues = useCallback((values: NonNullable<typeof transformValues>, immediate = false) => {
-    const now = Date.now();
-    const timeSinceLastUpdate = now - lastUpdateTimeRef.current;
-    
-    // FPS tracking for legacy animations - track actual frame intervals
-    if (lastFpsLogRef.current > 0) {
-      const frameTime = now - lastFpsLogRef.current;
-      frameTimes.current.push(frameTime);
-      frameCountRef.current += 1;
-      
-      // Keep only last 60 frames for rolling average
-      if (frameTimes.current.length > 60) {
-        frameTimes.current.shift();
-      }
-      
-      // Log every 30 frames or every 1000ms, whichever comes first
-      if (frameCountRef.current >= 30 || (now - (lastFpsLogRef.current + 1000)) > 0) {
-        if (frameTimes.current.length > 0) {
-          const avgFrameTime = frameTimes.current.reduce((a, b) => a + b, 0) / frameTimes.current.length;
-          
-          debugLogAnimationFrame('Legacy Animation', avgFrameTime);
-          debugLogPerformance('Legacy Animation Stats', {
-            fps: parseFloat((1000 / avgFrameTime).toFixed(1)),
-            averageFrameTime: parseFloat(avgFrameTime.toFixed(2)),
-            totalFrames: frameCountRef.current,
-            animationEngine: 'legacy',
-            isInContinuousMode: isInContinuousModeRef.current,
-            sampleSize: frameTimes.current.length,
-            timestamp: new Date().toISOString()
-          });
-        }
-        
-        frameCountRef.current = 0;
-      }
-    }
-    lastFpsLogRef.current = now;
-    
-    // Track rapid updates to determine if we're in continuous mode (like slider dragging)
-    if (timeSinceLastUpdate < 50) { // Updates within 50ms are considered rapid
-      rapidUpdatesCountRef.current += 1;
-      if (rapidUpdatesCountRef.current >= 3) {
-        isInContinuousModeRef.current = true;
-      }
-    } else {
-      // Reset rapid update tracking after a pause
-      rapidUpdatesCountRef.current = 0;
-      if (timeSinceLastUpdate > 200) { // 200ms pause means we're back to discrete mode
-        isInContinuousModeRef.current = false;
-      }
-    }
-    
-    lastUpdateTimeRef.current = now;
-
-    // Cancel previous animation, timeout, and throttled frame
-    if (currentAnimationRef.current) {
-      currentAnimationRef.current.stop();
-    }
+  // Debounced update function to prevent excessive animation restarts
+  const updateValues = useCallback((values: NonNullable<typeof transformValues>) => {
+    // Clear previous timeout
     if (animationTimeoutRef.current) {
       clearTimeout(animationTimeoutRef.current);
     }
-    if (throttleFrameRef.current) {
-      cancelAnimationFrame(throttleFrameRef.current);
-    }
 
-    const executeUpdate = () => {
-      const isInContinuousMode = isInContinuousModeRef.current;
+    // Debounce animation updates - prevents excessive restarts during rapid changes
+    animationTimeoutRef.current = setTimeout(() => {
+      // Cancel any running animation
+      if (animationRef.current) {
+        animationRef.current.stop();
+      }
+
+      // Optimized animation config for native - shorter duration for snappier response
+      const animationConfig = { 
+        duration: 100, // Reduced from 150ms for snappier response
+        useNativeDriver: true 
+      };
       
-      if (immediate || isInContinuousMode) {
-        // PERFORMANCE MODE: Use direct value updates - no animations, no JS thread overhead
-        animatedValues.printTranslateX.setValue(values.printTranslateX);
-        animatedValues.printTranslateY.setValue(values.printTranslateY);
-        animatedValues.printScaleX.setValue(values.printScaleX);
-        animatedValues.printScaleY.setValue(values.printScaleY);
-        animatedValues.leftBladePosition.setValue(values.leftBorderPercent);
-        animatedValues.rightBladePosition.setValue(values.rightBorderPercent);
-        animatedValues.topBladePosition.setValue(values.topBorderPercent);
-        animatedValues.bottomBladePosition.setValue(values.bottomBorderPercent);
-      } else {
-        // SMOOTH MODE: Use animations for discrete changes
-        const nativeAnimationConfig = { 
-          duration: 100, 
-          useNativeDriver: true 
-        };
-        
-        currentAnimationRef.current = Animated.parallel([
-          Animated.timing(animatedValues.printTranslateX, { toValue: values.printTranslateX, ...nativeAnimationConfig }),
-          Animated.timing(animatedValues.printTranslateY, { toValue: values.printTranslateY, ...nativeAnimationConfig }),
-          Animated.timing(animatedValues.printScaleX, { toValue: values.printScaleX, ...nativeAnimationConfig }),
-          Animated.timing(animatedValues.printScaleY, { toValue: values.printScaleY, ...nativeAnimationConfig }),
-          Animated.timing(animatedValues.leftBladePosition, { toValue: values.leftBorderPercent, ...nativeAnimationConfig }),
-          Animated.timing(animatedValues.rightBladePosition, { toValue: values.rightBorderPercent, ...nativeAnimationConfig }),
-          Animated.timing(animatedValues.topBladePosition, { toValue: values.topBorderPercent, ...nativeAnimationConfig }),
-          Animated.timing(animatedValues.bottomBladePosition, { toValue: values.bottomBorderPercent, ...nativeAnimationConfig }),
-        ]);
-        
-        currentAnimationRef.current.start();
-      }
-    };
-
-    if (immediate) {
-      executeUpdate();
-    } else if (isInContinuousModeRef.current) {
-      // PERFORMANCE THROTTLING: Limit updates to 60fps during continuous mode
-      const now = performance.now();
-      if (now - lastRenderTimeRef.current >= 16.67) { // ~60fps
-        lastRenderTimeRef.current = now;
-        executeUpdate();
-      } else {
-        // Cancel previous throttled frame
-        if (throttleFrameRef.current) {
-          cancelAnimationFrame(throttleFrameRef.current);
-        }
-        // Schedule for next available frame
-        throttleFrameRef.current = requestAnimationFrame(() => {
-          lastRenderTimeRef.current = performance.now();
-          executeUpdate();
-        });
-      }
-    } else {
-      // Minimal debouncing for discrete changes only
-      animationTimeoutRef.current = setTimeout(executeUpdate, 8);
-    }
+      animationRef.current = Animated.parallel([
+        Animated.timing(animatedValues.printTranslateX, { toValue: values.printTranslateX, ...animationConfig }),
+        Animated.timing(animatedValues.printTranslateY, { toValue: values.printTranslateY, ...animationConfig }),
+        Animated.timing(animatedValues.printScaleX, { toValue: values.printScaleX, ...animationConfig }),
+        Animated.timing(animatedValues.printScaleY, { toValue: values.printScaleY, ...animationConfig }),
+        Animated.timing(animatedValues.leftBladePosition, { toValue: values.leftBorderPercent, ...animationConfig }),
+        Animated.timing(animatedValues.rightBladePosition, { toValue: values.rightBorderPercent, ...animationConfig }),
+        Animated.timing(animatedValues.topBladePosition, { toValue: values.topBorderPercent, ...animationConfig }),
+        Animated.timing(animatedValues.bottomBladePosition, { toValue: values.bottomBorderPercent, ...animationConfig }),
+      ]);
+      
+      animationRef.current.start();
+    }, 16); // 16ms debounce - roughly one frame at 60fps
   }, [animatedValues]);
 
   useEffect(() => {
@@ -262,17 +160,14 @@ export const AnimatedPreview = React.memo(({ calculation, showBlades, borderColo
     }).start();
   }, [showBlades, animatedValues.bladeOpacity]);
 
-  // Cleanup animation refs on unmount
+  // Cleanup animation and timeouts on unmount
   useEffect(() => {
     return () => {
-      if (currentAnimationRef.current) {
-        currentAnimationRef.current.stop();
+      if (animationRef.current) {
+        animationRef.current.stop();
       }
       if (animationTimeoutRef.current) {
         clearTimeout(animationTimeoutRef.current);
-      }
-      if (throttleFrameRef.current) {
-        cancelAnimationFrame(throttleFrameRef.current);
       }
     };
   }, []);

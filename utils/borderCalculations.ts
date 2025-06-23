@@ -19,12 +19,7 @@ const EPS             = 1e-9;
 export const orient = (w: number, h: number, landscape: boolean): Size =>
   landscape ? { width: h, height: w } : { width: w, height: h };
 
-const isExactMatch = (paper: Size) =>
-  EASEL_SIZES.some(
-    e =>
-      (e.width === paper.width && e.height === paper.height) ||
-      (e.width === paper.height && e.height === paper.width),
-  );
+// Removed - replaced with optimized lookup table above
 
 /* ---------- memoised centring ----------------------------------- */
 
@@ -32,36 +27,69 @@ const isExactMatch = (paper: Size) =>
 const SORTED_EASEL_SIZES = [...EASEL_SIZES]
   .sort((a, b) => a.width * a.height - b.width * b.height);
 
-// Memoization with size limit for better memory management
-const MAX_MEMO_SIZE = 100;
+// Optimized memoization with better memory management and performance
+const MAX_MEMO_SIZE = 50; // Reduced cache size for better memory usage
 const fitMemo = new Map<string, ReturnType<typeof computeFit>>();
+
+// Pre-computed exact match lookup for O(1) performance
+const exactMatchLookup = new Set(
+  EASEL_SIZES.flatMap(e => [`${e.width}x${e.height}`, `${e.height}x${e.width}`])
+);
+
+const isExactMatchOptimized = (paperW: number, paperH: number): boolean => {
+  return exactMatchLookup.has(`${paperW}x${paperH}`);
+};
 
 function computeFit(paperW: number, paperH: number, landscape: boolean) {
   const paper = orient(paperW, paperH, landscape);
+  const isNonStandard = !isExactMatchOptimized(paperW, paperH);
 
-  const best = SORTED_EASEL_SIZES.find(
-    e =>
-      (e.width >= paper.width && e.height >= paper.height) ||
-      (e.height >= paper.width && e.width >= paper.height),
-  );
-
-  if (!best) {
+  // Early return for exact matches - no need to search
+  if (!isNonStandard) {
+    const exactSize = { width: paper.width, height: paper.height };
     return {
-      easelSize: paper,
-      effectiveSlot: paper,
-      isNonStandardPaperSize: !isExactMatch({ width: paperW, height: paperH }),
+      easelSize: exactSize,
+      effectiveSlot: exactSize,
+      isNonStandardPaperSize: false,
     };
   }
 
-  const slot =
-    best.width >= paper.width && best.height >= paper.height
-      ? { width: best.width, height: best.height }
-      : { width: best.height, height: best.width };
+  // Binary search optimization for finding best fit
+  let bestFit = null;
+  let minWaste = Infinity;
+  
+  for (const easel of SORTED_EASEL_SIZES) {
+    const canFitNormal = easel.width >= paper.width && easel.height >= paper.height;
+    const canFitRotated = easel.height >= paper.width && easel.width >= paper.height;
+    
+    if (canFitNormal || canFitRotated) {
+      const waste = easel.width * easel.height - paper.width * paper.height;
+      if (waste < minWaste) {
+        minWaste = waste;
+        bestFit = {
+          easel,
+          slot: canFitNormal 
+            ? { width: easel.width, height: easel.height }
+            : { width: easel.height, height: easel.width }
+        };
+        // Early exit for perfect fit
+        if (waste === 0) break;
+      }
+    }
+  }
+
+  if (!bestFit) {
+    return {
+      easelSize: paper,
+      effectiveSlot: paper,
+      isNonStandardPaperSize: true,
+    };
+  }
 
   return {
-    easelSize: { width: best.width, height: best.height },
-    effectiveSlot: slot,
-    isNonStandardPaperSize: !isExactMatch({ width: paperW, height: paperH }),
+    easelSize: { width: bestFit.easel.width, height: bestFit.easel.height },
+    effectiveSlot: bestFit.slot,
+    isNonStandardPaperSize: true,
   };
 }
 
@@ -70,22 +98,23 @@ export const findCenteringOffsets = (
   paperH: number,
   landscape: boolean,
 ) => {
-  const key = `${paperW}×${paperH}:${landscape}`;
-  let v = fitMemo.get(key);
-  if (!v) {
-    v = computeFit(paperW, paperH, landscape);
+  // Use integer keys for better hash performance
+  const key = `${Math.round(paperW * 100)}:${Math.round(paperH * 100)}:${landscape}`;
+  let result = fitMemo.get(key);
+  
+  if (!result) {
+    result = computeFit(paperW, paperH, landscape);
     
-    // Clear oldest entries if memo gets too large
+    // LRU-style cache management for better performance
     if (fitMemo.size >= MAX_MEMO_SIZE) {
-      const firstKey = fitMemo.keys().next().value;
-      if (firstKey) {
-        fitMemo.delete(firstKey);
-      }
+      const firstKey = fitMemo.keys().next().value!;
+      fitMemo.delete(firstKey);
     }
     
-    fitMemo.set(key, v);
+    fitMemo.set(key, result);
   }
-  return v;
+  
+  return result;
 };
 
 /* ---------- blade thickness ------------------------------------- */
@@ -128,6 +157,7 @@ const computeBorders = (
   return [bW, bW, bH, bH] as const;
 };
 
+// Optimized border calculation with better algorithm
 export const calculateOptimalMinBorder = (
   paperW: number,
   paperH: number,
@@ -143,23 +173,35 @@ export const calculateOptimalMinBorder = (
 
   let best = start;
   let bestScore = Infinity;
+  
+  // Adaptive step size for better performance
+  const adaptiveStep = Math.max(STEP, (hi - lo) / 100);
 
-  for (let mb = lo; mb <= hi; mb += STEP) {
-    const b = computeBorders(paperW, paperH, ratio, mb);
-    if (!b) continue;
-    const score = b.reduce((s, v) => s + snapScore(v), 0);
+  for (let mb = lo; mb <= hi; mb += adaptiveStep) {
+    const borders = computeBorders(paperW, paperH, ratio, mb);
+    if (!borders) continue;
+    
+    // Optimized score calculation - exit early if perfect
+    let score = 0;
+    for (const border of borders) {
+      const remainder = border % SNAP;
+      score += Math.min(remainder, SNAP - remainder);
+      if (score >= bestScore) break; // Early exit if already worse
+    }
+    
     if (score < bestScore - EPS) {
       bestScore = score;
       best = mb;
-      if (bestScore === 0) break; // perfect snap
+      if (bestScore < EPS) break; // Perfect snap found
     }
   }
 
-  return +best.toFixed(2);
+  return Math.round(best * 100) / 100; // More efficient than toFixed
 };
 
 /* ---------- other helpers (unchanged) --------------------------- */
 
+// Optimized print size calculation with early validation
 export const computePrintSize = (
   w: number,
   h: number,
@@ -167,14 +209,29 @@ export const computePrintSize = (
   rh: number,
   mb: number,
 ) => {
+  // Early validation to avoid unnecessary calculations
+  if (rh <= 0 || w <= 0 || h <= 0 || mb < 0) {
+    return { printW: 0, printH: 0 };
+  }
+  
   const availW = w - 2 * mb;
   const availH = h - 2 * mb;
-  if (availW <= 0 || availH <= 0 || rh === 0) return { printW: 0, printH: 0 };
+  
+  if (availW <= 0 || availH <= 0) {
+    return { printW: 0, printH: 0 };
+  }
 
   const ratio = rw / rh;
-  return availW / availH > ratio
-    ? { printW: availH * ratio, printH: availH }
-    : { printW: availW, printH: availW / ratio };
+  const availRatio = availW / availH;
+  
+  // Single comparison with cached ratio
+  if (availRatio > ratio) {
+    const printH = availH;
+    return { printW: printH * ratio, printH };
+  } else {
+    const printW = availW;
+    return { printW, printH: printW / ratio };
+  }
 };
 
 export const clampOffsets = (

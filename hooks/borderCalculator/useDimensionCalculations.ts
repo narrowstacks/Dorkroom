@@ -17,10 +17,11 @@ import type {
   MinBorderData,
 } from './types';
 
-const MAX_EASEL_DIMENSION = EASEL_SIZES.reduce((m, e) => Math.max(m, e.width, e.height), 0);
+// Pre-calculate max easel dimension for O(1) lookup
+const MAX_EASEL_DIMENSION = Math.max(...EASEL_SIZES.flatMap(e => [e.width, e.height]));
 
 export const useDimensionCalculations = (state: BorderCalculatorState) => {
-  // Paper size calculations
+  // Optimized paper size calculations with better caching
   const paperEntry = useMemo((): PaperEntry => {
     if (state.paperSize === 'custom') {
       return {
@@ -30,24 +31,24 @@ export const useDimensionCalculations = (state: BorderCalculatorState) => {
       };
     }
     
-    // Use O(1) lookup instead of linear search
+    // Use O(1) lookup with fallback
     const p = PAPER_SIZE_MAP[state.paperSize];
-    if (!p) {
-      console.warn(`Unknown paper size: ${state.paperSize}`);
-      return { w: 8, h: 10, custom: false }; // fallback to 8x10
-    }
-    return { w: p.width, h: p.height, custom: false };
+    return p 
+      ? { w: p.width, h: p.height, custom: false }
+      : { w: 8, h: 10, custom: false }; // fallback to 8x10
   }, [state.paperSize, state.lastValidCustomPaperWidth, state.lastValidCustomPaperHeight]);
 
-  // Paper size warning
+  // Optimized paper size warning with early exit
   const paperSizeWarning = useMemo(() => {
-    return paperEntry.custom &&
-      (paperEntry.w > MAX_EASEL_DIMENSION || paperEntry.h > MAX_EASEL_DIMENSION)
-        ? `Custom paper (${paperEntry.w}×${paperEntry.h}) exceeds largest standard easel (20×24").`
-        : null;
-  }, [paperEntry]);
+    if (!paperEntry.custom) return null;
+    
+    const exceedsMax = paperEntry.w > MAX_EASEL_DIMENSION || paperEntry.h > MAX_EASEL_DIMENSION;
+    return exceedsMax 
+      ? `Custom paper (${paperEntry.w}×${paperEntry.h}) exceeds largest standard easel (20×24").`
+      : null;
+  }, [paperEntry.custom, paperEntry.w, paperEntry.h]);
 
-  // Aspect ratio calculations
+  // Optimized aspect ratio calculations
   const ratioEntry = useMemo((): RatioEntry => {
     if (state.aspectRatio === 'custom') {
       return {
@@ -56,16 +57,14 @@ export const useDimensionCalculations = (state: BorderCalculatorState) => {
       };
     }
     
-    // Use O(1) lookup instead of linear search
+    // Use O(1) lookup with safer fallback
     const r = ASPECT_RATIO_MAP[state.aspectRatio];
-    if (!r) {
-      console.warn(`Unknown aspect ratio: ${state.aspectRatio}`);
-      return { w: 3, h: 2 }; // fallback to 3:2
-    }
-    return { w: r.width || 1, h: r.height || 1 };
+    return r 
+      ? { w: r.width || 1, h: r.height || 1 }
+      : { w: 3, h: 2 }; // fallback to 3:2
   }, [state.aspectRatio, state.lastValidCustomAspectWidth, state.lastValidCustomAspectHeight]);
 
-  // Oriented dimensions (apply landscape and ratio flipping)
+  // Optimized oriented dimensions with direct property access
   const orientedDimensions = useMemo((): OrientedDimensions => {
     const orientedPaper = state.isLandscape
       ? { w: paperEntry.h, h: paperEntry.w }
@@ -76,28 +75,51 @@ export const useDimensionCalculations = (state: BorderCalculatorState) => {
       : { w: ratioEntry.w, h: ratioEntry.h };
 
     return { orientedPaper, orientedRatio };
-  }, [paperEntry, ratioEntry, state.isLandscape, state.isRatioFlipped]);
+  }, [
+    paperEntry.w, paperEntry.h,
+    ratioEntry.w, ratioEntry.h,
+    state.isLandscape, state.isRatioFlipped
+  ]);
 
-  // Minimum border validation
+  // Optimized minimum border validation with direct calculations
   const minBorderData = useMemo((): MinBorderData => {
     const { orientedPaper } = orientedDimensions;
-    const maxBorder = Math.min(orientedPaper.w, orientedPaper.h) / 2;
-    let minBorder = state.minBorder;
-    let minBorderWarning: string | null = null;
-    let lastValid = state.lastValidMinBorder;
-
-    if (minBorder >= maxBorder && maxBorder > 0) {
-      minBorderWarning = `Minimum border too large; using ${state.lastValidMinBorder}.`;
-      minBorder = state.lastValidMinBorder;
-    } else if (minBorder < 0) {
-      minBorderWarning = `Border cannot be negative; using ${state.lastValidMinBorder}.`;
-      minBorder = state.lastValidMinBorder;
-    } else {
-      lastValid = minBorder;
+    const paperW = orientedPaper.w;
+    const paperH = orientedPaper.h;
+    const maxBorder = (paperW < paperH ? paperW : paperH) / 2; // More efficient than Math.min
+    
+    const inputMinBorder = state.minBorder;
+    const lastValidMinBorder = state.lastValidMinBorder;
+    
+    // Early validation with optimized logic
+    if (inputMinBorder < 0) {
+      return {
+        minBorder: lastValidMinBorder,
+        minBorderWarning: `Border cannot be negative; using ${lastValidMinBorder}.`,
+        lastValid: lastValidMinBorder
+      };
     }
-
-    return { minBorder, minBorderWarning, lastValid };
-  }, [orientedDimensions, state.minBorder, state.lastValidMinBorder]);
+    
+    if (inputMinBorder >= maxBorder && maxBorder > 0) {
+      return {
+        minBorder: lastValidMinBorder,
+        minBorderWarning: `Minimum border too large; using ${lastValidMinBorder}.`,
+        lastValid: lastValidMinBorder
+      };
+    }
+    
+    // Valid input
+    return {
+      minBorder: inputMinBorder,
+      minBorderWarning: null,
+      lastValid: inputMinBorder
+    };
+  }, [
+    orientedDimensions.orientedPaper.w,
+    orientedDimensions.orientedPaper.h,
+    state.minBorder,
+    state.lastValidMinBorder
+  ]);
 
   return {
     paperEntry,
