@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Platform, TouchableOpacity } from 'react-native';
-import { Box, ScrollView, VStack, Text, HStack } from '@gluestack-ui/themed';
+import { Box, ScrollView, VStack, HStack } from '@gluestack-ui/themed';
 import { 
   Drawer, 
-  DrawerBackdrop, 
   DrawerContent, 
-  DrawerHeader, 
   DrawerBody 
 } from '@/components/ui/drawer/index';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -20,7 +18,6 @@ import {
 
 // Inline sections instead of modals
 import {
-  SectionWrapper,
   PaperSizeSection,
   BorderSizeSection,
   PositionOffsetsSection,
@@ -32,7 +29,6 @@ import {
   ImageIcon, 
   RulerIcon, 
   MoveIcon, 
-  SettingsIcon,
   RotateCcw,
   Eye,
   EyeOff,
@@ -43,18 +39,15 @@ import {
 // Border calculator functionality
 import { useBorderCalculator, useBorderPresets } from '@/hooks/borderCalculator';
 import { Button, ButtonText, ButtonIcon } from '@gluestack-ui/themed';
-import type { BorderPreset, BorderPresetSettings } from '@/types/borderPresetTypes';
+import type { BorderPreset } from '@/types/borderPresetTypes';
 
 // Active section type
 type ActiveSection = 'paperSize' | 'borderSize' | 'positionOffsets' | 'presets';
 
-interface MobileBorderCalculatorProps {
-  // This component will use the same hooks as the desktop version
-}
+interface MobileBorderCalculatorProps {}
 
 export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () => {
   const backgroundColor = useThemeColor({}, 'background');
-  const outline = useThemeColor({}, 'outline');
 
   // Drawer state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -85,74 +78,60 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
 
   const { presets, addPreset, removePreset } = useBorderPresets();
 
-  // Reset current preset when settings change
-  useEffect(() => {
-    if (currentPreset) {
-      // Check if current settings still match the preset
-      const currentSettings = {
-        aspectRatio,
-        paperSize,
-        customAspectWidth: parseFloat(String(customAspectWidth)) || 0,
-        customAspectHeight: parseFloat(String(customAspectHeight)) || 0,
-        customPaperWidth: parseFloat(String(customPaperWidth)) || 0,
-        customPaperHeight: parseFloat(String(customPaperHeight)) || 0,
-        minBorder: parseFloat(String(minBorder)) || 0,
-        enableOffset,
-        ignoreMinBorder,
-        horizontalOffset: parseFloat(String(horizontalOffset)) || 0,
-        verticalOffset: parseFloat(String(verticalOffset)) || 0,
-        showBlades,
-        isLandscape,
-        isRatioFlipped,
-      };
-      
-      const settingsMatch = Object.keys(currentSettings).every(
-        key => currentSettings[key as keyof typeof currentSettings] === 
-               currentPreset.settings[key as keyof typeof currentPreset.settings]
-      );
-      
-      if (!settingsMatch) {
-        setCurrentPreset(null);
-      }
-    }
+  // Optimized settings comparison - memoize current settings and use shallow comparison
+  const currentSettingsHash = useMemo(() => {
+    return `${aspectRatio}-${paperSize}-${customAspectWidth}-${customAspectHeight}-${customPaperWidth}-${customPaperHeight}-${minBorder}-${enableOffset}-${ignoreMinBorder}-${horizontalOffset}-${verticalOffset}-${showBlades}-${isLandscape}-${isRatioFlipped}`;
   }, [
     aspectRatio, paperSize, customAspectWidth, customAspectHeight,
     customPaperWidth, customPaperHeight, minBorder, enableOffset,
     ignoreMinBorder, horizontalOffset, verticalOffset, showBlades,
-    isLandscape, isRatioFlipped, currentPreset
+    isLandscape, isRatioFlipped
   ]);
 
-  // Helper functions for display values
-  const getPaperSizeDisplayValue = () => {
+  const presetSettingsHash = useMemo(() => {
+    if (!currentPreset) return null;
+    const settings = currentPreset.settings;
+    return `${settings.aspectRatio}-${settings.paperSize}-${settings.customAspectWidth}-${settings.customAspectHeight}-${settings.customPaperWidth}-${settings.customPaperHeight}-${settings.minBorder}-${settings.enableOffset}-${settings.ignoreMinBorder}-${settings.horizontalOffset}-${settings.verticalOffset}-${settings.showBlades}-${settings.isLandscape}-${settings.isRatioFlipped}`;
+  }, [currentPreset]);
+
+  // Reset current preset when settings change (much faster than deep object comparison)
+  useEffect(() => {
+    if (currentPreset && currentSettingsHash !== presetSettingsHash) {
+      setCurrentPreset(null);
+    }
+  }, [currentSettingsHash, presetSettingsHash, currentPreset]);
+
+  // Memoized helper functions for display values to prevent parseFloat on every render
+  const paperSizeDisplayValue = useMemo(() => {
     if (paperSize === 'custom') {
       return `${customPaperWidth}" × ${customPaperHeight}"`;
     }
     return paperSize;
-  };
+  }, [paperSize, customPaperWidth, customPaperHeight]);
 
-  const getAspectRatioDisplayValue = () => {
+  const aspectRatioDisplayValue = useMemo(() => {
     if (aspectRatio === 'custom') {
       return `${customAspectWidth}:${customAspectHeight}`;
     }
     return aspectRatio;
-  };
+  }, [aspectRatio, customAspectWidth, customAspectHeight]);
 
-  const getBorderSizeDisplayValue = () => {
+  const borderSizeDisplayValue = useMemo(() => {
     const borderValue = parseFloat(String(minBorder));
     return `${(isNaN(borderValue) ? 0 : borderValue).toFixed(2)}"`;
-  };
+  }, [minBorder]);
 
-  const getPositionDisplayValue = () => {
+  const positionDisplayValue = useMemo(() => {
     if (!enableOffset) return 'Centered';
     const hOffset = parseFloat(String(horizontalOffset));
     const vOffset = parseFloat(String(verticalOffset));
     return `H:${(isNaN(hOffset) ? 0 : hOffset).toFixed(1)} V:${(isNaN(vOffset) ? 0 : vOffset).toFixed(1)}`;
-  };
+  }, [enableOffset, horizontalOffset, verticalOffset]);
 
-  const getPresetsDisplayValue = () => {
+  const presetsDisplayValue = useMemo(() => {
     if (!currentPreset) return 'Presets';
     return currentPreset.name.length > 10 ? currentPreset.name : `Preset: ${currentPreset.name}`;
-  };
+  }, [currentPreset]);
 
   // Action handlers
   const handleCopyResults = () => {
@@ -198,8 +177,8 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
           {/* Hero Section - Blade Results */}
           <BladeResultsDisplay 
             calculation={calculation}
-            paperSize={getPaperSizeDisplayValue()}
-            aspectRatio={getAspectRatioDisplayValue()}
+            paperSize={paperSizeDisplayValue}
+            aspectRatio={aspectRatioDisplayValue}
           />
 
           {/* Compact Preview */}
@@ -218,21 +197,21 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
           <VStack space="xs" style={{ marginTop: 5 }}>
             <SettingsButton 
               label="Paper and Image Size"
-              value={`${getAspectRatioDisplayValue()} on ${getPaperSizeDisplayValue()}`}
+              value={`${aspectRatioDisplayValue} on ${paperSizeDisplayValue}`}
               onPress={() => openDrawerSection('paperSize')}
               icon={ImageIcon}
             />
 
             <SettingsButton 
               label="Border Size"
-              value={getBorderSizeDisplayValue()}
+              value={borderSizeDisplayValue}
               onPress={() => openDrawerSection('borderSize')}
               icon={RulerIcon}
             />
 
             <SettingsButton 
               label="Position & Offsets"
-              value={getPositionDisplayValue()}
+              value={positionDisplayValue}
               onPress={() => openDrawerSection('positionOffsets')}
               icon={MoveIcon}
             />
@@ -248,7 +227,7 @@ export const MobileBorderCalculator: React.FC<MobileBorderCalculatorProps> = () 
 
             <Box style={{ flex: 1 }}>
               <SettingsButton 
-                value={getPresetsDisplayValue()}
+                value={presetsDisplayValue}
                 onPress={() => openDrawerSection('presets')}
                 icon={BookOpen}
               />

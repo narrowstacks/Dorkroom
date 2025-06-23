@@ -18,6 +18,7 @@ export const AnimatedBlade = ({
   thickness, 
   borderColor 
 }: AnimatedBladeProps) => {
+  // Create interpolated position value
   const bladePosition = bladePositionValue.interpolate({ 
     inputRange: [0, 100], 
     outputRange: ['0%', '100%'] 
@@ -27,14 +28,14 @@ export const AnimatedBlade = ({
     position: 'absolute' as const, 
     boxShadow: '0px 2px 4px rgba(0,0,0,0.25)', 
     elevation: 5, 
-    opacity, 
     backgroundColor: borderColor 
   };
   
   const orientationStyle = orientation === 'vertical' 
     ? { top: -1000, bottom: -1000, width: thickness } 
     : { left: -1000, right: -1000, height: thickness };
-    
+  
+  // Create dynamic position style for layout properties
   const positionStyle = { [position]: bladePosition };
   
   const transformStyle = { 
@@ -53,7 +54,9 @@ export const AnimatedBlade = ({
         commonStyle, 
         orientationStyle, 
         positionStyle, 
-        transformStyle
+        transformStyle,
+        // Opacity must be handled separately to potentially use native driver
+        { opacity }
       ]} 
     />
   );
