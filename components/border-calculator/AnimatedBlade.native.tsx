@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Animated } from 'react-native';
 
 interface AnimatedBladeProps {
@@ -12,7 +12,7 @@ interface AnimatedBladeProps {
   containerHeight?: number;
 }
 
-export const AnimatedBlade = ({ 
+export const AnimatedBlade = React.memo(({ 
   orientation, 
   position, 
   bladePositionValue, 
@@ -23,37 +23,43 @@ export const AnimatedBlade = ({
   containerHeight = 100
 }: AnimatedBladeProps) => {
   
-  // Convert percentage to pixel position for transforms
-  const transformValue = bladePositionValue.interpolate({
-    inputRange: [0, 100],
-    outputRange: orientation === 'vertical' 
-      ? [0, containerWidth] 
-      : [0, containerHeight]
-  });
+  // Memoize interpolation to prevent recreation on every render 
+  const transformValue = useMemo(() => 
+    bladePositionValue.interpolate({
+      inputRange: [0, 100],
+      outputRange: orientation === 'vertical' 
+        ? [0, containerWidth] 
+        : [0, containerHeight]
+    }), 
+    [bladePositionValue, orientation, containerWidth, containerHeight]
+  );
   
-  const commonStyle = { 
+  // Memoize common styles to prevent object recreation
+  const commonStyle = useMemo(() => ({ 
     position: 'absolute' as const, 
     backgroundColor: borderColor,
-    // Use opacity from animated value with native driver support
-  };
+  }), [borderColor]);
   
-  // Base positioning and sizing
-  const orientationStyle = orientation === 'vertical' 
-    ? { 
-        top: -1000, 
-        bottom: -1000, 
-        width: thickness,
-        left: 0, // Base position, will be overridden by transform
-      } 
-    : { 
-        left: -1000, 
-        right: -1000, 
-        height: thickness,
-        top: 0, // Base position, will be overridden by transform
-      };
+  // Memoize orientation-specific styles
+  const orientationStyle = useMemo(() => 
+    orientation === 'vertical' 
+      ? { 
+          top: -1000, 
+          bottom: -1000, 
+          width: thickness,
+          left: 0, // Base position, will be overridden by transform
+        } 
+      : { 
+          left: -1000, 
+          right: -1000, 
+          height: thickness,
+          top: 0, // Base position, will be overridden by transform
+        },
+    [orientation, thickness]
+  );
   
-  // Calculate transform based on position and orientation
-  const getTransform = () => {
+  // Memoize transform calculation to prevent recalculation on every render
+  const transform = useMemo(() => {
     const offsetTranslation = position === 'left' 
       ? [{ translateX: -thickness }] 
       : position === 'right' 
@@ -74,7 +80,7 @@ export const AnimatedBlade = ({
         ...offsetTranslation
       ];
     }
-  };
+  }, [orientation, position, thickness, transformValue]);
   
   return (
     <Animated.View 
@@ -83,9 +89,11 @@ export const AnimatedBlade = ({
         orientationStyle,
         {
           opacity, // Animated opacity value
-          transform: getTransform()
+          transform
         }
       ]} 
     />
   );
-};
+});
+
+AnimatedBlade.displayName = 'AnimatedBlade';
