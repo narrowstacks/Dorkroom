@@ -2,12 +2,25 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Rules and Tools
+
+- Refrain from using emojis in documentation (.md files) and code, unless specificially specified.
+- Use the tools at your disposal:
+  - **Context7**: Use context7 to grab the latest versions of docs and sample code.
+  - **Clear-thought**: Use sequentialthinking, debuggingapproach, decisionframework, and other tools provided by clear-thought to work through problems in an orderly way.
+  - **Serena**: Use Serena to access IDE tools, get tasks and memory, replace lines, and think a bit.
+    - **Core approach**: Use the language server protocol (LSP) tools for symbol-level understanding rather than text-based analysis. Search for symbols by name/type using `find_symbol`, examine code structure with `get_symbols_overview`, and navigate relationships with `find_referencing_symbols`/`code_snippets`.
+    - **Workflow pattern**: Start by reading project memories and performing onboarding if needed. Use `find_symbol` and overview tools to understand codebase structure. Edit at symbol level with `replace_symbol_body` or `insert_before`/`after_symbol` rather than line-based operations when possible. Execute tests/commands to verify changes and self-correct.
+    - **Key tools**: `find_symbol` for discovery, `get_symbols_overview` for structure, `read_file` for content, `replace_symbol_body` for editing, `execute_shell_command` for testing, and memory tools for persistence across conversations.
+    - **Best practices**: Work from clean git state, create/read memories for context, use symbolic editing over line-based when possible, validate changes through testing, and split complex tasks across conversations using memories to manage context limits.
+    - **Capability**: The toolkit enables autonomous coding workflows from analysis through implementation to testing and version control.
+
 ## Development Commands
 
 ### Core Development
 
 - `bun run dev` or `bunx expo start` - Start development server with options for iOS, Android, or web
-- `bun run web` - Start web version specifically  
+- `bun run web` - Start web version specifically
 - `bun run ios` - Start iOS simulator
 - `bun run android` - Start Android emulator
 - `bun test` - Run Jest tests
@@ -42,7 +55,7 @@ app/(tabs)/           # Tab-based navigation screens
   _layout.tsx         # Complex responsive navigation (mobile tabs, desktop top nav, mobile web sidebar)
   index.tsx           # Home screen
   border.tsx          # Print Border Calculator
-  resize.tsx          # Print Resizing Calculator  
+  resize.tsx          # Print Resizing Calculator
   exposure.tsx        # Stop-Based Exposure Calculator
   cameraExposure.tsx  # Camera Exposure Calculator
   reciprocity.tsx     # Reciprocity Calculator
@@ -78,7 +91,7 @@ utils/                # Pure calculation functions
 The app uses a sophisticated responsive navigation system:
 
 - **Mobile Native**: Bottom tab navigation with haptic feedback
-- **Desktop Web**: Top horizontal navigation bar  
+- **Desktop Web**: Top horizontal navigation bar
 - **Mobile Web**: Hamburger menu with animated sidebar
 - All implemented in `app/(tabs)/_layout.tsx` with responsive breakpoints
 
