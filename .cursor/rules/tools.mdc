@@ -181,7 +181,9 @@ Always running.
 
 ### Serena Key Tools
 
-- **Key tools**: `find_symbol` for discovery, `get_symbols_overview` for structure, `read_file` for content, `replace_symbol_body` for editing, `execute_shell_command` for testing, and memory tools for persistence across conversations.
+- **Key tools**:
+  - Active tools: `activate_project`, `check_onboarding_performed`, `delete_memory`, `find_file`, `find_referencing_symbols`, `find_symbol`, `get_current_config`, `get_symbols_overview`, `initial_instructions`, `insert_after_symbol`, `insert_before_symbol`, `list_dir`, `list_memories`, `onboarding`, `prepare_for_new_conversation`, `read_memory`, `remove_project`, `replace_regex`, `replace_symbol_body`, `restart_language_server`, `search_for_pattern`, `summarize_changes`, `switch_modes`, `think_about_collected_information`, `think_about_task_adherence`, `think_about_whether_you_are_done`, `write_memory`
+  - Excluded 6 tools: `create_text_file`, `read_file`, `delete_lines`, `replace_lines`, `insert_at_line`, `execute_shell_command`. **DO NOT USE THESE TOOLS, USE CURSOR NATIVE TOOLS**
 
 ### Serena Best Practices
 

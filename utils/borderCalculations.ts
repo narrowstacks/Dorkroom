@@ -2,17 +2,17 @@
    Pure geometry helpers
 \* ------------------------------------------------------------------ */
 
-import { EASEL_SIZES, BLADE_THICKNESS } from '@/constants/border';
+import { EASEL_SIZES, BLADE_THICKNESS } from "@/constants/border";
 
 export type Size = { width: number; height: number };
 
 /* ---------- constants ------------------------------------------- */
 
 const BASE_PAPER_AREA = 20 * 24;
-const STEP            = 0.01;
-const SEARCH_SPAN     = 0.5;
-const SNAP            = 0.25;
-const EPS             = 1e-9;
+const STEP = 0.01;
+const SEARCH_SPAN = 0.5;
+const SNAP = 0.25;
+const EPS = 1e-9;
 
 /* ---------- helpers --------------------------------------------- */
 
@@ -24,8 +24,9 @@ export const orient = (w: number, h: number, landscape: boolean): Size =>
 /* ---------- memoised centring ----------------------------------- */
 
 // Pre-sort EASEL_SIZES by area for optimal performance
-const SORTED_EASEL_SIZES = [...EASEL_SIZES]
-  .sort((a, b) => a.width * a.height - b.width * b.height);
+const SORTED_EASEL_SIZES = [...EASEL_SIZES].sort(
+  (a, b) => a.width * a.height - b.width * b.height,
+);
 
 // Optimized memoization with better memory management and performance
 const MAX_MEMO_SIZE = 50; // Reduced cache size for better memory usage
@@ -33,7 +34,10 @@ const fitMemo = new Map<string, ReturnType<typeof computeFit>>();
 
 // Pre-computed exact match lookup for O(1) performance
 const exactMatchLookup = new Set(
-  EASEL_SIZES.flatMap(e => [`${e.width}x${e.height}`, `${e.height}x${e.width}`])
+  EASEL_SIZES.flatMap((e) => [
+    `${e.width}x${e.height}`,
+    `${e.height}x${e.width}`,
+  ]),
 );
 
 const isExactMatchOptimized = (paperW: number, paperH: number): boolean => {
@@ -46,31 +50,45 @@ function computeFit(paperW: number, paperH: number, landscape: boolean) {
 
   // Early return for exact matches - no need to search
   if (!isNonStandard) {
-    const exactSize = { width: paper.width, height: paper.height };
-    return {
-      easelSize: exactSize,
-      effectiveSlot: exactSize,
-      isNonStandardPaperSize: false,
-    };
+    // For exact matches, find the actual easel that matches this paper size
+    const matchingEasel = EASEL_SIZES.find(
+      (e) =>
+        (e.width === paper.width && e.height === paper.height) ||
+        (e.height === paper.width && e.width === paper.height),
+    );
+
+    if (matchingEasel) {
+      const easelSize = {
+        width: matchingEasel.width,
+        height: matchingEasel.height,
+      };
+      return {
+        easelSize: easelSize,
+        effectiveSlot: easelSize,
+        isNonStandardPaperSize: false,
+      };
+    }
   }
 
   // Binary search optimization for finding best fit
   let bestFit = null;
   let minWaste = Infinity;
-  
+
   for (const easel of SORTED_EASEL_SIZES) {
-    const canFitNormal = easel.width >= paper.width && easel.height >= paper.height;
-    const canFitRotated = easel.height >= paper.width && easel.width >= paper.height;
-    
+    const canFitNormal =
+      easel.width >= paper.width && easel.height >= paper.height;
+    const canFitRotated =
+      easel.height >= paper.width && easel.width >= paper.height;
+
     if (canFitNormal || canFitRotated) {
       const waste = easel.width * easel.height - paper.width * paper.height;
       if (waste < minWaste) {
         minWaste = waste;
         bestFit = {
           easel,
-          slot: canFitNormal 
+          slot: canFitNormal
             ? { width: easel.width, height: easel.height }
-            : { width: easel.height, height: easel.width }
+            : { width: easel.height, height: easel.width },
         };
         // Early exit for perfect fit
         if (waste === 0) break;
@@ -101,19 +119,19 @@ export const findCenteringOffsets = (
   // Use integer keys for better hash performance
   const key = `${Math.round(paperW * 100)}:${Math.round(paperH * 100)}:${landscape}`;
   let result = fitMemo.get(key);
-  
+
   if (!result) {
     result = computeFit(paperW, paperH, landscape);
-    
+
     // LRU-style cache management for better performance
     if (fitMemo.size >= MAX_MEMO_SIZE) {
       const firstKey = fitMemo.keys().next().value!;
       fitMemo.delete(firstKey);
     }
-    
+
     fitMemo.set(key, result);
   }
-  
+
   return result;
 };
 
@@ -122,7 +140,7 @@ export const findCenteringOffsets = (
 export const calculateBladeThickness = (paperW: number, paperH: number) => {
   if (paperW <= 0 || paperH <= 0) return BLADE_THICKNESS;
 
-  const area  = paperW * paperH;
+  const area = paperW * paperH;
   const scale = Math.min(BASE_PAPER_AREA / Math.max(area, EPS), 2);
   return Math.round(BLADE_THICKNESS * scale);
 };
@@ -173,14 +191,14 @@ export const calculateOptimalMinBorder = (
 
   let best = start;
   let bestScore = Infinity;
-  
+
   // Adaptive step size for better performance
   const adaptiveStep = Math.max(STEP, (hi - lo) / 100);
 
   for (let mb = lo; mb <= hi; mb += adaptiveStep) {
     const borders = computeBorders(paperW, paperH, ratio, mb);
     if (!borders) continue;
-    
+
     // Optimized score calculation - exit early if perfect
     let score = 0;
     for (const border of borders) {
@@ -188,7 +206,7 @@ export const calculateOptimalMinBorder = (
       score += Math.min(remainder, SNAP - remainder);
       if (score >= bestScore) break; // Early exit if already worse
     }
-    
+
     if (score < bestScore - EPS) {
       bestScore = score;
       best = mb;
@@ -213,17 +231,17 @@ export const computePrintSize = (
   if (rh <= 0 || w <= 0 || h <= 0 || mb < 0) {
     return { printW: 0, printH: 0 };
   }
-  
+
   const availW = w - 2 * mb;
   const availH = h - 2 * mb;
-  
+
   if (availW <= 0 || availH <= 0) {
     return { printW: 0, printH: 0 };
   }
 
   const ratio = rw / rh;
   const availRatio = availW / availH;
-  
+
   // Single comparison with cached ratio
   if (availRatio > ratio) {
     const printH = availH;
@@ -255,8 +273,8 @@ export const clampOffsets = (
   let warning: string | null = null;
   if (h !== offH || v !== offV)
     warning = ignoreMB
-      ? 'Offset adjusted to keep print on paper.'
-      : 'Offset adjusted to honour min‑border.';
+      ? "Offset adjusted to keep print on paper."
+      : "Offset adjusted to honour min‑border.";
 
   return { h, v, halfW, halfH, warning };
 };

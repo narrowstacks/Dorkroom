@@ -23,7 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Context7**: Use context7 to grab the latest versions of docs and sample code.
 - **Clear-thought**: Use sequentialthinking, debuggingapproach, decisionframework, and other tools provided by clear-thought to work through problems in an orderly way.
 - **Playwright**: Use Playwright MCP tools for end-to-end testing and browser automation.
-- **Serena**: Use Serena to access more granular edit functions, IDE tools, get tasks and memory, replace lines, and think a bit.
+- **Serena**: Use Serena to access more granular edit functions, IDE tools, get tasks and memory, replace lines, and think a bit. **Before using any other tools, read the initial instructions.**
 
 ### Context7
 
@@ -184,7 +184,7 @@ Not always running, only use when user asks for web version help. If not running
 
 Always running.
 
-**Important:** At the start of any session, run activate_project with parameter `DorkroomReact` and then run `initial_instructions`.
+**Important:** **Before using any other tools, read the initial instructions.**
 
 #### Serena Core Approach
 
@@ -196,7 +196,9 @@ Always running.
 
 #### Serena Key Tools
 
-- **Key tools**: `find_symbol` for discovery, `get_symbols_overview` for structure, `read_file` for content, `replace_symbol_body` for editing, `execute_shell_command` for testing, and memory tools for persistence across conversations.
+- **Key tools**:
+  - Active tools: `activate_project`, `check_onboarding_performed`, `delete_memory`, `find_file`, `find_referencing_symbols`, `find_symbol`, `get_current_config`, `get_symbols_overview`, `initial_instructions`, `insert_after_symbol`, `insert_before_symbol`, `list_dir`, `list_memories`, `onboarding`, `prepare_for_new_conversation`, `read_memory`, `remove_project`, `replace_regex`, `replace_symbol_body`, `restart_language_server`, `search_for_pattern`, `summarize_changes`, `switch_modes`, `think_about_collected_information`, `think_about_task_adherence`, `think_about_whether_you_are_done`, `write_memory`
+  - Excluded 9 tools: `create_text_file`, `read_file`, `delete_lines`, `replace_lines`, `insert_at_line`, `execute_shell_command`. **DO NOT USE THESE TOOLS, USE CLAUDE CODE NATIVE TOOLS**
 
 #### Serena Best Practices
 

@@ -96,20 +96,20 @@ The DorkroomReact project currently has minimal test coverage despite having a r
 
 **Target: Core calculation hooks**
 
-1. **`hooks/__tests__/useBorderCalculator.test.ts`**
+1. **`hooks/__tests__/useBorderCalculator.test.ts`** ✅ DONE
    - Test calculation accuracy with various inputs
    - Test edge cases (zero dimensions, extreme ratios)
    - Test state management and updates
    - Mock external dependencies (AsyncStorage)
    - Test preset loading and saving
 
-2. **`hooks/__tests__/useExposureCalculator.test.ts`**
+2. **`hooks/__tests__/useExposureCalculator.test.ts`** ✅ DONE
    - Test exposure time calculations
    - Test stop adjustments (positive/negative)
    - Test edge cases (zero time, extreme stops)
    - Validate mathematical accuracy
 
-3. **`hooks/__tests__/useReciprocityCalculator.test.ts`**
+3. **`hooks/__tests__/useReciprocityCalculator.test.ts`** ✅ DONE
    - Test time parsing and formatting
    - Test reciprocity calculations for different films
    - Test custom factor applications
@@ -119,17 +119,17 @@ The DorkroomReact project currently has minimal test coverage despite having a r
 
 **Target: Border calculator sub-hooks**
 
-4. **`hooks/borderCalculator/__tests__/useBorderCalculatorState.test.ts`**
+4. **`hooks/borderCalculator/__tests__/useBorderCalculatorState.test.ts`** ✅ DONE
    - Test reducer logic for all actions
    - Test state initialization and persistence
    - Test complex state transitions
 
-5. **`hooks/borderCalculator/__tests__/useDimensionCalculations.test.ts`**
+5. **`hooks/borderCalculator/__tests__/useDimensionCalculations.test.ts`** ✅ DONE
    - Test dimension fitting algorithms
    - Test aspect ratio calculations
    - Test constraint handling
 
-6. **`hooks/borderCalculator/__tests__/useGeometryCalculations.test.ts`**
+6. **`hooks/borderCalculator/__tests__/useGeometryCalculations.test.ts`** ✅ DONE
    - Test geometric calculations
    - Test coordinate transformations
    - Test positioning algorithms
@@ -138,49 +138,56 @@ The DorkroomReact project currently has minimal test coverage despite having a r
 
 **Target: Core utility functions**
 
-7. **`utils/__tests__/githubIssueGenerator.test.ts`**
+7. **`utils/__tests__/githubIssueGenerator.test.ts`** ✅ DONE
    - Test URL generation
    - Test data formatting
    - Test temperature conversions
    - Test edge cases and validation
 
-8. **`utils/__tests__/presetSharing.test.ts`**
+8. **`utils/__tests__/presetSharing.test.ts`** ✅ DONE
    - Test encoding/decoding symmetry
    - Test data integrity
    - Test error handling for malformed data
 
 ### Phase 2: Core Components & Integration (2-3 weeks)
 
-#### Week 4-5: Form Components
+#### Week 4-5: Form Components ✅ COMPLETED
 
 **Target: Critical UI components**
 
-9. **`components/ui/forms/__tests__/NumberInput.test.tsx`**
-   - Test input validation
-   - Test increment/decrement functionality
-   - Test mobile modal behavior
-   - Test accessibility
+9. **`components/ui/forms/__tests__/NumberInput.test.tsx`** ✅ DONE
+   - ✅ Test input validation (numeric pattern regex, text change validation)
+   - ✅ Test increment/decrement functionality (various step values, NaN handling, zero clamping)
+   - ✅ Test mobile modal behavior (stepper buttons, confirm/cancel logic)
+   - ✅ Test accessibility (label generation, platform-specific behavior)
+   - **18 tests, 63 expect() calls**
 
-10. **`components/ui/forms/__tests__/LabeledSliderInput.test.tsx`**
-    - Test slider interactions
-    - Test value changes and validation
-    - Test throttling behavior
+10. **`components/ui/forms/__tests__/LabeledSliderInput.test.tsx`** ✅ DONE
+    - ✅ Test slider interactions (platform-specific components, continuous vs discrete modes)
+    - ✅ Test value changes and validation (range validation, format conversion)
+    - ✅ Test throttling behavior (web vs native timing, cleanup, velocity-based haptics)
+    - ✅ Test performance optimizations (memoization, callback dependencies)
+    - **37 tests, 93 expect() calls**
 
-11. **`components/ui/select/__tests__/ThemedSelect.test.tsx`**
-    - Test item selection
-    - Test platform-specific behavior
-    - Test data formatting
+11. **`components/ui/select/__tests__/ThemedSelect.test.tsx`** ✅ DONE
+    - ✅ Test item selection (normalization, label finding, selection state)
+    - ✅ Test platform-specific behavior (theme integration, dropdown behavior)
+    - ✅ Test data formatting (string vs object items, divider handling)
+    - ✅ Test edge cases (malformed data, null handling, duplicate values)
+    - **32 tests, 79 expect() calls**
+
+**Week 4-5 Summary**: ✅ **87 total tests implemented** with **235 expect() calls** covering critical form component business logic. All tests focus on core functionality without React Native component rendering issues, ensuring robust coverage of input validation, platform-specific behavior, performance optimizations, and edge case handling.
 
 #### Week 6: Complex Components
 
 **Target: Calculator components**
 
-12. **`components/development-recipes/__tests__/ChemistryCalculator.test.tsx`**
+12. **`components/development-recipes/__tests__/ChemistryCalculator.test.tsx`** ✅ DONE
     - Test calculation rendering
     - Test user interactions
     - Test data flow
 
-13. **`components/border-calculator/mobile/__tests__/MobileBorderCalculator.test.tsx`**
+13. **`components/border-calculator/mobile/__tests__/MobileBorderCalculator.test.tsx`** ✅ DONE
     - Test mobile-specific behavior
     - Test drawer interactions
     - Test state management integration
@@ -191,9 +198,9 @@ The DorkroomReact project currently has minimal test coverage despite having a r
 
 **Target: Remaining hooks and utilities**
 
-14. **`hooks/__tests__/useCustomRecipes.test.ts`**
-15. **`hooks/__tests__/useDevelopmentRecipes.test.ts`**
-16. **`api/dorkroom/__tests__/transport.test.ts`** (enhanced coverage)
+14. **`hooks/__tests__/useCustomRecipes.test.ts`** ✅ DONE
+15. **`hooks/__tests__/useDevelopmentRecipes.test.ts`** ✅ DONE
+16. **`api/dorkroom/__tests__/transport.test.ts`** (enhanced coverage) ✅ DONE
 17. Additional component tests as needed
 
 ## Testing Guidelines
