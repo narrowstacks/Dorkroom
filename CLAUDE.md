@@ -23,7 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Context7**: Use context7 to grab the latest versions of docs and sample code.
 - **Clear-thought**: Use sequentialthinking, debuggingapproach, decisionframework, and other tools provided by clear-thought to work through problems in an orderly way.
 - **Playwright**: Use Playwright MCP tools for end-to-end testing and browser automation.
-- **Serena**: Use Serena to access IDE tools, get tasks and memory, replace lines, and think a bit.
+- **Serena**: Use Serena to access more granular edit functions, IDE tools, get tasks and memory, replace lines, and think a bit.
 
 ### Context7
 
@@ -140,6 +140,8 @@ Not always running, only use when user asks for web version help. If not running
 ### Serena
 
 Always running.
+
+**Important:** At the start of any session, run activate_project with parameter `DorkroomReact` and then run `initial_instructions`.
 
 #### Serena Core Approach
 
