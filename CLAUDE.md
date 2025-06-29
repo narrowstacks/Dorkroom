@@ -4,6 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Rules and Tools
 
+- Assume the expo server is already running-- don't try to run `bun run dev`.
+- We should aim for consistency in styling, including libraries used.
+- When grepping the codebase, use ripgrep `rg` instead of standard grep.
+- Add new libraries using `bun install`, do not edit the dependencies of `project.json` directly. Other parts of the `projects.json` file can be modified, but never the dependencies.
 - Refrain from using emojis in documentation (.md files) and code, unless specificially specified.
 - Use the tools at your disposal:
   - **Context7**: Use context7 to grab the latest versions of docs and sample code.
@@ -14,6 +18,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     - **Key tools**: `find_symbol` for discovery, `get_symbols_overview` for structure, `read_file` for content, `replace_symbol_body` for editing, `execute_shell_command` for testing, and memory tools for persistence across conversations.
     - **Best practices**: Work from clean git state, create/read memories for context, use symbolic editing over line-based when possible, validate changes through testing, and split complex tasks across conversations using memories to manage context limits.
     - **Capability**: The toolkit enables autonomous coding workflows from analysis through implementation to testing and version control.
+
+## Git
+
+- **Always commit before making changes**. If the user hasn't yet committed their changes, check the current git status, and commit their changes, _but not sync_, so for them before you make a change
+- **Husky and lint-staged commit messages**. Your commit messages should follow the conventions defined by the husky and lint-staged config in `project.json`.
+- **Don't commit until confirming with user.** The user should always test your changes before they are committed.
+- **Let user sync commits to remote**. You should never be the one to sync the commits.
 
 ## Development Commands
 
@@ -92,10 +103,10 @@ The app uses a sophisticated responsive navigation system:
 
 - **Mobile Native**: Bottom tab navigation with haptic feedback
 - **Desktop Web**: Top horizontal navigation bar
-- **Mobile Web**: Hamburger menu with animated sidebar
+- **Mobile Web**: Hamburger menu with animated right-thumb accessible menu.
 - All implemented in `app/(tabs)/_layout.tsx` with responsive breakpoints
 
-### Calculator Hook Pattern
+### Hook Pattern
 
 Calculator hooks follow a consistent pattern:
 
@@ -105,13 +116,14 @@ Calculator hooks follow a consistent pattern:
 4. Handle validation and error states
 5. Implement memoization for performance
 
-Key calculators:
+Key features:
 
 - **Border Calculator**: Calculates blade positions for darkroom easels based on paper size and desired borders
 - **Resize Calculator**: Determines exposure adjustments when changing print sizes
 - **Exposure Calculator**: Handles stop-based exposure calculations
 - **Camera Exposure**: Implements exposure triangle relationships (aperture, shutter, ISO)
 - **Reciprocity**: Compensates for film reciprocity failure at long exposures
+- **Film Development Recipes**: Find and add development recipe combinations for black and white film development.
 
 ### Styling Approach
 
@@ -151,9 +163,3 @@ Key calculators:
 - Responsive design adapts to different screen sizes
 - Platform-specific components where needed (TabBarBackground.ios.tsx)
 - Consistent user experience across iOS, Android, and web
-
-### Rules
-
-- Assume the expo server is already running-- don't try to run `bun run dev`.
-- We should aim for consistency in styling, including libraries used.
-- When grepping the codebase, use ripgrep `rg` instead of standard grep.
