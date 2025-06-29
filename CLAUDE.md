@@ -58,6 +58,49 @@ Always running.
 - **Comprehensive coverage**: Access documentation for thousands of popular libraries and frameworks
 - **Focused retrieval**: Target specific topics within large documentation sets for efficient information gathering
 
+#### Context7 Library IDs for DorkroomReact Core Dependencies
+
+Use when calling `get-library-docs`.
+
+##### Core Frameworks & Languages
+
+- **React**: `/reactjs/react.dev` (Trust Score: 9, 2791 snippets)
+- **React Native**: `/facebook/react-native-website` (Trust Score: 9.2, 14551 snippets)
+- **TypeScript**: `/microsoft/typescript` (Trust Score: 9.9, 26981 snippets)
+- **React DOM**: `/reactjs/react.dev` (covered under main React docs)
+
+##### Expo Ecosystem
+
+- **Expo**: `/expo/expo` (Trust Score: 10, 4431 snippets)
+- **Expo SDK**: `/context7/docs_expo_dev-versions-latest` (Trust Score: 10, 14576 snippets)
+
+##### Styling & UI
+
+- **TailwindCSS**: `/tailwindlabs/tailwindcss.com` (Trust Score: 8, 2026 snippets)
+- **NativeWind**: `/nativewind/nativewind` (Trust Score: 7.3, 12 snippets)
+- **Gluestack UI**: `/gluestack/gluestack-ui` (Trust Score: 7.9, 2078 snippets)
+
+##### Animation & Gestures
+
+- **React Native Reanimated**: `/software-mansion/react-native-reanimated` (973 snippets)
+- **React Native Gesture Handler**: `/software-mansion/react-native-gesture-handler` (287 snippets)
+
+##### React Native Core Libraries
+
+- **React Native Web**: `/necolas/react-native-web` (Trust Score: 9.6, 195 snippets)
+- **React Native SVG**: `/software-mansion/react-native-svg` (Trust Score: 8.7, 65 snippets)
+- **React Native Screens**: `/software-mansion/react-native-screens` (62 snippets)
+
+##### Development & Testing
+
+- **TypeScript ESLint**: `/typescript-eslint/typescript-eslint` (Trust Score: 8.6, 1213 snippets)
+- **Prettier Plugin TailwindCSS**: `/tailwindlabs/prettier-plugin-tailwindcss` (Trust Score: 8, 10 snippets)
+
+##### Additional Core Libraries
+
+- **React Native Safe Area Context**: `/appandflow/react-native-safe-area-context` (Trust Score: 8.7, 36 snippets)
+- **React Native Paper**: `/callstack/react-native-paper` (Trust Score: 10, 1239 snippets)
+
 ### Clear-Thought
 
 Always running.
