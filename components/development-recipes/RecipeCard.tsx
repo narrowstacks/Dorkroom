@@ -15,7 +15,13 @@ interface RecipeCardProps {
   isCustomRecipe: boolean;
 }
 
-export function RecipeCard({ combination, film, developer, onPress, isCustomRecipe }: RecipeCardProps) {
+export function RecipeCard({
+  combination,
+  film,
+  developer,
+  onPress,
+  isCustomRecipe,
+}: RecipeCardProps) {
   const textColor = useThemeColor({}, "text");
   const developmentTint = useThemeColor({}, "developmentRecipesTint");
   const cardBackground = useThemeColor({}, "cardBackground");
@@ -23,41 +29,53 @@ export function RecipeCard({ combination, film, developer, onPress, isCustomReci
   const resultRowBackground = useThemeColor({}, "resultRowBackground");
   const { width } = useWindowDimensions();
   const isMobile = Platform.OS !== "web" || width <= 768;
-  
+
   // Calculate card width based on screen size
   const getCardWidth = () => {
     if (isMobile) {
-      return '46%'; // 2 cards per row on mobile with more space
+      return "46%"; // 2 cards per row on mobile with more space
     } else if (width > 1600) {
-      return '23%'; // 4 cards per row on very large desktop
+      return "23%"; // 4 cards per row on very large desktop
     } else if (width > 1200) {
-      return '30%'; // 3 cards per row on large desktop
+      return "30%"; // 3 cards per row on large desktop
     } else {
-      return '47%'; // 2 cards per row on medium desktop
+      return "47%"; // 2 cards per row on medium desktop
     }
   };
 
-  const filmName = film ? 
-    (isMobile ? film.name : `${film.brand} ${film.name}`) : 
-    "Unknown Film";
-  
+  const filmName = film
+    ? isMobile
+      ? film.name
+      : `${film.brand} ${film.name}`
+    : "Unknown Film";
+
   // Check if shooting ISO is different from film stock ISO
   const isNonStandardISO = film && combination.shootingIso !== film.isoSpeed;
-  
+
   // Format push/pull value if present
-  const pushPullDisplay = combination.pushPull !== 0 
-    ? ` ${combination.pushPull > 0 ? `+${combination.pushPull}` : combination.pushPull}`
-    : null;
-    
-  const developerName = developer ? 
-    (isMobile ? developer.name : `${developer.name}`) : 
-    "Unknown Developer";
+  const formatPushPullNumber = (num: number): string => {
+    return num % 1 === 0
+      ? num.toString()
+      : num.toFixed(2).replace(/\.?0+$/, "");
+  };
+
+  const pushPullDisplay =
+    combination.pushPull !== 0
+      ? ` ${combination.pushPull > 0 ? `+${formatPushPullNumber(combination.pushPull)}` : formatPushPullNumber(combination.pushPull)}`
+      : null;
+
+  const developerName = developer
+    ? isMobile
+      ? developer.name
+      : `${developer.name}`
+    : "Unknown Developer";
 
   // Get dilution info
   const dilutionInfo = formatDilution(
-    combination.customDilution || 
-    (developer?.dilutions.find(d => d.id === combination.dilutionId)?.dilution) || 
-    "Stock"
+    combination.customDilution ||
+      developer?.dilutions.find((d) => d.id === combination.dilutionId)
+        ?.dilution ||
+      "Stock",
   );
 
   // Check if temperature is non-standard (not 68°F)
@@ -65,52 +83,71 @@ export function RecipeCard({ combination, film, developer, onPress, isCustomReci
   const tempDisplay = `${combination.temperatureF}°F`;
 
   return (
-    <TouchableOpacity onPress={onPress} style={[styles.cardTouchable, { width: getCardWidth() }]}>
-      <Box style={[
-        styles.recipeCard, 
-        { 
-          backgroundColor: cardBackground,
-          borderColor: borderColor,
-        }
-      ]}>
+    <TouchableOpacity
+      onPress={onPress}
+      style={[styles.cardTouchable, { width: getCardWidth() }]}
+    >
+      <Box
+        style={[
+          styles.recipeCard,
+          {
+            backgroundColor: cardBackground,
+            borderColor: borderColor,
+          },
+        ]}
+      >
         {/* Header with Film and ISO */}
         <Box style={styles.cardHeader}>
-          <Text style={[styles.cardFilmName, { color: textColor }]} numberOfLines={1}>
+          <Text
+            style={[styles.cardFilmName, { color: textColor }]}
+            numberOfLines={2}
+          >
             {filmName}
             {isNonStandardISO && (
               <Text style={[styles.cardISO, { color: developmentTint }]}>
-                {' @ '}{combination.shootingIso} ISO
+                {" @ "}
+                {combination.shootingIso} ISO
               </Text>
             )}
             {!isNonStandardISO && (
               <Text style={[styles.cardISO, { color: textColor }]}>
-                {' @ '}{combination.shootingIso} ISO
+                {" @ "}
+                {combination.shootingIso} ISO
               </Text>
             )}
             {pushPullDisplay && (
-              <Text style={{ color: developmentTint }}>
+              <Text style={[styles.pushPullText, { color: developmentTint }]}>
                 {pushPullDisplay}
               </Text>
             )}
           </Text>
           {isCustomRecipe && (
-            <Box style={[styles.customBadge, { backgroundColor: developmentTint }]}>
+            <Box
+              style={[styles.customBadge, { backgroundColor: developmentTint }]}
+            >
               <Text style={styles.customBadgeText}>●</Text>
             </Box>
           )}
         </Box>
-        
+
         {/* Developer and Dilution Parameters */}
         <Box style={[styles.cardParams, styles.firstParamSection]}>
-          <Box style={[styles.paramBox, { backgroundColor: resultRowBackground }]}>
+          <Box
+            style={[styles.paramBox, { backgroundColor: resultRowBackground }]}
+          >
             <Text style={[styles.cardParamLabel, { color: textColor }]}>
               Developer
             </Text>
-            <Text style={[styles.cardParamValue, { color: textColor }]} numberOfLines={1}>
+            <Text
+              style={[styles.cardParamValue, { color: textColor }]}
+              numberOfLines={1}
+            >
               {developerName}
             </Text>
           </Box>
-          <Box style={[styles.paramBox, { backgroundColor: resultRowBackground }]}>
+          <Box
+            style={[styles.paramBox, { backgroundColor: resultRowBackground }]}
+          >
             <Text style={[styles.cardParamLabel, { color: textColor }]}>
               Dilution
             </Text>
@@ -119,10 +156,12 @@ export function RecipeCard({ combination, film, developer, onPress, isCustomReci
             </Text>
           </Box>
         </Box>
-        
+
         {/* Time and Temperature Parameters */}
         <Box style={styles.cardParams}>
-          <Box style={[styles.paramBox, { backgroundColor: resultRowBackground }]}>
+          <Box
+            style={[styles.paramBox, { backgroundColor: resultRowBackground }]}
+          >
             <Text style={[styles.cardParamLabel, { color: textColor }]}>
               Time
             </Text>
@@ -130,18 +169,25 @@ export function RecipeCard({ combination, film, developer, onPress, isCustomReci
               {formatTime(combination.timeMinutes)}
             </Text>
           </Box>
-          <Box style={[styles.paramBox, { backgroundColor: resultRowBackground }]}>
-            <Text style={[
-              styles.cardParamLabel,
-              { color: isNonStandardTemp ? developmentTint : textColor }
-            ]}>
+          <Box
+            style={[styles.paramBox, { backgroundColor: resultRowBackground }]}
+          >
+            <Text
+              style={[
+                styles.cardParamLabel,
+                { color: isNonStandardTemp ? developmentTint : textColor },
+              ]}
+            >
               Temperature
             </Text>
-            <Text style={[
-              styles.cardParamValue,
-              { color: isNonStandardTemp ? developmentTint : textColor }
-            ]}>
-              {tempDisplay}{isNonStandardTemp && ' ⚠'}
+            <Text
+              style={[
+                styles.cardParamValue,
+                { color: isNonStandardTemp ? developmentTint : textColor },
+              ]}
+            >
+              {tempDisplay}
+              {isNonStandardTemp && " ⚠"}
             </Text>
           </Box>
         </Box>
@@ -161,7 +207,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -171,22 +217,26 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 16,
     minHeight: 24,
   },
   cardFilmName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     flex: 1,
     lineHeight: 22,
     marginRight: 8,
   },
   cardISO: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
+  },
+  pushPullText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   customBadge: {
     width: 8,
@@ -197,35 +247,35 @@ const styles = StyleSheet.create({
   },
   customBadgeText: {
     fontSize: 6,
-    color: '#fff',
-    textAlign: 'center',
+    color: "#fff",
+    textAlign: "center",
     lineHeight: 8,
   },
   cardParams: {
     gap: 6,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
   cardParamLabel: {
     fontSize: 12,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     marginBottom: 2,
   },
   cardParamValue: {
     fontSize: 13,
-    textAlign: 'center',
-    fontWeight: '400',
+    textAlign: "center",
+    fontWeight: "400",
   },
   paramBox: {
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 6,
     flex: 1,
-    maxWidth: '48%',
-    minWidth: '48%',
-    alignItems: 'center',
+    maxWidth: "48%",
+    minWidth: "48%",
+    alignItems: "center",
   },
   firstParamSection: {
     marginBottom: 6,
