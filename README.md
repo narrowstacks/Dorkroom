@@ -55,7 +55,7 @@ Dorkroom is a cross-platform React Native application built with Expo, designed 
 2. Clone and install dependencies:
 
    ```bash
-   git clone [repository-url]
+   git clone https://github.com/narrowstacks/Dorkroom.git
    cd DorkroomReact
    bun install
    ```
