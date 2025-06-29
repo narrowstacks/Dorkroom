@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Git Rules
 
-- **Always commit before making changes**. If the user hasn't yet committed their changes, check the current git status, and commit their changes, _but not sync_, so for them before you make a change
+- **Always commit before making changes**. Before starting any work, check the current git status, and if the user hasn't yet committed their changes, commit their changes, _but not sync_, so for them before you make a change
 - **Husky and lint-staged commit messages**. Your commit messages should follow the conventions defined by the husky and lint-staged config in `project.json` and `commitlint.config.cjs`.
 - **Don't commit until confirming with user.** The user should always test your changes before they are committed.
 - **Let user sync commits to remote**. You should never be the one to sync the commits.

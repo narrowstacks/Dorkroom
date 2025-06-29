@@ -19,7 +19,7 @@ This document outlines the coding conventions and patterns used in the Dorkroom 
 ### Git Workflow
 
 #### Pre-Change Requirements
-- **Always commit before making changes**: If the user hasn't yet committed their changes, check the current git status, and commit their changes, but not sync, for them before you make a change
+- **Always commit before making changes**: Before conducting any work, check the current git status, and if the user hasn't yet committed their changes, commit their changes, _but not sync_, for them before you do work.
 - **Work from clean git state**: Ensure the working directory is clean before starting new work
 
 #### Commit Conventions
