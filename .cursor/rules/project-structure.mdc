@@ -1,0 +1,103 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Project Structure Guide
+
+Dorkroom is a cross-platform React Native photography calculator app built with Expo and TypeScript. The main purpose is to provide photographers with helpful calculators for darkroom printing, film developing, and other photography tasks.
+
+## Tech Stack
+
+- **Framework**: React Native with Expo SDK 53, file-based routing via Expo Router
+- **Language**: TypeScript with strict mode enabled
+- **Styling**: NativeWind (Tailwind CSS for React Native) + Gluestack UI components
+- **Package Manager**: Bun (preferred) or npm
+- **Platforms**: iOS, Android, and responsive web with platform-specific navigation
+
+## Main Entry Points
+- Main entry point: [app/_layout.tsx](mdc:app/_layout.tsx) - Root layout with providers
+- Tab navigation: [app/(tabs)/_layout.tsx](mdc:app/(tabs)/_layout.tsx) - Main tab navigation setup
+- Package configuration: [package.json](mdc:package.json) - Dependencies and scripts
+- Expo configuration: [app.json](mdc:app.json) - Expo app configuration
+- TypeScript config: [tsconfig.json](mdc:tsconfig.json) - TypeScript settings
+
+## Project Structure
+
+### Application Structure
+```structure
+app/(tabs)/           # Tab-based navigation screens
+  _layout.tsx         # Complex responsive navigation (mobile tabs, desktop top nav, mobile web sidebar)
+  index.tsx           # Home screen
+  border.tsx          # Print Border Calculator
+  resize.tsx          # Print Resizing Calculator
+  exposure.tsx        # Stop-Based Exposure Calculator
+  cameraExposure.tsx  # Camera Exposure Calculator
+  reciprocity.tsx     # Reciprocity Calculator
+  settings.tsx        # Settings screen
+
+hooks/                # Calculator logic and utilities
+  useBorderCalculator.ts      # Print border blade positioning
+  useExposureCalculator.ts    # Stop-based exposure adjustments
+  useCameraExposureCalculator.ts # Camera exposure triangle calculations
+  useReciprocityCalculator.ts # Film reciprocity failure compensation
+  useResizeCalculator.ts      # Print size scaling calculations
+  commonFunctions.ts          # Shared utility functions
+
+components/           # Reusable UI components
+  ui/                 # Gluestack UI component wrappers
+  ThemedText.tsx      # Theme-aware text component
+  ThemedView.tsx      # Theme-aware view component
+  NumberInput.tsx     # Numeric input with validation
+  SelectList.tsx      # Custom select component
+
+constants/            # Data and calculation constants
+  border.ts           # Paper sizes, aspect ratios, easel configurations
+  exposure.ts         # Exposure calculation constants
+  reciprocity.ts      # Film reciprocity data
+  Colors.ts           # Theme color definitions
+
+utils/                # Pure calculation functions
+  borderCalculations.ts # Core border geometry calculations
+```
+
+## Key Directories
+- `app/` - Expo Router file-based routing structure
+  - `(tabs)/` - Tab-based navigation screens (main calculators)
+- `components/` - Reusable React components
+  - `ui/` - UI component library
+- `hooks/` - Custom React hooks for calculator logic
+- `utils/` - Utility functions and calculations
+- `workers/` - Web workers for heavy calculations
+- `types/` - TypeScript type definitions
+- `constants/` - App constants and configuration
+- `assets/` - Static assets (images, fonts, etc.)
+- `styles/` - Global styles and themes
+
+## Calculator Screens
+- [app/(tabs)/index.tsx](mdc:app/(tabs)/index.tsx) - Home/Welcome screen
+- [app/(tabs)/border.tsx](mdc:app/(tabs)/border.tsx) - Print Border Calculator (main feature)
+- [app/(tabs)/resize.tsx](mdc:app/(tabs)/resize.tsx) - Print Resizing Calculator
+- [app/(tabs)/exposure.tsx](mdc:app/(tabs)/exposure.tsx) - Stop-Based Exposure Calculator
+- [app/(tabs)/cameraExposure.tsx](mdc:app/(tabs)/cameraExposure.tsx) - Camera Exposure Calculator
+- [app/(tabs)/reciprocity.tsx](mdc:app/(tabs)/reciprocity.tsx) - Reciprocity Calculator
+- [app/(tabs)/settings.tsx](mdc:app/(tabs)/settings.tsx) - App settings
+
+## Core Calculator Hooks
+- [hooks/useBorderCalculator.ts](mdc:hooks/useBorderCalculator.ts) - Print border calculations
+- [hooks/useResizeCalculator.ts](mdc:hooks/useResizeCalculator.ts) - Print resize calculations
+- [hooks/useExposureCalculator.ts](mdc:hooks/useExposureCalculator.ts) - Exposure stop calculations
+- [hooks/useCameraExposureCalculator.ts](mdc:hooks/useCameraExposureCalculator.ts) - Camera exposure calculations
+- [hooks/useReciprocityCalculator.ts](mdc:hooks/useReciprocityCalculator.ts) - Reciprocity failure calculations
+
+## Styling & UI
+- Primary styling: NativeWind (Tailwind CSS for React Native)
+- UI components: Gluestack UI library
+- Theme configuration: [tailwind.config.js](mdc:tailwind.config.js)
+- Gluestack config: [gluestack-ui.config.json](mdc:gluestack-ui.config.json)
+
+## Build & Development
+- Package manager: bun (preferred for speed)
+- Development server: `bun run dev` or `bunx expo start`
+- Web build: `bun run build` (exports to web)
+- Deployment: Vercel via [vercel.json](mdc:vercel.json)

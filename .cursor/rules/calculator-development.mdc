@@ -1,0 +1,211 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Calculator Development Guide
+
+This guide covers the specific patterns and considerations for developing photography calculators in the Dorkroom app.
+
+## Photography Domain Knowledge
+
+### Core Concepts
+- **Stops**: Logarithmic units for exposure (doubling/halving light)
+- **Aspect Ratios**: Width-to-height relationships for prints and negatives
+- **Print Borders**: Equal margins around prints for aesthetic framing
+- **Reciprocity Failure**: Non-linear response of film to very long/short exposures
+- **Enlargement Ratios**: Relationship between negative size and print size
+
+### Standard Paper Sizes
+See implementation in [constants/](mdc:constants) for standard sizes:
+- 4x6, 5x7, 8x10, 11x14, 16x20 inches
+- A4, A3, A2 metric sizes
+- Custom aspect ratios (square, panoramic, etc.)
+
+## Calculator Architecture
+
+### Hook Pattern
+
+Calculator hooks follow a consistent pattern with these numbered steps:
+
+1. **Accept input parameters via state**: Use useState for managing calculator inputs
+2. **Perform calculations using pure functions**: From `utils/` or `constants/` directories
+3. **Return calculated values and helper functions**: Provide computed results and update handlers
+4. **Handle validation and error states**: Include proper error handling and validation
+5. **Implement memoization for performance**: Use useMemo for expensive calculations
+
+### Hook-Based Calculator Pattern
+Each calculator follows this structure (see [hooks/useBorderCalculator.ts](mdc:hooks/useBorderCalculator.ts)):
+
+```typescript
+export const useCalculatorName = () => {
+  // 1. Input state
+  const [inputs, setInputs] = useState<InputType>({...});
+  
+  // 2. Calculation logic with memoization
+  const results = useMemo(() => {
+    return performCalculations(inputs);
+  }, [inputs]);
+  
+  // 3. Input handlers
+  const updateInput = useCallback((field: string, value: number) => {
+    setInputs(prev => ({ ...prev, [field]: value }));
+  }, []);
+  
+  // 4. Return interface
+  return {
+    inputs,
+    results,
+    updateInput,
+    // other utility functions
+  };
+};
+```
+
+### Key Calculator Features
+
+The app provides several specialized photography calculators:
+
+- **Border Calculator**: Calculates blade positions for darkroom easels based on paper size and desired borders
+- **Resize Calculator**: Determines exposure adjustments when changing print sizes
+- **Exposure Calculator**: Handles stop-based exposure calculations for exposure adjustments
+- **Camera Exposure**: Implements exposure triangle relationships (aperture, shutter speed, ISO)
+- **Reciprocity**: Compensates for film reciprocity failure at long exposures
+- **Film Development Recipes**: Find and add development recipe combinations for black and white film development
+
+### Calculation Utilities
+- Keep pure mathematical functions in [utils/](mdc:utils)
+- Use TypeScript for type safety on mathematical operations
+- Handle edge cases (division by zero, negative values)
+- Provide clear error states for invalid inputs
+
+## UI Patterns for Calculators
+
+### Layout Structure
+Follow the pattern from [components/CalculatorLayout.tsx](mdc:components/CalculatorLayout.tsx):
+
+1. **Input Section**: [components/FormSection.tsx](mdc:components/FormSection.tsx)
+   - Grouped related inputs
+   - Clear labels and units
+   - Real-time validation
+
+2. **Results Section**: [components/ResultsSection.tsx](mdc:components/ResultsSection.tsx)
+   - Prominent display of primary results
+   - Secondary calculations available
+   - Copy-to-clipboard functionality
+
+3. **Info Section**: [components/InfoSection.tsx](mdc:components/InfoSection.tsx)
+   - Contextual help and explanations
+   - Photography tips and best practices
+   - Links to detailed information
+
+### Input Components
+
+#### Numeric Inputs
+Use [components/NumberInput.tsx](mdc:components/NumberInput.tsx) for:
+- Decimal precision control
+- Unit display (inches, mm, seconds, stops)
+- Range validation
+- Increment/decrement buttons
+
+#### Slider Inputs
+Use [components/LabeledSliderInput.tsx](mdc:components/LabeledSliderInput.tsx) for:
+- Continuous value adjustment
+- Visual feedback of ranges
+- Quick approximate adjustments
+
+#### Selection Inputs
+Use [components/ThemedSelect.tsx](mdc:components/ThemedSelect.tsx) for:
+- Predefined options (paper sizes, film types)
+- Standardized photography values
+- Common presets
+
+## Mathematical Considerations
+
+### Precision and Rounding
+- Use appropriate decimal precision for photography (typically 2-3 decimal places)
+- Round final display values but maintain precision in calculations
+- Consider measurement tolerances in darkroom work
+
+### Units and Conversions
+- Support both imperial and metric units
+- Provide clear unit indicators in UI
+- Handle conversions transparently in calculations
+
+### Validation Patterns
+```typescript
+const validateInput = (value: number, min: number, max: number): boolean => {
+  return !isNaN(value) && isFinite(value) && value >= min && value <= max;
+};
+
+const validateAspectRatio = (width: number, height: number): boolean => {
+  return validateInput(width, 0.1, 100) && validateInput(height, 0.1, 100);
+};
+```
+
+## Performance Optimization
+
+### Heavy Calculations
+- Use Web Workers for complex iterative calculations (see [workers/](mdc:workers))
+- Implement calculation throttling with [utils/throttle.ts](mdc:utils/throttle.ts)
+- Cache expensive lookup tables in constants
+
+### Real-Time Updates
+- Debounce user input to prevent excessive calculations
+- Use `useMemo` for expensive derivations
+- Consider lazy evaluation for secondary results
+
+## Photography-Specific UX
+
+### Visual Feedback
+- Show aspect ratio previews where applicable
+- Use visual metaphors (enlarger diagrams, exposure scales)
+- Provide immediate feedback on input changes
+
+### Educational Content
+- Include brief explanations of photography concepts
+- Link to detailed information resources
+- Provide practical tips for darkroom work
+
+### Error States
+- Explain why certain combinations are invalid
+- Suggest corrective actions
+- Maintain context of partial calculations
+
+## Testing Calculator Logic
+
+### Mathematical Accuracy
+```typescript
+describe('Border Calculator', () => {
+  it('calculates equal borders correctly', () => {
+    const result = calculateBorders(8, 10, 4, 6, 0.5);
+    expect(result.leftBorder).toBeCloseTo(1.5, 2);
+    expect(result.rightBorder).toBeCloseTo(1.5, 2);
+  });
+});
+```
+
+### Edge Cases
+- Test with extreme aspect ratios
+- Verify behavior with zero/negative inputs
+- Check floating-point precision issues
+- Test unit boundary conditions
+
+### Cross-Platform Consistency
+- Verify calculations across iOS, Android, and Web
+- Test with different screen sizes and orientations
+- Ensure consistent rounding and precision
+
+## Domain-Specific Constants
+
+### Standard Values
+Keep photography standards in [constants/](mdc:constants):
+- Standard paper sizes and aspect ratios
+- Common enlargement ratios
+- Film format dimensions
+- Standard exposure stop increments
+
+### Reciprocity Data
+- Film-specific reciprocity failure curves
+- Standard compensation formulas
+- Manufacturer recommendations

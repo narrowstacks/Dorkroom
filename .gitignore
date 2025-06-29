@@ -47,7 +47,6 @@ app-example
 
 # LLM things
 .vercel
-.cursor
 .claude
 .yoyo
 bun.lock

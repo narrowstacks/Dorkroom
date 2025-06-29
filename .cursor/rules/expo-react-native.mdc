@@ -1,0 +1,354 @@
+---
+description: Information on running the project and its structure.
+globs: 
+alwaysApply: false
+---
+# Expo Router & React Native Patterns
+
+This guide covers Expo-specific development patterns and React Native best practices for the Dorkroom app.
+
+## Development Commands
+
+### Core Development
+- `bun run dev` or `bunx expo start` - Start development server with options for iOS, Android, or web
+- `bun run web` - Start web version specifically
+- `bun run ios` - Start iOS simulator
+- `bun run android` - Start Android emulator
+- `bun test` - Run Jest tests
+- `bun run lint` - Run linting (use this for code quality checks)
+
+### Build and Deployment
+- `bun run build` or `expo export -p web` - Build web version
+- `bun run vercel-build` - Build for Vercel deployment
+- `bun run deploy` - Deploy to Vercel
+- `bun run clean` - Clean node_modules, .expo, and dist directories
+
+### Testing
+- `bun test` - Run all Jest tests
+- Tests are located in `__tests__/` directories and use jest-expo preset
+
+## Expo Router File-Based Routing
+
+### Route Structure
+The app uses Expo Router's file-based routing system:
+
+```
+app/
+├── _layout.tsx           # Root layout with providers
+├── +html.tsx            # Web-specific HTML template
+├── +not-found.tsx       # 404 error page
+└── (tabs)/              # Tab navigation group
+    ├── _layout.tsx      # Tab layout configuration
+    ├── index.tsx        # Home screen (/)
+    ├── border.tsx       # Border calculator (/border)
+    ├── resize.tsx       # Resize calculator (/resize)
+    └── ...              # Other calculator screens
+```
+
+### Layout Configuration
+See [app/_layout.tsx](mdc:app/_layout.tsx) for root setup:
+- Theme providers (Gluestack, NativeWind)
+- Font loading with expo-font
+- Status bar configuration
+- Error boundaries
+
+### Tab Navigation
+Check [app/(tabs)/_layout.tsx](mdc:app/(tabs)/_layout.tsx) for:
+- Tab bar configuration with custom icons
+- Screen options and headers
+- Platform-specific adaptations
+- Dynamic tab titles and icons
+
+## Navigation Architecture
+
+The app uses a sophisticated responsive navigation system:
+
+### Platform-Specific Navigation
+- **Mobile Native**: Bottom tab navigation with haptic feedback
+- **Desktop Web**: Top horizontal navigation bar
+- **Mobile Web**: Hamburger menu with animated right-thumb accessible menu
+- **Implementation**: All implemented in `app/(tabs)/_layout.tsx` with responsive breakpoints
+
+### Navigation Features
+- Responsive design that adapts to screen size
+- Platform-specific optimizations for user experience
+- Haptic feedback on mobile for enhanced UX
+- Accessibility considerations for mobile web navigation
+- Consistent routing across all platforms
+
+## Cross-Platform Development
+
+### Platform-Specific Code
+```typescript
+import { Platform } from 'react-native';
+
+// Platform checks
+if (Platform.OS === 'web') {
+  // Web-specific code
+} else if (Platform.OS === 'ios') {
+  // iOS-specific code
+} else {
+  // Android-specific code
+}
+
+// Platform-specific styling
+const styles = StyleSheet.create({
+  container: {
+    ...Platform.select({
+      ios: { shadowOffset: { width: 0, height: 2 } },
+      android: { elevation: 4 },
+      web: { boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
+    }),
+  },
+});
+```
+
+### Cross-Platform Compatibility
+- **Expo Router**: Handles routing across platforms seamlessly
+- **Responsive design**: Adapts to different screen sizes automatically
+- **Platform-specific components**: Available where needed (TabBarBackground.ios.tsx)
+- **Consistent user experience**: Maintained across iOS, Android, and web
+- **Asset optimization**: Images optimized for multiple platforms
+- **Bundle optimization**: For web deployment with platform-specific builds
+
+### Web Optimizations
+For web deployment (see [vercel.json](mdc:vercel.json)):
+- Static export configuration
+- SEO optimization with +html.tsx
+- Progressive Web App features
+- Responsive design considerations
+
+## NativeWind Integration
+
+### Setup and Configuration
+Configured in [tailwind.config.js](mdc:tailwind.config.js):
+- Extended theme colors for photography app
+- Custom breakpoints for tablet/desktop
+- Dark mode support
+- Platform-specific utilities
+
+### Usage Patterns
+```typescript
+// Basic styling
+<View className="flex-1 bg-background p-4">
+
+// Responsive design
+<View className="p-4 md:p-6 lg:p-8">
+
+// Dark mode support
+<Text className="text-foreground dark:text-foreground-dark">
+
+// Platform-specific
+<View className="ios:pt-safe-area-top android:pt-4">
+```
+
+### Performance Considerations
+- Use className prop for better tree-shaking
+- Avoid inline styles when possible
+- Leverage design tokens from [tailwind.config.js](mdc:tailwind.config.js)
+
+## Gluestack UI Integration
+
+### Component Usage
+```typescript
+import { Button, ButtonText } from '@gluestack-ui/themed';
+import { VStack, HStack } from '@gluestack-ui/themed';
+
+// Combining with NativeWind
+<Button className="bg-primary rounded-lg">
+  <ButtonText className="text-primary-foreground">
+    Calculate
+  </ButtonText>
+</Button>
+```
+
+### Theme Configuration
+See [gluestack-ui.config.json](mdc:gluestack-ui.config.json) for:
+- Component token customization
+- Default variant settings
+- Platform-specific adaptations
+
+## State Management
+
+### Local State Patterns
+```typescript
+// Calculator state in hooks
+const useBorderCalculator = () => {
+  const [state, setState] = useState(initialState);
+  
+  const updateValue = useCallback((key: string, value: number) => {
+    setState(prev => ({ ...prev, [key]: value }));
+  }, []);
+  
+  return { state, updateValue };
+};
+```
+
+### Context for Global State
+```typescript
+// Theme context example
+const ThemeContext = createContext();
+
+export const ThemeProvider = ({ children }) => {
+  const [theme, setTheme] = useState('system');
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
+```
+
+## Navigation Patterns
+
+### Programmatic Navigation
+```typescript
+import { useRouter } from 'expo-router';
+
+const MyComponent = () => {
+  const router = useRouter();
+  
+  const navigateToCalculator = () => {
+    router.push('/border');
+  };
+  
+  return <Button onPress={navigateToCalculator}>Go to Border Calculator</Button>;
+};
+```
+
+### Deep Linking
+Configure in [app.json](mdc:app.json):
+```json
+{
+  "expo": {
+    "scheme": "dorkroom",
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
+```
+
+## Performance Optimization
+
+### Bundle Optimization
+- Use Expo's tree-shaking with [metro.config.js](mdc:metro.config.js)
+- Implement code splitting for web builds
+- Optimize asset loading and caching
+
+### Memory Management
+```typescript
+// Cleanup in useEffect
+useEffect(() => {
+  const subscription = eventEmitter.addListener('event', handler);
+  
+  return () => {
+    subscription.remove();
+  };
+}, []);
+
+// Memo for expensive components
+const ExpensiveComponent = React.memo(({ data }) => {
+  return <ComplexCalculation data={data} />;
+});
+```
+
+### Image and Asset Optimization
+- Use Expo's asset optimization
+- Implement lazy loading for images
+- Use appropriate image formats (WebP for web)
+
+## Development Workflow
+
+### Development Scripts
+From [package.json](mdc:package.json):
+```bash
+bun run dev          # Start development server
+bun run ios          # iOS simulator
+bun run android      # Android emulator  
+bun run web          # Web browser
+bun run build        # Production web build
+```
+
+### Environment Configuration
+- Use Expo Constants for environment variables
+- Configure different builds for development/production
+- Implement feature flags for testing
+
+### Debugging
+```typescript
+import { __DEV__ } from 'react-native';
+
+if (__DEV__) {
+  console.log('Development mode');
+  // Development-only code
+}
+```
+
+## Error Handling
+
+### Error Boundaries
+```typescript
+class CalculatorErrorBoundary extends React.Component {
+  state = { hasError: false };
+  
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+  
+  componentDidCatch(error, errorInfo) {
+    // Log error to analytics service
+    console.error('Calculator error:', error, errorInfo);
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      return <ErrorFallback />;
+    }
+    
+    return this.props.children;
+  }
+}
+```
+
+### Graceful Degradation
+- Handle network failures gracefully
+- Provide offline functionality where possible
+- Show meaningful error messages to users
+
+## Testing with Expo
+
+### Unit Testing
+```typescript
+// Jest configuration in package.json
+"jest": {
+  "preset": "jest-expo"
+}
+
+// Test example
+import { render } from '@testing-library/react-native';
+import { BorderCalculator } from '../border';
+
+test('renders calculator correctly', () => {
+  const { getByText } = render(<BorderCalculator />);
+  expect(getByText('Calculate Borders')).toBeTruthy();
+});
+```
+
+### E2E Testing
+- Use Detox for React Native E2E testing
+- Test across multiple platforms
+- Implement automated testing in CI/CD pipeline
+
+## Build and Deployment
+
+### Web Deployment
+Using Vercel with [vercel.json](mdc:vercel.json):
+- Static site generation
+- Automatic deployments from Git
+- Preview deployments for testing
+
+### Mobile App Distribution
+- Use EAS Build for production builds
+- Configure app store metadata
+- Implement over-the-air updates with EAS Update
