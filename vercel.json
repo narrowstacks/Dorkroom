@@ -3,6 +3,11 @@
   "devCommand": "npm run dev",
   "cleanUrls": true,
   "buildCommand": "bun run web-export",
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "@vercel/node"
+    }
+  },
   "rewrites": [
     {
       "source": "/:path*",
