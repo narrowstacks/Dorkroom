@@ -5,7 +5,7 @@
   "buildCommand": "bun run web-export",
   "functions": {
     "api/**/*.ts": {
-      "runtime": "@vercel/node@latest"
+      "runtime": "@vercel/node@5.3.0"
     }
   },
   "rewrites": [
