@@ -1,6 +1,6 @@
 /**
  * Dorkroom API Client
- * 
+ *
  * A robust, typed, and configurable TypeScript client for the
  * Dorkroom Static API. Features:
  * - Promise-based HTTP transport with retries & timeouts
@@ -12,7 +12,7 @@
  */
 
 // Main client class
-export { DorkroomClient } from './client';
+export { DorkroomClient } from "./client";
 
 // Data types and interfaces
 export type {
@@ -24,7 +24,9 @@ export type {
   Logger,
   FuzzySearchOptions,
   ApiResponse,
-} from './types';
+  PaginatedApiResponse,
+  CombinationFetchOptions,
+} from "./types";
 
 // Error classes
 export {
@@ -32,13 +34,13 @@ export {
   DataFetchError,
   DataParseError,
   DataNotLoadedError,
-} from './errors';
+} from "./errors";
 
 // Transport layer (for testing and custom implementations)
-export type { HTTPTransport, RetryConfig } from './transport';
+export type { HTTPTransport, RetryConfig } from "./transport";
 export {
   FetchHTTPTransport,
   ConsoleLogger,
   DEFAULT_RETRY_CONFIG,
   joinURL,
-} from './transport'; 
+} from "./transport";

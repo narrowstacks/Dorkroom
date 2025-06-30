@@ -1,7 +1,7 @@
 /**
  * Main client for interacting with the Dorkroom REST API.
- * 
- * This client provides methods to fetch film stocks, developers, and 
+ *
+ * This client provides methods to fetch film stocks, developers, and
  * development combinations from the Dorkroom REST API. Features:
  * - Automatic retries and timeouts with circuit breaker
  * - Indexed lookups for O(1) performance
@@ -10,23 +10,29 @@
  * - Comprehensive error handling
  */
 
-import { 
-  Film, 
-  Developer, 
-  Combination, 
-  DorkroomClientConfig, 
-  Logger, 
+import {
+  Film,
+  Developer,
+  Combination,
+  DorkroomClientConfig,
+  Logger,
   FuzzySearchOptions,
-  ApiResponse
-} from './types';
-import { DataFetchError, DataParseError, DataNotLoadedError } from './errors';
-import { 
-  HTTPTransport, 
-  FetchHTTPTransport, 
-  ConsoleLogger, 
-  joinURL 
-} from './transport';
-import { debounce } from '../../utils/throttle';
+  ApiResponse,
+  PaginatedApiResponse,
+  CombinationFetchOptions,
+} from "./types";
+import { DataFetchError, DataParseError, DataNotLoadedError } from "./errors";
+import {
+  HTTPTransport,
+  FetchHTTPTransport,
+  ConsoleLogger,
+  joinURL,
+} from "./transport";
+import { debounce } from "../../utils/throttle";
+import {
+  getApiEndpointConfig,
+  getEnvironmentConfig,
+} from "../../utils/platformDetection";
 
 /**
  * Cache entry with expiration.
@@ -48,10 +54,9 @@ class RequestDeduplicator {
       return this.pendingRequests.get(key) as Promise<T>;
     }
 
-    const promise = operation()
-      .finally(() => {
-        this.pendingRequests.delete(key);
-      });
+    const promise = operation().finally(() => {
+      this.pendingRequests.delete(key);
+    });
 
     this.pendingRequests.set(key, promise);
     return promise;
@@ -72,11 +77,12 @@ class RequestDeduplicator {
 class TTLCache<T> {
   private cache = new Map<string, CacheEntry<T>>();
 
-  set(key: string, value: T, ttlMs: number = 300000): void { // Default 5 minutes
+  set(key: string, value: T, ttlMs: number = 300000): void {
+    // Default 5 minutes
     this.cache.set(key, {
       data: value,
       timestamp: Date.now(),
-      ttl: ttlMs
+      ttl: ttlMs,
     });
   }
 
@@ -147,26 +153,37 @@ export class DorkroomClient {
   private debouncedFuzzySearchDevelopers: ReturnType<typeof debounce>;
 
   constructor(config: DorkroomClientConfig = {}) {
-    this.baseUrl = config.baseUrl || 'https://api.dorkroom.art/api';
+    // Use platform-aware endpoint configuration
+    const apiConfig = getApiEndpointConfig();
+    this.baseUrl = config.baseUrl || apiConfig.baseUrl;
     this.timeout = config.timeout || 10000; // 10 seconds
     this.cacheTTL = config.cacheTTL || 300000; // 5 minutes
     this.logger = config.logger || new ConsoleLogger();
-    
+
+    // Log the platform configuration for debugging
+    if (config.logger || __DEV__) {
+      const envConfig = getEnvironmentConfig();
+      this.logger.debug(
+        `Dorkroom client initialized for ${envConfig.platform} platform ` +
+          `with base URL: ${this.baseUrl}`,
+      );
+    }
+
     // Initialize HTTP transport
     this.transport = new FetchHTTPTransport(
       { maxRetries: config.maxRetries || 3 },
-      this.logger
+      this.logger,
     );
 
     // Initialize debounced search methods
     this.debouncedFuzzySearchFilms = debounce(
       this.performFuzzySearchFilms.bind(this),
-      config.searchDebounceMs || 300
+      config.searchDebounceMs || 300,
     );
 
     this.debouncedFuzzySearchDevelopers = debounce(
       this.performFuzzySearchDevelopers.bind(this),
-      config.searchDebounceMs || 300
+      config.searchDebounceMs || 300,
     );
 
     // Cleanup expired cache entries periodically
@@ -179,13 +196,13 @@ export class DorkroomClient {
    * Fetch and parse a JSON resource from the API.
    */
   private async fetch<T>(
-    resource: string, 
+    resource: string,
     params: URLSearchParams = new URLSearchParams(),
-    requestKey?: string
+    requestKey?: string,
   ): Promise<T[]> {
     const url = joinURL(this.baseUrl, `${resource}?${params.toString()}`);
     const cacheKey = requestKey || url;
-    
+
     // Check cache first
     const cached = this.searchCache.get(cacheKey);
     if (cached) {
@@ -202,21 +219,29 @@ export class DorkroomClient {
       }
 
       try {
-        this.logger.debug(`Fetching ${resource} with params: ${params.toString()}`);
+        this.logger.debug(
+          `Fetching ${resource} with params: ${params.toString()}`,
+        );
         const response = await this.transport.get(url, this.timeout);
-        
+
         try {
-          const apiResponse = await response.json() as ApiResponse<T>;
+          const apiResponse = (await response.json()) as ApiResponse<T>;
           if (apiResponse && apiResponse.data) {
-                       // Cache the result
-           this.searchCache.set(cacheKey, apiResponse.data as any, this.cacheTTL);
-           return apiResponse.data;
+            // Cache the result
+            this.searchCache.set(
+              cacheKey,
+              apiResponse.data as any,
+              this.cacheTTL,
+            );
+            return apiResponse.data;
           }
-          throw new DataParseError(`Invalid API response structure from ${resource}`);
+          throw new DataParseError(
+            `Invalid API response structure from ${resource}`,
+          );
         } catch (error) {
           throw new DataParseError(
             `Invalid JSON in ${resource}: ${error}`,
-            error as Error
+            error as Error,
           );
         }
       } catch (error) {
@@ -225,7 +250,7 @@ export class DorkroomClient {
         }
         throw new DataFetchError(
           `Failed to fetch ${resource}: ${error}`,
-          error as Error
+          error as Error,
         );
       } finally {
         if (requestKey) {
@@ -260,7 +285,7 @@ export class DorkroomClient {
 
   /**
    * Fetch and parse all JSON data, building internal indexes.
-   * 
+   *
    * This method must be called before using any other client methods.
    * Will only reload if data is expired (older than 10 minutes) or not loaded.
    */
@@ -269,7 +294,7 @@ export class DorkroomClient {
     if (this.loaded && !this.isDataExpired()) {
       this.logger.debug(
         `Data cache still valid (age: ${Math.round(this.getCacheAge() / 1000)}s), ` +
-        `skipping reload`
+          `skipping reload`,
       );
       return;
     }
@@ -281,7 +306,7 @@ export class DorkroomClient {
    * Force reload all data from the API, bypassing cache.
    */
   async forceReload(): Promise<void> {
-    this.logger.info('Force reloading data from API');
+    this.logger.info("Force reloading data from API");
     await this.performLoad();
   }
 
@@ -292,17 +317,19 @@ export class DorkroomClient {
     try {
       // Fetch all data in parallel
       const [rawFilms, rawDevelopers, rawCombinations] = await Promise.all([
-        this.fetch<Film>('films'),
-        this.fetch<Developer>('developers'),
-        this.fetch<any>('combinations'),
+        this.fetch<Film>("films"),
+        this.fetch<Developer>("developers"),
+        this.fetch<any>("combinations"),
       ]);
 
       // Store data
       this.films = rawFilms;
       this.developers = rawDevelopers;
-      this.combinations = (rawCombinations as any[]).map(c => ({
+      this.combinations = (rawCombinations as any[]).map((c) => ({
         ...c,
-        dilutionId: c.dilutionId ? parseInt(String(c.dilutionId), 10) : undefined,
+        dilutionId: c.dilutionId
+          ? parseInt(String(c.dilutionId), 10)
+          : undefined,
       }));
 
       // Build indexes
@@ -310,11 +337,11 @@ export class DorkroomClient {
 
       this.loaded = true;
       this.lastLoadedTimestamp = Date.now();
-      
+
       this.logger.info(
         `Loaded ${this.films.length} films, ` +
-        `${this.developers.length} developers, ` +
-        `${this.combinations.length} combinations.`
+          `${this.developers.length} developers, ` +
+          `${this.combinations.length} combinations.`,
       );
     } catch (error) {
       this.logger.error(`Failed to load data: ${error}`);
@@ -350,7 +377,9 @@ export class DorkroomClient {
     if (!this.loaded || this.lastLoadedTimestamp === null) {
       return true;
     }
-    return Date.now() - this.lastLoadedTimestamp > DorkroomClient.DATA_CACHE_TTL;
+    return (
+      Date.now() - this.lastLoadedTimestamp > DorkroomClient.DATA_CACHE_TTL
+    );
   }
 
   /**
@@ -425,7 +454,7 @@ export class DorkroomClient {
    */
   getCombinationsForFilm(filmId: string): Combination[] {
     this.ensureLoaded();
-    return this.combinations.filter(c => c.filmStockId === filmId);
+    return this.combinations.filter((c) => c.filmStockId === filmId);
   }
 
   /**
@@ -433,7 +462,160 @@ export class DorkroomClient {
    */
   getCombinationsForDeveloper(developerId: string): Combination[] {
     this.ensureLoaded();
-    return this.combinations.filter(c => c.developerId === developerId);
+    return this.combinations.filter((c) => c.developerId === developerId);
+  }
+
+  /**
+   * Fetch combinations with server-side filtering for better performance.
+   * This method leverages the Supabase edge function's filtering capabilities.
+   */
+  async fetchCombinations(
+    options: CombinationFetchOptions = {},
+  ): Promise<PaginatedApiResponse<Combination>> {
+    const params = new URLSearchParams();
+
+    if (options.filmSlug) {
+      params.set("film", options.filmSlug);
+    }
+
+    if (options.developerSlug) {
+      params.set("developer", options.developerSlug);
+    }
+
+    if (options.count && options.count > 0) {
+      params.set("count", options.count.toString());
+    }
+
+    if (options.page && options.page > 0) {
+      params.set("page", options.page.toString());
+    }
+
+    if (options.id) {
+      params.set("id", options.id);
+    }
+
+    const requestKey = `combinations-${params.toString()}`;
+
+    // Check cache first
+    const cached = this.searchCache.get(requestKey);
+    if (cached) {
+      return cached;
+    }
+
+    // Use deduplication for concurrent requests
+    return this.deduplicator.deduplicate(requestKey, async () => {
+      try {
+        const response = await this.transport.get(
+          joinURL(this.baseUrl, `combinations?${params.toString()}`),
+          this.timeout,
+        );
+
+        const data = await response.json();
+
+        // Handle single record response (when querying by ID)
+        if (
+          options.id &&
+          data &&
+          typeof data === "object" &&
+          !Array.isArray(data.data)
+        ) {
+          const result: PaginatedApiResponse<Combination> = {
+            data: data ? [data] : [],
+            count: data ? 1 : 0,
+            filters: {
+              film: options.filmSlug,
+              developer: options.developerSlug,
+            },
+          };
+
+          // Cache the result
+          this.searchCache.set(requestKey, result, this.cacheTTL);
+          return result;
+        }
+
+        // Handle paginated/filtered response
+        const result: PaginatedApiResponse<Combination> = {
+          data: data.data || [],
+          count: data.count || null,
+          page: data.page,
+          perPage: data.perPage,
+          filters: data.filters || {
+            film: options.filmSlug,
+            developer: options.developerSlug,
+          },
+        };
+
+        // Cache the result
+        this.searchCache.set(requestKey, result, this.cacheTTL);
+        return result;
+      } catch (error) {
+        this.logger.error(
+          `Failed to fetch combinations with options ${JSON.stringify(options)}: ${error}`,
+        );
+        throw new DataFetchError(
+          `Failed to fetch combinations: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+      }
+    });
+  }
+
+  /**
+   * Get combinations for a specific film using server-side filtering.
+   * More efficient than client-side filtering for large datasets.
+   */
+  async getCombinationsForFilmSlug(filmSlug: string): Promise<Combination[]> {
+    const response = await this.fetchCombinations({ filmSlug });
+    return response.data;
+  }
+
+  /**
+   * Get combinations for a specific developer using server-side filtering.
+   * More efficient than client-side filtering for large datasets.
+   */
+  async getCombinationsForDeveloperSlug(
+    developerSlug: string,
+  ): Promise<Combination[]> {
+    const response = await this.fetchCombinations({ developerSlug });
+    return response.data;
+  }
+
+  /**
+   * Get combinations for both a specific film and developer using server-side filtering.
+   * Most efficient way to find combinations for a specific film+developer pair.
+   */
+  async getCombinationsForFilmAndDeveloper(
+    filmSlug: string,
+    developerSlug: string,
+  ): Promise<Combination[]> {
+    const response = await this.fetchCombinations({ filmSlug, developerSlug });
+    return response.data;
+  }
+
+  /**
+   * Get a single combination by its UUID using server-side filtering.
+   * More efficient than loading all combinations when you only need one.
+   */
+  async getCombinationById(id: string): Promise<Combination | null> {
+    const response = await this.fetchCombinations({ id });
+    return response.data.length > 0 ? response.data[0] : null;
+  }
+
+  /**
+   * Get paginated combinations with optional filtering.
+   * Useful for implementing pagination in UI components.
+   */
+  async getPaginatedCombinations(
+    page: number = 1,
+    count: number = 25,
+    filters?: { filmSlug?: string; developerSlug?: string },
+  ): Promise<PaginatedApiResponse<Combination>> {
+    const options: CombinationFetchOptions = {
+      page,
+      count,
+      ...filters,
+    };
+
+    return this.fetchCombinations(options);
   }
 
   /**
@@ -442,19 +624,19 @@ export class DorkroomClient {
   searchFilms(query: string, colorType?: string): Film[] {
     this.ensureLoaded();
     const lowerQuery = query.toLowerCase().trim();
-    
+
     // Return empty array for empty queries
     if (!lowerQuery) {
       return [];
     }
-    
-    return this.films.filter(film => {
-      const matchesQuery = 
+
+    return this.films.filter((film) => {
+      const matchesQuery =
         film.name.toLowerCase().includes(lowerQuery) ||
         film.brand.toLowerCase().includes(lowerQuery);
-      
+
       const matchesColorType = !colorType || film.colorType === colorType;
-      
+
       return matchesQuery && matchesColorType;
     });
   }
@@ -465,19 +647,19 @@ export class DorkroomClient {
   searchDevelopers(query: string, type?: string): Developer[] {
     this.ensureLoaded();
     const lowerQuery = query.toLowerCase().trim();
-    
+
     // Return empty array for empty queries
     if (!lowerQuery) {
       return [];
     }
-    
-    return this.developers.filter(developer => {
-      const matchesQuery = 
+
+    return this.developers.filter((developer) => {
+      const matchesQuery =
         developer.name.toLowerCase().includes(lowerQuery) ||
         developer.manufacturer.toLowerCase().includes(lowerQuery);
-      
+
       const matchesType = !type || developer.type === type;
-      
+
       return matchesQuery && matchesType;
     });
   }
@@ -486,40 +668,40 @@ export class DorkroomClient {
    * Internal method for performing fuzzy search on films.
    */
   private async performFuzzySearchFilms(
-    query: string, 
-    options: FuzzySearchOptions = {}
+    query: string,
+    options: FuzzySearchOptions = {},
   ): Promise<Film[]> {
     const params = new URLSearchParams({
       query,
-      fuzzy: 'true',
+      fuzzy: "true",
     });
 
     if (options.limit) {
-      params.append('limit', options.limit.toString());
+      params.append("limit", options.limit.toString());
     }
-    
+
     const requestKey = `fuzzy-films-${query}-${JSON.stringify(options)}`;
-    return this.fetch<Film>('films', params, requestKey);
+    return this.fetch<Film>("films", params, requestKey);
   }
 
   /**
    * Internal method for performing fuzzy search on developers.
    */
   private async performFuzzySearchDevelopers(
-    query: string, 
-    options: FuzzySearchOptions = {}
+    query: string,
+    options: FuzzySearchOptions = {},
   ): Promise<Developer[]> {
     const params = new URLSearchParams({
       query,
-      fuzzy: 'true',
+      fuzzy: "true",
     });
 
     if (options.limit) {
-      params.append('limit', options.limit.toString());
+      params.append("limit", options.limit.toString());
     }
-    
+
     const requestKey = `fuzzy-developers-${query}-${JSON.stringify(options)}`;
-    return this.fetch<Developer>('developers', params, requestKey);
+    return this.fetch<Developer>("developers", params, requestKey);
   }
 
   /**
@@ -527,8 +709,8 @@ export class DorkroomClient {
    * This method is debounced to prevent excessive API calls.
    */
   async fuzzySearchFilms(
-    query: string, 
-    options: FuzzySearchOptions = {}
+    query: string,
+    options: FuzzySearchOptions = {},
   ): Promise<Film[]> {
     return new Promise((resolve, reject) => {
       this.debouncedFuzzySearchFilms(query, options)
@@ -542,8 +724,8 @@ export class DorkroomClient {
    * This method is debounced to prevent excessive API calls.
    */
   async fuzzySearchDevelopers(
-    query: string, 
-    options: FuzzySearchOptions = {}
+    query: string,
+    options: FuzzySearchOptions = {},
   ): Promise<Developer[]> {
     return new Promise((resolve, reject) => {
       this.debouncedFuzzySearchDevelopers(query, options)
@@ -571,9 +753,9 @@ export class DorkroomClient {
   /**
    * Get statistics about the loaded data.
    */
-  getStats(): { 
-    films: number; 
-    developers: number; 
+  getStats(): {
+    films: number;
+    developers: number;
     combinations: number;
     cacheSize: number;
     pendingRequests: number;
@@ -627,11 +809,11 @@ export class DorkroomClient {
     this.loaded = false;
     this.lastLoadedTimestamp = null;
     this.clearCache();
-    
+
     // Reset transport layer if possible
     const transport = this.transport as FetchHTTPTransport;
     if (transport.resetCircuitBreaker) {
       transport.resetCircuitBreaker();
     }
   }
-} 
+}

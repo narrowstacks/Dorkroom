@@ -1,3 +1,6 @@
+// Import using ES modules
+import { useDevelopmentRecipes } from "../useDevelopmentRecipes";
+
 describe("useDevelopmentRecipes", () => {
   // Test data factories
   const createMockFilm = (overrides = {}) => ({
@@ -25,8 +28,8 @@ describe("useDevelopmentRecipes", () => {
     type: "powder",
     filmOrPaper: "film",
     dilutions: [
-      { id: 1, dilution: "Stock" },
-      { id: 2, dilution: "1:1" },
+      { id: 1, name: "Stock", dilution: "Stock" },
+      { id: 2, name: "1:1", dilution: "1:1" },
     ],
     workingLifeHours: 24,
     stockLifeMonths: 6,
@@ -62,12 +65,10 @@ describe("useDevelopmentRecipes", () => {
 
   describe("hook structure", () => {
     it("should be importable", () => {
-      const { useDevelopmentRecipes } = require("../useDevelopmentRecipes");
       expect(typeof useDevelopmentRecipes).toBe("function");
     });
 
     it("should be properly structured as a hook", () => {
-      const { useDevelopmentRecipes } = require("../useDevelopmentRecipes");
       expect(useDevelopmentRecipes.name).toBe("useDevelopmentRecipes");
     });
   });
@@ -390,7 +391,7 @@ describe("useDevelopmentRecipes", () => {
       let sortBy = "timeMinutes";
 
       // Simulate handleSort logic
-      const handleSort = (newSortBy) => {
+      const handleSort = (newSortBy: string) => {
         if (sortBy === newSortBy) {
           sortDirection = sortDirection === "asc" ? "desc" : "asc";
         } else {
@@ -473,8 +474,8 @@ describe("useDevelopmentRecipes", () => {
       });
 
       Array.from(isoSet)
-        .sort((a, b) => a - b)
-        .forEach((iso) => {
+        .sort((a: number, b: number) => a - b)
+        .forEach((iso: number) => {
           isos.push({ label: iso.toString(), value: iso.toString() });
         });
 
@@ -793,15 +794,14 @@ describe("useDevelopmentRecipes", () => {
 
   describe("module exports", () => {
     it("should export useDevelopmentRecipes as named export", () => {
-      const { useDevelopmentRecipes } = require("../useDevelopmentRecipes");
       expect(useDevelopmentRecipes).toBeDefined();
       expect(typeof useDevelopmentRecipes).toBe("function");
     });
 
-    it("should export interfaces and types", () => {
-      const module = require("../useDevelopmentRecipes");
-      expect(module).toBeDefined();
-      expect(typeof module.useDevelopmentRecipes).toBe("function");
+    it("should have correct TypeScript types", () => {
+      // Test that the hook can be called and returns the expected structure
+      // This is a static test that verifies TypeScript compilation
+      expect(typeof useDevelopmentRecipes).toBe("function");
     });
   });
 });

@@ -1,6 +1,6 @@
 /**
  * TypeScript interfaces for Dorkroom API data structures.
- * 
+ *
  * These interfaces represent the data structures returned by the
  * Dorkroom REST API for film stocks, developers, and development combinations.
  */
@@ -168,4 +168,41 @@ export interface ApiResponse<T> {
   success: boolean;
   message: string;
   total: number;
-} 
+}
+
+/**
+ * Represents the structure of a paginated API response from Supabase edge functions.
+ */
+export interface PaginatedApiResponse<T> {
+  /** The data array */
+  data: T[];
+  /** Total count of records matching the query */
+  count: number | null;
+  /** Current page number (only present for paginated requests) */
+  page?: number;
+  /** Number of items per page (only present for paginated requests) */
+  perPage?: number;
+  /** Applied filters */
+  filters?: {
+    /** Film slug filter */
+    film?: string;
+    /** Developer slug filter */
+    developer?: string;
+  };
+}
+
+/**
+ * Options for fetching combinations with server-side filtering.
+ */
+export interface CombinationFetchOptions {
+  /** Film slug to filter by */
+  filmSlug?: string;
+  /** Developer slug to filter by */
+  developerSlug?: string;
+  /** Number of results per page */
+  count?: number;
+  /** Page number (starts at 1) */
+  page?: number;
+  /** Specific combination UUID to fetch */
+  id?: string;
+}

@@ -3,6 +3,8 @@
  *
  * Provides a configurable HTTP transport with retry logic and timeout handling,
  * similar to the Python requests.Session with retries.
+ *
+ * Updated to support platform-aware API endpoints with secure API key handling.
  */
 
 import {
@@ -15,6 +17,7 @@ import {
   CircuitBreakerError,
 } from "./errors";
 import type { Logger } from "./types";
+import { getApiUrl, getEnvironmentConfig } from "../../utils/platformDetection";
 
 /**
  * Protocol for HTTP transport layer dependency injection.
@@ -352,8 +355,23 @@ export class FetchHTTPTransport implements HTTPTransport {
 /**
  * Create a URL by joining base URL and path.
  * Similar to Python's urljoin but simplified for our use case.
+ * Updated to support platform-aware API endpoints.
  */
 export function joinURL(baseUrl: string, ...segments: string[]): string {
+  // Check if this is a request for any of the Supabase API endpoints
+  const allSegments = [baseUrl, ...segments].join("/");
+  const apiEndpoints = ["developers", "films", "combinations"];
+
+  for (const endpoint of apiEndpoints) {
+    if (
+      allSegments.includes(endpoint) ||
+      allSegments.includes(`/api/${endpoint}`)
+    ) {
+      // Use platform-aware endpoint for Supabase APIs
+      return getApiUrl(endpoint);
+    }
+  }
+
   // Handle empty baseUrl case
   if (!baseUrl && segments.length === 1 && !segments[0]) {
     return "/";
