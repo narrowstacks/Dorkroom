@@ -1,20 +1,20 @@
 /**
  * HTTP transport layer for Dorkroom API client.
- * 
+ *
  * Provides a configurable HTTP transport with retry logic and timeout handling,
  * similar to the Python requests.Session with retries.
  */
 
-import { 
-  DataFetchError, 
-  NetworkError, 
-  TimeoutError, 
-  RateLimitError, 
-  ServerError, 
-  ClientError, 
-  CircuitBreakerError 
-} from './errors';
-import type { Logger } from './types';
+import {
+  DataFetchError,
+  NetworkError,
+  TimeoutError,
+  RateLimitError,
+  ServerError,
+  ClientError,
+  CircuitBreakerError,
+} from "./errors";
+import type { Logger } from "./types";
 
 /**
  * Protocol for HTTP transport layer dependency injection.
@@ -57,9 +57,9 @@ export interface CircuitBreakerConfig {
  * Circuit breaker states.
  */
 enum CircuitBreakerState {
-  CLOSED = 'CLOSED',
-  OPEN = 'OPEN',
-  HALF_OPEN = 'HALF_OPEN'
+  CLOSED = "CLOSED",
+  OPEN = "OPEN",
+  HALF_OPEN = "HALF_OPEN",
 }
 
 /**
@@ -77,8 +77,8 @@ class CircuitBreaker {
     if (this.state === CircuitBreakerState.OPEN) {
       if (Date.now() < this.nextAttemptTime) {
         throw new CircuitBreakerError(
-          'Circuit breaker is open - too many recent failures',
-          new Date(this.nextAttemptTime)
+          "Circuit breaker is open - too many recent failures",
+          new Date(this.nextAttemptTime),
         );
       } else {
         this.state = CircuitBreakerState.HALF_OPEN;
@@ -179,13 +179,13 @@ export class FetchHTTPTransport implements HTTPTransport {
   constructor(
     retryConfig: Partial<RetryConfig> = {},
     logger: Logger = new ConsoleLogger(),
-    circuitBreakerConfig: Partial<CircuitBreakerConfig> = {}
+    circuitBreakerConfig: Partial<CircuitBreakerConfig> = {},
   ) {
     this.retryConfig = { ...DEFAULT_RETRY_CONFIG, ...retryConfig };
     this.logger = logger;
     this.circuitBreaker = new CircuitBreaker({
       ...DEFAULT_CIRCUIT_BREAKER_CONFIG,
-      ...circuitBreakerConfig
+      ...circuitBreakerConfig,
     });
   }
 
@@ -196,17 +196,17 @@ export class FetchHTTPTransport implements HTTPTransport {
       for (let attempt = 0; attempt <= this.retryConfig.maxRetries; attempt++) {
         try {
           this.logger.debug(`GET ${url} (attempt ${attempt + 1})`);
-          
+
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), timeout);
 
           try {
             const response = await fetch(url, {
-              method: 'GET',
+              method: "GET",
               signal: controller.signal,
               headers: {
-                'Accept': 'application/json',
-                'User-Agent': 'Dorkroom-Client-TS/1.0',
+                Accept: "application/json",
+                "User-Agent": "Dorkroom-Client-TS/1.0",
               },
             });
 
@@ -214,12 +214,14 @@ export class FetchHTTPTransport implements HTTPTransport {
 
             // Classify and handle different response types
             if (response.status === 429) {
-              const retryAfter = response.headers.get('retry-after');
-              const retryAfterMs = retryAfter ? parseInt(retryAfter) * 1000 : 60000;
+              const retryAfter = response.headers.get("retry-after");
+              const retryAfterMs = retryAfter
+                ? parseInt(retryAfter) * 1000
+                : 60000;
               throw new RateLimitError(
                 `Rate limit exceeded: ${response.statusText}`,
                 retryAfterMs,
-                new Date(Date.now() + retryAfterMs)
+                new Date(Date.now() + retryAfterMs),
               );
             }
 
@@ -227,14 +229,14 @@ export class FetchHTTPTransport implements HTTPTransport {
               throw new ServerError(
                 `Server error: ${response.status} ${response.statusText}`,
                 response.status,
-                true
+                true,
               );
             }
 
             if (response.status >= 400) {
               throw new ClientError(
                 `Client error: ${response.status} ${response.statusText}`,
-                response.status
+                response.status,
               );
             }
 
@@ -243,28 +245,31 @@ export class FetchHTTPTransport implements HTTPTransport {
                 `HTTP ${response.status}: ${response.statusText}`,
                 undefined,
                 response.status,
-                this.retryConfig.retryStatusCodes.includes(response.status)
+                this.retryConfig.retryStatusCodes.includes(response.status),
               );
             }
 
             return response;
           } catch (error) {
             clearTimeout(timeoutId);
-            
+
             // Handle different error types
-            if (error instanceof DOMException && error.name === 'AbortError') {
-              throw new TimeoutError(`Request timed out after ${timeout}ms`, timeout);
+            if (error instanceof DOMException && error.name === "AbortError") {
+              throw new TimeoutError(
+                `Request timed out after ${timeout}ms`,
+                timeout,
+              );
             }
-            
+
             if (error instanceof TypeError) {
               throw new NetworkError(`Network error: ${error.message}`, error);
             }
-            
+
             throw error;
           }
         } catch (error) {
           lastError = error as Error;
-          
+
           // Don't retry on the last attempt
           if (attempt === this.retryConfig.maxRetries) {
             break;
@@ -276,11 +281,12 @@ export class FetchHTTPTransport implements HTTPTransport {
           }
 
           // Calculate delay with exponential backoff
-          const delay = this.retryConfig.baseDelay * 
+          const delay =
+            this.retryConfig.baseDelay *
             Math.pow(this.retryConfig.backoffFactor, attempt);
-          
+
           this.logger.warn(
-            `Request failed (attempt ${attempt + 1}), retrying in ${delay}ms: ${error}`
+            `Request failed (attempt ${attempt + 1}), retrying in ${delay}ms: ${error}`,
           );
 
           await this.sleep(delay);
@@ -292,7 +298,7 @@ export class FetchHTTPTransport implements HTTPTransport {
         `Failed to fetch ${url} after ${this.retryConfig.maxRetries + 1} attempts`,
         lastError || undefined,
         undefined,
-        false
+        false,
       );
     });
   }
@@ -325,7 +331,7 @@ export class FetchHTTPTransport implements HTTPTransport {
    * Sleep for the specified number of milliseconds.
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -347,11 +353,31 @@ export class FetchHTTPTransport implements HTTPTransport {
  * Create a URL by joining base URL and path.
  * Similar to Python's urljoin but simplified for our use case.
  */
-export function joinURL(baseUrl: string, path: string): string {
+export function joinURL(baseUrl: string, ...segments: string[]): string {
+  // Handle empty baseUrl case
+  if (!baseUrl && segments.length === 1 && !segments[0]) {
+    return "/";
+  }
+
   // Remove trailing slash from base
-  const cleanBase = baseUrl.replace(/\/$/, '');
-  // Remove leading slash from path
-  const cleanPath = path.replace(/^\//, '');
-  
-  return `${cleanBase}/${cleanPath}`;
-} 
+  let result = baseUrl.replace(/\/$/, "");
+
+  // Join all segments
+  let hasSegments = false;
+  for (const segment of segments) {
+    if (segment !== undefined && segment !== null) {
+      // Remove leading and trailing slashes from segment
+      const cleanSegment = segment.replace(/^\/+|\/+$/g, "");
+      if (cleanSegment) {
+        result += `/${cleanSegment}`;
+        hasSegments = true;
+      } else if (segment === "" && !hasSegments) {
+        // Special case: if we have an empty string as the first segment, add trailing slash
+        result += "/";
+        hasSegments = true;
+      }
+    }
+  }
+
+  return result;
+}

@@ -1,11 +1,14 @@
 import React from 'react';
 import { Platform } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { startContinuousFPSMonitoring, stopContinuousFPSMonitoring, debugLog } from '@/utils/debugLogger';
 // UI Components
 import { LabeledSliderInput, TextInput, DimensionInputGroup, ToggleSwitch } from '@/components/ui/forms';
 import { WarningAlert } from '@/components/ui/feedback';
 import { ResultRow } from '@/components/ui/calculator';
 // Border Calculator Specific Components
 import { AnimatedPreview, BorderInfoSection } from '@/components/border-calculator';
+import { MobileBorderCalculator, useResponsiveDetection } from '@/components/border-calculator/mobile';
 
 import {
   DESKTOP_BREAKPOINT,
@@ -40,6 +43,8 @@ import * as Clipboard from 'expo-clipboard';
 import { encodePreset } from '@/utils/presetSharing';
 import { useSharedPresetLoader } from '@/hooks/useSharedPresetLoader';
 import { generateSharingUrls } from '@/utils/urlHelpers';
+import { useAppDetection } from '@/hooks/useAppDetection';
+import { AppBanner } from '@/components/ui/feedback/AppBanner';
 
 import {
   Box,
@@ -70,6 +75,7 @@ import {
 export default function BorderCalculator() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width > DESKTOP_BREAKPOINT;
+  const { shouldUseMobileLayout } = useResponsiveDetection();
   const backgroundColor = useThemeColor({}, 'background');
   const cardBackground = useThemeColor({}, 'cardBackground');
   const textColor = useThemeColor({}, 'text');
@@ -78,10 +84,13 @@ export default function BorderCalculator() {
   const outline = useThemeColor({}, 'outline');
   const shadowColor = useThemeColor({}, 'shadowColor');
 
-  const { aspectRatio, setAspectRatio, paperSize, setPaperSize, customAspectWidth, setCustomAspectWidth, customAspectHeight, setCustomAspectHeight, customPaperWidth, setCustomPaperWidth, customPaperHeight, setCustomPaperHeight, minBorder, setMinBorder, enableOffset, setEnableOffset, ignoreMinBorder, setIgnoreMinBorder, horizontalOffset, setHorizontalOffset, verticalOffset, setVerticalOffset, showBlades, setShowBlades, isLandscape, setIsLandscape, isRatioFlipped, setIsRatioFlipped, offsetWarning, bladeWarning, calculation, minBorderWarning, paperSizeWarning, resetToDefaults, applyPreset } = useBorderCalculator();
+  const { aspectRatio, setAspectRatio, paperSize, setPaperSize, customAspectWidth, setCustomAspectWidth, customAspectHeight, setCustomAspectHeight, customPaperWidth, setCustomPaperWidth, customPaperHeight, setCustomPaperHeight, minBorder, setMinBorder, setMinBorderSlider, enableOffset, setEnableOffset, ignoreMinBorder, setIgnoreMinBorder, horizontalOffset, setHorizontalOffset, setHorizontalOffsetSlider, verticalOffset, setVerticalOffset, setVerticalOffsetSlider, showBlades, setShowBlades, isLandscape, setIsLandscape, isRatioFlipped, setIsRatioFlipped, offsetWarning, bladeWarning, calculation, minBorderWarning, paperSizeWarning, resetToDefaults, applyPreset } = useBorderCalculator();
   const { presets, addPreset, updatePreset, removePreset } = useBorderPresets();
-  const loadedPresetFromUrl = useSharedPresetLoader();
+  const { loadedPreset: loadedPresetFromUrl, clearLoadedPreset } = useSharedPresetLoader();
   const toast = useToast();
+  const { showAppBanner, openInApp, dismissBanner, appMessage } = useAppDetection({ 
+    hasSharedContent: !!loadedPresetFromUrl 
+  });
 
   const [selectedPresetId, setSelectedPresetId] = React.useState('');
   const [presetName, setPresetName] = React.useState('');
@@ -89,38 +98,77 @@ export default function BorderCalculator() {
   const [isShareModalVisible, setShareModalVisible] = React.useState(false);
   const loadedPresetRef = React.useRef<BorderPreset | null>(null);
 
-  const currentSettings = React.useMemo(() => ({ aspectRatio, paperSize, customAspectWidth, customAspectHeight, customPaperWidth, customPaperHeight, minBorder, enableOffset, ignoreMinBorder, horizontalOffset, verticalOffset, showBlades, isLandscape, isRatioFlipped }), [aspectRatio, paperSize, customAspectWidth, customAspectHeight, customPaperWidth, customPaperHeight, minBorder, enableOffset, ignoreMinBorder, horizontalOffset, verticalOffset, showBlades, isLandscape, isRatioFlipped]);
+  // Optimized settings memoization - avoid object recreation
+  const currentSettings = React.useMemo(() => ({ 
+    aspectRatio, paperSize, customAspectWidth, customAspectHeight, 
+    customPaperWidth, customPaperHeight, minBorder, enableOffset, 
+    ignoreMinBorder, horizontalOffset, verticalOffset, showBlades, 
+    isLandscape, isRatioFlipped 
+  }), [
+    aspectRatio, paperSize, customAspectWidth, customAspectHeight, 
+    customPaperWidth, customPaperHeight, minBorder, enableOffset, 
+    ignoreMinBorder, horizontalOffset, verticalOffset, showBlades, 
+    isLandscape, isRatioFlipped
+  ]);
   const presetDirty = React.useMemo(() => loadedPresetRef.current && JSON.stringify(loadedPresetRef.current.settings) !== JSON.stringify(currentSettings), [currentSettings]);
 
   React.useEffect(() => {
     if (presetDirty) setIsEditingPreset(true);
   }, [presetDirty]);
 
-  React.useEffect(() => {
-    if (loadedPresetFromUrl) {
-      if (loadedPresetFromUrl) {
-        applyPreset(loadedPresetFromUrl.settings);
-        setPresetName(loadedPresetFromUrl.name);
-        // Create a temporary preset object to indicate it's loaded, but not saved yet
-        const tempPreset = { id: 'shared-' + Date.now(), name: loadedPresetFromUrl.name, settings: loadedPresetFromUrl.settings };
-        loadedPresetRef.current = tempPreset;
-        setSelectedPresetId(''); // It's not a saved preset yet
-        setIsEditingPreset(true); // Encourage user to save it
-        toast.show({
-            placement: "top",
-            render: ({ id }) => (
-                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                    <ToastVStack space="xs">
-                        <ToastTitle>Shared preset &quot;{loadedPresetFromUrl.name}&quot; loaded!</ToastTitle>
-                    </ToastVStack>
-                </Toast>
-            ),
-        });
-    }
-    }
-  }, [loadedPresetFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Start/stop continuous FPS monitoring when page is focused/unfocused
+  useFocusEffect(
+    React.useCallback(() => {
+      startContinuousFPSMonitoring('Border Calculator');
+      return () => {
+        stopContinuousFPSMonitoring();
+      };
+    }, [])
+  );
 
-  const presetItems = [...presets.map(p => ({ label: p.name, value: p.id })), { label: '────────', value: '__divider__' }, ...DEFAULT_BORDER_PRESETS.map(p => ({ label: p.name, value: p.id }))];
+  React.useEffect(() => {
+    debugLog('📋 [BORDER CALC] Desktop preset effect triggered, loadedPresetFromUrl:', loadedPresetFromUrl, 'shouldUseMobileLayout:', shouldUseMobileLayout);
+    if (loadedPresetFromUrl && !shouldUseMobileLayout) {
+      debugLog('📋 [BORDER CALC] Desktop applying preset:', loadedPresetFromUrl);
+      applyPreset(loadedPresetFromUrl.settings);
+      setPresetName(loadedPresetFromUrl.name);
+      // Create a temporary preset object to indicate it's loaded, but not saved yet
+      const tempPreset = { id: 'shared-' + Date.now(), name: loadedPresetFromUrl.name, settings: loadedPresetFromUrl.settings };
+      loadedPresetRef.current = tempPreset;
+      setSelectedPresetId(''); // It's not a saved preset yet
+      setIsEditingPreset(true); // Encourage user to save it
+      
+      // Determine the appropriate toast message
+      const isFromUrl = loadedPresetFromUrl.isFromUrl;
+      const toastTitle = isFromUrl 
+        ? `Shared preset "${loadedPresetFromUrl.name}" loaded!`
+        : `Last settings "${loadedPresetFromUrl.name}" loaded`;
+      
+      debugLog('📋 [BORDER CALC] Desktop showing toast, isFromUrl:', isFromUrl, 'title:', toastTitle);
+      toast.show({
+          placement: "top",
+          render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                  <ToastVStack space="xs">
+                      <ToastTitle>{toastTitle}</ToastTitle>
+                  </ToastVStack>
+              </Toast>
+          ),
+      });
+      
+      // Clear the preset after processing to prevent it from persisting
+      clearLoadedPreset();
+    } else if (loadedPresetFromUrl && shouldUseMobileLayout) {
+      debugLog('📋 [BORDER CALC] Mobile layout detected, skipping desktop preset application (mobile will handle it)');
+    }
+  }, [loadedPresetFromUrl, shouldUseMobileLayout, clearLoadedPreset]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Memoized preset items to avoid recreation on every render
+  const presetItems = React.useMemo(() => [
+    ...presets.map(p => ({ label: p.name, value: p.id })), 
+    { label: '────────', value: '__divider__' }, 
+    ...DEFAULT_BORDER_PRESETS.map(p => ({ label: p.name, value: p.id }))
+  ], [presets]);
 
   const handleSelectPreset = (id: string) => {
     if (id === '__divider__') return;
@@ -212,8 +260,40 @@ export default function BorderCalculator() {
     sharePreset(newPreset);
   };
 
+  const handleOpenInApp = async () => {
+    if (loadedPresetFromUrl) {
+      const encoded = encodePreset(loadedPresetFromUrl);
+      if (encoded) {
+        const { nativeUrl } = generateSharingUrls(encoded);
+        await openInApp(nativeUrl);
+      }
+    }
+  };
+
+  // Use mobile layout for mobile devices
+  if (shouldUseMobileLayout) {
+    debugLog('📋 [BORDER CALC] Using mobile layout, passing loadedPresetFromUrl:', loadedPresetFromUrl);
+    return (
+      <>
+        <AppBanner 
+          isVisible={showAppBanner}
+          message={appMessage}
+          onOpenApp={handleOpenInApp}
+          onDismiss={dismissBanner}
+        />
+        <MobileBorderCalculator loadedPresetFromUrl={loadedPresetFromUrl} clearLoadedPreset={clearLoadedPreset} />
+      </>
+    );
+  }
+
   return (
     <ScrollView sx={{ flex: 1, bg: backgroundColor }} contentContainerStyle={{ flexGrow: 1, paddingBottom: Platform.OS === 'ios' || Platform.OS === 'android' ? 100 : 80 }}>
+      <AppBanner 
+        isVisible={showAppBanner}
+        message={appMessage}
+        onOpenApp={handleOpenInApp}
+        onDismiss={dismissBanner}
+      />
       <Modal isOpen={isShareModalVisible} onClose={() => setShareModalVisible(false)}>
         <ModalBackdrop />
         <ModalContent>
@@ -254,9 +334,38 @@ export default function BorderCalculator() {
         <Box sx={{ width: '100%', ...(Platform.OS === 'web' && isDesktop && { flexDirection: 'row', gap: 32, alignItems: 'flex-start' }) }}>
           {calculation && (
             <Box sx={{ gap: 16, alignItems: 'center', width: '100%', mb: Platform.OS === 'web' ? 0 : 32, ...(Platform.OS === 'web' && isDesktop && { flex: 1, alignSelf: 'flex-start', mb: 0 }) }}>
-              <AnimatedPreview calculation={calculation} showBlades={showBlades} borderColor={borderColor} />
+              {/* Fixed-size preview container to prevent layout shifts */}
+              <Box sx={{ 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                width: '100%'
+              }}>
+                <Box sx={{ 
+                  width: isDesktop ? 400 : 320,
+                  height: isDesktop ? 300 : 240,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  backgroundColor: 'transparent'
+                }}>
+                  <Box sx={{
+                    transform: [{ 
+                      scale: Math.min(
+                        (isDesktop ? 400 : 320) / (calculation.previewWidth || 1),
+                        (isDesktop ? 300 : 240) / (calculation.previewHeight || 1),
+                        1
+                      )
+                    }],
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <AnimatedPreview calculation={calculation} showBlades={showBlades} borderColor={borderColor} />
+                  </Box>
+                </Box>
+              </Box>
 
-                {Platform.OS === 'web' && isDesktop ? (
+              {!shouldUseMobileLayout && (
+                Platform.OS === 'web' && isDesktop ? (
                   <HStack sx={{ flex: 1, justifyContent: 'space-between', gap: 12 }}>
                     <Button onPress={() => setIsLandscape(!isLandscape)} variant="solid" action="primary" size="md">
                       <ButtonIcon as={RotateCwSquare} size="md"/>
@@ -278,6 +387,7 @@ export default function BorderCalculator() {
                     <ButtonText style={{ fontSize: 18}}>Flip Aspect Ratio</ButtonText>
                   </Button>
                 </VStack>
+                )
               )}
 
               <Box className="p-5 rounded-2xl mt-1 mb-4 border shadow-sm" style={{ 
@@ -353,7 +463,7 @@ export default function BorderCalculator() {
             <ThemedSelect label="Paper Size:" selectedValue={paperSize} onValueChange={setPaperSize} items={PAPER_SIZES as any} placeholder="Select Paper Size" />
             {paperSize === 'custom' && <DimensionInputGroup widthValue={String(customPaperWidth)} onWidthChange={setCustomPaperWidth} heightValue={String(customPaperHeight)} onHeightChange={setCustomPaperHeight} widthLabel="Width (inches):" heightLabel="Height (inches):" widthPlaceholder="Width" heightPlaceholder="Height" widthDefault="8" heightDefault="10" />}
 
-            <LabeledSliderInput label="Minimum Border (inches):" value={minBorder} onChange={setMinBorder} min={SLIDER_MIN_BORDER} max={SLIDER_MAX_BORDER} step={SLIDER_STEP_BORDER} labels={BORDER_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} inputWidth={Platform.OS === 'web' && isDesktop ? 80 : undefined} continuousUpdate={true} />
+            <LabeledSliderInput label="Minimum Border (inches):" value={minBorder} onChange={setMinBorder} onSliderChange={setMinBorderSlider} min={SLIDER_MIN_BORDER} max={SLIDER_MAX_BORDER} step={SLIDER_STEP_BORDER} labels={BORDER_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} inputWidth={Platform.OS === 'web' && isDesktop ? 80 : undefined} continuousUpdate={true} />
             
             <HStack sx={{ flexDirection: 'row', gap: 16, width: '100%' }}>
               <ToggleSwitch label="Enable Offsets:" value={enableOffset} onValueChange={setEnableOffset} />
@@ -369,10 +479,10 @@ export default function BorderCalculator() {
                 <Box sx={{ gap: 8 }}>
                   <Box sx={{ flexDirection: 'row', alignItems: 'flex-start', gap: 24, mt: 8 }}>
                     <Box sx={{ flex: 1, gap: 4 }}>
-                      <LabeledSliderInput label="Horizontal Offset:" value={horizontalOffset} onChange={setHorizontalOffset} min={OFFSET_SLIDER_MIN} max={OFFSET_SLIDER_MAX} step={OFFSET_SLIDER_STEP} labels={OFFSET_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} warning={!!offsetWarning} continuousUpdate={true} />
+                      <LabeledSliderInput label="Horizontal Offset:" value={horizontalOffset} onChange={setHorizontalOffset} onSliderChange={setHorizontalOffsetSlider} min={OFFSET_SLIDER_MIN} max={OFFSET_SLIDER_MAX} step={OFFSET_SLIDER_STEP} labels={OFFSET_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} warning={!!offsetWarning} continuousUpdate={true} />
                     </Box>
                     <Box sx={{ flex: 1, gap: 4 }}>
-                      <LabeledSliderInput label="Vertical Offset:" value={verticalOffset} onChange={setVerticalOffset} min={OFFSET_SLIDER_MIN} max={OFFSET_SLIDER_MAX} step={OFFSET_SLIDER_STEP} labels={OFFSET_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} warning={!!offsetWarning} continuousUpdate={true} />
+                      <LabeledSliderInput label="Vertical Offset:" value={verticalOffset} onChange={setVerticalOffset} onSliderChange={setVerticalOffsetSlider} min={OFFSET_SLIDER_MIN} max={OFFSET_SLIDER_MAX} step={OFFSET_SLIDER_STEP} labels={OFFSET_SLIDER_LABELS} textColor={textColor} borderColor={borderColor} tintColor={tintColor} warning={!!offsetWarning} continuousUpdate={true} />
                     </Box>
                   </Box>
                   {offsetWarning && <WarningAlert message={offsetWarning} action="warning" />}

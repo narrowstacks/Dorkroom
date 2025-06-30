@@ -1,0 +1,100 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Git Rules
+
+- **Always commit before making changes**. Before starting any work, check the current git status, and if the user hasn't yet committed their changes, commit their changes, _but not sync_, so for them before you make a change
+- **Husky and lint-staged commit messages**. Your commit messages should follow the conventions defined by the husky and lint-staged config in `project.json` and `commitlint.config.cjs`.
+- **Don't commit until confirming with user.** The user should always test your changes before they are committed.
+- **Let user sync commits to remote**. You should never be the one to sync the commits.
+
+## Rules
+
+- Assume the expo server is already running; don't try to run `bun run dev`.
+- Aim for consistency in styling, including libraries used.
+- Use ripgrep `rg` instead of standard grep.
+- Add new libraries using `bun install`, do not edit dependencies in `project.json` directly.
+- Refrain from using emojis in documentation and code unless specifically requested.
+
+## Tools
+
+### Context7
+
+Always running. Use for documentation-first development and library research. Start with `resolve-library-id` then `get-library-docs` for up-to-date documentation. Essential for dependency research and integration verification.
+
+**Core Library IDs:**
+
+- React: `/reactjs/react.dev`
+- React Native: `/facebook/react-native-website`
+- TypeScript: `/microsoft/typescript`
+- Expo: `/expo/expo`
+- Expo SDK: `/context7/docs_expo_dev-versions-latest`
+- TailwindCSS: `/tailwindlabs/tailwindcss.com`
+- NativeWind: `/nativewind/nativewind`
+- Gluestack UI: `/gluestack/gluestack-ui`
+- React Native Reanimated: `/software-mansion/react-native-reanimated`
+
+### Clear-Thought
+
+Always running. Use for systematic problem decomposition and structured decision-making. Key tools: `sequentialthinking` for complex tasks, `debuggingapproach` for systematic issue and bug resolution, `decisionframework` for structured evaluation, `mentalmodel` for proven thinking frameworks.
+
+### Playwright
+
+Only use when user asks for web version help. Focus on end-to-end testing and browser automation. Assumes development server is running. Test across viewports and use robust selectors.
+
+### Serena
+
+Always running. **Start every session with:** `activate_project DorkroomReact` then `initial_instructions`. Use LSP tools for symbol-level understanding. Key tools: `find_symbol`, `get_symbols_overview`, `replace_symbol_body`. Work from clean git state and use symbolic editing over line-based when possible.
+
+## Development Commands
+
+- `bun run dev` / `bunx expo start` - Start development server
+- `bun run web` - Start web version
+- `bun run ios` - Start iOS simulator
+- `bun run android` - Start Android emulator
+- `bun test` - Run Jest tests
+- `bun run lint` - Run linting
+- `bun run build` - Build web version
+- `bun run deploy` - Deploy to Vercel
+
+## Architecture Overview
+
+### Tech Stack
+
+- **Framework**: React Native with Expo SDK 53, Expo Router
+- **Language**: TypeScript (strict mode)
+- **Styling**: NativeWind + Gluestack UI
+- **Package Manager**: Bun
+- **Platforms**: iOS, Android, responsive web
+
+### Key Structure
+
+```
+app/(tabs)/           # Tab navigation screens (_layout.tsx has responsive nav)
+hooks/                # Calculator logic (useBorderCalculator.ts, etc.)
+components/           # Reusable UI (ui/, ThemedText.tsx, NumberInput.tsx)
+constants/            # Data and calculations (border.ts, exposure.ts)
+utils/                # Pure calculation functions
+```
+
+### Navigation
+
+- **Mobile Native**: Bottom tabs with haptic feedback
+- **Desktop Web**: Top navigation bar
+- **Mobile Web**: Hamburger menu with right-thumb accessibility
+
+### Calculator Features
+
+- Border Calculator: Darkroom easel blade positioning
+- Resize Calculator: Print size exposure adjustments
+- Exposure Calculator: Stop-based calculations
+- Camera Exposure: Exposure triangle (aperture/shutter/ISO)
+- Reciprocity: Film reciprocity failure compensation
+
+### Patterns
+
+- Hooks follow consistent pattern: accept inputs, calculate via pure functions, return values/helpers
+- Theme-aware components with light/dark mode
+- Platform-specific optimizations
+- Jest testing focused on calculation accuracy

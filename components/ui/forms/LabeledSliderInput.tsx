@@ -7,8 +7,9 @@ import {
   InputField,
 } from '@gluestack-ui/themed';
 
-// Use the proven native slider for reliable visuals
+// Use platform-specific slider to avoid React 19 compatibility issues
 import Slider from '@react-native-community/slider';
+import WebSlider from './Slider.web';
 import * as Haptics from 'expo-haptics';
 
 import { getPlatformFont } from '@/styles/common';
@@ -19,6 +20,7 @@ interface LabeledSliderInputProps {
   label: string;
   value: string | number;
   onChange: (v: string) => void;
+  onSliderChange?: (v: number) => void; // New optimized handler for slider values
   min: number;
   max: number;
   step: number;
@@ -40,12 +42,15 @@ interface LabeledSliderInputProps {
   sliderOnTop?: boolean;
 }
 
-const SLIDER_THROTTLE_MS = 30; // ~33 FPS for smooth but efficient updates
+// Platform-adaptive throttling - native needs less aggressive throttling
+const SLIDER_THROTTLE_MS = Platform.OS === 'web' ? 16 : 8; // Web: ~60 FPS, Native: ~120 FPS
+const CALCULATION_THROTTLE_MS = Platform.OS === 'web' ? 16 : 32; // Separate throttling for heavy calculations
 
 export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
   label,
   value,
   onChange,
+  onSliderChange,
   min,
   max,
   step,
@@ -61,46 +66,87 @@ export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
   // Convert the incoming value to a number for Slider compatibility
   const numericValue = Number(value) || 0;
 
-  // Throttled onChange for continuous updates
+  // Separate throttling strategies for visual updates vs heavy calculations
   const onChangeThrottled = useMemo(() =>
-    throttle(onChange, SLIDER_THROTTLE_MS, { leading: true, trailing: true })
+    throttle(onChange, CALCULATION_THROTTLE_MS, { leading: true, trailing: true })
   , [onChange]);
 
-  // Throttled haptic feedback to prevent overwhelming the Taptic Engine
+  const onSliderChangeThrottled = useMemo(() =>
+    onSliderChange ? throttle(onSliderChange, SLIDER_THROTTLE_MS, { leading: true, trailing: true }) : null
+  , [onSliderChange]);
+
+  // Immediate visual feedback for slider value (no throttling on native)
+  const onVisualUpdateThrottled = useMemo(() =>
+    Platform.OS === 'web' 
+      ? throttle(onChange, SLIDER_THROTTLE_MS, { leading: true, trailing: true })
+      : onChange // No throttling on native for immediate visual feedback
+  , [onChange]);
+
+  // Velocity-based haptic feedback to prevent overwhelming the Taptic Engine
   const lastHapticValue = useRef<number>(0);
+  const lastHapticTime = useRef<number>(0);
   const hapticThrottled = useMemo(() =>
-    throttle(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), 100)
+    throttle(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), 150) // Increased from 100ms
   , []);
 
   // Cleanup throttled functions on unmount
   useEffect(() => {
     return () => {
       onChangeThrottled.cancel();
+      onSliderChangeThrottled?.cancel();
+      onVisualUpdateThrottled?.cancel?.();
       hapticThrottled.cancel();
     };
-  }, [onChangeThrottled, hapticThrottled]);
+  }, [onChangeThrottled, onSliderChangeThrottled, onVisualUpdateThrottled, hapticThrottled]);
 
   // Handlers -------------------------------------------------
   const handleValueChange = useCallback((v: number) => {
-    // Trigger haptic feedback only on step increments and throttled
-    if (Math.abs(v - lastHapticValue.current) >= step) {
+    const now = Date.now();
+    
+    // Velocity-based haptic feedback - consider both value change and time since last feedback
+    const valueDelta = Math.abs(v - lastHapticValue.current);
+    const timeDelta = now - lastHapticTime.current;
+    const velocity = timeDelta > 0 ? valueDelta / timeDelta : 0;
+    
+    // Trigger haptics based on velocity - prevents excessive haptics during rapid sliding
+    if (valueDelta >= step && (timeDelta > 150 || velocity < 0.1)) {
       lastHapticValue.current = v;
+      lastHapticTime.current = now;
       hapticThrottled();
     }
     
+    // Always provide immediate visual feedback
+    onVisualUpdateThrottled(v.toString());
+    
     if (continuousUpdate) {
-      onChangeThrottled(v.toString());
+      // Use throttled calculations for expensive operations
+      if (onSliderChangeThrottled) {
+        onSliderChangeThrottled(v);
+      } else {
+        onChangeThrottled(v.toString());
+      }
     }
-  }, [continuousUpdate, onChangeThrottled, step, hapticThrottled]);
+  }, [continuousUpdate, onChangeThrottled, onSliderChangeThrottled, onVisualUpdateThrottled, step, hapticThrottled]);
 
   const handleSlidingComplete = useCallback((v: number) => {
+    // Always ensure final visual state is updated immediately
+    onChange(v.toString());
+    
     if (!continuousUpdate) {
-      onChange(v.toString());
+      // For non-continuous mode, this is where we do the heavy calculation
+      if (onSliderChange) {
+        onSliderChange(v);
+      }
     } else {
-      // Ensure final value is set even with throttling
-      onChange(v.toString());
+      // For continuous mode, ensure final value calculation is not throttled
+      // Cancel any pending throttled calls and execute immediately
+      onSliderChangeThrottled?.cancel?.();
+      onChangeThrottled.cancel();
+      if (onSliderChange) {
+        onSliderChange(v);
+      }
     }
-  }, [continuousUpdate, onChange]);
+  }, [continuousUpdate, onChange, onSliderChange, onSliderChangeThrottled, onChangeThrottled]);
 
   // Memoized components for better performance
   const inputField = useMemo(() => (
@@ -128,22 +174,26 @@ export const LabeledSliderInput: React.FC<LabeledSliderInputProps> = ({
     </Input>
   ), [warning, borderColor, inputWidth, sliderOnTop, textColor, value, onChange]);
 
-  const slider = useMemo(() => (
-    <Box style={styles.sliderWrapper}>
-      <Slider
-        style={styles.slider}
-        value={numericValue}
-        minimumValue={min}
-        maximumValue={max}
-        step={step}
-        minimumTrackTintColor={tintColor}
-        maximumTrackTintColor={borderColor}
-        thumbTintColor={tintColor}
-        onValueChange={handleValueChange}
-        onSlidingComplete={handleSlidingComplete}
-      />
-    </Box>
-  ), [numericValue, min, max, step, tintColor, borderColor, handleValueChange, handleSlidingComplete]);
+  const slider = useMemo(() => {
+    const SliderComponent = Platform.OS === 'web' ? WebSlider : Slider;
+    
+    return (
+      <Box style={styles.sliderWrapper}>
+        <SliderComponent
+          style={styles.slider}
+          value={numericValue}
+          minimumValue={min}
+          maximumValue={max}
+          step={step}
+          minimumTrackTintColor={tintColor}
+          maximumTrackTintColor={borderColor}
+          thumbTintColor={tintColor}
+          onValueChange={handleValueChange}
+          onSlidingComplete={handleSlidingComplete}
+        />
+      </Box>
+    );
+  }, [numericValue, min, max, step, tintColor, borderColor, handleValueChange, handleSlidingComplete]);
 
   const sliderLabels = useMemo(() => (
     labels.length > 0 ? (

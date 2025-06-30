@@ -4,7 +4,7 @@
 export const throttle = <T extends (...args: any[]) => any>(
   func: T,
   delay: number,
-  options: { leading?: boolean; trailing?: boolean } = {}
+  options: { leading?: boolean; trailing?: boolean } = {},
 ): T & { cancel: () => void } => {
   const { leading = true, trailing = true } = options;
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -24,12 +24,15 @@ export const throttle = <T extends (...args: any[]) => any>(
       execute();
     } else if (trailing) {
       if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        if (lastArgs) {
-          func(...lastArgs);
-          lastCallTime = Date.now();
-        }
-      }, delay - (now - lastCallTime));
+      timeoutId = setTimeout(
+        () => {
+          if (lastArgs) {
+            func(...lastArgs);
+            lastCallTime = Date.now();
+          }
+        },
+        delay - (now - lastCallTime),
+      );
     }
   };
 
@@ -52,33 +55,51 @@ export const throttle = <T extends (...args: any[]) => any>(
 export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   delay: number,
-  options: { immediate?: boolean } = {}
+  options: { immediate?: boolean } = {},
 ): T & { cancel: () => void; flush: () => void } => {
   const { immediate = false } = options;
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   let lastArgs: Parameters<T> | null = null;
-  let result: ReturnType<T>;
+  let pendingResolvers: {
+    resolve: (value: any) => void;
+    reject: (error: any) => void;
+  }[] = [];
 
   const debounced = (...args: Parameters<T>) => {
     lastArgs = args;
-    const callNow = immediate && !timeoutId;
 
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
+    return new Promise((resolve, reject) => {
+      pendingResolvers.push({ resolve, reject });
 
-    timeoutId = setTimeout(() => {
-      timeoutId = null;
-      if (!immediate && lastArgs) {
-        result = func(...lastArgs);
+      const callNow = immediate && !timeoutId;
+
+      if (timeoutId) {
+        clearTimeout(timeoutId);
       }
-    }, delay);
 
-    if (callNow) {
-      result = func(...args);
-    }
+      const executeFunction = async () => {
+        if (lastArgs) {
+          try {
+            const result = await func(...lastArgs);
+            pendingResolvers.forEach(({ resolve }) => resolve(result));
+          } catch (error) {
+            pendingResolvers.forEach(({ reject }) => reject(error));
+          }
+          pendingResolvers = [];
+        }
+      };
 
-    return result;
+      timeoutId = setTimeout(() => {
+        timeoutId = null;
+        if (!immediate) {
+          executeFunction();
+        }
+      }, delay);
+
+      if (callNow) {
+        executeFunction();
+      }
+    });
   };
 
   // Add utility functions
@@ -87,17 +108,31 @@ export const debounce = <T extends (...args: any[]) => any>(
       clearTimeout(timeoutId);
       timeoutId = null;
     }
+    pendingResolvers.forEach(({ reject }) =>
+      reject(new Error("Debounced function cancelled")),
+    );
+    pendingResolvers = [];
     lastArgs = null;
   };
 
-  debounced.flush = () => {
+  debounced.flush = async () => {
     if (timeoutId && lastArgs) {
       clearTimeout(timeoutId);
       timeoutId = null;
-      result = func(...lastArgs);
+      const args = lastArgs;
+      try {
+        const result = await func(...args);
+        pendingResolvers.forEach(({ resolve }) => resolve(result));
+        pendingResolvers = [];
+        return result;
+      } catch (error) {
+        pendingResolvers.forEach(({ reject }) => reject(error));
+        pendingResolvers = [];
+        throw error;
+      }
     }
-    return result;
+    return Promise.resolve();
   };
 
   return debounced as unknown as T & { cancel: () => void; flush: () => void };
-}; 
+};

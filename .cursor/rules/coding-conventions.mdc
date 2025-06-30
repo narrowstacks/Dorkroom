@@ -1,0 +1,174 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Coding Conventions & Standards
+
+This document outlines the coding conventions and patterns used in the Dorkroom React Native app.
+
+## Operational Rules
+
+### Development Environment
+- **Assume expo server is running**: Don't try to run `bun run dev` - the development server should already be running
+- **Use ripgrep for searching**: When grepping the codebase, use ripgrep `rg` instead of standard grep
+- **Package management**: Add new libraries using `bun install`, do not edit the dependencies of `package.json` directly. Other parts of the `package.json` file can be modified, but never the dependencies
+- **Documentation style**: Refrain from using emojis in documentation (.md files) and code, unless specifically specified
+- **Styling consistency**: Aim for consistency in styling, including libraries used
+
+### Git Workflow
+
+#### Pre-Change Requirements
+- **Always commit before making changes**: Before conducting any work, check the current git status, and if the user hasn't yet committed their changes, commit their changes, _but not sync_, for them before you do work.
+- **Work from clean git state**: Ensure the working directory is clean before starting new work
+
+#### Commit Conventions
+- **Husky and lint-staged commit messages**. Your commit messages should follow the conventions defined by the husky and lint-staged config in `project.json` and `commitlint.config.cjs`.
+- **Don't commit until confirming with user**: The user should always test your changes before they are committed
+- **Let user sync commits to remote**: You should never be the one to sync the commits to remote
+
+## TypeScript & React Patterns
+
+### Component Structure
+- Use functional components with TypeScript
+- Export components as default exports
+- Use named exports for types and utilities
+- Prefer composition over inheritance
+
+### File Naming Conventions
+- **Calculator screens**: descriptive names (border.tsx, cameraExposure.tsx)
+- **Hooks**: camelCase starting with "use" + descriptive name (useBorderCalculator.ts)
+- **Components**: PascalCase (ThemedText.tsx, NumberInput.tsx, CalculatorLayout.tsx)
+- **Utilities**: camelCase (borderCalculations.ts, throttle.ts)
+- **Constants**: camelCase (border.ts, reciprocity.ts)
+- **Types**: PascalCase for interfaces/types (CalculatorTypes.ts)
+
+### Import Organization
+```typescript
+// 1. React and React Native imports
+import React from 'react';
+import { View, Text } from 'react-native';
+
+// 2. Third-party libraries
+import { useRouter } from 'expo-router';
+import { styled } from '@gluestack-style/react';
+
+// 3. Local components and hooks
+import { ThemedText } from '@/components/ThemedText';
+import { useBorderCalculator } from '@/hooks/useBorderCalculator';
+
+// 4. Types and constants
+import type { CalculatorProps } from '@/types/calculator';
+import { PAPER_SIZES } from '@/constants/paperSizes';
+```
+
+## Styling Conventions
+
+### Styling Approach
+- **NativeWind**: Use utility-first styling with Tailwind classes
+- **Gluestack UI**: Use for consistent cross-platform components
+- **Theme-aware**: Components that adapt to light/dark mode
+- **Platform-specific styling**: Handle through Tailwind responsive prefixes
+- **Colors**: Define in `constants/Colors.ts` with light/dark variants
+
+### NativeWind (Tailwind) Classes
+- Use utility-first approach with NativeWind
+- Prefer responsive design with breakpoint prefixes
+- Group related classes logically:
+  ```typescript
+  <View className="flex-1 bg-background p-4 md:p-6 safe-area-top">
+  ```
+
+### Gluestack UI Components
+- Import specific components from their respective packages
+- Use themed variants when available
+- Combine with NativeWind for custom styling:
+  ```typescript
+  import { Button, ButtonText } from '@gluestack-ui/themed';
+  
+  <Button className="bg-primary rounded-lg">
+    <ButtonText>Calculate</ButtonText>
+  </Button>
+  ```
+
+## Calculator Logic Patterns
+
+### Custom Hooks Structure
+See [hooks/useBorderCalculator.ts](mdc:hooks/useBorderCalculator.ts) as the primary example:
+- Separate calculation logic into custom hooks
+- Return computed values and handler functions
+- Use useMemo for expensive calculations
+- Include proper TypeScript typing
+
+### State Management
+- Use React's built-in state management (useState, useReducer)
+- Keep calculator state local to components/hooks
+- Use context sparingly for truly global state
+
+### Input Validation
+- Validate inputs in real-time
+- Provide clear error messages
+- Use TypeScript for compile-time type safety
+- Handle edge cases gracefully
+
+## Component Patterns
+
+### Calculator Components
+- Follow the pattern in [components/CalculatorLayout.tsx](mdc:components/CalculatorLayout.tsx)
+- Use consistent section structure (inputs, results, info)
+- Implement responsive design for mobile and tablet
+
+### Form Components
+- See [components/NumberInput.tsx](mdc:components/NumberInput.tsx) for input patterns
+- Use controlled components with proper validation
+- Provide immediate feedback on input changes
+
+### Layout Components
+- Use [components/ParallaxScrollView.tsx](mdc:components/ParallaxScrollView.tsx) for main screens
+- Implement proper safe area handling
+- Support both light and dark themes
+
+## Performance Considerations
+
+### Optimization Patterns
+- Use Web Workers for heavy calculations (see [workers/](mdc:workers))
+- Implement throttling for rapid input changes [utils/throttle.ts](mdc:utils/throttle.ts)
+- Use React.memo for expensive components
+- Optimize re-renders with proper dependency arrays
+
+### Calculator-Specific Optimizations
+- **Calculator hooks use useMemo**: For expensive calculations
+- **Components are properly memoized**: Where needed for performance
+- **Debounce user inputs**: To reduce calculation frequency
+- **Use worker threads**: For computationally intensive operations
+- **Platform-specific optimizations**: In navigation and rendering
+
+## Error Handling
+
+### Calculator Errors
+- Validate mathematical inputs (division by zero, negative values where inappropriate)
+- Provide meaningful error messages to users
+- Log errors for debugging while maintaining user experience
+
+### TypeScript Error Prevention
+- Use strict TypeScript configuration [tsconfig.json](mdc:tsconfig.json)
+- Define proper interfaces for all data structures
+- Use discriminated unions for state management
+
+## Testing Strategy
+
+### Unit Testing
+- **Jest with jest-expo preset**: Standard testing framework
+- **Component tests**: Located in `__tests__/` directories
+- **Hook tests**: For calculator logic validation
+- **Snapshot testing**: For UI components
+- **Focus on calculation accuracy**: And edge cases testing
+- Test calculator logic in isolation
+- Mock heavy computations for faster tests
+- Use Jest with React Native Testing Library
+- See examples in [hooks/__tests__/](mdc:hooks/__tests__)
+
+### Integration Tests
+- Test complete calculator workflows
+- Verify UI interactions with calculations
+- Test cross-platform compatibility (iOS, Android, Web)

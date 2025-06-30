@@ -1,20 +1,22 @@
 {
   "expo": {
     "name": "DorkroomReact",
-    "slug": "DorkroomReact",
+    "slug": "dorkroom",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "dorkroom",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dorkroom.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.dorkroom.app"
     },
     "web": {
       "bundler": "metro",
@@ -32,10 +34,18 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e81d817d-4794-41d4-a2da-e1564e7147be"
+      }
+    },
+    "owner": "narrowstacks-org"
   }
 }
