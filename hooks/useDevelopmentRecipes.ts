@@ -112,13 +112,18 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState &
       const allDevelopersData = client.getAllDevelopers();
       const combinations = client.getAllCombinations();
 
-      // Filter films to only show black and white films
-      const films = allFilmsData.filter((film) => film.colorType === "bw");
+      // Filter films to only show black-and-white films (case-insensitive, allows "B&W")
+      const films = allFilmsData.filter((film) => {
+        if (!film.colorType) return false;
+        const ct = film.colorType.toLowerCase();
+        return ct === "bw" || ct === "b&w" || ct === "b & w";
+      });
 
-      // Filter developers to only show those for film development (not paper)
-      const developers = allDevelopersData.filter(
-        (developer) => developer.filmOrPaper === "film",
-      );
+      // Filter developers to only show those for film development (not paper) – case-insensitive
+      const developers = allDevelopersData.filter((developer) => {
+        if (!developer.filmOrPaper) return false;
+        return developer.filmOrPaper.toLowerCase() === "film";
+      });
 
       setAllFilms(films);
       setAllDevelopers(developers);
@@ -152,13 +157,18 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState &
           client.getAllCombinations(),
         ]);
 
-      // Filter films to only show black and white films
-      const films = allFilmsData.filter((film) => film.colorType === "bw");
+      // Filter films to only show black-and-white films (case-insensitive, allows "B&W")
+      const films = allFilmsData.filter((film) => {
+        if (!film.colorType) return false;
+        const ct = film.colorType.toLowerCase();
+        return ct === "bw" || ct === "b&w" || ct === "b & w";
+      });
 
-      // Filter developers to only show those for film development (not paper)
-      const developers = allDevelopersData.filter(
-        (developer) => developer.filmOrPaper === "film",
-      );
+      // Filter developers to only show those for film development (not paper) – case-insensitive
+      const developers = allDevelopersData.filter((developer) => {
+        if (!developer.filmOrPaper) return false;
+        return developer.filmOrPaper.toLowerCase() === "film";
+      });
 
       console.log("[useDevelopmentRecipes] Data refreshed:", {
         films: films.length,
