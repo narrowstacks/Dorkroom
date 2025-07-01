@@ -302,7 +302,7 @@ export default function DevelopmentRecipes() {
       dilutionFilter,
       isoFilter,
     },
-    recipesByUuid,
+    undefined, // Will be handled when recipes are loaded
   );
 
   // Apply URL state to hook state when data is loaded and URL state is available
