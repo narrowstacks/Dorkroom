@@ -1,5 +1,10 @@
-import type { CustomRecipe, GitHubIssueData, CustomFilmData, CustomDeveloperData } from '@/types/customRecipeTypes';
-import type { Film, Developer } from '@/api/dorkroom/types';
+import type {
+  CustomRecipe,
+  GitHubIssueData,
+  CustomFilmData,
+  CustomDeveloperData,
+} from "@/types/customRecipeTypes";
+import type { Film, Developer } from "@/api/dorkroom/types";
 
 const REPO_URL = "https://github.com/narrowstacks/dorkroom-static-api";
 
@@ -10,18 +15,17 @@ export function createRecipeIssue(
   recipe: CustomRecipe,
   film: Film | CustomFilmData | undefined,
   developer: Developer | CustomDeveloperData | undefined,
-  sources: string = ""
+  sources: string = "",
 ): GitHubIssueData {
   // Create title
-  const filmName = film 
-    ? `${film.brand} ${film.name}`.trim()
-    : "Unknown Film";
+  const filmName = film ? `${film.brand} ${film.name}`.trim() : "Unknown Film";
   const developerName = developer
     ? `${developer.manufacturer} ${developer.name}`.trim()
     : "Unknown Developer";
-  
+
   const dilutionInfo = recipe.customDilution || "Stock";
-  const title = `[COMBO] Add: ${filmName} in ${developerName} ${dilutionInfo}`.trim();
+  const title =
+    `[COMBO] Add: ${filmName} in ${developerName} ${dilutionInfo}`.trim();
 
   // Create body using GitHub issue form format
   const bodyParts = [
@@ -33,7 +37,7 @@ export function createRecipeIssue(
     "",
     film?.brand || "Unknown",
     "",
-    "### Film Name", 
+    "### Film Name",
     "",
     film?.name || "Unknown",
     "",
@@ -86,13 +90,13 @@ export function createRecipeIssue(
     "- [x] I have verified this combination is not already in the database",
     "- [x] I have confirmed both the film and developer exist in our database (or submitted them separately)",
     "- [x] I have reliable sources for this development data",
-    "- [x] I understand this data will be publicly available under the project's license"
+    "- [x] I understand this data will be publicly available under the project's license",
   ];
 
   return {
     title,
-    body: bodyParts.join('\n'),
-    labels: ['data-submission', 'development-combination', 'mobile-app']
+    body: bodyParts.join("\n"),
+    labels: ["data-submission", "development-combination", "mobile-app"],
   };
 }
 
@@ -101,15 +105,15 @@ export function createRecipeIssue(
  */
 export function createFilmIssue(
   filmData: CustomFilmData,
-  sources: string = ""
+  sources: string = "",
 ): GitHubIssueData {
   const title = `[FILM] Add: ${filmData.brand} ${filmData.name}`.trim();
-  
+
   // Map colorType to GitHub form values
   const colorTypeMap = {
-    'bw': 'Black & White (bw)',
-    'color': 'Color Negative (color)',
-    'slide': 'Color Slide/Transparency (slide)'
+    bw: "Black & White (bw)",
+    color: "Color Negative (color)",
+    slide: "Color Slide/Transparency (slide)",
   };
   const colorType = colorTypeMap[filmData.colorType] || filmData.colorType;
 
@@ -118,7 +122,7 @@ export function createFilmIssue(
     "",
     filmData.brand,
     "",
-    "### Film Name", 
+    "### Film Name",
     "",
     filmData.name,
     "",
@@ -165,14 +169,14 @@ export function createFilmIssue(
     "### Submission Guidelines",
     "",
     "- [x] I have verified this film is not already in the database",
-    "- [x] I have reliable sources for this information", 
-    "- [x] I understand this data will be publicly available under the project's license"
+    "- [x] I have reliable sources for this information",
+    "- [x] I understand this data will be publicly available under the project's license",
   ];
 
   return {
     title,
-    body: bodyParts.join('\n'),
-    labels: ['data-submission', 'film-stock', 'mobile-app']
+    body: bodyParts.join("\n"),
+    labels: ["data-submission", "film-stock", "mobile-app"],
   };
 }
 
@@ -181,22 +185,23 @@ export function createFilmIssue(
  */
 export function createDeveloperIssue(
   developerData: CustomDeveloperData,
-  sources: string = ""
+  sources: string = "",
 ): GitHubIssueData {
-  const title = `[DEVELOPER] Add: ${developerData.manufacturer} ${developerData.name}`.trim();
-  
+  const title =
+    `[DEVELOPER] Add: ${developerData.manufacturer} ${developerData.name}`.trim();
+
   // Map filmOrPaper values
-  let intendedUse = 'film';
-  if (developerData.filmOrPaper === 'paper') {
-    intendedUse = 'paper';
-  } else if (developerData.filmOrPaper === 'both') {
-    intendedUse = 'both';
+  let intendedUse = "film";
+  if (developerData.filmOrPaper === "paper") {
+    intendedUse = "paper";
+  } else if (developerData.filmOrPaper === "both") {
+    intendedUse = "both";
   }
 
   // Format dilutions
   const dilutionText = developerData.dilutions
-    .map(d => `${d.name}: ${d.dilution}`)
-    .join('\n');
+    .map((d) => `${d.name}: ${d.dilution}`)
+    .join("\n");
 
   const bodyParts = [
     "### Developer Name",
@@ -259,13 +264,13 @@ export function createDeveloperIssue(
     "",
     "- [x] I have verified this developer is not already in the database",
     "- [x] I have reliable sources for this information",
-    "- [x] I understand this data will be publicly available under the project's license"
+    "- [x] I understand this data will be publicly available under the project's license",
   ];
 
   return {
     title,
-    body: bodyParts.join('\n'),
-    labels: ['data-submission', 'developer', 'mobile-app']
+    body: bodyParts.join("\n"),
+    labels: ["data-submission", "developer", "mobile-app"],
   };
 }
 
@@ -274,13 +279,13 @@ export function createDeveloperIssue(
  */
 export function createIssueUrl(issueData: GitHubIssueData): string {
   const baseUrl = `${REPO_URL}/issues/new`;
-  
+
   const params = new URLSearchParams({
     title: issueData.title,
     body: issueData.body,
-    labels: issueData.labels.join(',')
+    labels: issueData.labels.join(","),
   });
-  
+
   return `${baseUrl}?${params.toString()}`;
 }
 
@@ -288,11 +293,11 @@ export function createIssueUrl(issueData: GitHubIssueData): string {
  * Temperature conversion utilities
  */
 export function fahrenheitToCelsius(fahrenheit: number): number {
-  return Math.round(((fahrenheit - 32) * 5/9) * 10) / 10;
+  return Math.round((((fahrenheit - 32) * 5) / 9) * 10) / 10;
 }
 
 export function celsiusToFahrenheit(celsius: number): number {
-  return Math.round((celsius * 9/5 + 32) * 10) / 10;
+  return Math.round(((celsius * 9) / 5 + 32) * 10) / 10;
 }
 
 /**
@@ -306,6 +311,8 @@ export function formatTimeMinutes(minutes: number): string {
   } else {
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
+    return remainingMinutes > 0
+      ? `${hours}h ${remainingMinutes}min`
+      : `${hours}h`;
   }
-} 
+}

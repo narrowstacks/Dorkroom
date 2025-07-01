@@ -16,21 +16,35 @@ import {
 import { useResizeCalculator } from "@/hooks/useResizeCalculator";
 import { NumberInput } from "@/components/ui/forms/NumberInput";
 import { CalculatorLayout } from "@/components/ui/layout/CalculatorLayout";
-import { ResultsSection, ResultRow } from "@/components/ui/calculator/ResultsSection";
+import {
+  ResultsSection,
+  ResultRow,
+} from "@/components/ui/calculator/ResultsSection";
 import { FormSection, FormGroup } from "@/components/ui/forms/FormSection";
-import { InfoSection, InfoText, InfoSubtitle, InfoList, InfoFormula } from "@/components/ui/calculator/InfoSection";
+import {
+  InfoSection,
+  InfoText,
+  InfoSubtitle,
+  InfoList,
+  InfoFormula,
+} from "@/components/ui/calculator/InfoSection";
 
 // --- Helper Components ---
 
-const ModeToggle = ({ 
-  isEnlargerHeightMode, 
-  setIsEnlargerHeightMode 
-}: { 
-  isEnlargerHeightMode: boolean; 
-  setIsEnlargerHeightMode: (value: boolean) => void; 
+const ModeToggle = ({
+  isEnlargerHeightMode,
+  setIsEnlargerHeightMode,
+}: {
+  isEnlargerHeightMode: boolean;
+  setIsEnlargerHeightMode: (value: boolean) => void;
 }) => (
   <FormControl>
-    <HStack space="md" alignItems="center" justifyContent="flex-start" paddingTop={10}>
+    <HStack
+      space="md"
+      alignItems="center"
+      justifyContent="flex-start"
+      paddingTop={10}
+    >
       <FormControlLabel>
         <FormControlLabelText>Print Size</FormControlLabelText>
       </FormControlLabel>
@@ -45,16 +59,16 @@ const ModeToggle = ({
   </FormControl>
 );
 
-const DimensionInputGroup = ({ 
-  firstLabel, 
-  firstValue, 
-  onFirstChange, 
+const DimensionInputGroup = ({
+  firstLabel,
+  firstValue,
+  onFirstChange,
   firstPlaceholder,
-  secondLabel, 
-  secondValue, 
-  onSecondChange, 
+  secondLabel,
+  secondValue,
+  onSecondChange,
   secondPlaceholder,
-  unit 
+  unit,
 }: {
   firstLabel: string;
   firstValue: string;
@@ -68,7 +82,9 @@ const DimensionInputGroup = ({
 }) => (
   <HStack space="sm">
     <HStack alignItems="center" space="sm">
-      <Text w="$16" textAlign="right">{firstLabel}:</Text>
+      <Text w="$16" textAlign="right">
+        {firstLabel}:
+      </Text>
       <NumberInput
         value={firstValue}
         onChangeText={onFirstChange}
@@ -76,10 +92,14 @@ const DimensionInputGroup = ({
         inputTitle={`Enter ${firstLabel}`}
         step={0.1}
       />
-      <Text minWidth={30} textAlign="left">{unit}</Text>
+      <Text minWidth={30} textAlign="left">
+        {unit}
+      </Text>
     </HStack>
     <HStack alignItems="center" space="sm">
-      <Text w="$16" textAlign="right">{secondLabel}:</Text>
+      <Text w="$16" textAlign="right">
+        {secondLabel}:
+      </Text>
       <NumberInput
         value={secondValue}
         onChangeText={onSecondChange}
@@ -87,67 +107,75 @@ const DimensionInputGroup = ({
         inputTitle={`Enter ${secondLabel}`}
         step={0.1}
       />
-      <Text minWidth={30} textAlign="left">{unit}</Text>
+      <Text minWidth={30} textAlign="left">
+        {unit}
+      </Text>
     </HStack>
   </HStack>
 );
 
 const HOW_TO_USE_PRINT = [
   "1. Choose your calculation method: Print Size or Enlarger Height",
-  "2. Print size is easier to use, but enlarger height is more accurate", 
+  "2. Print size is easier to use, but enlarger height is more accurate",
   "3. Enter the width and height of your original print",
   "4. Enter the width and height of your desired new print size",
   "5. Enter the original exposure time in seconds",
-  "6. The new exposure time will be calculated automatically"
+  "6. The new exposure time will be calculated automatically",
 ];
 
 const HOW_TO_USE_ENLARGER = [
   "1. Choose your calculation method: Print Size or Enlarger Height",
   "2. Print size is easier to use, but enlarger height is more accurate",
   "3. Enter the original and new enlarger heights (lens to paper distance)",
-  "4. Enter the original exposure time in seconds", 
-  "5. The new exposure time will be calculated automatically"
+  "4. Enter the original exposure time in seconds",
+  "5. The new exposure time will be calculated automatically",
 ];
 
 const TIPS = [
   "• The results should only be treated as a best-guess estimate",
   "• Always make a test strip when resizing prints!",
-  "• The \"stops difference\" shows exposure change in photographic stops",
+  '• The "stops difference" shows exposure change in photographic stops',
   "• Positive stops = more exposure needed (larger print)",
   "• Negative stops = less exposure needed (smaller print)",
-  "• Enlarger height method is more accurate when properly calibrated"
+  "• Enlarger height method is more accurate when properly calibrated",
 ];
 
-const InfoSectionContent = ({ isEnlargerHeightMode }: { isEnlargerHeightMode: boolean }) => {
-  const inverseSquareLawUrl = "https://en.wikipedia.org/wiki/Inverse-square_law";
-  
+const InfoSectionContent = ({
+  isEnlargerHeightMode,
+}: {
+  isEnlargerHeightMode: boolean;
+}) => {
+  const inverseSquareLawUrl =
+    "https://en.wikipedia.org/wiki/Inverse-square_law";
+
   return (
     <InfoSection title="About This Tool">
       <InfoText>
-        The print resize calculator helps you determine the correct exposure time when enlarging or reducing the size of your darkroom prints.
+        The print resize calculator helps you determine the correct exposure
+        time when enlarging or reducing the size of your darkroom prints.
       </InfoText>
 
       <InfoSubtitle>How to Use:</InfoSubtitle>
-      <InfoList items={isEnlargerHeightMode ? HOW_TO_USE_ENLARGER : HOW_TO_USE_PRINT} />
+      <InfoList
+        items={isEnlargerHeightMode ? HOW_TO_USE_ENLARGER : HOW_TO_USE_PRINT}
+      />
 
       <InfoSubtitle>How It Works:</InfoSubtitle>
       <InfoText>
-        When you change the size of a print, the light is spread across a different area, affecting the exposure needed. This is caused by the{" "}
+        When you change the size of a print, the light is spread across a
+        different area, affecting the exposure needed. This is caused by the{" "}
         <Link href={inverseSquareLawUrl} isExternal>
           <LinkText>inverse-square law</LinkText>
         </Link>
         .
       </InfoText>
-      
-      <InfoText>
-        The formula used depends on your selected mode:
-      </InfoText>
-      
+
+      <InfoText>The formula used depends on your selected mode:</InfoText>
+
       <InfoFormula>
-        {isEnlargerHeightMode 
+        {isEnlargerHeightMode
           ? "New Time = Original Time × (New Height)² ÷ (Original Height)²"
-          : "New Time = Original Time × (New Area ÷ Original Area)"
-        }
+          : "New Time = Original Time × (New Area ÷ Original Area)"}
       </InfoFormula>
 
       <InfoSubtitle>Tips:</InfoSubtitle>
@@ -180,25 +208,24 @@ export default function ResizeScreen() {
   } = useResizeCalculator();
 
   return (
-    <CalculatorLayout 
-      title="Print Resize Calculator" 
-      infoSection={<InfoSectionContent isEnlargerHeightMode={isEnlargerHeightMode} />}
+    <CalculatorLayout
+      title="Print Resize Calculator"
+      infoSection={
+        <InfoSectionContent isEnlargerHeightMode={isEnlargerHeightMode} />
+      }
     >
       <ResultsSection show={!!newTime}>
-        <ResultRow 
-          label="New Time" 
-          value={`${newTime} seconds`} 
-        />
-        <ResultRow 
-          label="Difference" 
-          value={`${stopsDifference} stops`} 
+        <ResultRow label="New Time" value={`${newTime} seconds`} />
+        <ResultRow
+          label="Difference"
+          value={`${stopsDifference} stops`}
           isLast
         />
       </ResultsSection>
 
       <FormSection>
         <FormGroup label="Calculation Method">
-          <ModeToggle 
+          <ModeToggle
             isEnlargerHeightMode={isEnlargerHeightMode}
             setIsEnlargerHeightMode={setIsEnlargerHeightMode}
           />
@@ -268,7 +295,9 @@ export default function ResizeScreen() {
               inputTitle="Enter Exposure Time"
               step={0.5}
             />
-            <Text minWidth={60} textAlign="left">seconds</Text>
+            <Text minWidth={60} textAlign="left">
+              seconds
+            </Text>
           </HStack>
         </FormGroup>
       </FormSection>

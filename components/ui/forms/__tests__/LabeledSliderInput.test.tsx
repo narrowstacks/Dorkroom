@@ -221,8 +221,6 @@ describe("LabeledSliderInput Logic Functions", () => {
 
   describe("Layout and Styling Logic", () => {
     it("should handle sliderOnTop layout variation", () => {
-      const sliderOnTop = true;
-
       // Simulate layout order logic
       const getLayoutOrder = (sliderOnTop: boolean) => {
         return sliderOnTop

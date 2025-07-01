@@ -1,4 +1,4 @@
-import { AspectRatio, PaperSize } from '@/types/borderTypes';
+import { AspectRatio, PaperSize } from "@/types/borderTypes";
 
 // Define raw data without the derived 'value'
 const rawAspectRatiosData = [
@@ -37,7 +37,7 @@ const rawEaselSizesData = [
 
 // Map raw data to include the derived 'value', keeping numbers defined once
 export const ASPECT_RATIOS: readonly AspectRatio[] = Object.freeze([
-  ...rawAspectRatiosData.map(item => ({
+  ...rawAspectRatiosData.map((item) => ({
     ...item,
     value: `${item.width}/${item.height}`,
   })),
@@ -46,7 +46,7 @@ export const ASPECT_RATIOS: readonly AspectRatio[] = Object.freeze([
 ]);
 
 export const PAPER_SIZES: readonly PaperSize[] = Object.freeze([
-  ...rawPaperSizesData.map(item => ({
+  ...rawPaperSizesData.map((item) => ({
     ...item,
     value: `${item.width}x${item.height}`,
   })),
@@ -55,23 +55,23 @@ export const PAPER_SIZES: readonly PaperSize[] = Object.freeze([
 ]);
 
 export const EASEL_SIZES: readonly PaperSize[] = Object.freeze([
-  ...rawEaselSizesData.map(item => ({
+  ...rawEaselSizesData.map((item) => ({
     ...item,
     value: `${item.width}x${item.height}`,
-  }))
+  })),
 ]);
 
 // Create lookup maps for O(1) access
 export const PAPER_SIZE_MAP = Object.freeze(
-  Object.fromEntries(PAPER_SIZES.map(p => [p.value, p]))
+  Object.fromEntries(PAPER_SIZES.map((p) => [p.value, p])),
 );
 
 export const ASPECT_RATIO_MAP = Object.freeze(
-  Object.fromEntries(ASPECT_RATIOS.map(r => [r.value, r]))
+  Object.fromEntries(ASPECT_RATIOS.map((r) => [r.value, r])),
 );
 
 export const EASEL_SIZE_MAP = Object.freeze(
-  Object.fromEntries(EASEL_SIZES.map(e => [`${e.width}×${e.height}`, e]))
+  Object.fromEntries(EASEL_SIZES.map((e) => [`${e.width}×${e.height}`, e])),
 );
 
 // UI Constants
@@ -86,4 +86,4 @@ export default {
   ASPECT_RATIO_MAP,
   EASEL_SIZE_MAP,
   BLADE_THICKNESS,
-}; 
+};

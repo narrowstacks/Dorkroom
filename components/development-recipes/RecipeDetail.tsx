@@ -1,5 +1,11 @@
 import React, { useState, useMemo } from "react";
-import { StyleSheet, ScrollView, Platform, Animated, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  ScrollView,
+  Platform,
+  Animated,
+  TouchableOpacity,
+} from "react-native";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import {
@@ -13,7 +19,14 @@ import {
   Toast,
   ToastTitle,
 } from "@gluestack-ui/themed";
-import { X, Calculator, Beaker, Edit3, Copy, Trash2 } from "lucide-react-native";
+import {
+  X,
+  Calculator,
+  Beaker,
+  Edit3,
+  Copy,
+  Trash2,
+} from "lucide-react-native";
 
 import { FormGroup } from "@/components/ui/forms/FormSection";
 import { TextInput } from "@/components/ui/forms";
@@ -43,16 +56,25 @@ interface RecipeDetailProps {
   isCustomRecipe?: boolean; // Whether this is a custom recipe
 }
 
-export function RecipeDetail({ combination, film, developer, onClose, onEdit, onDuplicate, onDelete, isCustomRecipe }: RecipeDetailProps) {
+export function RecipeDetail({
+  combination,
+  film,
+  developer,
+  onClose,
+  onEdit,
+  onDuplicate,
+  onDelete,
+  isCustomRecipe,
+}: RecipeDetailProps) {
   const [showCalculator, setShowCalculator] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { width } = useWindowDimensions();
   const isMobile = Platform.OS !== "web" || width <= 768;
-  
+
   // Animation for bottom sheet
   const translateY = React.useRef(new Animated.Value(1000)).current;
   const opacity = React.useRef(new Animated.Value(0)).current;
-  
+
   const textColor = useThemeColor({}, "text");
   const textSecondary = useThemeColor({}, "textSecondary");
   const developmentTint = useThemeColor({}, "developmentRecipesTint");
@@ -66,30 +88,38 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
 
   // Get film and developer names
   const filmName = film ? `${film.brand} ${film.name}` : "Unknown Film";
-  const developerName = developer ? `${developer.manufacturer} ${developer.name}` : "Unknown Developer";
+  const developerName = developer
+    ? `${developer.manufacturer} ${developer.name}`
+    : "Unknown Developer";
 
   // Get dilution info
   const dilutionInfo = formatDilution(
-    combination.customDilution || 
-    (developer?.dilutions.find(d => d.id === combination.dilutionId)?.dilution) || 
-    "Stock"
+    combination.customDilution ||
+      developer?.dilutions.find((d) => d.id === combination.dilutionId)
+        ?.dilution ||
+      "Stock",
   );
 
   // Available dilutions for calculator
   const availableDilutions = useMemo(() => {
     const dilutions = [{ label: "Stock", value: "Stock" }];
-    
+
     if (developer?.dilutions) {
-      developer.dilutions.forEach(d => {
+      developer.dilutions.forEach((d) => {
         dilutions.push({ label: d.dilution, value: d.dilution });
       });
     }
-    
-    if (combination.customDilution && 
-        !dilutions.find(d => d.value === combination.customDilution)) {
-      dilutions.push({ label: combination.customDilution, value: combination.customDilution });
+
+    if (
+      combination.customDilution &&
+      !dilutions.find((d) => d.value === combination.customDilution)
+    ) {
+      dilutions.push({
+        label: combination.customDilution,
+        value: combination.customDilution,
+      });
     }
-    
+
     return dilutions;
   }, [developer, combination.customDilution]);
 
@@ -148,16 +178,16 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
   // Delete functionality for custom recipes - identical to CustomRecipeForm.tsx
   const performDeletion = async () => {
     if (!combination.id) return;
-    
-    debugLog('[RecipeDetail] Starting delete operation');
+
+    debugLog("[RecipeDetail] Starting delete operation");
     setIsLoading(true);
-    
+
     try {
       const recipeName = filmName; // Use the film name as the recipe name for the toast
-      
+
       await deleteCustomRecipe(combination.id);
       await forceRefresh();
-      
+
       // Show success toast
       toast.show({
         placement: "top",
@@ -167,18 +197,19 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
           </Toast>
         ),
       });
-      
+
       if (onDelete) {
         onDelete();
       } else {
         onClose();
       }
     } catch (error) {
-      debugLog('[RecipeDetail] Delete operation failed:', error);
-      const errorMessage = error instanceof Error 
-        ? `Failed to delete recipe: ${error.message}` 
-        : "Failed to delete recipe";
-      
+      debugLog("[RecipeDetail] Delete operation failed:", error);
+      const errorMessage =
+        error instanceof Error
+          ? `Failed to delete recipe: ${error.message}`
+          : "Failed to delete recipe";
+
       // Show error toast
       toast.show({
         placement: "top",
@@ -199,21 +230,21 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
       "Are you sure you want to delete this recipe? This action cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: performDeletion }
-      ]
+        { text: "Delete", style: "destructive", onPress: performDeletion },
+      ],
     );
   };
 
   // Handle pan gesture for swipe down
   const onGestureEvent = Animated.event(
     [{ nativeEvent: { translationY: translateY } }],
-    { useNativeDriver: true }
+    { useNativeDriver: true },
   );
 
   const onHandlerStateChange = (event: any) => {
     if (event.nativeEvent.state === State.END) {
       const { translationY, velocityY } = event.nativeEvent;
-      
+
       if (translationY > 100 || velocityY > 500) {
         hideBottomSheet();
       } else {
@@ -227,292 +258,398 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
   };
 
   return (
-    <Box style={[styles.container, { backgroundColor: cardBackground, borderColor: outline }]}>
+    <Box
+      style={[
+        styles.container,
+        { backgroundColor: cardBackground, borderColor: outline },
+      ]}
+    >
       {/* Header */}
       <Box style={styles.header}>
         <VStack space="xs" style={styles.headerContent}>
-          <Text style={[styles.filmName, { color: developmentTint }]} numberOfLines={2}>
+          <Text
+            style={[styles.filmName, { color: developmentTint }]}
+            numberOfLines={2}
+          >
             {filmName}
           </Text>
-          <Text style={[styles.developerName, { color: textSecondary }]} numberOfLines={2}>
+          <Text
+            style={[styles.developerName, { color: textSecondary }]}
+            numberOfLines={2}
+          >
             {developerName}
           </Text>
         </VStack>
-        
+
         <HStack space="xs" style={styles.headerActions}>
           {/* Edit button for custom recipes */}
           {isCustomRecipe && onEdit && (
-            <Button variant="outline" size="sm" onPress={onEdit} style={styles.actionButton}>
+            <Button
+              variant="outline"
+              size="sm"
+              onPress={onEdit}
+              style={styles.actionButton}
+            >
               <Edit3 size={16} color={developmentTint} />
             </Button>
           )}
-          
+
           {/* Delete button for custom recipes */}
           {isCustomRecipe && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onPress={handleDelete} 
+            <Button
+              variant="outline"
+              size="sm"
+              onPress={handleDelete}
               style={styles.actionButton}
               disabled={isLoading}
             >
               <Trash2 size={16} color="#ff4444" />
             </Button>
           )}
-          
+
           {/* Duplicate button for all recipes */}
           {onDuplicate && (
-            <Button variant="outline" size="sm" onPress={onDuplicate} style={styles.actionButton}>
+            <Button
+              variant="outline"
+              size="sm"
+              onPress={onDuplicate}
+              style={styles.actionButton}
+            >
               <Copy size={16} color={textColor} />
             </Button>
           )}
-          
-          <Button variant="outline" size="sm" onPress={onClose} style={styles.closeButton}>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onPress={onClose}
+            style={styles.closeButton}
+          >
             <X size={20} color={textColor} />
           </Button>
         </HStack>
       </Box>
 
       {/* Recipe Details - Scrollable */}
-      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
         <VStack space="lg" style={styles.content}>
-        {/* Basic Parameters */}
-        <Box>
-          <Text style={[styles.sectionTitle, { color: textColor }]}>Development Parameters</Text>
-          
-          <Box style={styles.parametersGrid}>
-            <Box style={styles.parameterCard}>
-              <Text style={[styles.parameterLabel, { color: textSecondary }]}>Development Time</Text>
-              <Text style={[styles.parameterValue, { color: textColor }]}>
-                {formatTime(combination.timeMinutes)}
-              </Text>
-            </Box>
-            
-            <Box style={styles.parameterCard}>
-              <Text style={[styles.parameterLabel, { color: textSecondary }]}>Temperature</Text>
-              <Text style={[styles.parameterValue, { color: textColor }]}>
-                {convertToDisplay(combination.temperatureF)}
-              </Text>
-            </Box>
-            
-            <Box style={styles.parameterCard}>
-              <Text style={[styles.parameterLabel, { color: textSecondary }]}>Shooting ISO</Text>
-              <Text style={[styles.parameterValue, { color: textColor }]}>
-                {combination.shootingIso}
-              </Text>
-            </Box>
-            
-            <Box style={styles.parameterCard}>
-              <Text style={[styles.parameterLabel, { color: textSecondary }]}>Dilution</Text>
-              <Text style={[styles.parameterValue, { color: textColor }]}>
-                {dilutionInfo}
-              </Text>
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Push/Pull */}
-        {combination.pushPull !== 0 && (
+          {/* Basic Parameters */}
           <Box>
-            <Text style={[styles.sectionTitle, { color: textColor }]}>Push/Pull Processing</Text>
-            <Text style={[styles.pushPullValue, { color: developmentTint }]}>
-              {PUSH_PULL_LABELS[combination.pushPull] || 
-               `${combination.pushPull > 0 ? '+' : ''}${combination.pushPull} stops`}
+            <Text style={[styles.sectionTitle, { color: textColor }]}>
+              Development Parameters
             </Text>
-          </Box>
-        )}
 
-        {/* Agitation */}
-        {combination.agitationSchedule && (
-          <Box>
-            <Text style={[styles.sectionTitle, { color: textColor }]}>Agitation Schedule</Text>
-            <Text style={[styles.detailText, { color: textColor }]}>
-              {combination.agitationSchedule}
-            </Text>
-          </Box>
-        )}
+            <Box style={styles.parametersGrid}>
+              <Box style={styles.parameterCard}>
+                <Text style={[styles.parameterLabel, { color: textSecondary }]}>
+                  Development Time
+                </Text>
+                <Text style={[styles.parameterValue, { color: textColor }]}>
+                  {formatTime(combination.timeMinutes)}
+                </Text>
+              </Box>
 
-        {/* Notes */}
-        {combination.notes && (
-          <Box>
-            <Text style={[styles.sectionTitle, { color: textColor }]}>Notes</Text>
-            <Text style={[styles.detailText, { color: textColor }]}>
-              {combination.notes}
-            </Text>
-          </Box>
-        )}
+              <Box style={styles.parameterCard}>
+                <Text style={[styles.parameterLabel, { color: textSecondary }]}>
+                  Temperature
+                </Text>
+                <Text style={[styles.parameterValue, { color: textColor }]}>
+                  {convertToDisplay(combination.temperatureF)}
+                </Text>
+              </Box>
 
-        {/* Film Information */}
-        {film && (
-          <Box>
-            <Text style={[styles.sectionTitle, { color: textColor }]}>Film Information</Text>
-            <VStack space="xs">
-              <Text style={[styles.detailText, { color: textColor }]}>
-                <Text style={{ fontWeight: '600' }}>ISO Speed:</Text> {film.isoSpeed}
+              <Box style={styles.parameterCard}>
+                <Text style={[styles.parameterLabel, { color: textSecondary }]}>
+                  Shooting ISO
+                </Text>
+                <Text style={[styles.parameterValue, { color: textColor }]}>
+                  {combination.shootingIso}
+                </Text>
+              </Box>
+
+              <Box style={styles.parameterCard}>
+                <Text style={[styles.parameterLabel, { color: textSecondary }]}>
+                  Dilution
+                </Text>
+                <Text style={[styles.parameterValue, { color: textColor }]}>
+                  {dilutionInfo}
+                </Text>
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Push/Pull */}
+          {combination.pushPull !== 0 && (
+            <Box>
+              <Text style={[styles.sectionTitle, { color: textColor }]}>
+                Push/Pull Processing
+              </Text>
+              <Text style={[styles.pushPullValue, { color: developmentTint }]}>
+                {PUSH_PULL_LABELS[combination.pushPull] ||
+                  `${combination.pushPull > 0 ? "+" : ""}${combination.pushPull} stops`}
+              </Text>
+            </Box>
+          )}
+
+          {/* Agitation */}
+          {combination.agitationSchedule && (
+            <Box>
+              <Text style={[styles.sectionTitle, { color: textColor }]}>
+                Agitation Schedule
               </Text>
               <Text style={[styles.detailText, { color: textColor }]}>
-                <Text style={{ fontWeight: '600' }}>Type:</Text> {film.colorType}
+                {combination.agitationSchedule}
               </Text>
-              {film.grainStructure && (
+            </Box>
+          )}
+
+          {/* Notes */}
+          {combination.notes && (
+            <Box>
+              <Text style={[styles.sectionTitle, { color: textColor }]}>
+                Notes
+              </Text>
+              <Text style={[styles.detailText, { color: textColor }]}>
+                {combination.notes}
+              </Text>
+            </Box>
+          )}
+
+          {/* Film Information */}
+          {film && (
+            <Box>
+              <Text style={[styles.sectionTitle, { color: textColor }]}>
+                Film Information
+              </Text>
+              <VStack space="xs">
                 <Text style={[styles.detailText, { color: textColor }]}>
-                  <Text style={{ fontWeight: '600' }}>Grain:</Text> {film.grainStructure}
+                  <Text style={{ fontWeight: "600" }}>ISO Speed:</Text>{" "}
+                  {film.isoSpeed}
                 </Text>
-              )}
-            </VStack>
-          </Box>
-        )}
-
-        {/* Developer Information */}
-        {developer && (
-          <Box>
-            <Text style={[styles.sectionTitle, { color: textColor }]}>Developer Information</Text>
-            <VStack space="xs">
-              <Text style={[styles.detailText, { color: textColor }]}>
-                <Text style={{ fontWeight: '600' }}>Type:</Text> {developer.type}
-              </Text>
-              <Text style={[styles.detailText, { color: textColor }]}>
-                <Text style={{ fontWeight: '600' }}>For:</Text> {developer.filmOrPaper}
-              </Text>
-              {developer.workingLifeHours && (
                 <Text style={[styles.detailText, { color: textColor }]}>
-                  <Text style={{ fontWeight: '600' }}>Working Life:</Text> {developer.workingLifeHours} hours
+                  <Text style={{ fontWeight: "600" }}>Type:</Text>{" "}
+                  {film.colorType}
                 </Text>
-              )}
-              {developer.stockLifeMonths && (
+                {film.grainStructure && (
+                  <Text style={[styles.detailText, { color: textColor }]}>
+                    <Text style={{ fontWeight: "600" }}>Grain:</Text>{" "}
+                    {film.grainStructure}
+                  </Text>
+                )}
+              </VStack>
+            </Box>
+          )}
+
+          {/* Developer Information */}
+          {developer && (
+            <Box>
+              <Text style={[styles.sectionTitle, { color: textColor }]}>
+                Developer Information
+              </Text>
+              <VStack space="xs">
                 <Text style={[styles.detailText, { color: textColor }]}>
-                  <Text style={{ fontWeight: '600' }}>Stock Life:</Text> {developer.stockLifeMonths} months
+                  <Text style={{ fontWeight: "600" }}>Type:</Text>{" "}
+                  {developer.type}
                 </Text>
-              )}
-            </VStack>
-          </Box>
-        )}
-
-        {/* Chemistry Calculator Toggle */}
-        <Box style={styles.calculatorSection}>
-          <Button 
-            variant="outline" 
-            onPress={isMobile ? showBottomSheet : () => setShowCalculator(!showCalculator)}
-            style={[styles.calculatorToggle, { borderColor: developmentTint }]}
-          >
-            <Calculator size={16} color={developmentTint} />
-            <ButtonText style={[styles.calculatorToggleText, { color: developmentTint }]}>
-              Show Chemistry Calculator
-            </ButtonText>
-          </Button>
-
-          {/* Chemistry Calculator - Desktop Only */}
-          {showCalculator && !isMobile && (
-            <VStack space="md" style={[styles.calculator, { backgroundColor: inputBackground }]}>
-              <HStack space="sm" style={styles.calculatorHeader}>
-                <Beaker size={16} color={developmentTint} />
-                <Text style={[styles.calculatorTitle, { color: textColor }]}>
-                  Chemistry Calculator
+                <Text style={[styles.detailText, { color: textColor }]}>
+                  <Text style={{ fontWeight: "600" }}>For:</Text>{" "}
+                  {developer.filmOrPaper}
                 </Text>
-              </HStack>
+                {developer.workingLifeHours && (
+                  <Text style={[styles.detailText, { color: textColor }]}>
+                    <Text style={{ fontWeight: "600" }}>Working Life:</Text>{" "}
+                    {developer.workingLifeHours} hours
+                  </Text>
+                )}
+                {developer.stockLifeMonths && (
+                  <Text style={[styles.detailText, { color: textColor }]}>
+                    <Text style={{ fontWeight: "600" }}>Stock Life:</Text>{" "}
+                    {developer.stockLifeMonths} months
+                  </Text>
+                )}
+              </VStack>
+            </Box>
+          )}
 
-              <FormGroup label="Volume Unit">
-                <StyledSelect
-                  value={chemistry.unit}
-                  onValueChange={(value) => chemistry.setUnit(value as any)}
-                  items={volumeUnits}
-                />
-              </FormGroup>
+          {/* Chemistry Calculator Toggle */}
+          <Box style={styles.calculatorSection}>
+            <Button
+              variant="outline"
+              onPress={
+                isMobile
+                  ? showBottomSheet
+                  : () => setShowCalculator(!showCalculator)
+              }
+              style={[
+                styles.calculatorToggle,
+                { borderColor: developmentTint },
+              ]}
+            >
+              <Calculator size={16} color={developmentTint} />
+              <ButtonText
+                style={[
+                  styles.calculatorToggleText,
+                  { color: developmentTint },
+                ]}
+              >
+                Show Chemistry Calculator
+              </ButtonText>
+            </Button>
 
-              {chemistry.unit === 'rolls' ? (
-                <>
-                  <FormGroup label="Film Format">
-                    <StyledSelect
-                      value={chemistry.filmFormat}
-                      onValueChange={(value) => chemistry.setFilmFormat(value as any)}
-                      items={filmFormats}
-                    />
-                  </FormGroup>
-                  
-                  <FormGroup label="Number of Rolls">
-                    <TextInput
-                      value={chemistry.numberOfRolls}
-                      onChangeText={chemistry.setNumberOfRolls}
-                      placeholder="1"
-                      keyboardType="numeric"
-                      inputTitle="Enter Number of Rolls"
-                    />
-                  </FormGroup>
-                </>
-              ) : (
-                <FormGroup label={`Total Volume (${chemistry.unit})`}>
-                  <TextInput
-                    value={chemistry.totalVolume}
-                    onChangeText={chemistry.setTotalVolume}
-                    placeholder={chemistry.unit === 'ml' ? '500' : '16.9'}
-                    keyboardType="numeric"
-                    inputTitle={`Enter Total Volume (${chemistry.unit})`}
+            {/* Chemistry Calculator - Desktop Only */}
+            {showCalculator && !isMobile && (
+              <VStack
+                space="md"
+                style={[
+                  styles.calculator,
+                  { backgroundColor: inputBackground },
+                ]}
+              >
+                <HStack space="sm" style={styles.calculatorHeader}>
+                  <Beaker size={16} color={developmentTint} />
+                  <Text style={[styles.calculatorTitle, { color: textColor }]}>
+                    Chemistry Calculator
+                  </Text>
+                </HStack>
+
+                <FormGroup label="Volume Unit">
+                  <StyledSelect
+                    value={chemistry.unit}
+                    onValueChange={(value) => chemistry.setUnit(value as any)}
+                    items={volumeUnits}
                   />
                 </FormGroup>
-              )}
 
-              <FormGroup label="Dilution Ratio">
-                <StyledSelect
-                  value={chemistry.selectedDilution || ''}
-                  onValueChange={(value) => chemistry.setSelectedDilution(value || null)}
-                  items={availableDilutions}
-                />
-              </FormGroup>
+                {chemistry.unit === "rolls" ? (
+                  <>
+                    <FormGroup label="Film Format">
+                      <StyledSelect
+                        value={chemistry.filmFormat}
+                        onValueChange={(value) =>
+                          chemistry.setFilmFormat(value as any)
+                        }
+                        items={filmFormats}
+                      />
+                    </FormGroup>
 
-              {/* Results */}
-              {chemistry.calculation && (
-                <Box style={[styles.calculationResults, { borderColor: outline }]}>
-                  <Text style={[styles.resultsTitle, { color: textColor }]}>Recipe:</Text>
-                  
-                  <VStack space="xs">
-                    <HStack style={styles.resultRow}>
-                      <Text style={[styles.resultLabel, { color: textSecondary }]}>
-                        Total Volume:
-                      </Text>
-                      <Text style={[styles.resultValue, { color: textColor }]}>
-                        {chemistry.calculation.totalVolumeDisplay}
-                      </Text>
-                    </HStack>
-                    
-                    <HStack style={styles.resultRow}>
-                      <Text style={[styles.resultLabel, { color: textSecondary }]}>
-                        Developer:
-                      </Text>
-                      <Text style={[styles.resultValue, { color: developmentTint }]}>
-                        {chemistry.calculation.developerVolumeDisplay}
-                      </Text>
-                    </HStack>
-                    
-                    <HStack style={styles.resultRow}>
-                      <Text style={[styles.resultLabel, { color: textSecondary }]}>
-                        Water:
-                      </Text>
-                      <Text style={[styles.resultValue, { color: textColor }]}>
-                        {chemistry.calculation.waterVolumeDisplay}
-                      </Text>
-                    </HStack>
-                  </VStack>
-                </Box>
-              )}
+                    <FormGroup label="Number of Rolls">
+                      <TextInput
+                        value={chemistry.numberOfRolls}
+                        onChangeText={chemistry.setNumberOfRolls}
+                        placeholder="1"
+                        keyboardType="numeric"
+                        inputTitle="Enter Number of Rolls"
+                      />
+                    </FormGroup>
+                  </>
+                ) : (
+                  <FormGroup label={`Total Volume (${chemistry.unit})`}>
+                    <TextInput
+                      value={chemistry.totalVolume}
+                      onChangeText={chemistry.setTotalVolume}
+                      placeholder={chemistry.unit === "ml" ? "500" : "16.9"}
+                      keyboardType="numeric"
+                      inputTitle={`Enter Total Volume (${chemistry.unit})`}
+                    />
+                  </FormGroup>
+                )}
 
-              {/* Errors */}
-              {chemistry.errors.length > 0 && (
-                <Box style={styles.errorContainer}>
-                  {chemistry.errors.map((error, index) => (
-                    <Text key={index} style={styles.errorText}>
-                      {error}
+                <FormGroup label="Dilution Ratio">
+                  <StyledSelect
+                    value={chemistry.selectedDilution || ""}
+                    onValueChange={(value) =>
+                      chemistry.setSelectedDilution(value || null)
+                    }
+                    items={availableDilutions}
+                  />
+                </FormGroup>
+
+                {/* Results */}
+                {chemistry.calculation && (
+                  <Box
+                    style={[
+                      styles.calculationResults,
+                      { borderColor: outline },
+                    ]}
+                  >
+                    <Text style={[styles.resultsTitle, { color: textColor }]}>
+                      Recipe:
                     </Text>
-                  ))}
-                </Box>
-              )}
 
-              <Button variant="outline" onPress={chemistry.reset} style={styles.resetButton}>
-                <ButtonText style={[styles.resetButtonText, { color: textSecondary }]}>
-                  Reset Calculator
-                </ButtonText>
-              </Button>
-            </VStack>
-          )}
-        </Box>
+                    <VStack space="xs">
+                      <HStack style={styles.resultRow}>
+                        <Text
+                          style={[styles.resultLabel, { color: textSecondary }]}
+                        >
+                          Total Volume:
+                        </Text>
+                        <Text
+                          style={[styles.resultValue, { color: textColor }]}
+                        >
+                          {chemistry.calculation.totalVolumeDisplay}
+                        </Text>
+                      </HStack>
+
+                      <HStack style={styles.resultRow}>
+                        <Text
+                          style={[styles.resultLabel, { color: textSecondary }]}
+                        >
+                          Developer:
+                        </Text>
+                        <Text
+                          style={[
+                            styles.resultValue,
+                            { color: developmentTint },
+                          ]}
+                        >
+                          {chemistry.calculation.developerVolumeDisplay}
+                        </Text>
+                      </HStack>
+
+                      <HStack style={styles.resultRow}>
+                        <Text
+                          style={[styles.resultLabel, { color: textSecondary }]}
+                        >
+                          Water:
+                        </Text>
+                        <Text
+                          style={[styles.resultValue, { color: textColor }]}
+                        >
+                          {chemistry.calculation.waterVolumeDisplay}
+                        </Text>
+                      </HStack>
+                    </VStack>
+                  </Box>
+                )}
+
+                {/* Errors */}
+                {chemistry.errors.length > 0 && (
+                  <Box style={styles.errorContainer}>
+                    {chemistry.errors.map((error, index) => (
+                      <Text key={index} style={styles.errorText}>
+                        {error}
+                      </Text>
+                    ))}
+                  </Box>
+                )}
+
+                <Button
+                  variant="outline"
+                  onPress={chemistry.reset}
+                  style={styles.resetButton}
+                >
+                  <ButtonText
+                    style={[styles.resetButtonText, { color: textSecondary }]}
+                  >
+                    Reset Calculator
+                  </ButtonText>
+                </Button>
+              </VStack>
+            )}
+          </Box>
         </VStack>
       </ScrollView>
 
@@ -525,15 +662,12 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
             activeOpacity={1}
             onPress={hideBottomSheet}
           >
-            <Animated.View 
-              style={[
-                styles.backdropOverlay, 
-                { opacity }
-              ]}
+            <Animated.View
+              style={[styles.backdropOverlay, { opacity }]}
               pointerEvents="none"
             />
           </TouchableOpacity>
-          
+
           {/* Bottom Sheet */}
           <PanGestureHandler
             onGestureEvent={onGestureEvent}
@@ -542,11 +676,11 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
             <Animated.View
               style={[
                 styles.bottomSheet,
-                { 
+                {
                   backgroundColor: cardBackground,
                   borderColor: outline,
-                  transform: [{ translateY }]
-                }
+                  transform: [{ translateY }],
+                },
               ]}
             >
               {/* Bottom Sheet Header */}
@@ -554,23 +688,38 @@ export function RecipeDetail({ combination, film, developer, onClose, onEdit, on
                 <Box style={styles.dragHandle} />
                 <HStack style={styles.bottomSheetTitleContainer}>
                   <VStack space="xs" style={styles.bottomSheetTitleContent}>
-                    <Text style={[styles.bottomSheetTitle, { color: textColor }]}>
+                    <Text
+                      style={[styles.bottomSheetTitle, { color: textColor }]}
+                    >
                       Chemistry Calculator
                     </Text>
-                    <Text style={[styles.bottomSheetSubtitle, { color: textSecondary }]}>
+                    <Text
+                      style={[
+                        styles.bottomSheetSubtitle,
+                        { color: textSecondary },
+                      ]}
+                    >
                       {filmName} + {developerName}
                     </Text>
                   </VStack>
-                  <Button variant="outline" size="sm" onPress={hideBottomSheet} style={styles.closeButton}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onPress={hideBottomSheet}
+                    style={styles.closeButton}
+                  >
                     <X size={20} color={textColor} />
                   </Button>
                 </HStack>
               </Box>
 
               {/* Bottom Sheet Content */}
-              <ScrollView style={styles.bottomSheetScrollView} showsVerticalScrollIndicator={false}>
+              <ScrollView
+                style={styles.bottomSheetScrollView}
+                showsVerticalScrollIndicator={false}
+              >
                 <Box style={styles.bottomSheetContent}>
-                  <ChemistryCalculator 
+                  <ChemistryCalculator
                     availableDilutions={availableDilutions}
                     defaultDilution={dilutionInfo}
                   />
@@ -589,16 +738,16 @@ const styles = StyleSheet.create({
     flex: 1,
     borderWidth: 1,
     borderRadius: 12,
-    overflow: 'visible',
+    overflow: "visible",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     padding: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    borderBottomColor: "rgba(0,0,0,0.1)",
   },
   headerContent: {
     flex: 1,
@@ -606,24 +755,24 @@ const styles = StyleSheet.create({
   },
   filmName: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     lineHeight: 24,
   },
   developerName: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     lineHeight: 20,
   },
   headerActions: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   actionButton: {
     width: 32,
     height: 32,
     padding: 0,
     minHeight: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   closeButton: {
     width: 32,
@@ -641,33 +790,33 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 12,
   },
   parametersGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
   },
   parameterCard: {
     flex: 1,
-    minWidth: '45%',
+    minWidth: "45%",
     padding: 12,
-    backgroundColor: 'rgba(0,0,0,0.03)',
+    backgroundColor: "rgba(0,0,0,0.03)",
     borderRadius: 8,
   },
   parameterLabel: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: 4,
   },
   parameterValue: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   pushPullValue: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   detailText: {
     fontSize: 14,
@@ -677,14 +826,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   calculatorToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   calculatorToggleText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   calculator: {
     marginTop: 16,
@@ -693,12 +842,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   calculatorHeader: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 12,
   },
   calculatorTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   input: {
     borderRadius: 8,
@@ -711,39 +860,39 @@ const styles = StyleSheet.create({
   },
   resultsTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
   },
   resultRow: {
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   resultLabel: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   resultValue: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   errorContainer: {
     padding: 8,
-    backgroundColor: 'rgba(255, 0, 0, 0.1)',
+    backgroundColor: "rgba(255, 0, 0, 0.1)",
     borderRadius: 6,
   },
   errorText: {
     fontSize: 12,
-    color: '#d32f2f',
+    color: "#d32f2f",
   },
   resetButton: {
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   resetButtonText: {
     fontSize: 12,
   },
   // Bottom Sheet Styles
   backdrop: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -752,40 +901,40 @@ const styles = StyleSheet.create({
   },
   backdropOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   bottomSheet: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    maxHeight: '85%',
+    maxHeight: "85%",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
     zIndex: 1001,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   bottomSheetHeader: {
     paddingTop: 8,
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    borderBottomColor: "rgba(0,0,0,0.1)",
   },
   dragHandle: {
     width: 40,
     height: 4,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: "rgba(0,0,0,0.3)",
     borderRadius: 2,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginBottom: 12,
   },
   bottomSheetTitleContainer: {
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
   bottomSheetTitleContent: {
     flex: 1,
@@ -793,11 +942,11 @@ const styles = StyleSheet.create({
   },
   bottomSheetTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   bottomSheetSubtitle: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   bottomSheetScrollView: {
     flex: 1,

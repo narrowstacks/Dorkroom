@@ -4,22 +4,18 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
-  Platform,
   TextInputProps,
 } from "react-native";
-import { 
-  Text, 
-  HStack, 
-} from "@gluestack-ui/themed";
+import { Text, HStack } from "@gluestack-ui/themed";
 import { Minus, Plus } from "lucide-react-native";
 import { ThemedText } from "@/components/ui/core/ThemedText";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { 
-  useMobileInputDetection, 
-  MobileInputTrigger, 
-  MobileInputModal, 
-  modalInputStyles 
-} from './MobileInputShared';
+import {
+  useMobileInputDetection,
+  MobileInputTrigger,
+  MobileInputModal,
+  modalInputStyles,
+} from "./MobileInputShared";
 
 interface NumberInputProps extends TextInputProps {
   value: string;
@@ -47,19 +43,19 @@ const NumberStepperButtons: React.FC<{
   };
 
   return (
-    <HStack space="md" style={{ alignItems: 'center' }}>
-      <TouchableOpacity 
+    <HStack space="md" style={{ alignItems: "center" }}>
+      <TouchableOpacity
         onPress={onDecrement}
         style={[styles.stepperButton, { borderColor: borderColor }]}
       >
         <Minus size={20} color={textColor} />
       </TouchableOpacity>
-      
+
       <Text style={[styles.stepperLabel, { color: textColor }]}>
         {formatStepLabel(step)}
       </Text>
-      
-      <TouchableOpacity 
+
+      <TouchableOpacity
         onPress={onIncrement}
         style={[styles.stepperButton, { borderColor: borderColor }]}
       >
@@ -134,7 +130,7 @@ export const NumberInput = ({
   const handleTextChange = (text: string) => {
     // Allow only numbers and a single decimal point
     // Allow empty string for clearing input
-    if (text === '' || /^\d*\.?\d*$/.test(text)) {
+    if (text === "" || /^\d*\.?\d*$/.test(text)) {
       onChangeText(text);
     }
   };
@@ -142,7 +138,7 @@ export const NumberInput = ({
   const handleModalTextChange = (text: string) => {
     // Allow only numbers and a single decimal point
     // Allow empty string for clearing input
-    if (text === '' || /^\d*\.?\d*$/.test(text)) {
+    if (text === "" || /^\d*\.?\d*$/.test(text)) {
       setTempValue(text);
     }
   };
@@ -184,10 +180,13 @@ export const NumberInput = ({
         >
           <TextInput
             ref={inputRef}
-            style={[modalInputStyles.modalInput, { 
-              color: textColor, 
-              borderColor: borderColor,
-            }]}
+            style={[
+              modalInputStyles.modalInput,
+              {
+                color: textColor,
+                borderColor: borderColor,
+              },
+            ]}
             value={tempValue}
             onChangeText={handleModalTextChange}
             keyboardType="decimal-pad"
@@ -250,7 +249,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-evenly",
     alignItems: "center",
     borderLeftWidth: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   spinnerButton: {
     width: "100%",
@@ -266,13 +265,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   stepperLabel: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     minWidth: 40,
-    textAlign: 'center',
+    textAlign: "center",
   },
-}); 
+});

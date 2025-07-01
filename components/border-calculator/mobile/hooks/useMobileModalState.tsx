@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 export const useMobileModalState = () => {
   const [paperSizeModalVisible, setPaperSizeModalVisible] = useState(false);
   const [borderSizeModalVisible, setBorderSizeModalVisible] = useState(false);
-  const [positionOffsetsModalVisible, setPositionOffsetsModalVisible] = useState(false);
-  const [advancedOptionsModalVisible, setAdvancedOptionsModalVisible] = useState(false);
+  const [positionOffsetsModalVisible, setPositionOffsetsModalVisible] =
+    useState(false);
+  const [advancedOptionsModalVisible, setAdvancedOptionsModalVisible] =
+    useState(false);
   const [copyResultsModalVisible, setCopyResultsModalVisible] = useState(false);
   const [presetModalVisible, setPresetModalVisible] = useState(false);
 
@@ -25,7 +27,7 @@ export const useMobileModalState = () => {
     advancedOptionsModalVisible,
     copyResultsModalVisible,
     presetModalVisible,
-    
+
     // Setters
     setPaperSizeModalVisible,
     setBorderSizeModalVisible,
@@ -33,8 +35,8 @@ export const useMobileModalState = () => {
     setAdvancedOptionsModalVisible,
     setCopyResultsModalVisible,
     setPresetModalVisible,
-    
+
     // Utilities
-    closeAllModals
+    closeAllModals,
   };
-}; 
+};

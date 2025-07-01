@@ -1,5 +1,10 @@
 import React from "react";
-import { Platform, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import {
+  Platform,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
 import { Box, Text, Modal } from "@gluestack-ui/themed";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
@@ -19,9 +24,9 @@ interface BaseSearchDropdownProps {
 }
 
 interface DesktopSearchDropdownProps extends BaseSearchDropdownProps {
-  variant: 'desktop';
+  variant: "desktop";
   items: SearchDropdownItem[];
-  position: 'left' | 'right';
+  position: "left" | "right";
   dynamicPosition?: {
     top: number;
     left: number;
@@ -30,8 +35,8 @@ interface DesktopSearchDropdownProps extends BaseSearchDropdownProps {
 }
 
 interface MobileSearchDropdownProps extends BaseSearchDropdownProps {
-  variant: 'mobile';
-  type: 'film' | 'developer' | 'dilution';
+  variant: "mobile";
+  type: "film" | "developer" | "dilution";
   films?: Film[];
   developers?: Developer[];
   dilutionOptions?: { label: string; value: string }[];
@@ -41,20 +46,22 @@ interface MobileSearchDropdownProps extends BaseSearchDropdownProps {
   onDilutionSelect?: (value: string) => void;
 }
 
-type SearchDropdownProps = DesktopSearchDropdownProps | MobileSearchDropdownProps;
+type SearchDropdownProps =
+  | DesktopSearchDropdownProps
+  | MobileSearchDropdownProps;
 
 export function SearchDropdown(props: SearchDropdownProps) {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
-  
+
   // Colors and theme
   const textColor = useThemeColor({}, "text");
   const borderColor = useThemeColor({}, "borderColor");
   const cardBackground = useThemeColor({}, "cardBackground");
-  
-  const variant = props.variant || (isDesktop ? 'desktop' : 'mobile');
-  
-  if (variant === 'mobile') {
+
+  const variant = props.variant || (isDesktop ? "desktop" : "mobile");
+
+  if (variant === "mobile") {
     const mobileProps = props as MobileSearchDropdownProps;
     return (
       <MobileSelectionModal
@@ -71,7 +78,7 @@ export function SearchDropdown(props: SearchDropdownProps) {
             props.onItemSelect({
               id: film.uuid,
               title: film.name,
-              subtitle: film.brand
+              subtitle: film.brand,
             });
           }
         }}
@@ -82,7 +89,7 @@ export function SearchDropdown(props: SearchDropdownProps) {
             props.onItemSelect({
               id: developer.uuid,
               title: developer.name,
-              subtitle: developer.manufacturer
+              subtitle: developer.manufacturer,
             });
           }
         }}
@@ -93,7 +100,7 @@ export function SearchDropdown(props: SearchDropdownProps) {
             props.onItemSelect({
               id: dilution.value,
               title: dilution.label,
-              subtitle: dilution.value
+              subtitle: dilution.value,
             });
           }
         }}
@@ -113,14 +120,14 @@ export function SearchDropdown(props: SearchDropdownProps) {
   }
 
   const dynamicOverlayStyle = {
-    position: 'absolute' as const,
+    position: "absolute" as const,
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'transparent',
-    justifyContent: 'flex-start' as const,
-    alignItems: 'flex-start' as const,
+    backgroundColor: "transparent",
+    justifyContent: "flex-start" as const,
+    alignItems: "flex-start" as const,
     paddingTop: desktopProps.dynamicPosition.top,
     paddingLeft: desktopProps.dynamicPosition.left,
     paddingRight: 0,
@@ -129,22 +136,20 @@ export function SearchDropdown(props: SearchDropdownProps) {
   const dropdownWidth = desktopProps.dynamicPosition.width;
 
   return (
-    <Modal
-      isOpen={props.isOpen}
-      onClose={props.onClose}
-      size="sm"
-    >
-      <Box 
-        style={dynamicOverlayStyle} 
-        onTouchEnd={props.onClose}
-      >
-        <Box style={[styles.dropdownContent, { 
-          borderColor, 
-          backgroundColor: cardBackground,
-          shadowColor: textColor,
-          width: dropdownWidth 
-        }]}>
-          <ScrollView 
+    <Modal isOpen={props.isOpen} onClose={props.onClose} size="sm">
+      <Box style={dynamicOverlayStyle} onTouchEnd={props.onClose}>
+        <Box
+          style={[
+            styles.dropdownContent,
+            {
+              borderColor,
+              backgroundColor: cardBackground,
+              shadowColor: textColor,
+              width: dropdownWidth,
+            },
+          ]}
+        >
+          <ScrollView
             style={styles.dropdownScroll}
             showsVerticalScrollIndicator
             keyboardShouldPersistTaps="handled"
@@ -152,13 +157,18 @@ export function SearchDropdown(props: SearchDropdownProps) {
             {sortedItems.map((item) => (
               <TouchableOpacity
                 key={item.id}
-                style={[styles.dropdownItem, { borderBottomColor: borderColor }]}
+                style={[
+                  styles.dropdownItem,
+                  { borderBottomColor: borderColor },
+                ]}
                 onPress={() => props.onItemSelect(item)}
               >
                 <Text style={[styles.dropdownItemTitle, { color: textColor }]}>
                   {item.title}
                 </Text>
-                <Text style={[styles.dropdownItemSubtitle, { color: textColor }]}>
+                <Text
+                  style={[styles.dropdownItemSubtitle, { color: textColor }]}
+                >
                   {item.subtitle}
                 </Text>
               </TouchableOpacity>
@@ -181,7 +191,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 1000,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   dropdownScroll: {
     maxHeight: 200,
@@ -189,18 +199,18 @@ const styles = StyleSheet.create({
   dropdownItem: {
     padding: 12,
     borderBottomWidth: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   dropdownItemTitle: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
     lineHeight: 20,
   },
   dropdownItemSubtitle: {
     fontSize: 13,
     opacity: 0.75,
-    fontWeight: '500',
+    fontWeight: "500",
     lineHeight: 16,
   },
 });

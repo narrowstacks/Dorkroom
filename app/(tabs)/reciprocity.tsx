@@ -1,12 +1,22 @@
 import React from "react";
 import { Platform, StyleSheet } from "react-native";
-import { Textarea, TextareaInput, Button, ButtonText, Box, Text } from "@gluestack-ui/themed";
+import {
+  Textarea,
+  TextareaInput,
+  Button,
+  ButtonText,
+  Box,
+  Text,
+} from "@gluestack-ui/themed";
 import { useReciprocityCalculator } from "@/hooks/useReciprocityCalculator";
 import { FILM_TYPES, EXPOSURE_PRESETS } from "@/constants/reciprocity";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { fonts } from "@/styles/common";
 import { CalculatorLayout } from "@/components/ui/layout/CalculatorLayout";
-import { ResultsSection, ResultRow } from "@/components/ui/calculator/ResultsSection";
+import {
+  ResultsSection,
+  ResultRow,
+} from "@/components/ui/calculator/ResultsSection";
 import { FormSection, FormGroup } from "@/components/ui/forms/FormSection";
 import { InfoSection, InfoText } from "@/components/ui/calculator/InfoSection";
 import { StyledSelect } from "@/components/ui/select/StyledSelect";
@@ -34,14 +44,13 @@ export default function ReciprocityCalculator() {
     formatTime,
   } = useReciprocityCalculator();
 
-
   const infoSection = (
     <InfoSection title="What is reciprocity failure?">
       <InfoText>
-        Film becomes less sensitive to light during long exposures,
-        requiring additional exposure time beyond what your light meter
-        indicates. Different films have different characteristics,
-        represented by the reciprocity factor.
+        Film becomes less sensitive to light during long exposures, requiring
+        additional exposure time beyond what your light meter indicates.
+        Different films have different characteristics, represented by the
+        reciprocity factor.
       </InfoText>
     </InfoSection>
   );
@@ -49,53 +58,65 @@ export default function ReciprocityCalculator() {
   return (
     <CalculatorLayout title="Reciprocity Calculator" infoSection={infoSection}>
       <ResultsSection show={!!calculation}>
-        <ResultRow 
-          label="Film" 
-          value={calculation?.filmName || ""} 
+        <ResultRow label="Film" value={calculation?.filmName || ""} />
+        <ResultRow
+          label="Increase"
+          value={`${Math.round(calculation?.percentageIncrease || 0)}%`}
         />
-        <ResultRow 
-          label="Increase" 
-          value={`${Math.round(calculation?.percentageIncrease || 0)}%`} 
-        />
-        <ResultRow 
-          label="Formula" 
+        <ResultRow
+          label="Formula"
           value={
             <Text>
               {calculation?.originalTime}
-              <Text className="text-xs leading-6 relative px-1 py-0.5 rounded border" style={[
-                styles.subscript, 
-                { 
-                  backgroundColor: 'transparent',
-                  borderColor: textColor,
-                  borderWidth: 1,
-                }
-              ]}>
+              <Text
+                className="relative rounded border px-1 py-0.5 text-xs leading-6"
+                style={[
+                  styles.subscript,
+                  {
+                    backgroundColor: "transparent",
+                    borderColor: textColor,
+                    borderWidth: 1,
+                  },
+                ]}
+              >
                 {calculation?.factor.toFixed(2)}
               </Text>
               {" = "}
               {Math.round((calculation?.adjustedTime || 0) * 10) / 10}
             </Text>
-          } 
+          }
         />
-        <ResultRow 
-          label="Metered Time" 
-          value={formatTime(calculation?.originalTime || 0)} 
+        <ResultRow
+          label="Metered Time"
+          value={formatTime(calculation?.originalTime || 0)}
         />
-        <ResultRow 
-          label="Adjusted Time" 
-          value={formatTime(calculation?.adjustedTime || 0)} 
+        <ResultRow
+          label="Adjusted Time"
+          value={formatTime(calculation?.adjustedTime || 0)}
           isLast
         />
-        
+
         {/* Visual Time Comparison */}
         {calculation && (
-          <Box className="w-full mt-4 gap-3" style={styles.timeComparisonContainer}>
-            <Text className="text-base mb-2 font-semibold text-center" style={styles.timeComparisonTitle}>
+          <Box
+            className="mt-4 w-full gap-3"
+            style={styles.timeComparisonContainer}
+          >
+            <Text
+              className="mb-2 text-center text-base font-semibold"
+              style={styles.timeComparisonTitle}
+            >
               Time Comparison
             </Text>
-            <Box className="w-full h-5 rounded-lg overflow-hidden relative" style={[styles.timeBarContainer, { backgroundColor: `${textSecondary}20` }]}>
+            <Box
+              className="relative h-5 w-full overflow-hidden rounded-lg"
+              style={[
+                styles.timeBarContainer,
+                { backgroundColor: `${textSecondary}20` },
+              ]}
+            >
               <Box
-                className="absolute left-0 top-0 h-full rounded-lg z-10 w-3/10"
+                className="w-3/10 absolute left-0 top-0 z-10 h-full rounded-lg"
                 style={[
                   styles.timeBar,
                   styles.meteredTimeBar,
@@ -103,25 +124,35 @@ export default function ReciprocityCalculator() {
                 ]}
               />
               <Box
-                className="absolute left-0 top-0 h-full rounded-lg z-20"
+                className="absolute left-0 top-0 z-20 h-full rounded-lg"
                 style={[
                   styles.timeBar,
                   styles.adjustedTimeBar,
                   {
                     backgroundColor: `${tintColor}66`,
                     width: `${Math.min(
-                      (calculation.adjustedTime / calculation.originalTime) * 100,
-                      100
+                      (calculation.adjustedTime / calculation.originalTime) *
+                        100,
+                      100,
                     )}%`,
                   },
                 ]}
               />
             </Box>
-            <Box className="flex-row justify-between w-full mt-2" style={styles.timeBarLabels}>
-              <Text className="text-xs" style={[styles.timeBarLabel, { color: textSecondary }]}>
+            <Box
+              className="mt-2 w-full flex-row justify-between"
+              style={styles.timeBarLabels}
+            >
+              <Text
+                className="text-xs"
+                style={[styles.timeBarLabel, { color: textSecondary }]}
+              >
                 Metered: {formatTime(calculation.originalTime)}
               </Text>
-              <Text className="text-xs" style={[styles.timeBarLabel, { color: textSecondary }]}>
+              <Text
+                className="text-xs"
+                style={[styles.timeBarLabel, { color: textSecondary }]}
+              >
                 Adjusted: {formatTime(calculation.adjustedTime)}
               </Text>
             </Box>
@@ -131,7 +162,7 @@ export default function ReciprocityCalculator() {
 
       <FormSection>
         <FormGroup label="Film Type">
-          <StyledSelect 
+          <StyledSelect
             value={filmType}
             onValueChange={setFilmType}
             items={FILM_TYPES}
@@ -141,7 +172,7 @@ export default function ReciprocityCalculator() {
         {filmType === "custom" && (
           <FormGroup label="Reciprocity Factor">
             <Textarea
-              className={`w-full border rounded-xl`}
+              className={`w-full rounded-xl border`}
               style={{
                 backgroundColor: inputBackground,
                 borderColor,
@@ -151,15 +182,18 @@ export default function ReciprocityCalculator() {
               <TextareaInput
                 value={customFactor}
                 onChangeText={setCustomFactor}
-                keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
+                keyboardType={Platform.OS === "ios" ? "decimal-pad" : "numeric"}
                 placeholder="1.3"
                 placeholderTextColor={textMuted}
                 multiline={false}
-                className={`text-base px-4 py-3`}
+                className={`px-4 py-3 text-base`}
                 style={{ color: textColor }}
               />
             </Textarea>
-            <Text className="text-xs italic mt-1.5" style={[styles.infoText, { color: textMuted }]}>
+            <Text
+              className="mt-1.5 text-xs italic"
+              style={[styles.infoText, { color: textMuted }]}
+            >
               Higher values mean more compensation needed
             </Text>
           </FormGroup>
@@ -167,7 +201,7 @@ export default function ReciprocityCalculator() {
 
         <FormGroup label="Metered Exposure Time">
           <Textarea
-            className={`w-full border rounded-xl`}
+            className={`w-full rounded-xl border`}
             style={{
               backgroundColor: inputBackground,
               borderColor: timeFormatError ? errorColor : borderColor,
@@ -180,24 +214,33 @@ export default function ReciprocityCalculator() {
               placeholder="e.g. 30s, 1m30s, 2h"
               placeholderTextColor={textMuted}
               multiline={false}
-              className={`text-base px-4 py-3`}
+              className={`px-4 py-3 text-base`}
               style={{ color: textColor }}
             />
           </Textarea>
           {formattedTime && (
-            <Text className="text-xs italic mt-1.5" style={[styles.helpText, { color: textMuted }]}>
+            <Text
+              className="mt-1.5 text-xs italic"
+              style={[styles.helpText, { color: textMuted }]}
+            >
               Parsed as: {formattedTime}
             </Text>
           )}
           {timeFormatError && (
-            <Text className="text-xs mt-1.5 font-medium" style={[styles.errorText, { color: errorColor }]}>
+            <Text
+              className="mt-1.5 text-xs font-medium"
+              style={[styles.errorText, { color: errorColor }]}
+            >
               {timeFormatError}
             </Text>
           )}
         </FormGroup>
 
         <FormGroup label="Common Presets">
-          <Box className="flex-row flex-wrap gap-3 mt-2" style={styles.presetsContainer}>
+          <Box
+            className="mt-2 flex-row flex-wrap gap-3"
+            style={styles.presetsContainer}
+          >
             {EXPOSURE_PRESETS.map((seconds: number) => (
               <Button
                 key={seconds}

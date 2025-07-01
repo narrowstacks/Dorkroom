@@ -11,19 +11,19 @@ export interface FilmType {
 export interface ReciprocityCalculation {
   // Original metered time in seconds
   originalTime: number;
-  
+
   // Adjusted time after applying reciprocity factor
   adjustedTime: number;
-  
+
   // Factor used in calculation
   factor: number;
-  
+
   // Name of the film being used
   filmName: string;
-  
+
   // Percentage increase from original time
   percentageIncrease: number;
-  
+
   // For visual representation
   timeBarWidth: number;
   adjustedTimeBarWidth: number;
@@ -34,4 +34,4 @@ type ReciprocityTypes = {
   ReciprocityCalculation: ReciprocityCalculation;
 };
 
-export default {} as ReciprocityTypes; 
+export default {} as ReciprocityTypes;

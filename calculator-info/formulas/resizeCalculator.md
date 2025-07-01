@@ -5,6 +5,7 @@
 The Resize Calculator helps determine the correct exposure time when enlarging or reducing the size of darkroom prints. It accounts for the inverse-square law of light, which affects exposure as print size changes.
 
 The calculator supports two calculation methods:
+
 - **Print Size Mode**: Uses actual print dimensions (easier to use)
 - **Enlarger Height Mode**: Uses enlarger head height measurements (more accurate)
 
@@ -15,19 +16,19 @@ graph TD
     A[Start Calculation] --> B{Select Mode}
     B -->|Print Size| C[Enter Print Dimensions]
     B -->|Enlarger Height| D[Enter Height Measurements]
-    
+
     C --> E[Calculate Areas]
     D --> F[Calculate Height Ratio]
-    
+
     E --> G[Apply Area Ratio Formula]
     F --> H[Apply Height Squared Formula]
-    
+
     G --> I[Validate Aspect Ratios]
     H --> J[Calculate Results]
     I --> J
-    
+
     J --> K[Display New Time & Stops]
-    
+
     style B fill:#e1f5fe
     style C fill:#f3e5f5
     style D fill:#f3e5f5
@@ -125,22 +126,22 @@ Where:
 graph LR
     A[User Input] --> B[Mode Selection]
     B --> C{isEnlargerHeightMode}
-    
+
     C -->|false| D[Print Size Validation]
     C -->|true| E[Height Validation]
-    
+
     D --> F[Area Calculation]
     E --> G[Height Ratio Calculation]
-    
+
     F --> H[useMemo Hook]
     G --> H
-    
+
     H --> I[Stops Calculation]
     I --> J[Format Results]
-    
+
     D --> K[Aspect Ratio Check]
     K --> L[Warning Display]
-    
+
     style C fill:#e1f5fe
     style H fill:#fff3e0
     style J fill:#e8f5e8
@@ -201,16 +202,16 @@ flowchart TD
     A[Calculator Loads] --> B[Default: Print Size Mode]
     B --> C[User Toggles Mode]
     C --> D{Mode Selected}
-    
+
     D -->|Print Size| E[Show Width/Height Inputs]
     D -->|Enlarger Height| F[Show Height Inputs]
-    
+
     E --> G[Enable Aspect Ratio Check]
     F --> H[Skip Aspect Ratio Check]
-    
+
     G --> I[Calculate Using Area Formula]
     H --> J[Calculate Using Height Formula]
-    
+
     style D fill:#e1f5fe
     style I fill:#f3e5f5
     style J fill:#f3e5f5
@@ -264,16 +265,19 @@ The implementation uses React's `useMemo` hook to optimize calculations:
 ```javascript
 const { newTime, stopsDifference } = useMemo(() => {
   // Calculation logic here
-  return { newTime: calculatedNewTime, stopsDifference: calculatedStopsDifference };
+  return {
+    newTime: calculatedNewTime,
+    stopsDifference: calculatedStopsDifference,
+  };
 }, [
-  isEnlargerHeightMode, 
-  originalWidth, 
-  originalLength, 
-  newWidth, 
-  newLength, 
-  originalTime, 
-  originalHeight, 
-  newHeight
+  isEnlargerHeightMode,
+  originalWidth,
+  originalLength,
+  newWidth,
+  newLength,
+  originalTime,
+  originalHeight,
+  newHeight,
 ]);
 ```
 
@@ -291,12 +295,14 @@ This ensures calculations only run when input values change, improving performan
 ### Mode-Specific Guidelines
 
 #### Print Size Mode
+
 - Easier to use - just measure your prints
 - Good for most printing situations
 - Warns when aspect ratios don't match
 - Less accurate due to not accounting for lens characteristics
 
 #### Enlarger Height Mode
+
 - More accurate when properly calibrated
 - Requires measuring lens-to-paper distance
 - No aspect ratio concerns (prints will scale proportionally)
@@ -306,11 +312,13 @@ This ensures calculations only run when input values change, improving performan
 ### Measurement Tips
 
 For **Print Size Mode**:
+
 - Measure the actual printed image area, not the paper size
 - Use consistent units (inches recommended)
 - Double-check aspect ratio warnings
 
 For **Enlarger Height Mode**:
+
 - Measure from the lens to the baseboard/paper surface
 - Use centimeters for consistency
 - Ensure enlarger is properly aligned and focused

@@ -1,4 +1,4 @@
-import { ScrollViewStyleReset } from 'expo-router/html';
+import { ScrollViewStyleReset } from "expo-router/html";
 
 // This file is web-specific and will be used by Expo Router on the web.
 export default function Root({ children }: { children: React.ReactNode }) {
@@ -6,7 +6,10 @@ export default function Root({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+        />
         <title>Dorkroom</title>
         <meta name="description" content="Dorkroom" />
         <ScrollViewStyleReset />
@@ -17,4 +20,4 @@ export default function Root({ children }: { children: React.ReactNode }) {
       </body>
     </html>
   );
-} 
+}

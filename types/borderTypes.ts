@@ -21,26 +21,26 @@ interface BorderCalculation {
   printHeight: number;
   paperWidth: number;
   paperHeight: number;
-  
+
   previewScale: number;
   previewHeight: number;
   previewWidth: number;
-  
+
   printWidthPercent: number;
   printHeightPercent: number;
   leftBorderPercent: number;
   topBorderPercent: number;
   rightBorderPercent: number;
   bottomBorderPercent: number;
-  
+
   // NEW Blade Readings (based on Saunders-type scale from center)
   leftBladeReading: number;
   rightBladeReading: number;
   topBladeReading: number;
   bottomBladeReading: number;
-  
+
   bladeThickness: number;
-  
+
   // Easel information
   isNonStandardPaperSize: boolean;
   easelSize: { width: number; height: number };
@@ -62,6 +62,6 @@ const types = {
 };
 
 export type { AspectRatio, PaperSize, BorderCalculation, SelectListProps };
-export default types; 
+export default types;
 
 // empty comment to make a new commit to see what's going on with vercel

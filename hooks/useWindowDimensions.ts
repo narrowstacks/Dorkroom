@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Dimensions, ScaledSize } from 'react-native';
+import { useState, useEffect } from "react";
+import { Dimensions, ScaledSize } from "react-native";
 
 export const useWindowDimensions = () => {
-  const [dimensions, setDimensions] = useState<ScaledSize>(() => Dimensions.get("window"));
+  const [dimensions, setDimensions] = useState<ScaledSize>(() =>
+    Dimensions.get("window"),
+  );
 
   useEffect(() => {
     const subscription = Dimensions.addEventListener("change", ({ window }) => {
@@ -15,4 +17,4 @@ export const useWindowDimensions = () => {
   return dimensions;
 };
 
-export default useWindowDimensions; 
+export default useWindowDimensions;

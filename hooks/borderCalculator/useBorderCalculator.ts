@@ -19,4 +19,4 @@
 \* ------------------------------------------------------------------ */
 
 // Re-export the modular implementation
-export { useBorderCalculator, default } from './borderCalculator'; 
+export { useBorderCalculator, default } from "./index";

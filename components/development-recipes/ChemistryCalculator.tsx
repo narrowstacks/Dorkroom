@@ -21,9 +21,9 @@ interface ChemistryCalculatorProps {
   defaultDilution?: string;
 }
 
-export function ChemistryCalculator({ 
+export function ChemistryCalculator({
   availableDilutions = [{ label: "Stock", value: "Stock" }],
-  defaultDilution
+  defaultDilution,
 }: ChemistryCalculatorProps) {
   const textColor = useThemeColor({}, "text");
   const textSecondary = useThemeColor({}, "textSecondary");
@@ -52,7 +52,12 @@ export function ChemistryCalculator({
   ];
 
   return (
-    <Box style={[styles.container, { backgroundColor: cardBackground, borderColor: outline }]}>
+    <Box
+      style={[
+        styles.container,
+        { backgroundColor: cardBackground, borderColor: outline },
+      ]}
+    >
       <HStack space="sm" style={styles.header}>
         <Beaker size={20} color={developmentTint} />
         <Text style={[styles.title, { color: textColor }]}>
@@ -69,7 +74,7 @@ export function ChemistryCalculator({
           />
         </FormGroup>
 
-        {chemistry.unit === 'rolls' ? (
+        {chemistry.unit === "rolls" ? (
           <>
             <FormGroup label="Film Format">
               <StyledSelect
@@ -78,7 +83,7 @@ export function ChemistryCalculator({
                 items={filmFormats}
               />
             </FormGroup>
-            
+
             <FormGroup label="Number of Rolls">
               <TextInput
                 value={chemistry.numberOfRolls}
@@ -94,7 +99,7 @@ export function ChemistryCalculator({
             <TextInput
               value={chemistry.totalVolume}
               onChangeText={chemistry.setTotalVolume}
-              placeholder={chemistry.unit === 'ml' ? '500' : '16.9'}
+              placeholder={chemistry.unit === "ml" ? "500" : "16.9"}
               keyboardType="numeric"
               inputTitle={`Enter Total Volume (${chemistry.unit})`}
             />
@@ -103,8 +108,10 @@ export function ChemistryCalculator({
 
         <FormGroup label="Dilution Ratio">
           <StyledSelect
-            value={chemistry.selectedDilution || ''}
-            onValueChange={(value) => chemistry.setSelectedDilution(value || null)}
+            value={chemistry.selectedDilution || ""}
+            onValueChange={(value) =>
+              chemistry.setSelectedDilution(value || null)
+            }
             items={availableDilutions}
           />
         </FormGroup>
@@ -112,8 +119,10 @@ export function ChemistryCalculator({
         {/* Results */}
         {chemistry.calculation && (
           <Box style={[styles.calculationResults, { borderColor: outline }]}>
-            <Text style={[styles.resultsTitle, { color: textColor }]}>Mixing Recipe:</Text>
-            
+            <Text style={[styles.resultsTitle, { color: textColor }]}>
+              Mixing Recipe:
+            </Text>
+
             <VStack space="xs">
               <HStack style={styles.resultRow}>
                 <Text style={[styles.resultLabel, { color: textSecondary }]}>
@@ -123,7 +132,7 @@ export function ChemistryCalculator({
                   {chemistry.calculation.totalVolumeDisplay}
                 </Text>
               </HStack>
-              
+
               <HStack style={styles.resultRow}>
                 <Text style={[styles.resultLabel, { color: textSecondary }]}>
                   Developer:
@@ -132,7 +141,7 @@ export function ChemistryCalculator({
                   {chemistry.calculation.developerVolumeDisplay}
                 </Text>
               </HStack>
-              
+
               <HStack style={styles.resultRow}>
                 <Text style={[styles.resultLabel, { color: textSecondary }]}>
                   Water:
@@ -156,9 +165,15 @@ export function ChemistryCalculator({
           </Box>
         )}
 
-        <Button variant="outline" onPress={chemistry.reset} style={styles.resetButton}>
+        <Button
+          variant="outline"
+          onPress={chemistry.reset}
+          style={styles.resetButton}
+        >
           <RotateCcw size={14} color={textSecondary} />
-          <ButtonText style={[styles.resetButtonText, { color: textSecondary }]}>
+          <ButtonText
+            style={[styles.resetButtonText, { color: textSecondary }]}
+          >
             Reset Calculator
           </ButtonText>
         </Button>
@@ -174,15 +189,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    borderBottomColor: "rgba(0,0,0,0.1)",
   },
   title: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   content: {
     padding: 16,
@@ -194,38 +209,38 @@ const styles = StyleSheet.create({
     padding: 12,
     borderWidth: 1,
     borderRadius: 8,
-    backgroundColor: 'rgba(0,0,0,0.02)',
+    backgroundColor: "rgba(0,0,0,0.02)",
   },
   resultsTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
   },
   resultRow: {
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   resultLabel: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   resultValue: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   errorContainer: {
     padding: 8,
-    backgroundColor: 'rgba(255, 0, 0, 0.1)',
+    backgroundColor: "rgba(255, 0, 0, 0.1)",
     borderRadius: 6,
   },
   errorText: {
     fontSize: 12,
-    color: '#d32f2f',
+    color: "#d32f2f",
   },
   resetButton: {
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   resetButtonText: {

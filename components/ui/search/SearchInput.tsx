@@ -1,5 +1,10 @@
 import React from "react";
-import { Platform, StyleSheet, TextInput, TouchableOpacity } from "react-native";
+import {
+  Platform,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+} from "react-native";
 import { Box, HStack } from "@gluestack-ui/themed";
 import { Search, X } from "lucide-react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
@@ -9,11 +14,11 @@ import type { Film, Developer } from "@/api/dorkroom/types";
 
 interface BaseSearchInputProps {
   placeholder: string;
-  type: 'film' | 'developer';
+  type: "film" | "developer";
 }
 
 interface DesktopSearchInputProps extends BaseSearchInputProps {
-  variant: 'desktop';
+  variant: "desktop";
   value: string;
   onChangeText: (text: string) => void;
   onClear: () => void;
@@ -22,7 +27,7 @@ interface DesktopSearchInputProps extends BaseSearchInputProps {
 }
 
 interface MobileSearchInputProps extends BaseSearchInputProps {
-  variant: 'mobile';
+  variant: "mobile";
   selectedItem?: Film | Developer | null;
   onPress: () => void;
   onClear?: () => void;
@@ -33,33 +38,33 @@ type SearchInputProps = DesktopSearchInputProps | MobileSearchInputProps;
 export function SearchInput(props: SearchInputProps) {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
-  
+
   // Always call hooks at the top level
   const textColor = useThemeColor({}, "text");
   const borderColor = useThemeColor({}, "borderColor");
   const inputBackground = useThemeColor({}, "inputBackground");
   const iconColor = useThemeColor({}, "icon");
-  
+
   // Auto-detect variant if not specified based on platform
-  const variant = props.variant || (isDesktop ? 'desktop' : 'mobile');
-  
-  if (variant === 'mobile') {
+  const variant = props.variant || (isDesktop ? "desktop" : "mobile");
+
+  if (variant === "mobile") {
     const mobileProps = props as MobileSearchInputProps;
     const hasSelection = !!mobileProps.selectedItem;
-    
+
     return (
       <HStack space="sm" style={styles.mobileContainer}>
         <Box style={styles.mobileSelectContainer}>
           <MobileSelectButton
-            label={mobileProps.type === 'film' ? 'Film' : 'Developer'}
+            label={mobileProps.type === "film" ? "Film" : "Developer"}
             selectedItem={mobileProps.selectedItem}
             onPress={mobileProps.onPress}
             type={mobileProps.type}
           />
         </Box>
         {hasSelection && mobileProps.onClear && (
-          <TouchableOpacity 
-            style={[styles.mobileClearButton, { backgroundColor: 'white' }]}
+          <TouchableOpacity
+            style={[styles.mobileClearButton, { backgroundColor: "white" }]}
             onPress={mobileProps.onClear}
           >
             <X size={20} color="#000" />
@@ -92,7 +97,10 @@ export function SearchInput(props: SearchInputProps) {
         onBlur={desktopProps.onBlur}
       />
       {desktopProps.value.length > 0 && (
-        <TouchableOpacity onPress={desktopProps.onClear} style={styles.clearButton}>
+        <TouchableOpacity
+          onPress={desktopProps.onClear}
+          style={styles.clearButton}
+        >
           <X size={20} color={iconColor} />
         </TouchableOpacity>
       )}

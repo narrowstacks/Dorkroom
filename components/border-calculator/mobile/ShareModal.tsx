@@ -1,12 +1,12 @@
-import React from 'react';
-import { Platform } from 'react-native';
-import { 
-  Modal, 
-  ModalBackdrop, 
-  ModalContent, 
-  ModalHeader, 
-  ModalCloseButton, 
-  ModalBody, 
+import React from "react";
+import { Platform } from "react-native";
+import {
+  Modal,
+  ModalBackdrop,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
   ModalFooter,
   Heading,
   Text,
@@ -20,16 +20,22 @@ import {
   useToast,
   Toast,
   ToastTitle,
-  VStack as ToastVStack
-} from '@gluestack-ui/themed';
-import { Copy, Share2, ExternalLink, Smartphone, Clock } from 'lucide-react-native';
-import * as Clipboard from 'expo-clipboard';
-import * as Sharing from 'expo-sharing';
-import { encodePreset } from '@/utils/presetSharing';
-import { generateSharingUrls } from '@/utils/urlHelpers';
-import { isRunningOnMobileWeb, openInNativeApp } from '@/utils/appDetection';
-import { MOBILE_WEB_APP_CONFIG } from '@/constants/urls';
-import type { BorderPresetSettings } from '@/types/borderPresetTypes';
+  VStack as ToastVStack,
+} from "@gluestack-ui/themed";
+import {
+  Copy,
+  Share2,
+  ExternalLink,
+  Smartphone,
+  Clock,
+} from "lucide-react-native";
+import * as Clipboard from "expo-clipboard";
+import * as Sharing from "expo-sharing";
+import { encodePreset } from "@/utils/presetSharing";
+import { generateSharingUrls } from "@/utils/urlHelpers";
+import { isRunningOnMobileWeb, openInNativeApp } from "@/utils/appDetection";
+import { MOBILE_WEB_APP_CONFIG } from "@/constants/urls";
+import type { BorderPresetSettings } from "@/types/borderPresetTypes";
 
 interface ShareModalProps {
   isVisible: boolean;
@@ -42,7 +48,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   isVisible,
   onClose,
   currentSettings,
-  presetName = 'Border Settings'
+  presetName = "Border Settings",
 }) => {
   const toast = useToast();
   const isMobileWeb = isRunningOnMobileWeb();
@@ -50,9 +56,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const shareData = React.useMemo(() => {
     const preset = { name: presetName, settings: currentSettings };
     const encoded = encodePreset(preset);
-    
+
     if (!encoded) return null;
-    
+
     const { webUrl, nativeUrl } = generateSharingUrls(encoded);
     return { webUrl, nativeUrl, preset };
   }, [currentSettings, presetName]);
@@ -84,19 +90,19 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   const shareViaSystem = async () => {
     if (!shareData) return;
-    
+
     try {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(shareData.webUrl, {
           dialogTitle: `Share ${presetName}`,
-          mimeType: 'text/plain',
+          mimeType: "text/plain",
         });
       } else {
         // Fallback to clipboard
-        await copyToClipboard(shareData.webUrl, 'Share link');
+        await copyToClipboard(shareData.webUrl, "Share link");
       }
     } catch {
-      console.error('Share failed');
+      console.error("Share failed");
       toast.show({
         placement: "top",
         render: ({ id }) => (
@@ -110,7 +116,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   const handleOpenInApp = async () => {
     if (!shareData) return;
-    
+
     try {
       const success = await openInNativeApp(shareData.nativeUrl);
       if (success) {
@@ -138,7 +144,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         });
       }
     } catch (error) {
-      console.error('Failed to open in app:', error);
+      console.error("Failed to open in app:", error);
       toast.show({
         placement: "top",
         render: ({ id }) => (
@@ -186,40 +192,46 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         </ModalHeader>
         <ModalBody>
           <VStack space="md">
-            <Text>Choose how you&apos;d like to share your border calculator settings:</Text>
-            
+            <Text>
+              Choose how you&apos;d like to share your border calculator
+              settings:
+            </Text>
+
             {/* Mobile Web: Open in App Button or Coming Soon */}
-            {isMobileWeb && (
-              MOBILE_WEB_APP_CONFIG.ENABLE_APP_LINKS ? (
-                <Button 
+            {isMobileWeb &&
+              (MOBILE_WEB_APP_CONFIG.ENABLE_APP_LINKS ? (
+                <Button
                   onPress={handleOpenInApp}
-                  variant="solid" 
-                  action="primary" 
+                  variant="solid"
+                  action="primary"
                   size="lg"
                 >
                   <ButtonIcon as={Smartphone} size="sm" />
-                  <ButtonText style={{ marginLeft: 8 }}>Open in Dorkroom App</ButtonText>
+                  <ButtonText style={{ marginLeft: 8 }}>
+                    Open in Dorkroom App
+                  </ButtonText>
                 </Button>
               ) : (
-                <Button 
-                  variant="solid" 
-                  action="secondary" 
+                <Button
+                  variant="solid"
+                  action="secondary"
                   size="lg"
                   disabled={true}
                   style={{ opacity: 0.6 }}
                 >
                   <ButtonIcon as={Clock} size="sm" />
-                  <ButtonText style={{ marginLeft: 8 }}>App Coming Soon!</ButtonText>
+                  <ButtonText style={{ marginLeft: 8 }}>
+                    App Coming Soon!
+                  </ButtonText>
                 </Button>
-              )
-            )}
+              ))}
 
             {/* Native Share Button - only show on native or if not mobile web */}
             {!isMobileWeb && (
-              <Button 
+              <Button
                 onPress={shareViaSystem}
-                variant="solid" 
-                action="primary" 
+                variant="solid"
+                action="primary"
                 size="lg"
               >
                 <ButtonIcon as={Share2} size="sm" />
@@ -229,44 +241,60 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
             {/* Web URL Section */}
             <VStack space="sm">
-              <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Web Link</Text>
+              <Text style={{ fontWeight: "bold", fontSize: 16 }}>Web Link</Text>
               <Text style={{ fontSize: 14, opacity: 0.8 }}>
                 Works on any device with a web browser
               </Text>
-              <HStack space="sm" style={{ alignItems: 'center' }}>
-                <Button 
-                  onPress={() => copyToClipboard(shareData.webUrl, 'Web link')}
-                  variant="outline" 
+              <HStack space="sm" style={{ alignItems: "center" }}>
+                <Button
+                  onPress={() => copyToClipboard(shareData.webUrl, "Web link")}
+                  variant="outline"
                   action="secondary"
                   size="sm"
                   style={{ flex: 1 }}
                 >
                   <ButtonIcon as={Copy} size="sm" />
-                  <ButtonText style={{ marginLeft: 6 }}>Copy Web Link</ButtonText>
+                  <ButtonText style={{ marginLeft: 6 }}>
+                    Copy Web Link
+                  </ButtonText>
                 </Button>
-                <ButtonIcon as={ExternalLink} size="sm" style={{ opacity: 0.6 }} />
+                <ButtonIcon
+                  as={ExternalLink}
+                  size="sm"
+                  style={{ opacity: 0.6 }}
+                />
               </HStack>
             </VStack>
 
             {/* Native App URI Section - only show on native apps, not mobile web */}
-            {Platform.OS !== 'web' && (
+            {Platform.OS !== "web" && (
               <VStack space="sm">
-                <Text style={{ fontWeight: 'bold', fontSize: 16 }}>App Link</Text>
+                <Text style={{ fontWeight: "bold", fontSize: 16 }}>
+                  App Link
+                </Text>
                 <Text style={{ fontSize: 14, opacity: 0.8 }}>
                   Opens directly in the Dorkroom app
                 </Text>
-                <HStack space="sm" style={{ alignItems: 'center' }}>
-                  <Button 
-                    onPress={() => copyToClipboard(shareData.nativeUrl, 'App link')}
-                    variant="outline" 
+                <HStack space="sm" style={{ alignItems: "center" }}>
+                  <Button
+                    onPress={() =>
+                      copyToClipboard(shareData.nativeUrl, "App link")
+                    }
+                    variant="outline"
                     action="secondary"
                     size="sm"
                     style={{ flex: 1 }}
                   >
                     <ButtonIcon as={Copy} size="sm" />
-                    <ButtonText style={{ marginLeft: 6 }}>Copy App Link</ButtonText>
+                    <ButtonText style={{ marginLeft: 6 }}>
+                      Copy App Link
+                    </ButtonText>
                   </Button>
-                  <ButtonIcon as={Smartphone} size="sm" style={{ opacity: 0.6 }} />
+                  <ButtonIcon
+                    as={Smartphone}
+                    size="sm"
+                    style={{ opacity: 0.6 }}
+                  />
                 </HStack>
               </VStack>
             )}

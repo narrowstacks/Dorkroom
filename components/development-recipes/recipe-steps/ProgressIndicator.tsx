@@ -1,6 +1,6 @@
-import React from 'react';
-import { Box, Text, HStack, VStack } from '@gluestack-ui/themed';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import React from "react";
+import { Box, Text, HStack, VStack } from "@gluestack-ui/themed";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 interface ProgressIndicatorProps {
   currentStep: number;
@@ -11,20 +11,20 @@ interface ProgressIndicatorProps {
 
 /**
  * ProgressIndicator Component
- * 
+ *
  * Displays the current progress through a multi-step form with visual indicators
  * and step validation status. Shows progress bars and current step title.
- * 
+ *
  * @param currentStep - The currently active step (0-indexed)
  * @param totalSteps - Total number of steps in the process
  * @param stepTitles - Array of titles for each step
  * @param stepValidation - Object mapping step indices to their validation status
  */
-export function ProgressIndicator({ 
-  currentStep, 
-  totalSteps, 
-  stepTitles, 
-  stepValidation 
+export function ProgressIndicator({
+  currentStep,
+  totalSteps,
+  stepTitles,
+  stepValidation,
 }: ProgressIndicatorProps) {
   const developmentTint = useThemeColor({}, "developmentRecipesTint");
   const textColor = useThemeColor({}, "text");
@@ -36,7 +36,7 @@ export function ProgressIndicator({
       <HStack space="xs">
         {Array.from({ length: totalSteps }, (_, index) => {
           let backgroundColor = outline;
-          
+
           if (index < currentStep) {
             // Completed steps
             backgroundColor = developmentTint;
@@ -55,22 +55,24 @@ export function ProgressIndicator({
                 height: 4,
                 backgroundColor,
                 borderRadius: 2,
-                marginHorizontal: 1
+                marginHorizontal: 1,
               }}
             />
           );
         })}
       </HStack>
-      
+
       {/* Current step title and progress */}
-      <Text style={{ 
-        fontSize: 14, 
-        color: textColor, 
-        textAlign: 'center',
-        opacity: 0.8
-      }}>
+      <Text
+        style={{
+          fontSize: 14,
+          color: textColor,
+          textAlign: "center",
+          opacity: 0.8,
+        }}
+      >
         {stepTitles[currentStep]} ({currentStep + 1} of {totalSteps})
       </Text>
     </VStack>
   );
-} 
+}

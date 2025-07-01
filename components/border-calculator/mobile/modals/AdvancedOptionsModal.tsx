@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Modal,
   ModalBackdrop,
@@ -15,9 +15,9 @@ import {
   HStack,
   VStack,
   Text,
-} from '@gluestack-ui/themed';
-import { ToggleSwitch } from '@/components/ui/forms';
-import { useThemeColor } from '@/hooks/useThemeColor';
+} from "@gluestack-ui/themed";
+import { ToggleSwitch } from "@/components/ui/forms";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 interface AdvancedOptionsModalProps {
   isVisible: boolean;
@@ -32,7 +32,7 @@ export const AdvancedOptionsModal: React.FC<AdvancedOptionsModalProps> = ({
   showBlades,
   setShowBlades,
 }) => {
-  const textColor = useThemeColor({}, 'text');
+  const textColor = useThemeColor({}, "text");
 
   return (
     <Modal isOpen={isVisible} onClose={onClose} size="lg">
@@ -44,24 +44,31 @@ export const AdvancedOptionsModal: React.FC<AdvancedOptionsModalProps> = ({
             <Icon as={CloseIcon} />
           </ModalCloseButton>
         </ModalHeader>
-        
+
         <ModalBody>
           <VStack space="lg">
-            <Text style={{ fontSize: 16, color: textColor, textAlign: 'center' }}>
+            <Text
+              style={{ fontSize: 16, color: textColor, textAlign: "center" }}
+            >
               Configure advanced display and behavior options
             </Text>
-            
-            <ToggleSwitch 
-              label="Show Easel Blades:" 
-              value={showBlades} 
-              onValueChange={setShowBlades} 
+
+            <ToggleSwitch
+              label="Show Easel Blades:"
+              value={showBlades}
+              onValueChange={setShowBlades}
             />
           </VStack>
         </ModalBody>
-        
+
         <ModalFooter>
-          <HStack space="md" style={{ justifyContent: 'flex-end' }}>
-            <Button variant="outline" size="sm" action="secondary" onPress={onClose}>
+          <HStack space="md" style={{ justifyContent: "flex-end" }}>
+            <Button
+              variant="outline"
+              size="sm"
+              action="secondary"
+              onPress={onClose}
+            >
               <ButtonText>Done</ButtonText>
             </Button>
           </HStack>
@@ -69,4 +76,4 @@ export const AdvancedOptionsModal: React.FC<AdvancedOptionsModalProps> = ({
       </ModalContent>
     </Modal>
   );
-}; 
+};

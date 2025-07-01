@@ -7,62 +7,75 @@
      - useDimensionCalculations: Dimension and orientation logic
 \* ------------------------------------------------------------------ */
 
-import { useMemo } from 'react';
-import { PAPER_SIZE_MAP, ASPECT_RATIO_MAP, EASEL_SIZES } from '@/constants/border';
+import { useMemo } from "react";
+import {
+  PAPER_SIZE_MAP,
+  ASPECT_RATIO_MAP,
+  EASEL_SIZES,
+} from "@/constants/border";
 import type {
   BorderCalculatorState,
   PaperEntry,
   RatioEntry,
   OrientedDimensions,
   MinBorderData,
-} from './types';
+} from "./types";
 
 // Pre-calculate max easel dimension for O(1) lookup
-const MAX_EASEL_DIMENSION = Math.max(...EASEL_SIZES.flatMap(e => [e.width, e.height]));
+const MAX_EASEL_DIMENSION = Math.max(
+  ...EASEL_SIZES.flatMap((e) => [e.width, e.height]),
+);
 
 export const useDimensionCalculations = (state: BorderCalculatorState) => {
   // Optimized paper size calculations with better caching
   const paperEntry = useMemo((): PaperEntry => {
-    if (state.paperSize === 'custom') {
+    if (state.paperSize === "custom") {
       return {
         w: state.lastValidCustomPaperWidth,
         h: state.lastValidCustomPaperHeight,
         custom: true,
       };
     }
-    
+
     // Use O(1) lookup with fallback
     const p = PAPER_SIZE_MAP[state.paperSize];
-    return p 
+    return p
       ? { w: p.width, h: p.height, custom: false }
       : { w: 8, h: 10, custom: false }; // fallback to 8x10
-  }, [state.paperSize, state.lastValidCustomPaperWidth, state.lastValidCustomPaperHeight]);
+  }, [
+    state.paperSize,
+    state.lastValidCustomPaperWidth,
+    state.lastValidCustomPaperHeight,
+  ]);
 
   // Optimized paper size warning with early exit
   const paperSizeWarning = useMemo(() => {
     if (!paperEntry.custom) return null;
-    
-    const exceedsMax = paperEntry.w > MAX_EASEL_DIMENSION || paperEntry.h > MAX_EASEL_DIMENSION;
-    return exceedsMax 
+
+    const exceedsMax =
+      paperEntry.w > MAX_EASEL_DIMENSION || paperEntry.h > MAX_EASEL_DIMENSION;
+    return exceedsMax
       ? `Custom paper (${paperEntry.w}×${paperEntry.h}) exceeds largest standard easel (20×24").`
       : null;
   }, [paperEntry.custom, paperEntry.w, paperEntry.h]);
 
   // Optimized aspect ratio calculations
   const ratioEntry = useMemo((): RatioEntry => {
-    if (state.aspectRatio === 'custom') {
+    if (state.aspectRatio === "custom") {
       return {
         w: state.lastValidCustomAspectWidth,
         h: state.lastValidCustomAspectHeight,
       };
     }
-    
+
     // Use O(1) lookup with safer fallback
     const r = ASPECT_RATIO_MAP[state.aspectRatio];
-    return r 
-      ? { w: r.width || 1, h: r.height || 1 }
-      : { w: 3, h: 2 }; // fallback to 3:2
-  }, [state.aspectRatio, state.lastValidCustomAspectWidth, state.lastValidCustomAspectHeight]);
+    return r ? { w: r.width || 1, h: r.height || 1 } : { w: 3, h: 2 }; // fallback to 3:2
+  }, [
+    state.aspectRatio,
+    state.lastValidCustomAspectWidth,
+    state.lastValidCustomAspectHeight,
+  ]);
 
   // Optimized oriented dimensions with direct property access
   const orientedDimensions = useMemo((): OrientedDimensions => {
@@ -76,9 +89,12 @@ export const useDimensionCalculations = (state: BorderCalculatorState) => {
 
     return { orientedPaper, orientedRatio };
   }, [
-    paperEntry.w, paperEntry.h,
-    ratioEntry.w, ratioEntry.h,
-    state.isLandscape, state.isRatioFlipped
+    paperEntry.w,
+    paperEntry.h,
+    ratioEntry.w,
+    ratioEntry.h,
+    state.isLandscape,
+    state.isRatioFlipped,
   ]);
 
   // Optimized minimum border validation with direct calculations
@@ -87,39 +103,34 @@ export const useDimensionCalculations = (state: BorderCalculatorState) => {
     const paperW = orientedPaper.w;
     const paperH = orientedPaper.h;
     const maxBorder = (paperW < paperH ? paperW : paperH) / 2; // More efficient than Math.min
-    
+
     const inputMinBorder = state.minBorder;
     const lastValidMinBorder = state.lastValidMinBorder;
-    
+
     // Early validation with optimized logic
     if (inputMinBorder < 0) {
       return {
         minBorder: lastValidMinBorder,
         minBorderWarning: `Border cannot be negative; using ${lastValidMinBorder}.`,
-        lastValid: lastValidMinBorder
+        lastValid: lastValidMinBorder,
       };
     }
-    
+
     if (inputMinBorder >= maxBorder && maxBorder > 0) {
       return {
         minBorder: lastValidMinBorder,
         minBorderWarning: `Minimum border too large; using ${lastValidMinBorder}.`,
-        lastValid: lastValidMinBorder
+        lastValid: lastValidMinBorder,
       };
     }
-    
+
     // Valid input
     return {
       minBorder: inputMinBorder,
       minBorderWarning: null,
-      lastValid: inputMinBorder
+      lastValid: inputMinBorder,
     };
-  }, [
-    orientedDimensions.orientedPaper.w,
-    orientedDimensions.orientedPaper.h,
-    state.minBorder,
-    state.lastValidMinBorder
-  ]);
+  }, [orientedDimensions, state.minBorder, state.lastValidMinBorder]);
 
   return {
     paperEntry,
@@ -128,4 +139,4 @@ export const useDimensionCalculations = (state: BorderCalculatorState) => {
     orientedDimensions,
     minBorderData,
   };
-}; 
+};

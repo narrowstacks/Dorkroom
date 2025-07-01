@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Modal,
   ModalBackdrop,
@@ -14,11 +14,11 @@ import {
   ButtonText,
   HStack,
   VStack,
-} from '@gluestack-ui/themed';
-import { ThemedSelect } from '@/components/ui/select/ThemedSelect';
-import { DimensionInputGroup } from '@/components/ui/forms';
-import { RotateCwSquare, Proportions } from 'lucide-react-native';
-import { ASPECT_RATIOS, PAPER_SIZES } from '@/constants/border';
+} from "@gluestack-ui/themed";
+import { ThemedSelect } from "@/components/ui/select/ThemedSelect";
+import { DimensionInputGroup } from "@/components/ui/forms";
+import { RotateCwSquare, Proportions } from "lucide-react-native";
+import { ASPECT_RATIOS, PAPER_SIZES } from "@/constants/border";
 
 interface PaperSizeModalProps {
   isVisible: boolean;
@@ -71,77 +71,77 @@ export const PaperSizeModal: React.FC<PaperSizeModalProps> = ({
             <Icon as={CloseIcon} />
           </ModalCloseButton>
         </ModalHeader>
-        
+
         <ModalBody>
           <VStack space="lg">
             {/* Aspect Ratio Section */}
             <VStack space="md">
-              <ThemedSelect 
-                label="Aspect Ratio:" 
-                selectedValue={aspectRatio} 
-                onValueChange={setAspectRatio} 
-                items={ASPECT_RATIOS as any} 
-                placeholder="Select Aspect Ratio" 
+              <ThemedSelect
+                label="Aspect Ratio:"
+                selectedValue={aspectRatio}
+                onValueChange={setAspectRatio}
+                items={ASPECT_RATIOS as any}
+                placeholder="Select Aspect Ratio"
               />
-              
-              {aspectRatio === 'custom' && (
-                <DimensionInputGroup 
-                  widthValue={String(customAspectWidth)} 
-                  onWidthChange={setCustomAspectWidth} 
-                  heightValue={String(customAspectHeight)} 
-                  onHeightChange={setCustomAspectHeight} 
-                  widthLabel="width:" 
-                  heightLabel="height:" 
-                  widthPlaceholder="Width" 
-                  heightPlaceholder="Height" 
-                  widthDefault="2" 
-                  heightDefault="3" 
+
+              {aspectRatio === "custom" && (
+                <DimensionInputGroup
+                  widthValue={String(customAspectWidth)}
+                  onWidthChange={setCustomAspectWidth}
+                  heightValue={String(customAspectHeight)}
+                  onHeightChange={setCustomAspectHeight}
+                  widthLabel="width:"
+                  heightLabel="height:"
+                  widthPlaceholder="Width"
+                  heightPlaceholder="Height"
+                  widthDefault="2"
+                  heightDefault="3"
                 />
               )}
             </VStack>
 
             {/* Paper Size Section */}
             <VStack space="md">
-              <ThemedSelect 
-                label="Paper Size:" 
-                selectedValue={paperSize} 
-                onValueChange={setPaperSize} 
-                items={PAPER_SIZES as any} 
-                placeholder="Select Paper Size" 
+              <ThemedSelect
+                label="Paper Size:"
+                selectedValue={paperSize}
+                onValueChange={setPaperSize}
+                items={PAPER_SIZES as any}
+                placeholder="Select Paper Size"
               />
-              
-              {paperSize === 'custom' && (
-                <DimensionInputGroup 
-                  widthValue={String(customPaperWidth)} 
-                  onWidthChange={setCustomPaperWidth} 
-                  heightValue={String(customPaperHeight)} 
-                  onHeightChange={setCustomPaperHeight} 
-                  widthLabel="Width (inches):" 
-                  heightLabel="Height (inches):" 
-                  widthPlaceholder="Width" 
-                  heightPlaceholder="Height" 
-                  widthDefault="8" 
-                  heightDefault="10" 
+
+              {paperSize === "custom" && (
+                <DimensionInputGroup
+                  widthValue={String(customPaperWidth)}
+                  onWidthChange={setCustomPaperWidth}
+                  heightValue={String(customPaperHeight)}
+                  onHeightChange={setCustomPaperHeight}
+                  widthLabel="Width (inches):"
+                  heightLabel="Height (inches):"
+                  widthPlaceholder="Width"
+                  heightPlaceholder="Height"
+                  widthDefault="8"
+                  heightDefault="10"
                 />
               )}
             </VStack>
 
             {/* Orientation Controls */}
             <VStack space="sm">
-              <Button 
-                onPress={() => setIsLandscape(!isLandscape)} 
-                variant="outline" 
-                action="primary" 
+              <Button
+                onPress={() => setIsLandscape(!isLandscape)}
+                variant="outline"
+                action="primary"
                 size="md"
               >
                 <RotateCwSquare size={20} style={{ marginRight: 8 }} />
                 <ButtonText>Flip Paper Orientation</ButtonText>
               </Button>
-              
-              <Button 
-                onPress={() => setIsRatioFlipped(!isRatioFlipped)} 
-                variant="outline" 
-                action="primary" 
+
+              <Button
+                onPress={() => setIsRatioFlipped(!isRatioFlipped)}
+                variant="outline"
+                action="primary"
                 size="md"
               >
                 <Proportions size={20} style={{ marginRight: 8 }} />
@@ -150,10 +150,15 @@ export const PaperSizeModal: React.FC<PaperSizeModalProps> = ({
             </VStack>
           </VStack>
         </ModalBody>
-        
+
         <ModalFooter>
-          <HStack space="md" style={{ justifyContent: 'flex-end' }}>
-            <Button variant="outline" size="sm" action="secondary" onPress={onClose}>
+          <HStack space="md" style={{ justifyContent: "flex-end" }}>
+            <Button
+              variant="outline"
+              size="sm"
+              action="secondary"
+              onPress={onClose}
+            >
               <ButtonText>Done</ButtonText>
             </Button>
           </HStack>
@@ -161,4 +166,4 @@ export const PaperSizeModal: React.FC<PaperSizeModalProps> = ({
       </ModalContent>
     </Modal>
   );
-}; 
+};

@@ -3,17 +3,14 @@ import {
   TextInput as RNTextInput,
   TextInputProps as RNTextInputProps,
 } from "react-native";
-import { 
-  Input,
-  InputField,
-} from "@gluestack-ui/themed";
+import { Input, InputField } from "@gluestack-ui/themed";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { 
-  useMobileInputDetection, 
-  MobileInputTrigger, 
-  MobileInputModal, 
-  modalInputStyles 
-} from './MobileInputShared';
+import {
+  useMobileInputDetection,
+  MobileInputTrigger,
+  MobileInputModal,
+  modalInputStyles,
+} from "./MobileInputShared";
 
 interface TextInputProps extends RNTextInputProps {
   value: string;
@@ -21,9 +18,9 @@ interface TextInputProps extends RNTextInputProps {
   placeholder: string;
   inputTitle?: string; // Custom title for the modal
   maxLength?: number; // Maximum text length
-  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
   autoCorrect?: boolean;
-  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad' | 'url';
+  keyboardType?: "default" | "email-address" | "numeric" | "phone-pad" | "url";
 }
 
 export const TextInput = ({
@@ -32,9 +29,9 @@ export const TextInput = ({
   placeholder,
   inputTitle = "Enter Text",
   maxLength,
-  autoCapitalize = 'sentences',
+  autoCapitalize = "sentences",
   autoCorrect = true,
-  keyboardType = 'default',
+  keyboardType = "default",
   ...rest
 }: TextInputProps) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -69,10 +66,6 @@ export const TextInput = ({
     setModalVisible(false);
   };
 
-  const handleModalConfirm = (newValue: string) => {
-    onChangeText(newValue);
-  };
-
   // Mobile: Show button that opens modal
   if (isMobile) {
     return (
@@ -92,10 +85,13 @@ export const TextInput = ({
         >
           <RNTextInput
             ref={inputRef}
-            style={[modalInputStyles.modalInput, { 
-              color: textColor, 
-              borderColor: borderColor,
-            }]}
+            style={[
+              modalInputStyles.modalInput,
+              {
+                color: textColor,
+                borderColor: borderColor,
+              },
+            ]}
             value={tempValue}
             onChangeText={handleTextChange}
             keyboardType={keyboardType}
@@ -117,11 +113,7 @@ export const TextInput = ({
 
   // Desktop Web: Show inline input (original behavior)
   return (
-    <Input
-      variant="outline"
-      size="md"
-      style={{ borderColor: borderColor }}
-    >
+    <Input variant="outline" size="md" style={{ borderColor: borderColor }}>
       <InputField
         value={value}
         onChangeText={onChangeText}
@@ -136,4 +128,4 @@ export const TextInput = ({
       />
     </Input>
   );
-}; 
+};

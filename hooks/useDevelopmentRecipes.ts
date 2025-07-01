@@ -1,7 +1,6 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { DorkroomClient } from '@/api/dorkroom/client';
-import type { Film, Developer, Combination } from '@/api/dorkroom/types';
-import { SORT_OPTIONS } from '@/constants/developmentRecipes';
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { DorkroomClient } from "@/api/dorkroom/client";
+import type { Film, Developer, Combination } from "@/api/dorkroom/types";
 
 export interface DevelopmentRecipesState {
   // Search and filter state
@@ -11,17 +10,17 @@ export interface DevelopmentRecipesState {
   dilutionFilter: string;
   isoFilter: string;
   sortBy: string;
-  sortDirection: 'asc' | 'desc';
-  
+  sortDirection: "asc" | "desc";
+
   // Selected items
   selectedFilm: Film | null;
   selectedDeveloper: Developer | null;
-  
+
   // Loading and error states
   isLoading: boolean;
   isLoaded: boolean;
   error: string | null;
-  
+
   // Data
   allFilms: Film[];
   allDevelopers: Developer[];
@@ -36,18 +35,18 @@ export interface DevelopmentRecipesActions {
   setDilutionFilter: (filter: string) => void;
   setIsoFilter: (filter: string) => void;
   setSortBy: (sort: string) => void;
-  setSortDirection: (direction: 'asc' | 'desc') => void;
+  setSortDirection: (direction: "asc" | "desc") => void;
   handleSort: (sortKey: string) => void;
-  
+
   // Selection actions
   setSelectedFilm: (film: Film | null) => void;
   setSelectedDeveloper: (developer: Developer | null) => void;
-  
+
   // Data actions
   loadData: () => Promise<void>;
   forceRefresh: () => Promise<void>;
   clearFilters: () => void;
-  
+
   // Helper functions
   getFilmById: (id: string) => Film | undefined;
   getDeveloperById: (id: string) => Developer | undefined;
@@ -59,35 +58,41 @@ export interface DevelopmentRecipesActions {
 
 const client = new DorkroomClient();
 
-export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRecipesActions => {
+export const useDevelopmentRecipes = (): DevelopmentRecipesState &
+  DevelopmentRecipesActions => {
   // State
-  const [filmSearch, setFilmSearch] = useState<string>('');
-  const [developerSearch, setDeveloperSearch] = useState<string>('');
-  const [developerTypeFilter, setDeveloperTypeFilter] = useState<string>('');
-  const [dilutionFilter, setDilutionFilter] = useState<string>('');
-  const [isoFilter, setIsoFilter] = useState<string>('');
-  const [sortBy, setSortBy] = useState<string>('filmName');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  
+  const [filmSearch, setFilmSearch] = useState<string>("");
+  const [developerSearch, setDeveloperSearch] = useState<string>("");
+  const [developerTypeFilter, setDeveloperTypeFilter] = useState<string>("");
+  const [dilutionFilter, setDilutionFilter] = useState<string>("");
+  const [isoFilter, setIsoFilter] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("filmName");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
   const [selectedFilm, setSelectedFilm] = useState<Film | null>(null);
-  const [selectedDeveloper, setSelectedDeveloper] = useState<Developer | null>(null);
+  const [selectedDeveloper, setSelectedDeveloper] = useState<Developer | null>(
+    null,
+  );
 
   // Clear ISO filter when film selection changes
   const setSelectedFilmAndClearISO = useCallback((film: Film | null) => {
     setSelectedFilm(film);
-    setIsoFilter('');
+    setIsoFilter("");
   }, []);
 
   // Clear dilution filter when developer selection changes
-  const setSelectedDeveloperAndClearDilution = useCallback((developer: Developer | null) => {
-    setSelectedDeveloper(developer);
-    setDilutionFilter('');
-  }, []);
-  
+  const setSelectedDeveloperAndClearDilution = useCallback(
+    (developer: Developer | null) => {
+      setSelectedDeveloper(developer);
+      setDilutionFilter("");
+    },
+    [],
+  );
+
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [allFilms, setAllFilms] = useState<Film[]>([]);
   const [allDevelopers, setAllDevelopers] = useState<Developer[]>([]);
   const [allCombinations, setAllCombinations] = useState<Combination[]>([]);
@@ -96,31 +101,34 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
   const loadData = useCallback(async () => {
     if (isLoading) return;
     if (isLoaded && !client.isDataExpired()) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       await client.loadAll();
-      
+
       const allFilmsData = client.getAllFilms();
       const allDevelopersData = client.getAllDevelopers();
       const combinations = client.getAllCombinations();
-      
+
       // Filter films to only show black and white films
-      const films = allFilmsData.filter(film => film.colorType === 'bw');
-      
+      const films = allFilmsData.filter((film) => film.colorType === "bw");
+
       // Filter developers to only show those for film development (not paper)
-      const developers = allDevelopersData.filter(developer => developer.filmOrPaper === 'film');
-      
+      const developers = allDevelopersData.filter(
+        (developer) => developer.filmOrPaper === "film",
+      );
+
       setAllFilms(films);
       setAllDevelopers(developers);
       setAllCombinations(combinations);
       setIsLoaded(true);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load development data';
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to load development data";
       setError(errorMessage);
-      console.error('Failed to load development recipes data:', err);
+      console.error("Failed to load development recipes data:", err);
     } finally {
       setIsLoading(false);
     }
@@ -129,42 +137,48 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
   // Force refresh data bypassing cache
   const forceRefresh = useCallback(async () => {
     if (isLoading) return;
-    
-    console.log('[useDevelopmentRecipes] Force refresh started');
+
+    console.log("[useDevelopmentRecipes] Force refresh started");
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // Add minimum loading time to ensure spinner is visible
-      const [, allFilmsData, allDevelopersData, combinations] = await Promise.all([
-        new Promise(resolve => setTimeout(resolve, 500)), // Minimum 500ms loading
-        client.forceReload().then(() => client.getAllFilms()),
-        client.getAllDevelopers(),
-        client.getAllCombinations(),
-      ]);
-      
+      const [, allFilmsData, allDevelopersData, combinations] =
+        await Promise.all([
+          new Promise((resolve) => setTimeout(resolve, 500)), // Minimum 500ms loading
+          client.forceReload().then(() => client.getAllFilms()),
+          client.getAllDevelopers(),
+          client.getAllCombinations(),
+        ]);
+
       // Filter films to only show black and white films
-      const films = allFilmsData.filter(film => film.colorType === 'bw');
-      
+      const films = allFilmsData.filter((film) => film.colorType === "bw");
+
       // Filter developers to only show those for film development (not paper)
-      const developers = allDevelopersData.filter(developer => developer.filmOrPaper === 'film');
-      
-      console.log('[useDevelopmentRecipes] Data refreshed:', {
+      const developers = allDevelopersData.filter(
+        (developer) => developer.filmOrPaper === "film",
+      );
+
+      console.log("[useDevelopmentRecipes] Data refreshed:", {
         films: films.length,
         developers: developers.length,
-        combinations: combinations.length
+        combinations: combinations.length,
       });
-      
+
       setAllFilms(films);
       setAllDevelopers(developers);
       setAllCombinations(combinations);
       setIsLoaded(true);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh development data';
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Failed to refresh development data";
       setError(errorMessage);
-      console.error('Failed to refresh development recipes data:', err);
+      console.error("Failed to refresh development recipes data:", err);
     } finally {
-      console.log('[useDevelopmentRecipes] Force refresh completed');
+      console.log("[useDevelopmentRecipes] Force refresh completed");
       setIsLoading(false);
     }
   }, [isLoading]);
@@ -175,90 +189,123 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
   }, [loadData]);
 
   // Helper functions
-  const getFilmById = useCallback((id: string): Film | undefined => {
-    return allFilms.find(film => film.id === id || film.uuid === id);
-  }, [allFilms]);
+  const getFilmById = useCallback(
+    (id: string): Film | undefined => {
+      return allFilms.find((film) => film.id === id || film.uuid === id);
+    },
+    [allFilms],
+  );
 
-  const getDeveloperById = useCallback((id: string): Developer | undefined => {
-    return allDevelopers.find(dev => dev.id === id || dev.uuid === id);
-  }, [allDevelopers]);
+  const getDeveloperById = useCallback(
+    (id: string): Developer | undefined => {
+      return allDevelopers.find((dev) => dev.id === id || dev.uuid === id);
+    },
+    [allDevelopers],
+  );
 
-  const getCombinationsForFilm = useCallback((filmId: string): Combination[] => {
-    return allCombinations.filter(combo => combo.filmStockId === filmId);
-  }, [allCombinations]);
+  const getCombinationsForFilm = useCallback(
+    (filmId: string): Combination[] => {
+      return allCombinations.filter((combo) => combo.filmStockId === filmId);
+    },
+    [allCombinations],
+  );
 
-  const getCombinationsForDeveloper = useCallback((developerId: string): Combination[] => {
-    return allCombinations.filter(combo => combo.developerId === developerId);
-  }, [allCombinations]);
+  const getCombinationsForDeveloper = useCallback(
+    (developerId: string): Combination[] => {
+      return allCombinations.filter(
+        (combo) => combo.developerId === developerId,
+      );
+    },
+    [allCombinations],
+  );
 
   // Get available dilutions for selected developer
-  const getAvailableDilutions = useCallback((): { label: string; value: string }[] => {
+  const getAvailableDilutions = useCallback((): {
+    label: string;
+    value: string;
+  }[] => {
     if (!selectedDeveloper) return [];
-    
+
     const dilutions = [{ label: "All Dilutions", value: "" }];
     const dilutionSet = new Set<string>();
-    
+
     // Get combinations for this developer
-    const combinations = allCombinations.filter(combo => combo.developerId === selectedDeveloper.uuid);
-    
-    combinations.forEach(combo => {
-      const dilutionInfo = combo.customDilution || 
-        (selectedDeveloper.dilutions.find(d => d.id === combo.dilutionId)?.dilution) || 
+    const combinations = allCombinations.filter(
+      (combo) => combo.developerId === selectedDeveloper.uuid,
+    );
+
+    combinations.forEach((combo) => {
+      const dilutionInfo =
+        combo.customDilution ||
+        selectedDeveloper.dilutions.find((d) => d.id === combo.dilutionId)
+          ?.dilution ||
         "Stock";
       dilutionSet.add(dilutionInfo);
     });
-    
-    Array.from(dilutionSet).sort().forEach(dilution => {
-      dilutions.push({ label: dilution, value: dilution });
-    });
-    
+
+    Array.from(dilutionSet)
+      .sort()
+      .forEach((dilution) => {
+        dilutions.push({ label: dilution, value: dilution });
+      });
+
     return dilutions;
   }, [selectedDeveloper, allCombinations]);
 
   // Get available ISOs for selected film
-  const getAvailableISOs = useCallback((): { label: string; value: string }[] => {
+  const getAvailableISOs = useCallback((): {
+    label: string;
+    value: string;
+  }[] => {
     if (!selectedFilm) return [];
-    
+
     const isos = [{ label: "All ISOs", value: "" }];
     const isoSet = new Set<number>();
-    
+
     // Get combinations for this film
-    const combinations = allCombinations.filter(combo => combo.filmStockId === selectedFilm.uuid);
-    
-    combinations.forEach(combo => {
+    const combinations = allCombinations.filter(
+      (combo) => combo.filmStockId === selectedFilm.uuid,
+    );
+
+    combinations.forEach((combo) => {
       isoSet.add(combo.shootingIso);
     });
-    
-    Array.from(isoSet).sort((a, b) => a - b).forEach(iso => {
-      isos.push({ label: iso.toString(), value: iso.toString() });
-    });
-    
+
+    Array.from(isoSet)
+      .sort((a, b) => a - b)
+      .forEach((iso) => {
+        isos.push({ label: iso.toString(), value: iso.toString() });
+      });
+
     return isos;
   }, [selectedFilm, allCombinations]);
 
   // Handle sort with direction toggle
-  const handleSort = useCallback((sortKey: string) => {
-    if (sortBy === sortKey) {
-      // Same column, toggle direction
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      // New column, reset to ascending
-      setSortBy(sortKey);
-      setSortDirection('asc');
-    }
-  }, [sortBy, sortDirection]);
+  const handleSort = useCallback(
+    (sortKey: string) => {
+      if (sortBy === sortKey) {
+        // Same column, toggle direction
+        setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+      } else {
+        // New column, reset to ascending
+        setSortBy(sortKey);
+        setSortDirection("asc");
+      }
+    },
+    [sortBy, sortDirection],
+  );
 
   // Clear all filters
   const clearFilters = useCallback(() => {
-    setFilmSearch('');
-    setDeveloperSearch('');
-    setDeveloperTypeFilter('');
-    setDilutionFilter('');
-    setIsoFilter('');
+    setFilmSearch("");
+    setDeveloperSearch("");
+    setDeveloperTypeFilter("");
+    setDilutionFilter("");
+    setIsoFilter("");
     setSelectedFilm(null);
     setSelectedDeveloper(null);
-    setSortBy('filmName');
-    setSortDirection('asc');
+    setSortBy("filmName");
+    setSortDirection("asc");
   }, []);
 
   // Filter and sort combinations based on current state
@@ -267,43 +314,60 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
 
     // Filter by selected film
     if (selectedFilm) {
-      combinations = combinations.filter(combo => combo.filmStockId === selectedFilm.uuid);
+      combinations = combinations.filter(
+        (combo) => combo.filmStockId === selectedFilm.uuid,
+      );
     } else if (filmSearch.trim()) {
       // Filter by film search if no specific film selected
-      const matchingFilms = allFilms.filter(film =>
-        film.name.toLowerCase().includes(filmSearch.toLowerCase()) ||
-        film.brand.toLowerCase().includes(filmSearch.toLowerCase())
+      const matchingFilms = allFilms.filter(
+        (film) =>
+          film.name.toLowerCase().includes(filmSearch.toLowerCase()) ||
+          film.brand.toLowerCase().includes(filmSearch.toLowerCase()),
       );
-      const filmIds = matchingFilms.map(film => film.uuid);
-      combinations = combinations.filter(combo => filmIds.includes(combo.filmStockId));
+      const filmIds = matchingFilms.map((film) => film.uuid);
+      combinations = combinations.filter((combo) =>
+        filmIds.includes(combo.filmStockId),
+      );
     }
-
 
     // Filter by selected developer
     if (selectedDeveloper) {
-      combinations = combinations.filter(combo => combo.developerId === selectedDeveloper.uuid);
+      combinations = combinations.filter(
+        (combo) => combo.developerId === selectedDeveloper.uuid,
+      );
     } else if (developerSearch.trim()) {
       // Filter by developer search if no specific developer selected
-      const matchingDevelopers = allDevelopers.filter(dev =>
-        dev.name.toLowerCase().includes(developerSearch.toLowerCase()) ||
-        dev.manufacturer.toLowerCase().includes(developerSearch.toLowerCase())
+      const matchingDevelopers = allDevelopers.filter(
+        (dev) =>
+          dev.name.toLowerCase().includes(developerSearch.toLowerCase()) ||
+          dev.manufacturer
+            .toLowerCase()
+            .includes(developerSearch.toLowerCase()),
       );
-      const developerIds = matchingDevelopers.map(dev => dev.uuid);
-      combinations = combinations.filter(combo => developerIds.includes(combo.developerId));
+      const developerIds = matchingDevelopers.map((dev) => dev.uuid);
+      combinations = combinations.filter((combo) =>
+        developerIds.includes(combo.developerId),
+      );
     }
 
     // Filter by developer type
     if (developerTypeFilter) {
-      const matchingDevelopers = allDevelopers.filter(dev => dev.type === developerTypeFilter);
-      const developerIds = matchingDevelopers.map(dev => dev.uuid);
-      combinations = combinations.filter(combo => developerIds.includes(combo.developerId));
+      const matchingDevelopers = allDevelopers.filter(
+        (dev) => dev.type === developerTypeFilter,
+      );
+      const developerIds = matchingDevelopers.map((dev) => dev.uuid);
+      combinations = combinations.filter((combo) =>
+        developerIds.includes(combo.developerId),
+      );
     }
 
     // Filter by dilution (only when specific developer is selected)
     if (dilutionFilter && selectedDeveloper) {
-      combinations = combinations.filter(combo => {
-        const dilutionInfo = combo.customDilution || 
-          (selectedDeveloper.dilutions.find(d => d.id === combo.dilutionId)?.dilution) || 
+      combinations = combinations.filter((combo) => {
+        const dilutionInfo =
+          combo.customDilution ||
+          selectedDeveloper.dilutions.find((d) => d.id === combo.dilutionId)
+            ?.dilution ||
           "Stock";
         return dilutionInfo === dilutionFilter;
       });
@@ -311,45 +375,47 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
 
     // Filter by shooting ISO (only when specific film is selected)
     if (isoFilter && selectedFilm) {
-      combinations = combinations.filter(combo => combo.shootingIso.toString() === isoFilter);
+      combinations = combinations.filter(
+        (combo) => combo.shootingIso.toString() === isoFilter,
+      );
     }
 
     // Sort combinations
     combinations.sort((a, b) => {
       let comparison = 0;
-      
+
       switch (sortBy) {
-        case 'filmName': {
+        case "filmName": {
           const filmA = getFilmById(a.filmStockId);
           const filmB = getFilmById(b.filmStockId);
-          const nameA = filmA ? `${filmA.brand} ${filmA.name}` : '';
-          const nameB = filmB ? `${filmB.brand} ${filmB.name}` : '';
+          const nameA = filmA ? `${filmA.brand} ${filmA.name}` : "";
+          const nameB = filmB ? `${filmB.brand} ${filmB.name}` : "";
           comparison = nameA.localeCompare(nameB);
           break;
         }
-        case 'developerName': {
+        case "developerName": {
           const devA = getDeveloperById(a.developerId);
           const devB = getDeveloperById(b.developerId);
-          const nameA = devA ? `${devA.manufacturer} ${devA.name}` : '';
-          const nameB = devB ? `${devB.manufacturer} ${devB.name}` : '';
+          const nameA = devA ? `${devA.manufacturer} ${devA.name}` : "";
+          const nameB = devB ? `${devB.manufacturer} ${devB.name}` : "";
           comparison = nameA.localeCompare(nameB);
           break;
         }
-        case 'timeMinutes':
+        case "timeMinutes":
           comparison = a.timeMinutes - b.timeMinutes;
           break;
-        case 'temperatureF':
+        case "temperatureF":
           comparison = a.temperatureF - b.temperatureF;
           break;
-        case 'shootingIso':
+        case "shootingIso":
           comparison = a.shootingIso - b.shootingIso;
           break;
         default:
           comparison = 0;
       }
-      
+
       // Apply sort direction
-      return sortDirection === 'desc' ? -comparison : comparison;
+      return sortDirection === "desc" ? -comparison : comparison;
     });
 
     return combinations;
@@ -387,7 +453,7 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState & DevelopmentRe
     allFilms,
     allDevelopers,
     filteredCombinations,
-    
+
     // Actions
     setFilmSearch,
     setDeveloperSearch,

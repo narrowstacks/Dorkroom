@@ -1,5 +1,3 @@
-import type { Film, Developer, Combination } from '@/api/dorkroom/types';
-
 export interface CustomRecipe {
   id: string;
   name: string;
@@ -26,7 +24,7 @@ export interface CustomFilmData {
   brand: string;
   name: string;
   isoSpeed: number;
-  colorType: 'bw' | 'color' | 'slide';
+  colorType: "bw" | "color" | "slide";
   grainStructure?: string;
   description?: string;
 }
@@ -35,7 +33,7 @@ export interface CustomDeveloperData {
   manufacturer: string;
   name: string;
   type: string;
-  filmOrPaper: 'film' | 'paper' | 'both';
+  filmOrPaper: "film" | "paper" | "both";
   workingLifeHours?: number;
   stockLifeMonths?: number;
   notes?: string;
@@ -55,17 +53,17 @@ export interface GitHubIssueData {
 
 export interface CustomRecipeFormData {
   name: string;
-  
+
   // Film selection
   useExistingFilm: boolean;
   selectedFilmId?: string;
   customFilm?: CustomFilmData;
-  
+
   // Developer selection
   useExistingDeveloper: boolean;
   selectedDeveloperId?: string;
   customDeveloper?: CustomDeveloperData;
-  
+
   // Development parameters
   temperatureF: number;
   timeMinutes: number;
@@ -74,7 +72,7 @@ export interface CustomRecipeFormData {
   agitationSchedule: string;
   notes: string;
   customDilution: string;
-  
+
   // Metadata
   isPublic: boolean;
-} 
+}

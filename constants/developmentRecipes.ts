@@ -46,7 +46,7 @@ export const PUSH_PULL_LABELS: { [key: number]: string } = {
   [-2]: "Pull 2 stops",
   [-1]: "Pull 1 stop",
   0: "Normal",
-  1: "Push 1 stop", 
+  1: "Push 1 stop",
   2: "Push 2 stops",
 };
 

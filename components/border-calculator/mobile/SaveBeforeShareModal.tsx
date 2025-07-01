@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { 
-  Modal, 
-  ModalBackdrop, 
-  ModalContent, 
-  ModalHeader, 
-  ModalCloseButton, 
-  ModalBody, 
+import React, { useState } from "react";
+import {
+  Modal,
+  ModalBackdrop,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
   ModalFooter,
   Heading,
   Text,
@@ -18,10 +18,10 @@ import {
   useToast,
   Toast,
   ToastTitle,
-  VStack as ToastVStack
-} from '@gluestack-ui/themed';
-import { TextInput } from '@/components/ui/forms/TextInput';
-import type { BorderPresetSettings } from '@/types/borderPresetTypes';
+  VStack as ToastVStack,
+} from "@gluestack-ui/themed";
+import { TextInput } from "@/components/ui/forms/TextInput";
+import type { BorderPresetSettings } from "@/types/borderPresetTypes";
 
 interface SaveBeforeShareModalProps {
   isVisible: boolean;
@@ -34,9 +34,9 @@ export const SaveBeforeShareModal: React.FC<SaveBeforeShareModalProps> = ({
   isVisible,
   onClose,
   onSaveAndShare,
-  currentSettings
+  currentSettings,
 }) => {
-  const [presetName, setPresetName] = useState('');
+  const [presetName, setPresetName] = useState("");
   const toast = useToast();
 
   const handleSaveAndShare = () => {
@@ -55,12 +55,12 @@ export const SaveBeforeShareModal: React.FC<SaveBeforeShareModalProps> = ({
     }
 
     onSaveAndShare(presetName.trim());
-    setPresetName('');
+    setPresetName("");
     onClose();
   };
 
   const handleClose = () => {
-    setPresetName('');
+    setPresetName("");
     onClose();
   };
 
@@ -76,7 +76,10 @@ export const SaveBeforeShareModal: React.FC<SaveBeforeShareModalProps> = ({
         </ModalHeader>
         <ModalBody>
           <VStack space="md">
-            <Text>To share these settings, you must first save them as a named preset.</Text>
+            <Text>
+              To share these settings, you must first save them as a named
+              preset.
+            </Text>
             <TextInput
               value={presetName}
               onChangeText={setPresetName}
@@ -86,11 +89,15 @@ export const SaveBeforeShareModal: React.FC<SaveBeforeShareModalProps> = ({
           </VStack>
         </ModalBody>
         <ModalFooter>
-          <HStack space="sm" style={{ justifyContent: 'flex-end' }}>
+          <HStack space="sm" style={{ justifyContent: "flex-end" }}>
             <Button variant="outline" onPress={handleClose}>
               <ButtonText>Cancel</ButtonText>
             </Button>
-            <Button variant="solid" action="positive" onPress={handleSaveAndShare}>
+            <Button
+              variant="solid"
+              action="positive"
+              onPress={handleSaveAndShare}
+            >
               <ButtonText>Save & Share</ButtonText>
             </Button>
           </HStack>

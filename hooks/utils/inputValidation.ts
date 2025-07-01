@@ -28,10 +28,10 @@ export const tryNumber = (v: string): number | null => {
 // Debounce utility for input processing
 export const debounce = <T extends (...args: any[]) => any>(
   func: T,
-  wait: number
+  wait: number,
 ): ((...args: Parameters<T>) => void) => {
   let timeout: ReturnType<typeof setTimeout> | null = null;
-  
+
   return (...args: Parameters<T>) => {
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
@@ -39,10 +39,13 @@ export const debounce = <T extends (...args: any[]) => any>(
 };
 
 // RequestIdleCallback polyfill for React Native
-export const requestIdleCallback = (callback: IdleRequestCallback, options?: IdleRequestOptions) => {
-  if (typeof window !== 'undefined' && window.requestIdleCallback) {
+export const requestIdleCallback = (
+  callback: IdleRequestCallback,
+  options?: IdleRequestOptions,
+) => {
+  if (typeof window !== "undefined" && window.requestIdleCallback) {
     return window.requestIdleCallback(callback, options);
   }
   // Fallback for React Native
   return setTimeout(callback, 1);
-}; 
+};

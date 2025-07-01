@@ -12,7 +12,7 @@ The calculator follows a modular architecture separating concerns into specializ
 
 - **`useBorderCalculator`** - Main orchestrating hook that composes all sub-hooks
 - **`useBorderCalculatorState`** - Core state management and persistence
-- **`useDimensionCalculations`** - Paper size, aspect ratio, and orientation calculations  
+- **`useDimensionCalculations`** - Paper size, aspect ratio, and orientation calculations
 - **`useGeometryCalculations`** - Print size, borders, blade readings, and easel fitting
 - **`useWarningSystem`** - Debounced warning management to prevent flashing
 - **`useImageHandling`** - Image-related state and operations
@@ -28,10 +28,10 @@ graph TD
     A --> E["useWarningSystem<br/>(Debounced Warnings)"]
     A --> F["useImageHandling<br/>(Image State)"]
     A --> G["useInputHandlers<br/>(Input Validation)"]
-    
+
     D --> H["borderCalculations.ts<br/>(Pure Geometry Functions)"]
     D --> I["border.ts<br/>(Constants & Data)"]
-    
+
     H --> J["computePrintSize()"]
     H --> K["clampOffsets()"]
     H --> L["findCenteringOffsets()"]
@@ -55,7 +55,7 @@ The current implementation includes several performance optimizations:
 
 The print size is calculated based on the paper dimensions, minimum border requirement, and desired aspect ratio.
 
-**Function**: `computePrintSize(w, h, rw, rh, mb)` - *Optimized with early validation*
+**Function**: `computePrintSize(w, h, rw, rh, mb)` - _Optimized with early validation_
 
 Given:
 
@@ -107,8 +107,8 @@ if (availRatio > ratio) {
 The calculator computes the maximum allowed offsets and clamps user input accordingly:
 
 ```javascript
-const halfW = (paperW - printW) / 2;  // Half the horizontal gap
-const halfH = (paperH - printH) / 2;  // Half the vertical gap
+const halfW = (paperW - printW) / 2; // Half the horizontal gap
+const halfH = (paperH - printH) / 2; // Half the vertical gap
 
 // Maximum offsets depend on ignore minimum border setting
 const maxH = ignoreMB ? halfW : Math.min(halfW - mb, halfW);
@@ -135,8 +135,8 @@ borders = {
   left: halfW - h,
   right: halfW + h,
   bottom: halfH - v,
-  top: halfH + v
-}
+  top: halfH + v,
+};
 ```
 
 Where:
@@ -146,11 +146,12 @@ Where:
 
 ### Easel Size Determination
 
-**Function**: `findCenteringOffsets(paperW, paperH, landscape)` - *Optimized with LRU caching and exact match lookup*
+**Function**: `findCenteringOffsets(paperW, paperH, landscape)` - _Optimized with LRU caching and exact match lookup_
 
 The algorithm determines the appropriate easel slot and whether the paper is non-standard:
 
 **Performance Optimizations**:
+
 - **LRU Cache**: 50-item cache with integer keys for better hash performance
 - **Exact Match Lookup**: O(1) pre-computed Set for standard paper sizes
 - **Binary Search**: Sorted easel sizes by area for optimal performance
@@ -166,7 +167,7 @@ The algorithm determines the appropriate easel slot and whether the paper is non
 
    ```typescript
    const isNonStandard = !isExactMatchOptimized(paperW, paperH);
-   
+
    if (!isNonStandard) {
      const exactSize = { width: paper.width, height: paper.height };
      return {
@@ -182,16 +183,20 @@ The algorithm determines the appropriate easel slot and whether the paper is non
    ```typescript
    let bestFit = null;
    let minWaste = Infinity;
-   
+
    for (const easel of SORTED_EASEL_SIZES) {
-     const canFitNormal = easel.width >= paper.width && easel.height >= paper.height;
-     const canFitRotated = easel.height >= paper.width && easel.width >= paper.height;
-     
+     const canFitNormal =
+       easel.width >= paper.width && easel.height >= paper.height;
+     const canFitRotated =
+       easel.height >= paper.width && easel.width >= paper.height;
+
      if (canFitNormal || canFitRotated) {
        const waste = easel.width * easel.height - paper.width * paper.height;
        if (waste < minWaste) {
          minWaste = waste;
-         bestFit = { /* ... */ };
+         bestFit = {
+           /* ... */
+         };
          if (waste === 0) break; // Early exit for perfect fit
        }
      }
@@ -232,8 +237,12 @@ Where:
 **Paper shift calculation**:
 
 ```javascript
-const spX = isNonStandardPaperSize ? (orientedPaper.w - effectiveSlot.width) / 2 : 0;
-const spY = isNonStandardPaperSize ? (orientedPaper.h - effectiveSlot.height) / 2 : 0;
+const spX = isNonStandardPaperSize
+  ? (orientedPaper.w - effectiveSlot.width) / 2
+  : 0;
+const spY = isNonStandardPaperSize
+  ? (orientedPaper.h - effectiveSlot.height) / 2
+  : 0;
 ```
 
 ### Blade Thickness Scaling
@@ -243,19 +252,20 @@ const spY = isNonStandardPaperSize ? (orientedPaper.h - effectiveSlot.height) / 
 Visual blade thickness scales based on paper area relative to base size (20×24 inches):
 
 ```javascript
-const BASE_PAPER_AREA = 20 * 24;  // 480 sq inches
-const area = Math.max(paperW * paperH, EPS);  // Prevent division by zero
-const scale = Math.min(BASE_PAPER_AREA / area, 2);  // Cap at 2x scaling
+const BASE_PAPER_AREA = 20 * 24; // 480 sq inches
+const area = Math.max(paperW * paperH, EPS); // Prevent division by zero
+const scale = Math.min(BASE_PAPER_AREA / area, 2); // Cap at 2x scaling
 return Math.round(BLADE_THICKNESS * scale);
 ```
 
 ### Optimal Minimum Border Algorithm
 
-**Function**: `calculateOptimalMinBorder(paperW, paperH, ratioW, ratioH, start)` - *Optimized with adaptive step sizing*
+**Function**: `calculateOptimalMinBorder(paperW, paperH, ratioW, ratioH, start)` - _Optimized with adaptive step sizing_
 
 This algorithm finds a minimum border value that results in blade positions close to quarter-inch increments:
 
 **Performance Optimizations**:
+
 - **Adaptive Step Size**: Automatically adjusts precision based on search space
 - **Early Exit**: Stops immediately when perfect snap (score < ε) is found
 - **Optimized Score Calculation**: Short-circuits when current score exceeds best known
@@ -275,7 +285,7 @@ This algorithm finds a minimum border value that results in blade positions clos
      const r = b % SNAP;
      return Math.min(r, SNAP - r);
    };
-   
+
    // Optimized score calculation - exit early if already worse
    let score = 0;
    for (const border of borders) {
@@ -291,7 +301,7 @@ This algorithm finds a minimum border value that results in blade positions clos
    for (let mb = lo; mb <= hi; mb += adaptiveStep) {
      const borders = computeBorders(paperW, paperH, ratio, mb);
      if (!borders) continue;
-     
+
      // Calculate score with early exit
      if (score < bestScore - EPS) {
        bestScore = score;
@@ -313,29 +323,29 @@ flowchart TD
     B --> C[Paper Orientation]
     B --> D[Aspect Ratio Processing]
     B --> E[Min Border Validation]
-    
+
     C --> F[useGeometryCalculations]
     D --> F
     E --> F
-    
+
     F --> G[computePrintSize]
     G --> H[clampOffsets]
     H --> I[bordersFromGaps]
-    
+
     F --> J[findCenteringOffsets]
     J --> K[calculateBladeThickness]
-    
+
     I --> L[bladeReadings]
     K --> L
-    
+
     L --> M[Final Calculation Object]
-    
+
     subgraph "Optimization Layers"
       N[LRU Cache<br/>Easel Fitting]
       O[Memoization<br/>useMemo hooks]
       P[Early Validation<br/>Input Checks]
     end
-    
+
     J -.-> N
     F -.-> O
     G -.-> P
@@ -360,10 +370,10 @@ if (minBorder >= maxBorder && maxBorder > 0) {
 
 ```javascript
 const values = Object.values(blades);
-if (values.some(v => v < 0))
-  bladeWarning = 'Negative blade reading – use opposite side of scale.';
-if (values.some(v => Math.abs(v) < 3 && v !== 0))
-  bladeWarning += 'Many easels have no markings below about 3 in.';
+if (values.some((v) => v < 0))
+  bladeWarning = "Negative blade reading – use opposite side of scale.";
+if (values.some((v) => Math.abs(v) < 3 && v !== 0))
+  bladeWarning += "Many easels have no markings below about 3 in.";
 ```
 
 ### Paper Size Warnings
@@ -371,9 +381,10 @@ if (values.some(v => Math.abs(v) < 3 && v !== 0))
 For custom paper sizes:
 
 ```javascript
-const paperSizeWarning = (paperW > MAX_EASEL_DIMENSION || paperH > MAX_EASEL_DIMENSION)
-  ? `Custom paper (${paperW}×${paperH}) exceeds largest standard easel (20×24").`
-  : null;
+const paperSizeWarning =
+  paperW > MAX_EASEL_DIMENSION || paperH > MAX_EASEL_DIMENSION
+    ? `Custom paper (${paperW}×${paperH}) exceeds largest standard easel (20×24").`
+    : null;
 ```
 
 ## Constants and Standards
@@ -386,7 +397,7 @@ The calculator uses optimized lookup tables for O(1) access:
 
 - 4×5, 4×6 (postcard), 5×7, 8×10, 11×14, 16×20, 20×24 inches
 
-**Easel Sizes** (`EASEL_SIZES`):  
+**Easel Sizes** (`EASEL_SIZES`):
 
 - 5×7, 8×10, 11×14, 16×20, 20×24 inches
 
@@ -404,15 +415,15 @@ The calculator uses optimized lookup tables for O(1) access:
 
 ```typescript
 export const PAPER_SIZE_MAP = Object.freeze(
-  Object.fromEntries(PAPER_SIZES.map(p => [p.value, p]))
+  Object.fromEntries(PAPER_SIZES.map((p) => [p.value, p])),
 );
 
 export const ASPECT_RATIO_MAP = Object.freeze(
-  Object.fromEntries(ASPECT_RATIOS.map(r => [r.value, r]))
+  Object.fromEntries(ASPECT_RATIOS.map((r) => [r.value, r])),
 );
 
 export const EASEL_SIZE_MAP = Object.freeze(
-  Object.fromEntries(EASEL_SIZES.map(e => [`${e.width}×${e.height}`, e]))
+  Object.fromEntries(EASEL_SIZES.map((e) => [`${e.width}×${e.height}`, e])),
 );
 ```
 
@@ -436,16 +447,21 @@ Preview dimensions with performance optimizations:
 const previewScale = useMemo(() => {
   const { w, h } = orientedDimensions.orientedPaper;
   if (!w || !h) return 1;
-  
+
   // Use more efficient calculations
   const maxW = winW > 444 ? 400 : winW * 0.9; // Avoid Math.min for common case
   const maxH = winH > 800 ? 400 : winH * 0.5;
-  
+
   const scaleW = maxW / w;
   const scaleH = maxH / h;
-  
+
   return scaleW < scaleH ? scaleW : scaleH; // More efficient than Math.min
-}, [orientedDimensions.orientedPaper.w, orientedDimensions.orientedPaper.h, winW, winH]);
+}, [
+  orientedDimensions.orientedPaper.w,
+  orientedDimensions.orientedPaper.h,
+  winW,
+  winH,
+]);
 ```
 
 ## State Management
@@ -514,6 +530,7 @@ interface BorderCalculatorState {
 - **Last Valid Caching**: Custom numeric inputs cache last valid values
 
 This modular approach ensures:
+
 - **Clean separation** between UI state and mathematical calculations
 - **Optimized performance** through targeted memoization
 - **Maintainable code** with single-responsibility hooks

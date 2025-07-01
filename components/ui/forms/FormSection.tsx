@@ -15,7 +15,7 @@ interface FormSectionProps {
 export function FormGroup({ label, children }: FormGroupProps) {
   return (
     <Box className="gap-3" style={styles.formGroup}>
-      <Text className="text-base font-medium mb-1" style={styles.label}>
+      <Text className="mb-1 text-base font-medium" style={styles.label}>
         {label}:
       </Text>
       {children}
@@ -29,7 +29,7 @@ export function FormSection({ children }: FormSectionProps) {
 
   return (
     <Box
-      className="gap-5 w-full web:flex-1 web:max-w-lg"
+      className="w-full gap-5 web:max-w-lg web:flex-1"
       style={[
         styles.form,
         Platform.OS === "web" && isDesktop && styles.webForm,

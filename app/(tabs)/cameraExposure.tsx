@@ -4,12 +4,23 @@ import {
   useCameraExposureCalculator,
   ExposureSetting,
 } from "@/hooks/useCameraExposureCalculator";
-import { APERTURE_VALUES, ISO_VALUES, SHUTTER_SPEED_VALUES } from "@/constants/exposure";
+import {
+  APERTURE_VALUES,
+  ISO_VALUES,
+  SHUTTER_SPEED_VALUES,
+} from "@/constants/exposure";
 import { Box, Text } from "@gluestack-ui/themed";
 import { CalculatorLayout } from "@/components/ui/layout/CalculatorLayout";
-import { ResultsSection, ResultRow } from "@/components/ui/calculator/ResultsSection";
+import {
+  ResultsSection,
+  ResultRow,
+} from "@/components/ui/calculator/ResultsSection";
 import { FormSection, FormGroup } from "@/components/ui/forms/FormSection";
-import { InfoSection, InfoText, InfoSubtitle } from "@/components/ui/calculator/InfoSection";
+import {
+  InfoSection,
+  InfoText,
+  InfoSubtitle,
+} from "@/components/ui/calculator/InfoSection";
 import { PlatformSelect } from "@/components/ui/select/PlatformSelect";
 
 export default function CameraExposureCalculator() {
@@ -28,7 +39,6 @@ export default function CameraExposureCalculator() {
     setNewValue,
     equivalentExposure,
   } = useCameraExposureCalculator();
-
 
   const settingOptions = [
     { label: "Aperture", value: "aperture" as ExposureSetting },
@@ -52,26 +62,20 @@ export default function CameraExposureCalculator() {
   const infoSection = (
     <InfoSection title="About This Tool">
       <InfoText>
-        The camera exposure calculator helps you find equivalent exposures
-        when you want to change one aspect of your exposure triangle
-        (aperture, ISO, or shutter speed) while maintaining the same overall
-        exposure.
+        The camera exposure calculator helps you find equivalent exposures when
+        you want to change one aspect of your exposure triangle (aperture, ISO,
+        or shutter speed) while maintaining the same overall exposure.
       </InfoText>
 
       <InfoSubtitle>How to Use:</InfoSubtitle>
       <InfoText>
-        1. Enter your current camera settings (aperture, ISO, and shutter
-        speed)
+        1. Enter your current camera settings (aperture, ISO, and shutter speed)
       </InfoText>
+      <InfoText>2. Select which setting you want to change</InfoText>
+      <InfoText>3. Choose the new value for that setting</InfoText>
       <InfoText>
-        2. Select which setting you want to change
-      </InfoText>
-      <InfoText>
-        3. Choose the new value for that setting
-      </InfoText>
-      <InfoText>
-        4. The calculator will show equivalent settings that maintain the
-        same exposure
+        4. The calculator will show equivalent settings that maintain the same
+        exposure
       </InfoText>
 
       <InfoSubtitle>The Exposure Triangle:</InfoSubtitle>
@@ -84,8 +88,8 @@ export default function CameraExposureCalculator() {
         noise
       </InfoText>
       <InfoText>
-        • Shutter Speed: Controls motion blur. Faster speed = less motion
-        blur = less light
+        • Shutter Speed: Controls motion blur. Faster speed = less motion blur =
+        less light
       </InfoText>
 
       <InfoSubtitle>Notes:</InfoSubtitle>
@@ -98,30 +102,30 @@ export default function CameraExposureCalculator() {
         shutter speed
       </InfoText>
       <InfoText>
-        • Default values (f/5.6, ISO 100, 1/250s) with aperture change to
-        f/16 are pre-loaded for quick reference
+        • Default values (f/5.6, ISO 100, 1/250s) with aperture change to f/16
+        are pre-loaded for quick reference
       </InfoText>
     </InfoSection>
   );
 
   return (
-    <CalculatorLayout title="Camera Exposure Calculator" infoSection={infoSection}>
+    <CalculatorLayout
+      title="Camera Exposure Calculator"
+      infoSection={infoSection}
+    >
       <ResultsSection title="Equivalent Exposure" show={!!equivalentExposure}>
-        <ResultRow 
-          label="Aperture" 
-          value={`f/${equivalentExposure?.aperture}`} 
+        <ResultRow
+          label="Aperture"
+          value={`f/${equivalentExposure?.aperture}`}
         />
-        <ResultRow 
-          label="ISO" 
-          value={equivalentExposure?.iso || ""} 
+        <ResultRow label="ISO" value={equivalentExposure?.iso || ""} />
+        <ResultRow
+          label="Shutter Speed"
+          value={`${equivalentExposure?.shutterSpeed}s`}
         />
-        <ResultRow 
-          label="Shutter Speed" 
-          value={`${equivalentExposure?.shutterSpeed}s`} 
-        />
-        <ResultRow 
-          label="Exposure Value" 
-          value={`EV ${equivalentExposure?.ev}`} 
+        <ResultRow
+          label="Exposure Value"
+          value={`EV ${equivalentExposure?.ev}`}
           isLast
         />
       </ResultsSection>
@@ -129,7 +133,10 @@ export default function CameraExposureCalculator() {
       <FormSection>
         <Box style={[isMobile ? styles.mobileFormColumns : {}]}>
           <Box style={[isMobile ? styles.mobileFormColumn : styles.fullWidth]}>
-            <Text className="text-lg mb-4 font-semibold" style={styles.sectionTitle}>
+            <Text
+              className="mb-4 text-lg font-semibold"
+              style={styles.sectionTitle}
+            >
               Current Settings
             </Text>
 
@@ -159,7 +166,10 @@ export default function CameraExposureCalculator() {
           </Box>
 
           <Box style={[isMobile ? styles.mobileFormColumn : styles.fullWidth]}>
-            <Text className="text-lg mb-4 font-semibold" style={styles.sectionTitle}>
+            <Text
+              className="mb-4 text-lg font-semibold"
+              style={styles.sectionTitle}
+            >
               Change Setting
             </Text>
 

@@ -5,7 +5,6 @@ describe("ChemistryCalculator Logic Functions", () => {
   describe("Prop Handling Logic", () => {
     it("should handle default dilution prop correctly", () => {
       // Test the logic for setting default dilution when component mounts
-      const mockSetSelectedDilution = jest.fn();
       const mockChemistry = { selectedDilution: null };
       const defaultDilution = "1:1";
 
