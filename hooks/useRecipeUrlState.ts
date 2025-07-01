@@ -275,6 +275,14 @@ export const useRecipeUrlState = (
         return;
       }
 
+      // Wait for data to be loaded before attempting lookup
+      if (!recipesByUuid || recipesByUuid.size === 0) {
+        console.log("[useRecipeUrlState] Waiting for recipes data to load...");
+        setIsLoadingSharedRecipe(true);
+        setSharedRecipeError(null);
+        return;
+      }
+
       console.log(
         "[useRecipeUrlState] Starting recipe lookup for ID:",
         recipeId,
