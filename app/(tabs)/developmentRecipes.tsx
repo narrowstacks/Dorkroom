@@ -491,6 +491,10 @@ export default function DevelopmentRecipes() {
     }
   }, [sharedRecipeError]);
 
+  const [showFilters, setShowFilters] = useState(false);
+  const [showCustomRecipeImportModal, setShowCustomRecipeImportModal] =
+    useState(false);
+
   // Show import modal when a shared custom recipe is detected
   React.useEffect(() => {
     if (
@@ -502,8 +506,6 @@ export default function DevelopmentRecipes() {
       setShowCustomRecipeImportModal(true);
     }
   }, [hasSharedCustomRecipe, sharedCustomRecipe, showCustomRecipeImportModal]);
-
-  const [showFilters, setShowFilters] = useState(false);
   const [selectedCombination, setSelectedCombination] =
     useState<Combination | null>(null);
   const [selectedCustomRecipe, setSelectedCustomRecipe] =
@@ -519,8 +521,6 @@ export default function DevelopmentRecipes() {
     useState(false);
   const [isFilmSearchFocused, setIsFilmSearchFocused] = useState(false);
   const [isDeveloperSearchFocused, setIsDeveloperSearchFocused] =
-    useState(false);
-  const [showCustomRecipeImportModal, setShowCustomRecipeImportModal] =
     useState(false);
 
   // Add refs and position state for dynamic positioning
