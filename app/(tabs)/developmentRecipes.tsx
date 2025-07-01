@@ -285,146 +285,11 @@ export default function DevelopmentRecipes() {
     getAvailableISOs,
   } = useDevelopmentRecipes();
 
-  // URL state management - syncs current filter state with URL parameters
-  const {
-    initialUrlState,
-    hasUrlState,
-    sharedRecipe,
-    isLoadingSharedRecipe,
-    sharedRecipeError,
-    hasSharedRecipe,
-  } = useRecipeUrlState(
-    allFilms,
-    allDevelopers,
-    {
-      selectedFilm,
-      selectedDeveloper,
-      dilutionFilter,
-      isoFilter,
-    },
-    undefined, // Will be handled when recipes are loaded
-  );
-
-  // Apply URL state to hook state when data is loaded and URL state is available
-  React.useEffect(() => {
-    if (isLoaded && hasUrlState && initialUrlState.fromUrl) {
-      if (
-        initialUrlState.selectedFilm &&
-        initialUrlState.selectedFilm !== selectedFilm
-      ) {
-        setSelectedFilm(initialUrlState.selectedFilm);
-      }
-      if (
-        initialUrlState.selectedDeveloper &&
-        initialUrlState.selectedDeveloper !== selectedDeveloper
-      ) {
-        setSelectedDeveloper(initialUrlState.selectedDeveloper);
-      }
-      if (
-        initialUrlState.dilutionFilter &&
-        initialUrlState.dilutionFilter !== dilutionFilter
-      ) {
-        setDilutionFilter(initialUrlState.dilutionFilter);
-      }
-      if (
-        initialUrlState.isoFilter &&
-        initialUrlState.isoFilter !== isoFilter
-      ) {
-        setIsoFilter(initialUrlState.isoFilter);
-      }
-    }
-  }, [
-    isLoaded,
-    hasUrlState,
-    initialUrlState,
-    selectedFilm,
-    selectedDeveloper,
-    dilutionFilter,
-    isoFilter,
-    setSelectedFilm,
-    setSelectedDeveloper,
-    setDilutionFilter,
-    setIsoFilter,
-  ]);
-
   const { customRecipes, forceRefresh, stateVersion } = useCustomRecipes();
   debugLog(
     "[DevelopmentRecipes] Component render - customRecipes count:",
     customRecipes.length,
   );
-
-  // Handle shared recipe - automatically open the recipe detail when a shared recipe is loaded
-  React.useEffect(() => {
-    if (hasSharedRecipe && sharedRecipe && !isLoadingSharedRecipe) {
-      debugLog(
-        "[DevelopmentRecipes] Opening shared recipe:",
-        sharedRecipe.id || sharedRecipe.uuid,
-      );
-
-      // Check if it's a custom recipe or API recipe
-      const isCustomRecipe = customRecipes.some(
-        (recipe) => recipe.id === sharedRecipe.id,
-      );
-
-      if (isCustomRecipe) {
-        const customRecipe = customRecipes.find(
-          (recipe) => recipe.id === sharedRecipe.id,
-        );
-        if (customRecipe) {
-          setSelectedCustomRecipe(customRecipe);
-          setSelectedCombination(null);
-        }
-      } else {
-        setSelectedCombination(sharedRecipe);
-        setSelectedCustomRecipe(null);
-      }
-    }
-  }, [hasSharedRecipe, sharedRecipe, isLoadingSharedRecipe, customRecipes]);
-
-  // Show error message if shared recipe fails to load
-  React.useEffect(() => {
-    if (sharedRecipeError) {
-      debugLog("[DevelopmentRecipes] Shared recipe error:", sharedRecipeError);
-      // You could show a toast notification here if desired
-    }
-  }, [sharedRecipeError]);
-
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedCombination, setSelectedCombination] =
-    useState<Combination | null>(null);
-  const [selectedCustomRecipe, setSelectedCustomRecipe] =
-    useState<CustomRecipe | null>(null);
-  const [showCustomRecipeForm, setShowCustomRecipeForm] = useState(false);
-  const [editingCustomRecipe, setEditingCustomRecipe] = useState<
-    CustomRecipe | undefined
-  >(undefined);
-  const [showCustomRecipes, setShowCustomRecipes] = useState(true);
-  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
-  const [showMobileFilmModal, setShowMobileFilmModal] = useState(false);
-  const [showMobileDeveloperModal, setShowMobileDeveloperModal] =
-    useState(false);
-  const [isFilmSearchFocused, setIsFilmSearchFocused] = useState(false);
-  const [isDeveloperSearchFocused, setIsDeveloperSearchFocused] =
-    useState(false);
-
-  // Add refs and position state for dynamic positioning
-  const filmSearchRef = React.useRef<any>(null);
-  const developerSearchRef = React.useRef<any>(null);
-  const [filmSearchPosition, setFilmSearchPosition] = useState<{
-    top: number;
-    left: number;
-    width: number;
-  } | null>(null);
-  const [developerSearchPosition, setDeveloperSearchPosition] = useState<{
-    top: number;
-    left: number;
-    width: number;
-  } | null>(null);
-
-  const { width } = useWindowDimensions();
-  const isDesktop = Platform.OS === "web" && width > 768;
-  const textColor = useThemeColor({}, "text");
-  const developmentTint = useThemeColor({}, "developmentRecipesTint");
 
   // Convert custom recipes to combination-like format for display
   const customRecipesAsCombinations = React.useMemo(() => {
@@ -503,6 +368,141 @@ export default function DevelopmentRecipes() {
 
     return map;
   }, [filteredCombinations, customRecipesAsCombinations]);
+
+  // URL state management - syncs current filter state with URL parameters
+  const {
+    initialUrlState,
+    hasUrlState,
+    sharedRecipe,
+    isLoadingSharedRecipe,
+    sharedRecipeError,
+    hasSharedRecipe,
+  } = useRecipeUrlState(
+    allFilms,
+    allDevelopers,
+    {
+      selectedFilm,
+      selectedDeveloper,
+      dilutionFilter,
+      isoFilter,
+    },
+    recipesByUuid, // Recipe lookup map for shared recipe functionality
+  );
+
+  // Apply URL state to hook state when data is loaded and URL state is available
+  React.useEffect(() => {
+    if (isLoaded && hasUrlState && initialUrlState.fromUrl) {
+      if (
+        initialUrlState.selectedFilm &&
+        initialUrlState.selectedFilm !== selectedFilm
+      ) {
+        setSelectedFilm(initialUrlState.selectedFilm);
+      }
+      if (
+        initialUrlState.selectedDeveloper &&
+        initialUrlState.selectedDeveloper !== selectedDeveloper
+      ) {
+        setSelectedDeveloper(initialUrlState.selectedDeveloper);
+      }
+      if (
+        initialUrlState.dilutionFilter &&
+        initialUrlState.dilutionFilter !== dilutionFilter
+      ) {
+        setDilutionFilter(initialUrlState.dilutionFilter);
+      }
+      if (
+        initialUrlState.isoFilter &&
+        initialUrlState.isoFilter !== isoFilter
+      ) {
+        setIsoFilter(initialUrlState.isoFilter);
+      }
+    }
+  }, [
+    isLoaded,
+    hasUrlState,
+    initialUrlState,
+    selectedFilm,
+    selectedDeveloper,
+    dilutionFilter,
+    isoFilter,
+    setSelectedFilm,
+    setSelectedDeveloper,
+    setDilutionFilter,
+    setIsoFilter,
+  ]);
+
+  // Handle shared recipe - automatically open the recipe detail when a shared recipe is loaded
+  React.useEffect(() => {
+    if (hasSharedRecipe && sharedRecipe && !isLoadingSharedRecipe) {
+      debugLog(
+        "[DevelopmentRecipes] Opening shared recipe:",
+        sharedRecipe.id || sharedRecipe.uuid,
+      );
+
+      // Check if it's a custom recipe or API recipe
+      const isCustomRecipe = customRecipes.some(
+        (recipe) => recipe.id === sharedRecipe.id,
+      );
+
+      if (isCustomRecipe) {
+        const customRecipe = customRecipes.find(
+          (recipe) => recipe.id === sharedRecipe.id,
+        );
+        if (customRecipe) {
+          setSelectedCustomRecipe(customRecipe);
+          setSelectedCombination(null);
+        }
+      } else {
+        setSelectedCombination(sharedRecipe);
+        setSelectedCustomRecipe(null);
+      }
+    }
+  }, [hasSharedRecipe, sharedRecipe, isLoadingSharedRecipe, customRecipes]);
+
+  // Show error message if shared recipe fails to load
+  React.useEffect(() => {
+    if (sharedRecipeError) {
+      debugLog("[DevelopmentRecipes] Shared recipe error:", sharedRecipeError);
+      // You could show a toast notification here if desired
+    }
+  }, [sharedRecipeError]);
+
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedCombination, setSelectedCombination] =
+    useState<Combination | null>(null);
+  const [selectedCustomRecipe, setSelectedCustomRecipe] =
+    useState<CustomRecipe | null>(null);
+  const [showCustomRecipeForm, setShowCustomRecipeForm] = useState(false);
+  const [editingCustomRecipe, setEditingCustomRecipe] = useState<
+    CustomRecipe | undefined
+  >(undefined);
+  const [showCustomRecipes, setShowCustomRecipes] = useState(true);
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+  const [showMobileFilmModal, setShowMobileFilmModal] = useState(false);
+  const [showMobileDeveloperModal, setShowMobileDeveloperModal] =
+    useState(false);
+  const [isFilmSearchFocused, setIsFilmSearchFocused] = useState(false);
+  const [isDeveloperSearchFocused, setIsDeveloperSearchFocused] =
+    useState(false);
+
+  // Add refs and position state for dynamic positioning
+  const filmSearchRef = React.useRef<any>(null);
+  const developerSearchRef = React.useRef<any>(null);
+  const [filmSearchPosition, setFilmSearchPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
+  const [developerSearchPosition, setDeveloperSearchPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
+
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width > 768;
+  const textColor = useThemeColor({}, "text");
+  const developmentTint = useThemeColor({}, "developmentRecipesTint");
 
   // Combined API + custom recipes for display
   const allCombinations = React.useMemo(() => {
