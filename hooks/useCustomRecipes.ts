@@ -66,16 +66,22 @@ export const useCustomRecipes = () => {
         // Load current recipes from storage to ensure we have the latest data
         const currentRecipes = await loadRecipes();
 
+        // Validate film selection
+        const filmId = formData.useExistingFilm
+          ? formData.selectedFilmId || `fallback_film_${Date.now()}`
+          : `custom_film_${Date.now()}`;
+
+        // Validate developer selection
+        const developerId = formData.useExistingDeveloper
+          ? formData.selectedDeveloperId || `fallback_dev_${Date.now()}`
+          : `custom_dev_${Date.now()}`;
+
         // Create new recipe
         const newRecipe: CustomRecipe = {
           id: `custom_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
           name: formData.name,
-          filmId: formData.useExistingFilm
-            ? formData.selectedFilmId!
-            : `custom_film_${Date.now()}`,
-          developerId: formData.useExistingDeveloper
-            ? formData.selectedDeveloperId!
-            : `custom_dev_${Date.now()}`,
+          filmId,
+          developerId,
           temperatureF: formData.temperatureF,
           timeMinutes: formData.timeMinutes,
           shootingIso: formData.shootingIso,
@@ -132,15 +138,26 @@ export const useCustomRecipes = () => {
         }
 
         const existingRecipe = currentRecipes[recipeIndex];
+
+        // Validate film selection
+        const filmId = formData.useExistingFilm
+          ? formData.selectedFilmId ||
+            existingRecipe.filmId ||
+            `fallback_film_${Date.now()}`
+          : existingRecipe.filmId;
+
+        // Validate developer selection
+        const developerId = formData.useExistingDeveloper
+          ? formData.selectedDeveloperId ||
+            existingRecipe.developerId ||
+            `fallback_dev_${Date.now()}`
+          : existingRecipe.developerId;
+
         const updatedRecipe: CustomRecipe = {
           ...existingRecipe,
           name: formData.name,
-          filmId: formData.useExistingFilm
-            ? formData.selectedFilmId!
-            : existingRecipe.filmId,
-          developerId: formData.useExistingDeveloper
-            ? formData.selectedDeveloperId!
-            : existingRecipe.developerId,
+          filmId,
+          developerId,
           temperatureF: formData.temperatureF,
           timeMinutes: formData.timeMinutes,
           shootingIso: formData.shootingIso,

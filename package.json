@@ -67,10 +67,10 @@
     "@gluestack-ui/toast": "^1.0.9",
     "@legendapp/motion": "^2.4.0",
     "@react-native-async-storage/async-storage": "2.1.2",
+    "@react-native-community/cli": "^14.0.0",
     "@react-native-community/slider": "4.5.6",
     "@react-native-picker/picker": "2.11.0",
     "@react-native/normalize-colors": "^0.79.1",
-    "@react-native-community/cli": "^14.0.0",
     "expo": "53.0.12",
     "expo-blur": "~14.1.4",
     "expo-clipboard": "^7.1.4",
@@ -137,7 +137,8 @@
     "prettier-plugin-tailwindcss": "^0.6.13",
     "react-test-renderer": "19.0.0",
     "typescript": "~5.8.3",
-    "vercel": "^32.7.2"
+    "vercel": "^32.7.2",
+    "webpack-bundle-analyzer": "^4.10.2"
   },
   "private": true
 }

@@ -58,7 +58,6 @@ import { useCustomRecipes } from "@/hooks/useCustomRecipes";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { DEVELOPER_TYPES, formatTime } from "@/constants/developmentRecipes";
 import { formatDilution } from "@/utils/dilutionUtils";
-import { debugLog } from "@/utils/debugLogger";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
 import type { CustomRecipe } from "@/types/customRecipeTypes";
 
@@ -181,16 +180,7 @@ function RecipeRow({
   // Format temperature more compactly
   const tempDisplay = `${combination.temperatureF}°F`;
 
-  // Debug logging for temperature display
-  debugLog(
-    "[RecipeRow] Rendering row for combination:",
-    JSON.stringify({
-      id: combination.id,
-      temperatureF: combination.temperatureF,
-      tempDisplay,
-      uuid: combination.uuid,
-    }),
-  );
+  // Format temperature for display
 
   return (
     <TouchableOpacity onPress={onPress}>
@@ -285,40 +275,11 @@ export default function DevelopmentRecipes() {
     getAvailableISOs,
   } = useDevelopmentRecipes();
 
-  const { customRecipes, forceRefresh, stateVersion, addCustomRecipe } =
-    useCustomRecipes();
-  debugLog(
-    "[DevelopmentRecipes] Component render - customRecipes count:",
-    customRecipes.length,
-  );
+  const { customRecipes, forceRefresh, addCustomRecipe } = useCustomRecipes();
 
   // Convert custom recipes to combination-like format for display
   const customRecipesAsCombinations = React.useMemo(() => {
-    debugLog(
-      "[DevelopmentRecipes] customRecipesAsCombinations useMemo triggered",
-    );
-    debugLog(
-      "[DevelopmentRecipes] Converting custom recipes to combinations, count:",
-      customRecipes.length,
-    );
-    debugLog(
-      "[DevelopmentRecipes] customRecipes reference check:",
-      customRecipes,
-    );
-    debugLog(
-      "[DevelopmentRecipes] customRecipes dateModified values:",
-      customRecipes.map((r) => ({ id: r.id, dateModified: r.dateModified })),
-    );
-
     const combinations = customRecipes.map((recipe): Combination => {
-      debugLog(
-        "[DevelopmentRecipes] Converting recipe to combination:",
-        JSON.stringify({
-          id: recipe.id,
-          temperatureF: recipe.temperatureF,
-          dateModified: recipe.dateModified,
-        }),
-      );
       return {
         id: recipe.id,
         name: recipe.name,
@@ -338,14 +299,6 @@ export default function DevelopmentRecipes() {
         dilutionId: undefined,
       };
     });
-    debugLog(
-      "[DevelopmentRecipes] Converted to combinations:",
-      combinations.length,
-    );
-    debugLog(
-      "[DevelopmentRecipes] Combination temperature values:",
-      combinations.map((c) => ({ id: c.id, temperatureF: c.temperatureF })),
-    );
     return combinations;
   }, [customRecipes]);
 
@@ -392,14 +345,7 @@ export default function DevelopmentRecipes() {
     recipesByUuid, // Recipe lookup map for shared recipe functionality
   );
 
-  debugLog("[DevelopmentRecipes] URL state hook results:", {
-    hasUrlState,
-    hasSharedRecipe,
-    isLoadingSharedRecipe,
-    sharedRecipeError,
-    initialUrlStateKeys: Object.keys(initialUrlState || {}),
-    recipesByUuidSize: recipesByUuid?.size,
-  });
+  // URL state management for shared recipes
 
   // Apply URL state to hook state when data is loaded and URL state is available
   const urlStateAppliedRef = React.useRef(false);
@@ -505,7 +451,8 @@ export default function DevelopmentRecipes() {
       // Only open modal if it's not already open
       setShowCustomRecipeImportModal(true);
     }
-  }, [hasSharedCustomRecipe, sharedCustomRecipe, showCustomRecipeImportModal]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasSharedCustomRecipe, sharedCustomRecipe]);
   const [selectedCombination, setSelectedCombination] =
     useState<Combination | null>(null);
   const [selectedCustomRecipe, setSelectedCustomRecipe] =
@@ -548,27 +495,7 @@ export default function DevelopmentRecipes() {
 
   // Combined API + custom recipes for display
   const allCombinations = React.useMemo(() => {
-    debugLog("[DevelopmentRecipes] allCombinations useMemo triggered");
-    debugLog(
-      "[DevelopmentRecipes] Recalculating allCombinations, showCustomRecipes:",
-      showCustomRecipes,
-      "customRecipes.length:",
-      customRecipes.length,
-    );
-    debugLog(
-      "[DevelopmentRecipes] filteredCombinations.length:",
-      filteredCombinations.length,
-    );
-    debugLog(
-      "[DevelopmentRecipes] customRecipesAsCombinations.length:",
-      customRecipesAsCombinations.length,
-    );
-    debugLog("[DevelopmentRecipes] stateVersion:", stateVersion);
-
     if (!showCustomRecipes) {
-      debugLog(
-        "[DevelopmentRecipes] Not showing custom recipes, returning only API recipes",
-      );
       return filteredCombinations;
     }
 
@@ -654,11 +581,6 @@ export default function DevelopmentRecipes() {
       },
     );
 
-    debugLog(
-      "[DevelopmentRecipes] Filtered custom combinations:",
-      filteredCustomCombinations.length,
-    );
-
     // Sort custom recipes by creation date (newest first) to show recently added ones at the top
     filteredCustomCombinations.sort((a, b) => {
       const recipeA = customRecipes.find((r) => r.id === a.id);
@@ -672,15 +594,6 @@ export default function DevelopmentRecipes() {
 
     // Combine custom recipes (newest first) with API recipes
     const combined = [...filteredCustomCombinations, ...filteredCombinations];
-    debugLog(
-      "[DevelopmentRecipes] Final combined count:",
-      combined.length,
-      "(custom:",
-      filteredCustomCombinations.length,
-      "api:",
-      filteredCombinations.length,
-      ")",
-    );
     return combined;
   }, [
     filteredCombinations,
@@ -693,7 +606,6 @@ export default function DevelopmentRecipes() {
     getFilmById,
     getDeveloperById,
     customRecipes,
-    stateVersion,
   ]);
 
   // Custom recipe helpers
@@ -769,33 +681,16 @@ export default function DevelopmentRecipes() {
   }, [selectedCustomRecipe, customRecipes]);
 
   const handleCustomRecipePress = (recipe: CustomRecipe) => {
-    debugLog(
-      "[DevelopmentRecipes] handleCustomRecipePress called for recipe:",
-      recipe.id,
-    );
     setSelectedCustomRecipe(recipe);
     setSelectedCombination(null); // Clear API recipe selection
   };
 
   const handleEditCustomRecipe = (recipe: CustomRecipe) => {
-    debugLog("[DevelopmentRecipes] ===== handleEditCustomRecipe called =====");
-    debugLog("[DevelopmentRecipes] Recipe to edit:", recipe.id, recipe.name);
-    debugLog(
-      "[DevelopmentRecipes] Full recipe object:",
-      JSON.stringify(recipe, null, 2),
-    );
-    debugLog(
-      "[DevelopmentRecipes] Setting editingCustomRecipe and showing form...",
-    );
     setEditingCustomRecipe(recipe);
     setShowCustomRecipeForm(true);
-    debugLog(
-      "[DevelopmentRecipes] State updated - editingCustomRecipe set and form shown",
-    );
   };
 
   const handleNewCustomRecipe = () => {
-    debugLog("[DevelopmentRecipes] handleNewCustomRecipe called");
     setEditingCustomRecipe(undefined);
     setShowCustomRecipeForm(true);
   };
@@ -877,47 +772,21 @@ export default function DevelopmentRecipes() {
   };
 
   const handleCustomRecipeSave = async (recipeId: string) => {
-    debugLog(
-      "[DevelopmentRecipes] handleCustomRecipeSave called for recipe:",
-      recipeId,
-    );
-    debugLog(
-      "[DevelopmentRecipes] Current customRecipes count before refresh:",
-      customRecipes.length,
-    );
-
     // Force immediate refresh to ensure updated data is displayed
     // This is critical for both saves AND deletes
-    debugLog(
-      "[DevelopmentRecipes] Calling forceRefresh to update recipe list...",
-    );
     await forceRefresh();
-    debugLog("[DevelopmentRecipes] forceRefresh completed");
 
     // Check if the recipe still exists (it won't if it was deleted)
     const recipeStillExists = customRecipes.some((r) => r.id === recipeId);
-    debugLog(
-      "[DevelopmentRecipes] Recipe still exists after refresh:",
-      recipeStillExists,
-    );
 
     // If recipe was deleted, clear any selections that might reference it
     if (!recipeStillExists) {
-      debugLog(
-        "[DevelopmentRecipes] Recipe was deleted, clearing selections...",
-      );
       setSelectedCustomRecipe(null);
     }
-
-    debugLog(
-      "[DevelopmentRecipes] Updated customRecipes count after refresh:",
-      customRecipes.length,
-    );
 
     // Close the form modal
     setShowCustomRecipeForm(false);
     setEditingCustomRecipe(undefined);
-    debugLog("[DevelopmentRecipes] handleCustomRecipeSave completed");
   };
 
   // Handle duplicating a recipe (either API or custom)
