@@ -191,14 +191,18 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState &
   // Helper functions
   const getFilmById = useCallback(
     (id: string): Film | undefined => {
-      return allFilms.find((film) => film.id === id || film.uuid === id);
+      return allFilms.find(
+        (film) => film.id === id || film.uuid === id || film.slug === id,
+      );
     },
     [allFilms],
   );
 
   const getDeveloperById = useCallback(
     (id: string): Developer | undefined => {
-      return allDevelopers.find((dev) => dev.id === id || dev.uuid === id);
+      return allDevelopers.find(
+        (dev) => dev.id === id || dev.uuid === id || dev.slug === id,
+      );
     },
     [allDevelopers],
   );

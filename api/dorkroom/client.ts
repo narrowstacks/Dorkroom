@@ -322,17 +322,63 @@ export class DorkroomClient {
         this.fetch<any>("combinations"),
       ]);
 
-      // Store data
+      // Build quick-lookup maps (slug -> uuid) for films & developers
+      const filmSlugToUuid = new Map<string, string>();
+      rawFilms.forEach((f) => {
+        if (f.slug) filmSlugToUuid.set(f.slug, f.uuid);
+      });
+      const developerSlugToUuid = new Map<string, string>();
+      rawDevelopers.forEach((d) => {
+        if (d.slug) developerSlugToUuid.set(d.slug, d.uuid);
+      });
+
+      // Store films & developers as-is (they already match our interface)
       this.films = rawFilms;
       this.developers = rawDevelopers;
-      this.combinations = (rawCombinations as any[]).map((c) => ({
-        ...c,
-        dilutionId: c.dilutionId
-          ? parseInt(String(c.dilutionId), 10)
-          : undefined,
-      }));
 
-      // Build indexes
+      // Normalise combinations coming from the API so they match our
+      // internal Combination camel-cased shape & use UUID references.
+      this.combinations = (rawCombinations as any[]).map((c) => {
+        // Map film/developer slugs to UUIDs when available
+        const filmUuid =
+          filmSlugToUuid.get(c.film_stock ?? c.film_stock_id) ??
+          c.filmStockId ??
+          c.film_stock ??
+          c.film_stock_id;
+        const developerUuid =
+          developerSlugToUuid.get(c.developer ?? c.developer_id) ??
+          c.developerId ??
+          c.developer ??
+          c.developer_id;
+
+        // Temperature – API may send °C, convert to °F if °F not provided
+        let temperatureF: number | undefined = c.temperature_f;
+        if (temperatureF === undefined && c.temperature_celsius !== undefined) {
+          temperatureF = Math.round((c.temperature_celsius * 9) / 5 + 32);
+        }
+
+        return {
+          id: String(c.id),
+          uuid: c.uuid ?? String(c.id),
+          slug: c.slug ?? c.uuid ?? String(c.id),
+          name: c.name ?? "",
+          filmStockId: filmUuid,
+          developerId: developerUuid,
+          temperatureF: temperatureF ?? 68, // default to room temp if missing
+          timeMinutes: c.time_minutes ?? c.timeMinutes ?? 0,
+          shootingIso: c.shooting_iso ?? c.shootingIso ?? 0,
+          pushPull: c.push_pull ?? c.pushPull ?? 0,
+          agitationSchedule: c.agitation_method ?? c.agitationSchedule,
+          notes: c.notes,
+          dilutionId: c.dilution_id
+            ? parseInt(String(c.dilution_id), 10)
+            : c.dilutionId,
+          customDilution: c.custom_dilution ?? c.customDilution ?? null,
+          dateAdded: c.created_at ?? c.dateAdded ?? new Date().toISOString(),
+        } as Combination;
+      });
+
+      // Build indexes for fast look-ups
       this.buildIndexes();
 
       this.loaded = true;
