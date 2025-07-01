@@ -38,10 +38,13 @@ export function RecipeRow({
       : `${film.brand} ${film.name}`
     : "Unknown Film";
 
+  // Get push/pull value
+  const pushPullValue = combination.pushPull ?? 0;
+
   // Format push/pull value if present
   const pushPullDisplay =
-    combination.pushPull !== 0
-      ? ` ${combination.pushPull > 0 ? `+${combination.pushPull}` : combination.pushPull}`
+    pushPullValue !== 0
+      ? ` ${pushPullValue > 0 ? `+${pushPullValue}` : pushPullValue}`
       : null;
 
   const developerName = developer

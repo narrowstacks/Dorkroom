@@ -52,16 +52,22 @@ export function RecipeCard({
   // Check if shooting ISO is different from film stock ISO
   const isNonStandardISO = film && combination.shootingIso !== film.isoSpeed;
 
-  // Format push/pull value if present
+  // Format push/pull value if present. Accepts undefined and treats it as 0.
   const formatPushPullNumber = (num: number): string => {
+    if (num === undefined || num === null) return "";
     return num % 1 === 0
       ? num.toString()
-      : num.toFixed(2).replace(/\.?0+$/, "");
+      : Number(num)
+          .toFixed(2)
+          .replace(/\.?0+$/, "");
   };
 
+  // Safely derive the push/pull value (default-to-0 to avoid NaN / undefined issues).
+  const pushPullValue = combination.pushPull ?? 0;
+
   const pushPullDisplay =
-    combination.pushPull !== 0
-      ? ` ${combination.pushPull > 0 ? `+${formatPushPullNumber(combination.pushPull)}` : formatPushPullNumber(combination.pushPull)}`
+    pushPullValue !== 0
+      ? ` ${pushPullValue > 0 ? `+${formatPushPullNumber(pushPullValue)}` : formatPushPullNumber(pushPullValue)}`
       : null;
 
   const developerName = developer
