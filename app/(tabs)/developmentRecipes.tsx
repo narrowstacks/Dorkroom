@@ -285,27 +285,6 @@ export default function DevelopmentRecipes() {
     getAvailableISOs,
   } = useDevelopmentRecipes();
 
-  // Create a recipe lookup map for shared recipe functionality
-  const recipesByUuid = useMemo(() => {
-    const map = new Map<string, Combination>();
-
-    // Add API recipes
-    filteredCombinations.forEach((recipe) => {
-      if (recipe.uuid) {
-        map.set(recipe.uuid, recipe);
-      }
-    });
-
-    // Add custom recipes (they use id instead of uuid)
-    customRecipesAsCombinations.forEach((recipe) => {
-      if (recipe.id) {
-        map.set(recipe.id, recipe);
-      }
-    });
-
-    return map;
-  }, [filteredCombinations, customRecipesAsCombinations]);
-
   // URL state management - syncs current filter state with URL parameters
   const {
     initialUrlState,
@@ -503,6 +482,27 @@ export default function DevelopmentRecipes() {
     );
     return combinations;
   }, [customRecipes]);
+
+  // Create a recipe lookup map for shared recipe functionality
+  const recipesByUuid = useMemo(() => {
+    const map = new Map<string, Combination>();
+
+    // Add API recipes
+    filteredCombinations.forEach((recipe) => {
+      if (recipe.uuid) {
+        map.set(recipe.uuid, recipe);
+      }
+    });
+
+    // Add custom recipes (they use id instead of uuid)
+    customRecipesAsCombinations.forEach((recipe) => {
+      if (recipe.id) {
+        map.set(recipe.id, recipe);
+      }
+    });
+
+    return map;
+  }, [filteredCombinations, customRecipesAsCombinations]);
 
   // Combined API + custom recipes for display
   const allCombinations = React.useMemo(() => {
