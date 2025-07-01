@@ -129,6 +129,8 @@ export const createCustomRecipeFromEncoded = (
 
   return {
     name: encodedRecipe.name,
+    // For custom films/developers, generate new unique IDs to avoid conflicts
+    // For API films/developers, preserve the original ID
     filmId: encodedRecipe.isCustomFilm
       ? `custom_film_${timestamp}`
       : encodedRecipe.filmId,
