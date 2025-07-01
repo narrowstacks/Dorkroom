@@ -189,11 +189,29 @@ export const useRecipeUrlState = (
     console.log("[useRecipeUrlState] developers.length:", developers.length);
     console.log("[useRecipeUrlState] Raw URL params:", params);
 
-    if (isInitializedRef.current || !films.length || !developers.length) {
-      console.log(
-        "[useRecipeUrlState] Early return - not ready for processing",
-      );
+    // Only process URL if data is loaded, but allow re-processing when data becomes available
+    if (!films.length || !developers.length) {
+      console.log("[useRecipeUrlState] Early return - data not loaded yet");
       return {};
+    }
+
+    // Skip re-processing if we've already successfully processed valid URL params
+    if (isInitializedRef.current) {
+      console.log(
+        "[useRecipeUrlState] Already initialized, checking for URL params",
+      );
+      const hasValidParams = Object.keys(params).some(
+        (key) =>
+          ["recipe", "film", "developer", "iso", "dilution"].includes(key) &&
+          params[key],
+      );
+      if (!hasValidParams) {
+        console.log(
+          "[useRecipeUrlState] No valid URL params, skipping re-processing",
+        );
+        return {};
+      }
+      console.log("[useRecipeUrlState] Valid URL params found, re-processing");
     }
 
     const validation = validateUrlParams(params as RecipeUrlParams);
@@ -397,10 +415,13 @@ export const useRecipeUrlState = (
     hasSharedRecipe: !!initialUrlState.recipeId && params.source === "share",
   };
 
+  // Calculate hasUrlState - should be true if we have URL params OR a shared recipe
+  const hasUrlState = Object.keys(initialUrlState).length > 0 || !!sharedRecipe;
+
   return {
     initialUrlState: enhancedUrlState,
     updateUrl,
-    hasUrlState: Object.keys(initialUrlState).length > 0,
+    hasUrlState,
     sharedRecipe,
     isLoadingSharedRecipe,
     sharedRecipeError,
