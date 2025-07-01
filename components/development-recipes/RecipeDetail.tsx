@@ -26,12 +26,14 @@ import {
   Edit3,
   Copy,
   Trash2,
+  Share,
 } from "lucide-react-native";
 
 import { FormGroup } from "@/components/ui/forms/FormSection";
 import { TextInput } from "@/components/ui/forms";
 import { StyledSelect } from "@/components/ui/select/StyledSelect";
 import { ChemistryCalculator } from "@/components/development-recipes/ChemistryCalculator";
+import { ShareRecipeModal } from "@/components/ShareRecipeModal";
 import { showConfirmAlert } from "@/components/ui/layout/ConfirmAlert";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useChemistryCalculator } from "@/hooks/useChemistryCalculator";
@@ -67,6 +69,7 @@ export function RecipeDetail({
   isCustomRecipe,
 }: RecipeDetailProps) {
   const [showCalculator, setShowCalculator] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { width } = useWindowDimensions();
   const isMobile = Platform.OS !== "web" || width <= 768;
@@ -282,6 +285,16 @@ export function RecipeDetail({
         </VStack>
 
         <HStack space="xs" style={styles.headerActions}>
+          {/* Share button for all recipes */}
+          <Button
+            variant="outline"
+            size="sm"
+            onPress={() => setShowShareModal(true)}
+            style={styles.actionButton}
+          >
+            <Share size={16} color={textColor} />
+          </Button>
+
           {/* Edit button for custom recipes */}
           {isCustomRecipe && onEdit && (
             <Button
@@ -729,6 +742,15 @@ export function RecipeDetail({
           </PanGestureHandler>
         </>
       )}
+
+      {/* Share Recipe Modal */}
+      <ShareRecipeModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        recipe={combination}
+        film={film}
+        developer={developer}
+      />
     </Box>
   );
 }

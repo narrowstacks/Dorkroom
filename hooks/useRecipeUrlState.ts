@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocalSearchParams, router } from "expo-router";
-import { Film, Developer } from "../api/dorkroom/types";
+import { Film, Developer, Combination } from "../api/dorkroom/types";
 import {
   RecipeUrlParams,
   InitialUrlState,
@@ -136,6 +136,20 @@ export const validateUrlParams = (
 };
 
 /**
+ * Enhanced URL state interface that includes recipe lookup functionality
+ */
+export interface EnhancedUrlState extends InitialUrlState {
+  /** Shared recipe data if found */
+  sharedRecipe?: Combination;
+  /** Loading state for recipe lookup */
+  isLoadingSharedRecipe?: boolean;
+  /** Error message if recipe lookup failed */
+  sharedRecipeError?: string;
+  /** Whether this URL contains a shared recipe ID */
+  hasSharedRecipe?: boolean;
+}
+
+/**
  * Hook for managing URL state synchronization with development recipe filters
  */
 export const useRecipeUrlState = (
@@ -147,10 +161,18 @@ export const useRecipeUrlState = (
     dilutionFilter: string;
     isoFilter: string;
   },
+  recipesByUuid?: Map<string, Combination>, // Optional recipe lookup map
 ) => {
   const params = useLocalSearchParams();
   const isInitializedRef = useRef(false);
   const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // State for shared recipe lookup
+  const [sharedRecipe, setSharedRecipe] = useState<Combination | null>(null);
+  const [isLoadingSharedRecipe, setIsLoadingSharedRecipe] = useState(false);
+  const [sharedRecipeError, setSharedRecipeError] = useState<string | null>(
+    null,
+  );
 
   // Parse and validate URL parameters on mount
   const initialUrlState: InitialUrlState = useMemo(() => {
@@ -202,6 +224,52 @@ export const useRecipeUrlState = (
     isInitializedRef.current = true;
     return state;
   }, [params, films, developers]);
+
+  // Handle shared recipe lookup when recipe UUID is present
+  useEffect(() => {
+    const handleSharedRecipeLookup = async () => {
+      const validation = validateUrlParams(params as RecipeUrlParams);
+      const recipeId = validation.sanitized.recipe;
+      const isFromShare = validation.sanitized.source === "share";
+
+      if (!recipeId || !isFromShare) {
+        setSharedRecipe(null);
+        setIsLoadingSharedRecipe(false);
+        setSharedRecipeError(null);
+        return;
+      }
+
+      setIsLoadingSharedRecipe(true);
+      setSharedRecipeError(null);
+
+      try {
+        // Try to find recipe in provided lookup map first
+        if (recipesByUuid && recipesByUuid.has(recipeId)) {
+          const recipe = recipesByUuid.get(recipeId)!;
+          setSharedRecipe(recipe);
+          setIsLoadingSharedRecipe(false);
+          return;
+        }
+
+        // If not found in map, it could be an API recipe UUID
+        // This would require an API call to fetch the recipe
+        // For now, we'll just show an error if not found in the provided map
+        setSharedRecipeError(`Recipe with ID ${recipeId} not found`);
+        setSharedRecipe(null);
+      } catch (error) {
+        setSharedRecipeError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load shared recipe",
+        );
+        setSharedRecipe(null);
+      } finally {
+        setIsLoadingSharedRecipe(false);
+      }
+    };
+
+    handleSharedRecipeLookup();
+  }, [params, recipesByUuid]);
 
   // Debounced URL update function
   const updateUrl = useCallback((newParams: Partial<RecipeUrlParams>) => {
@@ -266,9 +334,22 @@ export const useRecipeUrlState = (
     };
   }, []);
 
+  // Enhanced return state with shared recipe functionality
+  const enhancedUrlState: EnhancedUrlState = {
+    ...initialUrlState,
+    sharedRecipe: sharedRecipe || undefined,
+    isLoadingSharedRecipe,
+    sharedRecipeError: sharedRecipeError || undefined,
+    hasSharedRecipe: !!initialUrlState.recipeId && params.source === "share",
+  };
+
   return {
-    initialUrlState,
+    initialUrlState: enhancedUrlState,
     updateUrl,
     hasUrlState: Object.keys(initialUrlState).length > 0,
+    sharedRecipe,
+    isLoadingSharedRecipe,
+    sharedRecipeError,
+    hasSharedRecipe: enhancedUrlState.hasSharedRecipe,
   };
 };

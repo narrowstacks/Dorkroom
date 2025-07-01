@@ -285,8 +285,36 @@ export default function DevelopmentRecipes() {
     getAvailableISOs,
   } = useDevelopmentRecipes();
 
+  // Create a recipe lookup map for shared recipe functionality
+  const recipesByUuid = useMemo(() => {
+    const map = new Map<string, Combination>();
+
+    // Add API recipes
+    filteredCombinations.forEach((recipe) => {
+      if (recipe.uuid) {
+        map.set(recipe.uuid, recipe);
+      }
+    });
+
+    // Add custom recipes (they use id instead of uuid)
+    customRecipesAsCombinations.forEach((recipe) => {
+      if (recipe.id) {
+        map.set(recipe.id, recipe);
+      }
+    });
+
+    return map;
+  }, [filteredCombinations, customRecipesAsCombinations]);
+
   // URL state management - syncs current filter state with URL parameters
-  const { initialUrlState, hasUrlState } = useRecipeUrlState(
+  const {
+    initialUrlState,
+    hasUrlState,
+    sharedRecipe,
+    isLoadingSharedRecipe,
+    sharedRecipeError,
+    hasSharedRecipe,
+  } = useRecipeUrlState(
     allFilms,
     allDevelopers,
     {
@@ -295,6 +323,7 @@ export default function DevelopmentRecipes() {
       dilutionFilter,
       isoFilter,
     },
+    recipesByUuid,
   );
 
   // Apply URL state to hook state when data is loaded and URL state is available
@@ -344,6 +373,42 @@ export default function DevelopmentRecipes() {
     "[DevelopmentRecipes] Component render - customRecipes count:",
     customRecipes.length,
   );
+
+  // Handle shared recipe - automatically open the recipe detail when a shared recipe is loaded
+  React.useEffect(() => {
+    if (hasSharedRecipe && sharedRecipe && !isLoadingSharedRecipe) {
+      debugLog(
+        "[DevelopmentRecipes] Opening shared recipe:",
+        sharedRecipe.id || sharedRecipe.uuid,
+      );
+
+      // Check if it's a custom recipe or API recipe
+      const isCustomRecipe = customRecipes.some(
+        (recipe) => recipe.id === sharedRecipe.id,
+      );
+
+      if (isCustomRecipe) {
+        const customRecipe = customRecipes.find(
+          (recipe) => recipe.id === sharedRecipe.id,
+        );
+        if (customRecipe) {
+          setSelectedCustomRecipe(customRecipe);
+          setSelectedCombination(null);
+        }
+      } else {
+        setSelectedCombination(sharedRecipe);
+        setSelectedCustomRecipe(null);
+      }
+    }
+  }, [hasSharedRecipe, sharedRecipe, isLoadingSharedRecipe, customRecipes]);
+
+  // Show error message if shared recipe fails to load
+  React.useEffect(() => {
+    if (sharedRecipeError) {
+      debugLog("[DevelopmentRecipes] Shared recipe error:", sharedRecipeError);
+      // You could show a toast notification here if desired
+    }
+  }, [sharedRecipeError]);
 
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCombination, setSelectedCombination] =

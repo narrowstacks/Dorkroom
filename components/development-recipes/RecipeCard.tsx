@@ -5,6 +5,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { formatTime } from "@/constants/developmentRecipes";
 import { formatDilution } from "@/utils/dilutionUtils";
+import { ShareButton } from "@/components/ShareButton";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
 
 interface RecipeCardProps {
@@ -13,6 +14,7 @@ interface RecipeCardProps {
   developer: Developer | undefined;
   onPress: () => void;
   isCustomRecipe: boolean;
+  onShare?: (e: any) => void; // Optional share handler to prevent card press
 }
 
 export function RecipeCard({
@@ -21,6 +23,7 @@ export function RecipeCard({
   developer,
   onPress,
   isCustomRecipe,
+  onShare,
 }: RecipeCardProps) {
   const textColor = useThemeColor({}, "text");
   const developmentTint = useThemeColor({}, "developmentRecipesTint");
@@ -127,13 +130,30 @@ export function RecipeCard({
               </Text>
             )}
           </Text>
-          {isCustomRecipe && (
-            <Box
-              style={[styles.customBadge, { backgroundColor: developmentTint }]}
-            >
-              <Text style={styles.customBadgeText}>●</Text>
-            </Box>
-          )}
+
+          <Box style={styles.cardHeaderActions}>
+            {isCustomRecipe && (
+              <Box
+                style={[
+                  styles.customBadge,
+                  { backgroundColor: developmentTint },
+                ]}
+              >
+                <Text style={styles.customBadgeText}>●</Text>
+              </Box>
+            )}
+
+            {/* Share Button */}
+            <ShareButton
+              recipe={combination}
+              size="xs"
+              style={styles.shareButton}
+              onShareStart={() => {
+                // Prevent card press when sharing
+                onShare?.(null);
+              }}
+            />
+          </Box>
         </Box>
 
         {/* Developer and Dilution Parameters */}
@@ -229,6 +249,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     minHeight: 24,
   },
+  cardHeaderActions: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+  },
   cardFilmName: {
     fontSize: 16,
     fontWeight: "600",
@@ -248,8 +273,10 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginLeft: 8,
     marginTop: 6,
+  },
+  shareButton: {
+    opacity: 0.8,
   },
   customBadgeText: {
     fontSize: 6,
