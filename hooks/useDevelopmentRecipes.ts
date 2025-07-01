@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { DorkroomClient } from "@/api/dorkroom/client";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
+import { debugLog } from "@/utils/debugLogger";
 
 export interface DevelopmentRecipesState {
   // Search and filter state
@@ -106,23 +107,75 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState &
     setError(null);
 
     try {
+      debugLog("[useDevelopmentRecipes] Starting client.loadAll()...");
       await client.loadAll();
 
       const allFilmsData = client.getAllFilms();
       const allDevelopersData = client.getAllDevelopers();
       const combinations = client.getAllCombinations();
 
+      debugLog("[useDevelopmentRecipes] Client data retrieved:", {
+        allFilmsData: allFilmsData.length,
+        allDevelopersData: allDevelopersData.length,
+        combinations: combinations.length,
+      });
+
+      // Log sample data to check structure
+      if (allFilmsData.length > 0) {
+        debugLog("[useDevelopmentRecipes] Sample film data:", allFilmsData[0]);
+      }
+      if (allDevelopersData.length > 0) {
+        debugLog(
+          "[useDevelopmentRecipes] Sample developer data:",
+          allDevelopersData[0],
+        );
+      }
+
       // Filter films to only show black-and-white films (case-insensitive, allows "B&W")
+      debugLog("[useDevelopmentRecipes] Starting film filtering...");
       const films = allFilmsData.filter((film) => {
-        if (!film.colorType) return false;
+        if (!film.colorType) {
+          debugLog(
+            "[useDevelopmentRecipes] Film rejected (no colorType):",
+            film.name,
+          );
+          return false;
+        }
         const ct = film.colorType.toLowerCase();
-        return ct === "bw" || ct === "b&w" || ct === "b & w";
+        const isValid = ct === "bw" || ct === "b&w" || ct === "b & w";
+        debugLog("[useDevelopmentRecipes] Film filter check:", {
+          name: film.name,
+          colorType: film.colorType,
+          lowerCase: ct,
+          isValid,
+        });
+        return isValid;
       });
 
       // Filter developers to only show those for film development (not paper) – case-insensitive
+      debugLog("[useDevelopmentRecipes] Starting developer filtering...");
       const developers = allDevelopersData.filter((developer) => {
-        if (!developer.filmOrPaper) return false;
-        return developer.filmOrPaper.toLowerCase() === "film";
+        if (!developer.filmOrPaper) {
+          debugLog(
+            "[useDevelopmentRecipes] Developer rejected (no filmOrPaper):",
+            developer.name,
+          );
+          return false;
+        }
+        const isValid = developer.filmOrPaper.toLowerCase() === "film";
+        debugLog("[useDevelopmentRecipes] Developer filter check:", {
+          name: developer.name,
+          filmOrPaper: developer.filmOrPaper,
+          isValid,
+        });
+        return isValid;
+      });
+
+      debugLog("[useDevelopmentRecipes] Filtering complete:", {
+        originalFilms: allFilmsData.length,
+        filteredFilms: films.length,
+        originalDevelopers: allDevelopersData.length,
+        filteredDevelopers: developers.length,
       });
 
       setAllFilms(films);
@@ -158,16 +211,50 @@ export const useDevelopmentRecipes = (): DevelopmentRecipesState &
         ]);
 
       // Filter films to only show black-and-white films (case-insensitive, allows "B&W")
+      debugLog(
+        "[useDevelopmentRecipes] forceRefresh: Starting film filtering...",
+      );
       const films = allFilmsData.filter((film) => {
-        if (!film.colorType) return false;
+        if (!film.colorType) {
+          debugLog(
+            "[useDevelopmentRecipes] forceRefresh: Film rejected (no colorType):",
+            film.name,
+          );
+          return false;
+        }
         const ct = film.colorType.toLowerCase();
-        return ct === "bw" || ct === "b&w" || ct === "b & w";
+        const isValid = ct === "bw" || ct === "b&w" || ct === "b & w";
+        debugLog("[useDevelopmentRecipes] forceRefresh: Film filter check:", {
+          name: film.name,
+          colorType: film.colorType,
+          lowerCase: ct,
+          isValid,
+        });
+        return isValid;
       });
 
       // Filter developers to only show those for film development (not paper) – case-insensitive
+      debugLog(
+        "[useDevelopmentRecipes] forceRefresh: Starting developer filtering...",
+      );
       const developers = allDevelopersData.filter((developer) => {
-        if (!developer.filmOrPaper) return false;
-        return developer.filmOrPaper.toLowerCase() === "film";
+        if (!developer.filmOrPaper) {
+          debugLog(
+            "[useDevelopmentRecipes] forceRefresh: Developer rejected (no filmOrPaper):",
+            developer.name,
+          );
+          return false;
+        }
+        const isValid = developer.filmOrPaper.toLowerCase() === "film";
+        debugLog(
+          "[useDevelopmentRecipes] forceRefresh: Developer filter check:",
+          {
+            name: developer.name,
+            filmOrPaper: developer.filmOrPaper,
+            isValid,
+          },
+        );
+        return isValid;
       });
 
       console.log("[useDevelopmentRecipes] Data refreshed:", {

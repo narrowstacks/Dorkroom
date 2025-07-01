@@ -33,6 +33,7 @@ import {
   getApiEndpointConfig,
   getEnvironmentConfig,
 } from "../../utils/platformDetection";
+import { debugLog } from "../../utils/debugLogger";
 
 /**
  * Cache entry with expiration.
@@ -316,11 +317,29 @@ export class DorkroomClient {
   private async performLoad(): Promise<void> {
     try {
       // Fetch all data in parallel
+      debugLog("[DorkroomClient] Starting parallel data fetch...");
       const [rawFilms, rawDevelopers, rawCombinations] = await Promise.all([
         this.fetch<Film>("films"),
         this.fetch<Developer>("developers"),
         this.fetch<any>("combinations"),
       ]);
+
+      debugLog("[DorkroomClient] Raw data fetched:", {
+        films: rawFilms.length,
+        developers: rawDevelopers.length,
+        combinations: rawCombinations.length,
+      });
+
+      // Log sample raw data to understand structure
+      if (rawFilms.length > 0) {
+        debugLog("[DorkroomClient] Sample raw film data:", rawFilms[0]);
+      }
+      if (rawDevelopers.length > 0) {
+        debugLog(
+          "[DorkroomClient] Sample raw developer data:",
+          rawDevelopers[0],
+        );
+      }
 
       // Build quick-lookup maps (slug -> uuid) for films & developers
       const filmSlugToUuid = new Map<string, string>();
@@ -332,9 +351,77 @@ export class DorkroomClient {
         if (d.slug) developerSlugToUuid.set(d.slug, d.uuid);
       });
 
-      // Store films & developers as-is (they already match our interface)
-      this.films = rawFilms;
-      this.developers = rawDevelopers;
+      // Transform films from API response format to match TypeScript interface
+      this.films = rawFilms.map(
+        (rawFilm: any): Film => ({
+          id: rawFilm.id || rawFilm.uuid,
+          uuid: rawFilm.uuid,
+          slug: rawFilm.slug,
+          name: rawFilm.name,
+          brand: rawFilm.brand,
+          isoSpeed: rawFilm.iso_speed || rawFilm.isoSpeed,
+          colorType: rawFilm.color_type || rawFilm.colorType,
+          description: rawFilm.description,
+          discontinued: rawFilm.discontinued ? 1 : 0,
+          manufacturerNotes: Array.isArray(rawFilm.manufacturer_notes)
+            ? rawFilm.manufacturer_notes
+            : rawFilm.manufacturerNotes || [],
+          grainStructure: rawFilm.grain_structure || rawFilm.grainStructure,
+          reciprocityFailure:
+            rawFilm.reciprocity_failure || rawFilm.reciprocityFailure,
+          staticImageURL: rawFilm.static_image_url || rawFilm.staticImageURL,
+          dateAdded:
+            rawFilm.date_added || rawFilm.dateAdded || rawFilm.created_at,
+        }),
+      );
+
+      // Transform developers from API response format to match TypeScript interface
+      this.developers = rawDevelopers.map(
+        (rawDev: any): Developer => ({
+          id: rawDev.id || rawDev.uuid,
+          uuid: rawDev.uuid,
+          slug: rawDev.slug,
+          name: rawDev.name,
+          manufacturer: rawDev.manufacturer,
+          type: rawDev.type,
+          // Convert boolean film_or_paper to string filmOrPaper
+          filmOrPaper:
+            rawDev.film_or_paper === true
+              ? "film"
+              : rawDev.film_or_paper === false
+                ? "paper"
+                : rawDev.filmOrPaper || "film",
+          dilutions: rawDev.dilutions || [],
+          workingLifeHours:
+            rawDev.working_life_hours || rawDev.workingLifeHours,
+          stockLifeMonths: rawDev.stock_life_months || rawDev.stockLifeMonths,
+          notes: rawDev.notes,
+          discontinued: rawDev.discontinued ? 1 : 0,
+          mixingInstructions:
+            rawDev.mixing_instructions || rawDev.mixingInstructions,
+          safetyNotes: rawDev.safety_notes || rawDev.safetyNotes,
+          datasheetUrl: Array.isArray(rawDev.datasheet_url)
+            ? rawDev.datasheet_url
+            : rawDev.datasheetUrl || [],
+          dateAdded: rawDev.date_added || rawDev.dateAdded || rawDev.created_at,
+        }),
+      );
+
+      debugLog("[DorkroomClient] Transformed data:", {
+        films: this.films.length,
+        developers: this.developers.length,
+      });
+
+      // Log sample transformed data
+      if (this.films.length > 0) {
+        debugLog("[DorkroomClient] Sample transformed film:", this.films[0]);
+      }
+      if (this.developers.length > 0) {
+        debugLog(
+          "[DorkroomClient] Sample transformed developer:",
+          this.developers[0],
+        );
+      }
 
       // Normalise combinations coming from the API so they match our
       // internal Combination camel-cased shape & use UUID references.
@@ -383,6 +470,13 @@ export class DorkroomClient {
 
       this.loaded = true;
       this.lastLoadedTimestamp = Date.now();
+
+      debugLog("[DorkroomClient] Data loading completed successfully:", {
+        films: this.films.length,
+        developers: this.developers.length,
+        combinations: this.combinations.length,
+        loaded: this.loaded,
+      });
 
       this.logger.info(
         `Loaded ${this.films.length} films, ` +
