@@ -389,6 +389,15 @@ export default function DevelopmentRecipes() {
     recipesByUuid, // Recipe lookup map for shared recipe functionality
   );
 
+  debugLog("[DevelopmentRecipes] URL state hook results:", {
+    hasUrlState,
+    hasSharedRecipe,
+    isLoadingSharedRecipe,
+    sharedRecipeError,
+    initialUrlStateKeys: Object.keys(initialUrlState || {}),
+    recipesByUuidSize: recipesByUuid?.size,
+  });
+
   // Apply URL state to hook state when data is loaded and URL state is available
   React.useEffect(() => {
     if (isLoaded && hasUrlState && initialUrlState.fromUrl) {
@@ -433,6 +442,14 @@ export default function DevelopmentRecipes() {
 
   // Handle shared recipe - automatically open the recipe detail when a shared recipe is loaded
   React.useEffect(() => {
+    debugLog("[DevelopmentRecipes] Shared recipe effect triggered", {
+      hasSharedRecipe,
+      hasSharedRecipeValue: !!sharedRecipe,
+      isLoadingSharedRecipe,
+      sharedRecipeError,
+      sharedRecipeId: sharedRecipe?.id || sharedRecipe?.uuid,
+    });
+
     if (hasSharedRecipe && sharedRecipe && !isLoadingSharedRecipe) {
       debugLog(
         "[DevelopmentRecipes] Opening shared recipe:",

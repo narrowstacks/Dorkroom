@@ -56,6 +56,7 @@ export const developerToSlug = (developer: Developer | null): string => {
 export const validateUrlParams = (
   params: RecipeUrlParams,
 ): UrlValidationResult => {
+  console.log("[validateUrlParams] Input params:", params);
   const errors: string[] = [];
   const sanitized: RecipeUrlParams = {};
 
@@ -128,11 +129,14 @@ export const validateUrlParams = (
     sanitized.source = "share";
   }
 
-  return {
+  const result = {
     isValid: errors.length === 0,
     sanitized,
     errors,
   };
+
+  console.log("[validateUrlParams] Validation result:", result);
+  return result;
 };
 
 /**
@@ -176,14 +180,30 @@ export const useRecipeUrlState = (
 
   // Parse and validate URL parameters on mount
   const initialUrlState: InitialUrlState = useMemo(() => {
+    console.log("[useRecipeUrlState] initialUrlState useMemo triggered");
+    console.log(
+      "[useRecipeUrlState] isInitializedRef.current:",
+      isInitializedRef.current,
+    );
+    console.log("[useRecipeUrlState] films.length:", films.length);
+    console.log("[useRecipeUrlState] developers.length:", developers.length);
+    console.log("[useRecipeUrlState] Raw URL params:", params);
+
     if (isInitializedRef.current || !films.length || !developers.length) {
+      console.log(
+        "[useRecipeUrlState] Early return - not ready for processing",
+      );
       return {};
     }
 
     const validation = validateUrlParams(params as RecipeUrlParams);
+    console.log("[useRecipeUrlState] URL validation result:", validation);
 
     if (!validation.isValid) {
-      console.warn("Invalid URL parameters:", validation.errors);
+      console.warn(
+        "[useRecipeUrlState] Invalid URL parameters:",
+        validation.errors,
+      );
       return {};
     }
 
@@ -219,8 +239,13 @@ export const useRecipeUrlState = (
 
     if (validation.sanitized.recipe) {
       state.recipeId = validation.sanitized.recipe;
+      console.log(
+        "[useRecipeUrlState] Found recipe ID in URL:",
+        validation.sanitized.recipe,
+      );
     }
 
+    console.log("[useRecipeUrlState] Final initial state:", state);
     isInitializedRef.current = true;
     return state;
   }, [params, films, developers]);
@@ -228,17 +253,32 @@ export const useRecipeUrlState = (
   // Handle shared recipe lookup when recipe UUID is present
   useEffect(() => {
     const handleSharedRecipeLookup = async () => {
+      console.log("[useRecipeUrlState] handleSharedRecipeLookup triggered");
       const validation = validateUrlParams(params as RecipeUrlParams);
       const recipeId = validation.sanitized.recipe;
       const isFromShare = validation.sanitized.source === "share";
 
+      console.log("[useRecipeUrlState] Recipe lookup params:", {
+        recipeId,
+        isFromShare,
+        hasRecipesByUuid: !!recipesByUuid,
+        recipesByUuidSize: recipesByUuid?.size,
+      });
+
       if (!recipeId || !isFromShare) {
+        console.log(
+          "[useRecipeUrlState] Early return - no recipe ID or not from share",
+        );
         setSharedRecipe(null);
         setIsLoadingSharedRecipe(false);
         setSharedRecipeError(null);
         return;
       }
 
+      console.log(
+        "[useRecipeUrlState] Starting recipe lookup for ID:",
+        recipeId,
+      );
       setIsLoadingSharedRecipe(true);
       setSharedRecipeError(null);
 
@@ -246,10 +286,16 @@ export const useRecipeUrlState = (
         // Try to find recipe in provided lookup map first
         if (recipesByUuid && recipesByUuid.has(recipeId)) {
           const recipe = recipesByUuid.get(recipeId)!;
+          console.log(
+            "[useRecipeUrlState] Found recipe in lookup map:",
+            recipe,
+          );
           setSharedRecipe(recipe);
           setIsLoadingSharedRecipe(false);
           return;
         }
+
+        console.log("[useRecipeUrlState] Recipe not found in lookup map");
 
         // If not found in map, it could be an API recipe UUID
         // This would require an API call to fetch the recipe
