@@ -285,7 +285,8 @@ export default function DevelopmentRecipes() {
     getAvailableISOs,
   } = useDevelopmentRecipes();
 
-  const { customRecipes, forceRefresh, stateVersion } = useCustomRecipes();
+  const { customRecipes, forceRefresh, stateVersion, addCustomRecipe } =
+    useCustomRecipes();
   debugLog(
     "[DevelopmentRecipes] Component render - customRecipes count:",
     customRecipes.length,
@@ -401,8 +402,14 @@ export default function DevelopmentRecipes() {
   });
 
   // Apply URL state to hook state when data is loaded and URL state is available
+  const urlStateAppliedRef = React.useRef(false);
   React.useEffect(() => {
-    if (isLoaded && hasUrlState && initialUrlState.fromUrl) {
+    if (
+      isLoaded &&
+      hasUrlState &&
+      initialUrlState.fromUrl &&
+      !urlStateAppliedRef.current
+    ) {
       if (
         initialUrlState.selectedFilm &&
         initialUrlState.selectedFilm !== selectedFilm
@@ -427,11 +434,16 @@ export default function DevelopmentRecipes() {
       ) {
         setIsoFilter(initialUrlState.isoFilter);
       }
+      urlStateAppliedRef.current = true;
     }
   }, [
     isLoaded,
     hasUrlState,
-    initialUrlState,
+    initialUrlState.fromUrl,
+    initialUrlState.selectedFilm,
+    initialUrlState.selectedDeveloper,
+    initialUrlState.dilutionFilter,
+    initialUrlState.isoFilter,
     selectedFilm,
     selectedDeveloper,
     dilutionFilter,
@@ -444,20 +456,7 @@ export default function DevelopmentRecipes() {
 
   // Handle shared recipe - automatically open the recipe detail when a shared recipe is loaded
   React.useEffect(() => {
-    debugLog("[DevelopmentRecipes] Shared recipe effect triggered", {
-      hasSharedRecipe,
-      hasSharedRecipeValue: !!sharedRecipe,
-      isLoadingSharedRecipe,
-      sharedRecipeError,
-      sharedRecipeId: sharedRecipe?.id || sharedRecipe?.uuid,
-    });
-
     if (hasSharedRecipe && sharedRecipe && !isLoadingSharedRecipe) {
-      debugLog(
-        "[DevelopmentRecipes] Opening shared recipe:",
-        sharedRecipe.id || sharedRecipe.uuid,
-      );
-
       // Check if it's a custom recipe or API recipe
       const isCustomRecipe = customRecipes.some(
         (recipe) => recipe.id === sharedRecipe.id,
@@ -487,21 +486,22 @@ export default function DevelopmentRecipes() {
   // Show error message if shared recipe fails to load
   React.useEffect(() => {
     if (sharedRecipeError) {
-      debugLog("[DevelopmentRecipes] Shared recipe error:", sharedRecipeError);
-      // You could show a toast notification here if desired
+      // Handle shared recipe error (could show toast notification)
+      console.warn("Shared recipe error:", sharedRecipeError);
     }
   }, [sharedRecipeError]);
 
   // Show import modal when a shared custom recipe is detected
   React.useEffect(() => {
-    if (hasSharedCustomRecipe && sharedCustomRecipe) {
-      debugLog(
-        "[DevelopmentRecipes] Shared custom recipe detected:",
-        sharedCustomRecipe.name,
-      );
+    if (
+      hasSharedCustomRecipe &&
+      sharedCustomRecipe &&
+      !showCustomRecipeImportModal
+    ) {
+      // Only open modal if it's not already open
       setShowCustomRecipeImportModal(true);
     }
-  }, [hasSharedCustomRecipe, sharedCustomRecipe]);
+  }, [hasSharedCustomRecipe, sharedCustomRecipe, showCustomRecipeImportModal]);
 
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCombination, setSelectedCombination] =
@@ -804,10 +804,7 @@ export default function DevelopmentRecipes() {
     if (!sharedCustomRecipe) return;
 
     try {
-      debugLog(
-        "[DevelopmentRecipes] Importing custom recipe:",
-        sharedCustomRecipe.name,
-      );
+      // Importing custom recipe
 
       // Convert the shared custom recipe to the format expected by addCustomRecipe
       const formData = {
@@ -832,11 +829,8 @@ export default function DevelopmentRecipes() {
         isPublic: sharedCustomRecipe.isPublic,
       };
 
-      const newRecipeId = await addCustomRecipe(formData);
-      debugLog(
-        "[DevelopmentRecipes] Successfully imported custom recipe:",
-        newRecipeId,
-      );
+      await addCustomRecipe(formData);
+      // Successfully imported custom recipe
 
       // Close the import modal
       setShowCustomRecipeImportModal(false);
@@ -844,27 +838,23 @@ export default function DevelopmentRecipes() {
       // Show success message
       // You could add a toast notification here if desired
     } catch (error) {
-      debugLog("[DevelopmentRecipes] Failed to import custom recipe:", error);
+      console.error("Failed to import custom recipe:", error);
       // You could show an error toast here if desired
     }
   };
 
   const handleForceRefresh = async () => {
-    debugLog("[DevelopmentRecipes] handleForceRefresh called");
-    debugLog(
-      "[DevelopmentRecipes] Force refresh button clicked, isLoading:",
-      isLoading,
-    );
+    // Handle force refresh
     try {
       await forceRefreshData();
-      debugLog("[DevelopmentRecipes] Force refresh completed successfully");
+      // Force refresh completed
     } catch (error) {
-      debugLog("[DevelopmentRecipes] Force refresh failed:", error);
+      console.error("Force refresh failed:", error);
     }
   };
 
   const handleCustomRecipeFormClose = () => {
-    debugLog("[DevelopmentRecipes] handleCustomRecipeFormClose called");
+    // Handle custom recipe form close
 
     // Force refresh to ensure any recipe deletions are reflected in the UI
     forceRefresh();
@@ -877,7 +867,7 @@ export default function DevelopmentRecipes() {
   };
 
   const handleCustomRecipeDelete = () => {
-    debugLog("[DevelopmentRecipes] handleCustomRecipeDelete called");
+    // Handle custom recipe delete
 
     // Force refresh to ensure the deletion is reflected in the UI
     forceRefresh();
@@ -1889,6 +1879,88 @@ export default function DevelopmentRecipes() {
                         >
                           {sharedCustomRecipe.name}
                         </Text>
+
+                        {/* Film and Developer Information */}
+                        <HStack
+                          space="md"
+                          style={{ justifyContent: "space-around" }}
+                        >
+                          <VStack
+                            space="xs"
+                            style={{ alignItems: "center", flex: 1 }}
+                          >
+                            <Text
+                              style={[
+                                { fontSize: 12, fontWeight: "500" },
+                                { color: textSecondary },
+                              ]}
+                            >
+                              Film
+                            </Text>
+                            <Text
+                              style={[
+                                { fontSize: 14, fontWeight: "600" },
+                                { color: textColor },
+                              ]}
+                              numberOfLines={2}
+                              textAlign="center"
+                            >
+                              {(() => {
+                                if (
+                                  sharedCustomRecipe.isCustomFilm &&
+                                  sharedCustomRecipe.customFilm
+                                ) {
+                                  return `${sharedCustomRecipe.customFilm.brand} ${sharedCustomRecipe.customFilm.name}`;
+                                } else {
+                                  const film = getFilmById(
+                                    sharedCustomRecipe.filmId,
+                                  );
+                                  return film
+                                    ? `${film.brand} ${film.name}`
+                                    : "Unknown Film";
+                                }
+                              })()}
+                            </Text>
+                          </VStack>
+
+                          <VStack
+                            space="xs"
+                            style={{ alignItems: "center", flex: 1 }}
+                          >
+                            <Text
+                              style={[
+                                { fontSize: 12, fontWeight: "500" },
+                                { color: textSecondary },
+                              ]}
+                            >
+                              Developer
+                            </Text>
+                            <Text
+                              style={[
+                                { fontSize: 14, fontWeight: "600" },
+                                { color: textColor },
+                              ]}
+                              numberOfLines={2}
+                              textAlign="center"
+                            >
+                              {(() => {
+                                if (
+                                  sharedCustomRecipe.isCustomDeveloper &&
+                                  sharedCustomRecipe.customDeveloper
+                                ) {
+                                  return `${sharedCustomRecipe.customDeveloper.manufacturer} ${sharedCustomRecipe.customDeveloper.name}`;
+                                } else {
+                                  const developer = getDeveloperById(
+                                    sharedCustomRecipe.developerId,
+                                  );
+                                  return developer
+                                    ? `${developer.manufacturer} ${developer.name}`
+                                    : "Unknown Developer";
+                                }
+                              })()}
+                            </Text>
+                          </VStack>
+                        </HStack>
 
                         <HStack
                           space="md"
