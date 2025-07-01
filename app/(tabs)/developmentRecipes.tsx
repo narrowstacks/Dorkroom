@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import {
   Platform,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
 } from "react-native";
+import { router } from "expo-router";
 import {
   Box,
   Text,
@@ -441,18 +442,32 @@ export default function DevelopmentRecipes() {
   const [showCustomRecipeImportModal, setShowCustomRecipeImportModal] =
     useState(false);
 
+  // Track if we've already shown the import modal for this shared recipe
+  const sharedRecipeModalShownRef = useRef<string | null>(null);
+
   // Show import modal when a shared custom recipe is detected
   React.useEffect(() => {
     if (
       hasSharedCustomRecipe &&
       sharedCustomRecipe &&
-      !showCustomRecipeImportModal
+      !showCustomRecipeImportModal &&
+      !isLoadingSharedRecipe
     ) {
-      // Only open modal if it's not already open
-      setShowCustomRecipeImportModal(true);
+      // Create a unique identifier for this shared recipe
+      const recipeKey = `${sharedCustomRecipe.name}_${sharedCustomRecipe.filmId}_${sharedCustomRecipe.developerId}_${sharedCustomRecipe.timeMinutes}`;
+
+      // Only show modal if we haven't already shown it for this specific recipe
+      if (sharedRecipeModalShownRef.current !== recipeKey) {
+        setShowCustomRecipeImportModal(true);
+        sharedRecipeModalShownRef.current = recipeKey;
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasSharedCustomRecipe, sharedCustomRecipe]);
+  }, [
+    hasSharedCustomRecipe,
+    sharedCustomRecipe,
+    showCustomRecipeImportModal,
+    isLoadingSharedRecipe,
+  ]);
   const [selectedCombination, setSelectedCombination] =
     useState<Combination | null>(null);
   const [selectedCustomRecipe, setSelectedCustomRecipe] =
@@ -730,12 +745,23 @@ export default function DevelopmentRecipes() {
       // Close the import modal
       setShowCustomRecipeImportModal(false);
 
+      // Clear the URL parameters to prevent the modal from showing again
+      router.setParams({ recipe: undefined, source: undefined });
+
       // Show success message
       // You could add a toast notification here if desired
     } catch (error) {
       console.error("Failed to import custom recipe:", error);
       // You could show an error toast here if desired
     }
+  };
+
+  const handleCancelImportCustomRecipe = () => {
+    // Close the import modal
+    setShowCustomRecipeImportModal(false);
+
+    // Clear the URL parameters to prevent the modal from showing again
+    router.setParams({ recipe: undefined, source: undefined });
   };
 
   const handleForceRefresh = async () => {
@@ -1702,7 +1728,7 @@ export default function DevelopmentRecipes() {
         {/* Custom Recipe Import Modal */}
         <Modal
           isOpen={showCustomRecipeImportModal}
-          onClose={() => setShowCustomRecipeImportModal(false)}
+          onClose={handleCancelImportCustomRecipe}
           size="md"
         >
           <ModalBackdrop />
@@ -1936,7 +1962,7 @@ export default function DevelopmentRecipes() {
                       <HStack space="md">
                         <Button
                           variant="outline"
-                          onPress={() => setShowCustomRecipeImportModal(false)}
+                          onPress={handleCancelImportCustomRecipe}
                           style={[{ flex: 1, borderColor: borderColor }]}
                         >
                           <ButtonText style={[{ color: textColor }]}>
