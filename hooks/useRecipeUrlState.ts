@@ -7,6 +7,8 @@ import {
   UrlValidationConfig,
   UrlValidationResult,
 } from "../types/urlTypes";
+import type { CustomRecipe } from "../types/customRecipeTypes";
+import { useCustomRecipeSharing } from "./useCustomRecipeSharing";
 
 /**
  * Configuration for URL parameter validation
@@ -145,12 +147,19 @@ export const validateUrlParams = (
 export interface EnhancedUrlState extends InitialUrlState {
   /** Shared recipe data if found */
   sharedRecipe?: Combination;
+  /** Shared custom recipe data if found */
+  sharedCustomRecipe?: Omit<
+    CustomRecipe,
+    "id" | "dateCreated" | "dateModified"
+  >;
   /** Loading state for recipe lookup */
   isLoadingSharedRecipe?: boolean;
   /** Error message if recipe lookup failed */
   sharedRecipeError?: string;
   /** Whether this URL contains a shared recipe ID */
   hasSharedRecipe?: boolean;
+  /** Whether this URL contains a shared custom recipe */
+  hasSharedCustomRecipe?: boolean;
 }
 
 /**
@@ -173,10 +182,18 @@ export const useRecipeUrlState = (
 
   // State for shared recipe lookup
   const [sharedRecipe, setSharedRecipe] = useState<Combination | null>(null);
+  const [sharedCustomRecipe, setSharedCustomRecipe] = useState<Omit<
+    CustomRecipe,
+    "id" | "dateCreated" | "dateModified"
+  > | null>(null);
   const [isLoadingSharedRecipe, setIsLoadingSharedRecipe] = useState(false);
   const [sharedRecipeError, setSharedRecipeError] = useState<string | null>(
     null,
   );
+
+  // Custom recipe sharing hooks
+  const { decodeSharedCustomRecipe, isCustomRecipeUrl } =
+    useCustomRecipeSharing();
 
   // Parse and validate URL parameters on mount
   const initialUrlState: InitialUrlState = useMemo(() => {
@@ -268,7 +285,7 @@ export const useRecipeUrlState = (
     return state;
   }, [params, films, developers]);
 
-  // Handle shared recipe lookup when recipe UUID is present
+  // Handle shared recipe lookup when recipe UUID/encoded data is present
   useEffect(() => {
     const handleSharedRecipeLookup = async () => {
       console.log("[useRecipeUrlState] handleSharedRecipeLookup triggered");
@@ -277,7 +294,9 @@ export const useRecipeUrlState = (
       const isFromShare = validation.sanitized.source === "share";
 
       console.log("[useRecipeUrlState] Recipe lookup params:", {
-        recipeId,
+        recipeId:
+          recipeId?.substring(0, 50) +
+          (recipeId && recipeId.length > 50 ? "..." : ""),
         isFromShare,
         hasRecipesByUuid: !!recipesByUuid,
         recipesByUuidSize: recipesByUuid?.size,
@@ -288,28 +307,56 @@ export const useRecipeUrlState = (
           "[useRecipeUrlState] Early return - no recipe ID or not from share",
         );
         setSharedRecipe(null);
+        setSharedCustomRecipe(null);
         setIsLoadingSharedRecipe(false);
-        setSharedRecipeError(null);
-        return;
-      }
-
-      // Wait for data to be loaded before attempting lookup
-      if (!recipesByUuid || recipesByUuid.size === 0) {
-        console.log("[useRecipeUrlState] Waiting for recipes data to load...");
-        setIsLoadingSharedRecipe(true);
         setSharedRecipeError(null);
         return;
       }
 
       console.log(
         "[useRecipeUrlState] Starting recipe lookup for ID:",
-        recipeId,
+        recipeId.substring(0, 50) + (recipeId.length > 50 ? "..." : ""),
       );
       setIsLoadingSharedRecipe(true);
       setSharedRecipeError(null);
 
       try {
-        // Try to find recipe in provided lookup map first
+        // First, check if this is a custom recipe (encoded data)
+        if (isCustomRecipeUrl(recipeId)) {
+          console.log("[useRecipeUrlState] Detected custom recipe URL");
+          const importedRecipe = decodeSharedCustomRecipe(recipeId);
+
+          if (importedRecipe && importedRecipe.isValid) {
+            console.log(
+              "[useRecipeUrlState] Successfully decoded custom recipe:",
+              importedRecipe.recipe.name,
+            );
+            setSharedCustomRecipe(importedRecipe.recipe);
+            setSharedRecipe(null); // Clear any existing database recipe
+            setIsLoadingSharedRecipe(false);
+            return;
+          } else {
+            console.log("[useRecipeUrlState] Failed to decode custom recipe");
+            setSharedRecipeError("Invalid custom recipe data");
+            setSharedRecipe(null);
+            setSharedCustomRecipe(null);
+            setIsLoadingSharedRecipe(false);
+            return;
+          }
+        }
+
+        // If not a custom recipe, try database recipe lookup
+        // Wait for data to be loaded before attempting lookup
+        if (!recipesByUuid || recipesByUuid.size === 0) {
+          console.log(
+            "[useRecipeUrlState] Waiting for recipes data to load...",
+          );
+          setIsLoadingSharedRecipe(true);
+          setSharedRecipeError(null);
+          return;
+        }
+
+        // Try to find recipe in provided lookup map
         if (recipesByUuid && recipesByUuid.has(recipeId)) {
           const recipe = recipesByUuid.get(recipeId)!;
           console.log(
@@ -317,6 +364,7 @@ export const useRecipeUrlState = (
             recipe,
           );
           setSharedRecipe(recipe);
+          setSharedCustomRecipe(null); // Clear any existing custom recipe
           setIsLoadingSharedRecipe(false);
           return;
         }
@@ -326,8 +374,11 @@ export const useRecipeUrlState = (
         // If not found in map, it could be an API recipe UUID
         // This would require an API call to fetch the recipe
         // For now, we'll just show an error if not found in the provided map
-        setSharedRecipeError(`Recipe with ID ${recipeId} not found`);
+        setSharedRecipeError(
+          `Recipe with ID ${recipeId.substring(0, 20)}... not found`,
+        );
         setSharedRecipe(null);
+        setSharedCustomRecipe(null);
       } catch (error) {
         setSharedRecipeError(
           error instanceof Error
@@ -335,13 +386,14 @@ export const useRecipeUrlState = (
             : "Failed to load shared recipe",
         );
         setSharedRecipe(null);
+        setSharedCustomRecipe(null);
       } finally {
         setIsLoadingSharedRecipe(false);
       }
     };
 
     handleSharedRecipeLookup();
-  }, [params, recipesByUuid]);
+  }, [params, recipesByUuid, isCustomRecipeUrl, decodeSharedCustomRecipe]);
 
   // Debounced URL update function
   const updateUrl = useCallback((newParams: Partial<RecipeUrlParams>) => {
@@ -410,21 +462,34 @@ export const useRecipeUrlState = (
   const enhancedUrlState: EnhancedUrlState = {
     ...initialUrlState,
     sharedRecipe: sharedRecipe || undefined,
+    sharedCustomRecipe: sharedCustomRecipe || undefined,
     isLoadingSharedRecipe,
     sharedRecipeError: sharedRecipeError || undefined,
-    hasSharedRecipe: !!initialUrlState.recipeId && params.source === "share",
+    hasSharedRecipe:
+      !!initialUrlState.recipeId &&
+      params.source === "share" &&
+      !sharedCustomRecipe,
+    hasSharedCustomRecipe:
+      !!initialUrlState.recipeId &&
+      params.source === "share" &&
+      !!sharedCustomRecipe,
   };
 
-  // Calculate hasUrlState - should be true if we have URL params OR a shared recipe
-  const hasUrlState = Object.keys(initialUrlState).length > 0 || !!sharedRecipe;
+  // Calculate hasUrlState - should be true if we have URL params OR a shared recipe OR a shared custom recipe
+  const hasUrlState =
+    Object.keys(initialUrlState).length > 0 ||
+    !!sharedRecipe ||
+    !!sharedCustomRecipe;
 
   return {
     initialUrlState: enhancedUrlState,
     updateUrl,
     hasUrlState,
     sharedRecipe,
+    sharedCustomRecipe,
     isLoadingSharedRecipe,
     sharedRecipeError,
     hasSharedRecipe: enhancedUrlState.hasSharedRecipe,
+    hasSharedCustomRecipe: enhancedUrlState.hasSharedCustomRecipe,
   };
 };

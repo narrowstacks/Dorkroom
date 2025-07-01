@@ -374,9 +374,11 @@ export default function DevelopmentRecipes() {
     initialUrlState,
     hasUrlState,
     sharedRecipe,
+    sharedCustomRecipe,
     isLoadingSharedRecipe,
     sharedRecipeError,
     hasSharedRecipe,
+    hasSharedCustomRecipe,
   } = useRecipeUrlState(
     allFilms,
     allDevelopers,
@@ -474,7 +476,13 @@ export default function DevelopmentRecipes() {
         setSelectedCustomRecipe(null);
       }
     }
-  }, [hasSharedRecipe, sharedRecipe, isLoadingSharedRecipe, customRecipes]);
+  }, [
+    hasSharedRecipe,
+    sharedRecipe,
+    isLoadingSharedRecipe,
+    customRecipes,
+    sharedRecipeError,
+  ]);
 
   // Show error message if shared recipe fails to load
   React.useEffect(() => {
@@ -483,6 +491,17 @@ export default function DevelopmentRecipes() {
       // You could show a toast notification here if desired
     }
   }, [sharedRecipeError]);
+
+  // Show import modal when a shared custom recipe is detected
+  React.useEffect(() => {
+    if (hasSharedCustomRecipe && sharedCustomRecipe) {
+      debugLog(
+        "[DevelopmentRecipes] Shared custom recipe detected:",
+        sharedCustomRecipe.name,
+      );
+      setShowCustomRecipeImportModal(true);
+    }
+  }, [hasSharedCustomRecipe, sharedCustomRecipe]);
 
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCombination, setSelectedCombination] =
@@ -500,6 +519,8 @@ export default function DevelopmentRecipes() {
     useState(false);
   const [isFilmSearchFocused, setIsFilmSearchFocused] = useState(false);
   const [isDeveloperSearchFocused, setIsDeveloperSearchFocused] =
+    useState(false);
+  const [showCustomRecipeImportModal, setShowCustomRecipeImportModal] =
     useState(false);
 
   // Add refs and position state for dynamic positioning
@@ -519,7 +540,11 @@ export default function DevelopmentRecipes() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
   const textColor = useThemeColor({}, "text");
+  const textSecondary = useThemeColor({}, "textSecondary");
   const developmentTint = useThemeColor({}, "developmentRecipesTint");
+  const cardBackground = useThemeColor({}, "cardBackground");
+  const inputBackground = useThemeColor({}, "inputBackground");
+  const borderColor = useThemeColor({}, "borderColor");
 
   // Combined API + custom recipes for display
   const allCombinations = React.useMemo(() => {
@@ -773,6 +798,55 @@ export default function DevelopmentRecipes() {
     debugLog("[DevelopmentRecipes] handleNewCustomRecipe called");
     setEditingCustomRecipe(undefined);
     setShowCustomRecipeForm(true);
+  };
+
+  const handleImportCustomRecipe = async () => {
+    if (!sharedCustomRecipe) return;
+
+    try {
+      debugLog(
+        "[DevelopmentRecipes] Importing custom recipe:",
+        sharedCustomRecipe.name,
+      );
+
+      // Convert the shared custom recipe to the format expected by addCustomRecipe
+      const formData = {
+        name: sharedCustomRecipe.name,
+        useExistingFilm: !sharedCustomRecipe.isCustomFilm,
+        selectedFilmId: sharedCustomRecipe.isCustomFilm
+          ? undefined
+          : sharedCustomRecipe.filmId,
+        useExistingDeveloper: !sharedCustomRecipe.isCustomDeveloper,
+        selectedDeveloperId: sharedCustomRecipe.isCustomDeveloper
+          ? undefined
+          : sharedCustomRecipe.developerId,
+        temperatureF: sharedCustomRecipe.temperatureF,
+        timeMinutes: sharedCustomRecipe.timeMinutes,
+        shootingIso: sharedCustomRecipe.shootingIso,
+        pushPull: sharedCustomRecipe.pushPull,
+        agitationSchedule: sharedCustomRecipe.agitationSchedule || "",
+        notes: sharedCustomRecipe.notes || "",
+        customDilution: sharedCustomRecipe.customDilution || "",
+        customFilm: sharedCustomRecipe.customFilm,
+        customDeveloper: sharedCustomRecipe.customDeveloper,
+        isPublic: sharedCustomRecipe.isPublic,
+      };
+
+      const newRecipeId = await addCustomRecipe(formData);
+      debugLog(
+        "[DevelopmentRecipes] Successfully imported custom recipe:",
+        newRecipeId,
+      );
+
+      // Close the import modal
+      setShowCustomRecipeImportModal(false);
+
+      // Show success message
+      // You could add a toast notification here if desired
+    } catch (error) {
+      debugLog("[DevelopmentRecipes] Failed to import custom recipe:", error);
+      // You could show an error toast here if desired
+    }
   };
 
   const handleForceRefresh = async () => {
@@ -1762,6 +1836,189 @@ export default function DevelopmentRecipes() {
                 isDesktop={isDesktop}
                 isMobileWeb={Platform.OS === "web" && !isDesktop}
               />
+            </ModalBody>
+          </ModalContent>
+        </Modal>
+
+        {/* Custom Recipe Import Modal */}
+        <Modal
+          isOpen={showCustomRecipeImportModal}
+          onClose={() => setShowCustomRecipeImportModal(false)}
+          size="md"
+        >
+          <ModalBackdrop />
+          <ModalContent style={{ backgroundColor: cardBackground }}>
+            <ModalHeader>
+              <Text
+                style={[
+                  { fontSize: 18, fontWeight: "600" },
+                  { color: textColor },
+                ]}
+              >
+                Import Shared Recipe
+              </Text>
+              <ModalCloseButton>
+                <X size={20} color={textColor} />
+              </ModalCloseButton>
+            </ModalHeader>
+
+            <ModalBody>
+              <VStack space="lg">
+                {sharedCustomRecipe && (
+                  <>
+                    {/* Recipe Preview */}
+                    <Box
+                      style={[
+                        {
+                          padding: 16,
+                          borderRadius: 12,
+                          borderWidth: 1,
+                        },
+                        {
+                          backgroundColor: inputBackground,
+                          borderColor: borderColor,
+                        },
+                      ]}
+                    >
+                      <VStack space="sm">
+                        <Text
+                          style={[
+                            { fontSize: 16, fontWeight: "600" },
+                            { color: developmentTint },
+                          ]}
+                        >
+                          {sharedCustomRecipe.name}
+                        </Text>
+
+                        <HStack
+                          space="md"
+                          style={{ justifyContent: "space-around" }}
+                        >
+                          <VStack
+                            space="xs"
+                            style={{ alignItems: "center", flex: 1 }}
+                          >
+                            <Text
+                              style={[
+                                { fontSize: 12, fontWeight: "500" },
+                                { color: textSecondary },
+                              ]}
+                            >
+                              Time
+                            </Text>
+                            <Text
+                              style={[
+                                { fontSize: 14, fontWeight: "600" },
+                                { color: textColor },
+                              ]}
+                            >
+                              {formatTime(sharedCustomRecipe.timeMinutes)}
+                            </Text>
+                          </VStack>
+
+                          <VStack
+                            space="xs"
+                            style={{ alignItems: "center", flex: 1 }}
+                          >
+                            <Text
+                              style={[
+                                { fontSize: 12, fontWeight: "500" },
+                                { color: textSecondary },
+                              ]}
+                            >
+                              Temperature
+                            </Text>
+                            <Text
+                              style={[
+                                { fontSize: 14, fontWeight: "600" },
+                                { color: textColor },
+                              ]}
+                            >
+                              {sharedCustomRecipe.temperatureF}°F
+                            </Text>
+                          </VStack>
+
+                          <VStack
+                            space="xs"
+                            style={{ alignItems: "center", flex: 1 }}
+                          >
+                            <Text
+                              style={[
+                                { fontSize: 12, fontWeight: "500" },
+                                { color: textSecondary },
+                              ]}
+                            >
+                              ISO
+                            </Text>
+                            <Text
+                              style={[
+                                { fontSize: 14, fontWeight: "600" },
+                                { color: textColor },
+                              ]}
+                            >
+                              {sharedCustomRecipe.shootingIso}
+                            </Text>
+                          </VStack>
+                        </HStack>
+
+                        {sharedCustomRecipe.notes && (
+                          <VStack space="xs">
+                            <Text
+                              style={[
+                                { fontSize: 12, fontWeight: "500" },
+                                { color: textSecondary },
+                              ]}
+                            >
+                              Notes
+                            </Text>
+                            <Text
+                              style={[{ fontSize: 14 }, { color: textColor }]}
+                            >
+                              {sharedCustomRecipe.notes}
+                            </Text>
+                          </VStack>
+                        )}
+                      </VStack>
+                    </Box>
+
+                    {/* Import Options */}
+                    <VStack space="md">
+                      <Text
+                        style={[
+                          { fontSize: 16, fontWeight: "600" },
+                          { color: textColor },
+                        ]}
+                      >
+                        Import this recipe to your collection?
+                      </Text>
+
+                      <HStack space="md">
+                        <Button
+                          variant="outline"
+                          onPress={() => setShowCustomRecipeImportModal(false)}
+                          style={[{ flex: 1, borderColor: borderColor }]}
+                        >
+                          <ButtonText style={[{ color: textColor }]}>
+                            Cancel
+                          </ButtonText>
+                        </Button>
+
+                        <Button
+                          variant="solid"
+                          onPress={handleImportCustomRecipe}
+                          style={[
+                            { flex: 1, backgroundColor: developmentTint },
+                          ]}
+                        >
+                          <ButtonText style={[{ color: "white" }]}>
+                            Import Recipe
+                          </ButtonText>
+                        </Button>
+                      </HStack>
+                    </VStack>
+                  </>
+                )}
+              </VStack>
             </ModalBody>
           </ModalContent>
         </Modal>

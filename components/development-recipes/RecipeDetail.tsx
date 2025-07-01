@@ -40,6 +40,7 @@ import { useChemistryCalculator } from "@/hooks/useChemistryCalculator";
 import { useCustomRecipes } from "@/hooks/useCustomRecipes";
 import { debugLog } from "@/utils/debugLogger";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
+import type { CustomRecipe } from "@/types/customRecipeTypes";
 import {
   convertToDisplay,
   formatTime,
@@ -750,6 +751,10 @@ export function RecipeDetail({
         recipe={combination}
         film={film}
         developer={developer}
+        isCustomRecipe={isCustomRecipe}
+        customRecipe={
+          isCustomRecipe ? (combination as unknown as CustomRecipe) : undefined
+        }
       />
     </Box>
   );

@@ -20,9 +20,14 @@ import {
 import { X, Share, Copy, Check } from "lucide-react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useShareLink, ShareLinkOptions } from "@/hooks/useShareLink";
+import {
+  useCustomRecipeSharing,
+  CustomRecipeShareOptions,
+} from "@/hooks/useCustomRecipeSharing";
 import { formatTime } from "@/constants/developmentRecipes";
 import { formatDilution } from "@/utils/dilutionUtils";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
+import type { CustomRecipe } from "@/types/customRecipeTypes";
 
 export interface ShareRecipeModalProps {
   isOpen: boolean;
@@ -30,6 +35,8 @@ export interface ShareRecipeModalProps {
   recipe: Combination;
   film?: Film;
   developer?: Developer;
+  isCustomRecipe?: boolean;
+  customRecipe?: CustomRecipe;
 }
 
 export function ShareRecipeModal({
@@ -38,12 +45,19 @@ export function ShareRecipeModal({
   recipe,
   film,
   developer,
+  isCustomRecipe = false,
+  customRecipe,
 }: ShareRecipeModalProps) {
   const [shareUrl, setShareUrl] = useState<string>("");
   const [copySuccess, setCopySuccess] = useState(false);
 
   const toast = useToast();
   const { generateShareUrl, shareRecipe, copyToClipboard } = useShareLink();
+  const {
+    generateCustomRecipeShareUrl,
+    shareCustomRecipe,
+    copyCustomRecipeToClipboard,
+  } = useCustomRecipeSharing();
 
   const textColor = useThemeColor({}, "text");
   const textSecondary = useThemeColor({}, "textSecondary");
@@ -55,14 +69,32 @@ export function ShareRecipeModal({
   // Generate share URL when modal opens
   useEffect(() => {
     if (isOpen && recipe) {
-      const shareOptions: ShareLinkOptions = {
-        recipe,
-        includeSource: true,
-      };
-      const url = generateShareUrl(shareOptions);
-      setShareUrl(url);
+      if (isCustomRecipe && customRecipe) {
+        // For custom recipes, use the custom recipe sharing
+        const customShareOptions: CustomRecipeShareOptions = {
+          recipe: customRecipe,
+          includeSource: true,
+        };
+        const url = generateCustomRecipeShareUrl(customShareOptions);
+        setShareUrl(url || "");
+      } else {
+        // For database recipes, use the regular sharing
+        const shareOptions: ShareLinkOptions = {
+          recipe,
+          includeSource: true,
+        };
+        const url = generateShareUrl(shareOptions);
+        setShareUrl(url);
+      }
     }
-  }, [isOpen, recipe, generateShareUrl]);
+  }, [
+    isOpen,
+    recipe,
+    customRecipe,
+    isCustomRecipe,
+    generateShareUrl,
+    generateCustomRecipeShareUrl,
+  ]);
 
   // Reset copy success state when modal opens
   useEffect(() => {
@@ -73,12 +105,23 @@ export function ShareRecipeModal({
 
   const handleShare = async () => {
     try {
-      const shareOptions: ShareLinkOptions = {
-        recipe,
-        includeSource: true,
-      };
+      let result;
 
-      const result = await shareRecipe(shareOptions);
+      if (isCustomRecipe && customRecipe) {
+        // Share custom recipe
+        const customShareOptions: CustomRecipeShareOptions = {
+          recipe: customRecipe,
+          includeSource: true,
+        };
+        result = await shareCustomRecipe(customShareOptions);
+      } else {
+        // Share database recipe
+        const shareOptions: ShareLinkOptions = {
+          recipe,
+          includeSource: true,
+        };
+        result = await shareRecipe(shareOptions);
+      }
 
       if (result.success) {
         let successMessage = "Recipe shared successfully!";
@@ -130,12 +173,23 @@ export function ShareRecipeModal({
 
   const handleCopyLink = async () => {
     try {
-      const shareOptions: ShareLinkOptions = {
-        recipe,
-        includeSource: true,
-      };
+      let result;
 
-      const result = await copyToClipboard(shareOptions);
+      if (isCustomRecipe && customRecipe) {
+        // Copy custom recipe link
+        const customShareOptions: CustomRecipeShareOptions = {
+          recipe: customRecipe,
+          includeSource: true,
+        };
+        result = await copyCustomRecipeToClipboard(customShareOptions);
+      } else {
+        // Copy database recipe link
+        const shareOptions: ShareLinkOptions = {
+          recipe,
+          includeSource: true,
+        };
+        result = await copyToClipboard(shareOptions);
+      }
 
       if (result.success) {
         setCopySuccess(true);
