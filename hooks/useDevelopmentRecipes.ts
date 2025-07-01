@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { DorkroomClient } from "@/api/dorkroom/client";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
 import { debugLog } from "@/utils/debugLogger";
+import { InitialUrlState } from "@/types/urlTypes";
 
 export interface DevelopmentRecipesState {
   // Search and filter state
@@ -59,20 +60,27 @@ export interface DevelopmentRecipesActions {
 
 const client = new DorkroomClient();
 
-export const useDevelopmentRecipes = (): DevelopmentRecipesState &
-  DevelopmentRecipesActions => {
-  // State
+export const useDevelopmentRecipes = (
+  initialUrlState?: InitialUrlState,
+): DevelopmentRecipesState & DevelopmentRecipesActions => {
+  // State - initialize with URL state if provided
   const [filmSearch, setFilmSearch] = useState<string>("");
   const [developerSearch, setDeveloperSearch] = useState<string>("");
   const [developerTypeFilter, setDeveloperTypeFilter] = useState<string>("");
-  const [dilutionFilter, setDilutionFilter] = useState<string>("");
-  const [isoFilter, setIsoFilter] = useState<string>("");
+  const [dilutionFilter, setDilutionFilter] = useState<string>(
+    initialUrlState?.dilutionFilter || "",
+  );
+  const [isoFilter, setIsoFilter] = useState<string>(
+    initialUrlState?.isoFilter || "",
+  );
   const [sortBy, setSortBy] = useState<string>("filmName");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  const [selectedFilm, setSelectedFilm] = useState<Film | null>(null);
+  const [selectedFilm, setSelectedFilm] = useState<Film | null>(
+    initialUrlState?.selectedFilm || null,
+  );
   const [selectedDeveloper, setSelectedDeveloper] = useState<Developer | null>(
-    null,
+    initialUrlState?.selectedDeveloper || null,
   );
 
   // Clear ISO filter when film selection changes

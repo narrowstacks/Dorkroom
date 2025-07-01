@@ -53,6 +53,7 @@ import {
 } from "@/components/development-recipes/ModalStyles";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useDevelopmentRecipes } from "@/hooks/useDevelopmentRecipes";
+import { useRecipeUrlState } from "@/hooks/useRecipeUrlState";
 import { useCustomRecipes } from "@/hooks/useCustomRecipes";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { DEVELOPER_TYPES, formatTime } from "@/constants/developmentRecipes";
@@ -247,6 +248,7 @@ function RecipeRow({
 }
 
 export default function DevelopmentRecipes() {
+  // Get development recipes data (this loads the data and provides films/developers for URL parsing)
   const {
     // State
     filmSearch,
@@ -282,6 +284,60 @@ export default function DevelopmentRecipes() {
     getAvailableDilutions,
     getAvailableISOs,
   } = useDevelopmentRecipes();
+
+  // URL state management - syncs current filter state with URL parameters
+  const { initialUrlState, hasUrlState } = useRecipeUrlState(
+    allFilms,
+    allDevelopers,
+    {
+      selectedFilm,
+      selectedDeveloper,
+      dilutionFilter,
+      isoFilter,
+    },
+  );
+
+  // Apply URL state to hook state when data is loaded and URL state is available
+  React.useEffect(() => {
+    if (isLoaded && hasUrlState && initialUrlState.fromUrl) {
+      if (
+        initialUrlState.selectedFilm &&
+        initialUrlState.selectedFilm !== selectedFilm
+      ) {
+        setSelectedFilm(initialUrlState.selectedFilm);
+      }
+      if (
+        initialUrlState.selectedDeveloper &&
+        initialUrlState.selectedDeveloper !== selectedDeveloper
+      ) {
+        setSelectedDeveloper(initialUrlState.selectedDeveloper);
+      }
+      if (
+        initialUrlState.dilutionFilter &&
+        initialUrlState.dilutionFilter !== dilutionFilter
+      ) {
+        setDilutionFilter(initialUrlState.dilutionFilter);
+      }
+      if (
+        initialUrlState.isoFilter &&
+        initialUrlState.isoFilter !== isoFilter
+      ) {
+        setIsoFilter(initialUrlState.isoFilter);
+      }
+    }
+  }, [
+    isLoaded,
+    hasUrlState,
+    initialUrlState,
+    selectedFilm,
+    selectedDeveloper,
+    dilutionFilter,
+    isoFilter,
+    setSelectedFilm,
+    setSelectedDeveloper,
+    setDilutionFilter,
+    setIsoFilter,
+  ]);
 
   const { customRecipes, forceRefresh, stateVersion } = useCustomRecipes();
   debugLog(
