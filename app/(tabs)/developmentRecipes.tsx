@@ -755,7 +755,7 @@ export default function DevelopmentRecipes() {
       // Show success message
       // You could add a toast notification here if desired
     } catch (error) {
-      console.error("Failed to import custom recipe:", error);
+      debugError("Failed to import custom recipe:", error);
       // You could show an error toast here if desired
     }
   };
@@ -774,7 +774,7 @@ export default function DevelopmentRecipes() {
       await forceRefreshData();
       // Force refresh completed
     } catch (error) {
-      console.error("Force refresh failed:", error);
+      debugError("Force refresh failed:", error);
     }
   };
 

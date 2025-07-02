@@ -120,7 +120,7 @@ export const useSharedPresetLoader = () => {
         }
       } catch (error) {
         debugLog("🔗 [PRESET LOADER] Error handling shared URL:", error);
-        console.error("Failed to handle shared URL:", error);
+        debugError("Failed to handle shared URL:", error);
       }
     };
 

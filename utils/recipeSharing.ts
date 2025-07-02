@@ -61,7 +61,7 @@ export const encodeCustomRecipe = (recipe: CustomRecipe): string => {
 
     return encoded;
   } catch (error) {
-    console.error("Failed to encode custom recipe:", error);
+    debugError("Failed to encode custom recipe:", error);
     return "";
   }
 };
@@ -117,7 +117,7 @@ export const decodeCustomRecipe = (
 
     return recipe;
   } catch (error) {
-    console.error("Failed to decode custom recipe:", error);
+    debugError("Failed to decode custom recipe:", error);
     return null;
   }
 };

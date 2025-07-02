@@ -102,7 +102,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         await copyToClipboard(shareData.webUrl, "Share link");
       }
     } catch {
-      console.error("Share failed");
+      debugError("Share failed");
       toast.show({
         placement: "top",
         render: ({ id }) => (
@@ -144,7 +144,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         });
       }
     } catch (error) {
-      console.error("Failed to open in app:", error);
+      debugError("Failed to open in app:", error);
       toast.show({
         placement: "top",
         render: ({ id }) => (

@@ -4,6 +4,7 @@ import * as Sharing from "expo-sharing";
 import * as Clipboard from "expo-clipboard";
 import { router } from "expo-router";
 import type { Combination } from "@/api/dorkroom/types";
+import { debugLog, debugWarn, debugError } from "@/utils/debugLogger";
 
 export interface ShareLinkOptions {
   recipe: Combination;
@@ -75,7 +76,7 @@ export const useShareLink = () => {
             return { success: true, method: "webShare" };
           } catch (webShareError) {
             // User cancelled or Web Share API failed, fallback to clipboard
-            console.log(
+            debugLog(
               "Web Share API cancelled or failed, falling back to clipboard",
             );
           }

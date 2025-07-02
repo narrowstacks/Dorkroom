@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { DorkroomClient } from "@/api/dorkroom/client";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
-import { debugLog } from "@/utils/debugLogger";
+import { debugLog, debugWarn, debugError } from "@/utils/debugLogger";
 import { InitialUrlState } from "@/types/urlTypes";
 
 export interface DevelopmentRecipesState {
@@ -194,7 +194,7 @@ export const useDevelopmentRecipes = (
       const errorMessage =
         err instanceof Error ? err.message : "Failed to load development data";
       setError(errorMessage);
-      console.error("Failed to load development recipes data:", err);
+      debugError("Failed to load development recipes data:", err);
     } finally {
       setIsLoading(false);
     }
@@ -204,7 +204,7 @@ export const useDevelopmentRecipes = (
   const forceRefresh = useCallback(async () => {
     if (isLoading) return;
 
-    console.log("[useDevelopmentRecipes] Force refresh started");
+    debugLog("[useDevelopmentRecipes] Force refresh started");
     setIsLoading(true);
     setError(null);
 
@@ -265,7 +265,7 @@ export const useDevelopmentRecipes = (
         return isValid;
       });
 
-      console.log("[useDevelopmentRecipes] Data refreshed:", {
+      debugLog("[useDevelopmentRecipes] Data refreshed:", {
         films: films.length,
         developers: developers.length,
         combinations: combinations.length,
@@ -281,9 +281,9 @@ export const useDevelopmentRecipes = (
           ? err.message
           : "Failed to refresh development data";
       setError(errorMessage);
-      console.error("Failed to refresh development recipes data:", err);
+      debugError("Failed to refresh development recipes data:", err);
     } finally {
-      console.log("[useDevelopmentRecipes] Force refresh completed");
+      debugLog("[useDevelopmentRecipes] Force refresh completed");
       setIsLoading(false);
     }
   }, [isLoading]);

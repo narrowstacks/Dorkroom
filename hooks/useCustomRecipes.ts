@@ -28,7 +28,7 @@ export const useCustomRecipes = () => {
       setStateVersion((prev) => prev + 1); // Increment version to force re-renders
       return recipes;
     } catch (error) {
-      console.error("[useCustomRecipes] Error loading recipes:", error);
+      debugError("[useCustomRecipes] Error loading recipes:", error);
       setCustomRecipes([]);
       setStateVersion((prev) => prev + 1); // Increment even on error to ensure consistency
       return [];
@@ -46,7 +46,7 @@ export const useCustomRecipes = () => {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
       debugLog("[useCustomRecipes] Successfully saved recipes to storage");
     } catch (error) {
-      console.error("[useCustomRecipes] Error saving recipes:", error);
+      debugError("[useCustomRecipes] Error saving recipes:", error);
       throw error;
     }
   }, []);
@@ -110,7 +110,7 @@ export const useCustomRecipes = () => {
         debugLog("[useCustomRecipes] Successfully added recipe:", newRecipe.id);
         return newRecipe.id;
       } catch (error) {
-        console.error("[useCustomRecipes] Error adding recipe:", error);
+        debugError("[useCustomRecipes] Error adding recipe:", error);
         throw error;
       } finally {
         setIsLoading(false);
@@ -190,7 +190,7 @@ export const useCustomRecipes = () => {
 
         debugLog("[useCustomRecipes] Successfully updated recipe:", id);
       } catch (error) {
-        console.error("[useCustomRecipes] Error updating recipe:", error);
+        debugError("[useCustomRecipes] Error updating recipe:", error);
         throw error;
       } finally {
         setIsLoading(false);
@@ -258,7 +258,7 @@ export const useCustomRecipes = () => {
 
         debugLog("[useCustomRecipes] Successfully deleted recipe:", id);
       } catch (error) {
-        console.error("[useCustomRecipes] Error deleting recipe:", error);
+        debugError("[useCustomRecipes] Error deleting recipe:", error);
         throw error;
       } finally {
         setIsLoading(false);
@@ -277,7 +277,7 @@ export const useCustomRecipes = () => {
       await loadRecipes();
       debugLog("[useCustomRecipes] Successfully cleared all recipes");
     } catch (error) {
-      console.error("[useCustomRecipes] Error clearing recipes:", error);
+      debugError("[useCustomRecipes] Error clearing recipes:", error);
       throw error;
     } finally {
       setIsLoading(false);

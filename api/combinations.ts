@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { debugLog, debugWarn, debugError } from "../utils/debugLogger";
 
 // The master API key that has high rate limits
 const SUPABASE_MASTER_API_KEY = process.env.SUPABASE_MASTER_API_KEY;
@@ -60,7 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const startTime = Date.now();
   const requestId = Math.random().toString(36).substring(7);
 
-  console.log(`[${requestId}] Combinations API request started`, {
+  debugLog(`[${requestId}] Combinations API request started`, {
     method: req.method,
     url: req.url,
     userAgent: req.headers["user-agent"],
@@ -78,7 +79,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Handle preflight requests
   if (req.method === "OPTIONS") {
-    console.log(`[${requestId}] CORS preflight request handled`);
+    debugLog(`[${requestId}] CORS preflight request handled`);
     return res.status(200).end();
   }
 
@@ -95,7 +96,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // Validate that we have the API key
     if (!SUPABASE_MASTER_API_KEY) {
-      console.error(
+      debugError(
         `[${requestId}] SUPABASE_MASTER_API_KEY environment variable is not set`,
       );
       return res.status(500).json({
@@ -112,7 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? `${SUPABASE_ENDPOINT}?${queryString}`
       : SUPABASE_ENDPOINT;
 
-    console.log(`[${requestId}] Making request to Supabase`, {
+    debugLog(`[${requestId}] Making request to Supabase`, {
       targetUrl,
       queryParams: Object.fromEntries(queryParams.entries()),
     });
@@ -132,7 +133,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const responseTime = Date.now() - startTime;
 
     if (!response.ok) {
-      console.error(`[${requestId}] Supabase API error`, {
+      debugError(`[${requestId}] Supabase API error`, {
         status: response.status,
         statusText: response.statusText,
         headers: Object.fromEntries(response.headers.entries()),
@@ -160,7 +161,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Validate response content type
     const contentType = response.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
-      console.error(
+      debugError(
         `[${requestId}] Invalid response content type: ${contentType}`,
       );
       return res.status(502).json({
@@ -176,7 +177,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       data = await response.json();
     } catch (_parseError) {
-      console.error(`[${requestId}] JSON parse error`, _parseError);
+      debugError(`[${requestId}] JSON parse error`, _parseError);
       return res.status(502).json({
         error: "Response parse error",
         message: "Could not parse JSON response from upstream API",
@@ -184,7 +185,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    console.log(`[${requestId}] Request completed successfully`, {
+    debugLog(`[${requestId}] Request completed successfully`, {
       responseTime,
       dataLength: Array.isArray(data?.data) ? data.data.length : "N/A",
     });
@@ -197,7 +198,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json(data);
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    console.error(`[${requestId}] API function error`, {
+    debugError(`[${requestId}] API function error`, {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       responseTime,

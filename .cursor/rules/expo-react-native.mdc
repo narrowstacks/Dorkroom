@@ -280,7 +280,7 @@ bun run build        # Production web build
 import { __DEV__ } from 'react-native';
 
 if (__DEV__) {
-  console.log('Development mode');
+  debugLog('Development mode');
   // Development-only code
 }
 ```
@@ -298,7 +298,7 @@ class CalculatorErrorBoundary extends React.Component {
   
   componentDidCatch(error, errorInfo) {
     // Log error to analytics service
-    console.error('Calculator error:', error, errorInfo);
+    debugError('Calculator error:', error, errorInfo);
   }
   
   render() {

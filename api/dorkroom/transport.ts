@@ -167,7 +167,7 @@ export class ConsoleLogger implements Logger {
   }
 
   error(message: string): void {
-    console.error(`[ERROR] ${message}`);
+    debugError(`[ERROR] ${message}`);
   }
 }
 

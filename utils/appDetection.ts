@@ -53,7 +53,7 @@ export const openInNativeApp = async (uri: string): Promise<boolean> => {
     }
     return false;
   } catch (error) {
-    console.error("Failed to open native app:", error);
+    debugError("Failed to open native app:", error);
     return false;
   }
 };
