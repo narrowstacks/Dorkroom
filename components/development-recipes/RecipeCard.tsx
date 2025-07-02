@@ -17,7 +17,7 @@ interface RecipeCardProps {
   onShare?: (e: any) => void; // Optional share handler to prevent card press
 }
 
-export function RecipeCard({
+export const RecipeCard = React.memo(function RecipeCard({
   combination,
   film,
   developer,
@@ -220,7 +220,7 @@ export function RecipeCard({
       </Box>
     </TouchableOpacity>
   );
-}
+});
 
 const styles = StyleSheet.create({
   cardTouchable: {

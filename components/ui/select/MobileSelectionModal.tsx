@@ -16,6 +16,7 @@ import {
 } from "@gluestack-ui/themed";
 import { Search, X } from "lucide-react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useDebounce } from "@/hooks/useDebounce";
 import type { Film, Developer } from "@/api/dorkroom/types";
 
 interface DilutionOption {
@@ -47,6 +48,7 @@ export function MobileSelectionModal({
   onDilutionSelect,
 }: MobileSelectionModalProps) {
   const [searchText, setSearchText] = useState("");
+  const debouncedSearchText = useDebounce(searchText, 300);
   const textColor = useThemeColor({}, "text");
   const cardBackground = useThemeColor({}, "cardBackground");
   const borderColor = useThemeColor({}, "borderColor");
@@ -61,30 +63,44 @@ export function MobileSelectionModal({
       items = dilutionOptions;
     }
 
-    if (!searchText.trim()) return items;
+    let filtered = items;
+    if (debouncedSearchText.trim()) {
+      filtered = items.filter((item) => {
+        if (type === "film") {
+          const film = item as Film;
+          return (
+            film.name
+              .toLowerCase()
+              .includes(debouncedSearchText.toLowerCase()) ||
+            film.brand.toLowerCase().includes(debouncedSearchText.toLowerCase())
+          );
+        } else if (type === "developer") {
+          const dev = item as Developer;
+          return (
+            dev.name
+              .toLowerCase()
+              .includes(debouncedSearchText.toLowerCase()) ||
+            dev.manufacturer
+              .toLowerCase()
+              .includes(debouncedSearchText.toLowerCase())
+          );
+        } else {
+          const dilution = item as DilutionOption;
+          return (
+            dilution.label
+              .toLowerCase()
+              .includes(debouncedSearchText.toLowerCase()) ||
+            dilution.value
+              .toLowerCase()
+              .includes(debouncedSearchText.toLowerCase())
+          );
+        }
+      });
+    }
 
-    return items.filter((item) => {
-      if (type === "film") {
-        const film = item as Film;
-        return (
-          film.name.toLowerCase().includes(searchText.toLowerCase()) ||
-          film.brand.toLowerCase().includes(searchText.toLowerCase())
-        );
-      } else if (type === "developer") {
-        const dev = item as Developer;
-        return (
-          dev.name.toLowerCase().includes(searchText.toLowerCase()) ||
-          dev.manufacturer.toLowerCase().includes(searchText.toLowerCase())
-        );
-      } else {
-        const dilution = item as DilutionOption;
-        return (
-          dilution.label.toLowerCase().includes(searchText.toLowerCase()) ||
-          dilution.value.toLowerCase().includes(searchText.toLowerCase())
-        );
-      }
-    });
-  }, [type, films, developers, dilutionOptions, searchText]);
+    // Limit results for better performance - show top 100 results on mobile
+    return filtered.slice(0, 100);
+  }, [type, films, developers, dilutionOptions, debouncedSearchText]);
 
   const handleSelect = (item: Film | Developer | DilutionOption) => {
     if (type === "film" && onFilmSelect) {

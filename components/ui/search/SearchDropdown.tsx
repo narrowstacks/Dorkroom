@@ -50,7 +50,9 @@ type SearchDropdownProps =
   | DesktopSearchDropdownProps
   | MobileSearchDropdownProps;
 
-export function SearchDropdown(props: SearchDropdownProps) {
+export const SearchDropdown = React.memo(function SearchDropdown(
+  props: SearchDropdownProps,
+) {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
 
@@ -60,6 +62,18 @@ export function SearchDropdown(props: SearchDropdownProps) {
   const cardBackground = useThemeColor({}, "cardBackground");
 
   const variant = props.variant || (isDesktop ? "desktop" : "mobile");
+
+  // Sort items alphabetically by manufacturer (subtitle) - memoized for performance
+  // Only compute this for desktop variant, but always call the hook
+  const sortedItems = React.useMemo(() => {
+    if (variant === "desktop") {
+      const desktopProps = props as DesktopSearchDropdownProps;
+      return desktopProps.items
+        .slice()
+        .sort((a, b) => a.subtitle.localeCompare(b.subtitle));
+    }
+    return [];
+  }, [variant, props]);
 
   if (variant === "mobile") {
     const mobileProps = props as MobileSearchDropdownProps;
@@ -110,10 +124,6 @@ export function SearchDropdown(props: SearchDropdownProps) {
 
   // Desktop variant
   const desktopProps = props as DesktopSearchDropdownProps;
-  // Sort items alphabetically by manufacturer (subtitle)
-  const sortedItems = desktopProps.items
-    .slice()
-    .sort((a, b) => a.subtitle.localeCompare(b.subtitle));
 
   if (!isDesktop || sortedItems.length === 0 || !desktopProps.dynamicPosition) {
     return null;
@@ -178,7 +188,7 @@ export function SearchDropdown(props: SearchDropdownProps) {
       </Box>
     </Modal>
   );
-}
+});
 
 const styles = StyleSheet.create({
   dropdownContent: {

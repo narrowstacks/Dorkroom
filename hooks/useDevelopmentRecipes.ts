@@ -186,8 +186,23 @@ export const useDevelopmentRecipes = (
         filteredDevelopers: developers.length,
       });
 
-      setAllFilms(films);
-      setAllDevelopers(developers);
+      // Pre-sort data for better performance (avoid sorting on every render)
+      const sortedFilms = films.slice().sort((a, b) => {
+        const brandCompare = a.brand.localeCompare(b.brand);
+        return brandCompare !== 0 ? brandCompare : a.name.localeCompare(b.name);
+      });
+
+      const sortedDevelopers = developers.slice().sort((a, b) => {
+        const manufacturerCompare = a.manufacturer.localeCompare(
+          b.manufacturer,
+        );
+        return manufacturerCompare !== 0
+          ? manufacturerCompare
+          : a.name.localeCompare(b.name);
+      });
+
+      setAllFilms(sortedFilms);
+      setAllDevelopers(sortedDevelopers);
       setAllCombinations(combinations);
       setIsLoaded(true);
     } catch (err) {

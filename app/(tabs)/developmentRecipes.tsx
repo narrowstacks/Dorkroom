@@ -58,6 +58,7 @@ import { useRecipeUrlState } from "@/hooks/useRecipeUrlState";
 import { useCustomRecipes } from "@/hooks/useCustomRecipes";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import { useDebounce } from "@/hooks/useDebounce";
 import { DEVELOPER_TYPES, formatTime } from "@/constants/developmentRecipes";
 import { formatDilution } from "@/utils/dilutionUtils";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
@@ -71,7 +72,7 @@ interface TableHeaderProps {
   onSort: (sortKey: string) => void;
 }
 
-function TableHeader({
+const TableHeader = React.memo(function TableHeader({
   title,
   sortKey,
   currentSort,
@@ -131,7 +132,7 @@ function TableHeader({
         ))}
     </TouchableOpacity>
   );
-}
+});
 
 interface RecipeRowProps {
   combination: Combination;
@@ -141,7 +142,7 @@ interface RecipeRowProps {
   isEven: boolean;
 }
 
-function RecipeRow({
+const RecipeRow = React.memo(function RecipeRow({
   combination,
   film,
   developer,
@@ -237,7 +238,7 @@ function RecipeRow({
       </Box>
     </TouchableOpacity>
   );
-}
+});
 
 export default function DevelopmentRecipes() {
   // Get development recipes data (this loads the data and provides films/developers for URL parsing)
@@ -276,6 +277,10 @@ export default function DevelopmentRecipes() {
     getAvailableDilutions,
     getAvailableISOs,
   } = useDevelopmentRecipes();
+
+  // Add debouncing to search inputs to prevent excessive filtering operations
+  const debouncedFilmSearch = useDebounce(filmSearch, 300);
+  const debouncedDeveloperSearch = useDebounce(developerSearch, 300);
 
   const { customRecipes, forceRefresh, addCustomRecipe } = useCustomRecipes();
   const { isRecipeImportEnabled } = useFeatureFlags();
@@ -539,22 +544,26 @@ export default function DevelopmentRecipes() {
           } else {
             return combination.filmStockId === selectedFilm.uuid;
           }
-        } else if (filmSearch.trim()) {
+        } else if (debouncedFilmSearch.trim()) {
           if (recipe.isCustomFilm && recipe.customFilm) {
             const filmMatch =
               recipe.customFilm.brand
                 .toLowerCase()
-                .includes(filmSearch.toLowerCase()) ||
+                .includes(debouncedFilmSearch.toLowerCase()) ||
               recipe.customFilm.name
                 .toLowerCase()
-                .includes(filmSearch.toLowerCase());
+                .includes(debouncedFilmSearch.toLowerCase());
             return filmMatch;
           } else {
             const film = getFilmById(combination.filmStockId);
             return (
               film &&
-              (film.name.toLowerCase().includes(filmSearch.toLowerCase()) ||
-                film.brand.toLowerCase().includes(filmSearch.toLowerCase()))
+              (film.name
+                .toLowerCase()
+                .includes(debouncedFilmSearch.toLowerCase()) ||
+                film.brand
+                  .toLowerCase()
+                  .includes(debouncedFilmSearch.toLowerCase()))
             );
           }
         }
@@ -573,24 +582,26 @@ export default function DevelopmentRecipes() {
           } else {
             return combination.developerId === selectedDeveloper.uuid;
           }
-        } else if (developerSearch.trim()) {
+        } else if (debouncedDeveloperSearch.trim()) {
           if (recipe.isCustomDeveloper && recipe.customDeveloper) {
             const devMatch =
               recipe.customDeveloper.manufacturer
                 .toLowerCase()
-                .includes(developerSearch.toLowerCase()) ||
+                .includes(debouncedDeveloperSearch.toLowerCase()) ||
               recipe.customDeveloper.name
                 .toLowerCase()
-                .includes(developerSearch.toLowerCase());
+                .includes(debouncedDeveloperSearch.toLowerCase());
             return devMatch;
           } else {
             const dev = getDeveloperById(combination.developerId);
             return (
               dev &&
-              (dev.name.toLowerCase().includes(developerSearch.toLowerCase()) ||
+              (dev.name
+                .toLowerCase()
+                .includes(debouncedDeveloperSearch.toLowerCase()) ||
                 dev.manufacturer
                   .toLowerCase()
-                  .includes(developerSearch.toLowerCase()))
+                  .includes(debouncedDeveloperSearch.toLowerCase()))
             );
           }
         }
@@ -620,8 +631,8 @@ export default function DevelopmentRecipes() {
     showCustomRecipes,
     selectedFilm,
     selectedDeveloper,
-    filmSearch,
-    developerSearch,
+    debouncedFilmSearch,
+    debouncedDeveloperSearch,
     getFilmById,
     getDeveloperById,
     customRecipes,
@@ -873,26 +884,42 @@ export default function DevelopmentRecipes() {
     setSelectedCustomRecipe(null);
   };
 
-  // Film and developer lists for desktop search dropdown
+  // Film and developer lists for desktop search dropdown (debounced + lazy-loaded for performance)
   const filteredFilms = React.useMemo(() => {
     if (!isFilmSearchFocused) return [];
-    if (!filmSearch.trim()) return allFilms;
-    return allFilms.filter(
-      (film) =>
-        film.name.toLowerCase().includes(filmSearch.toLowerCase()) ||
-        film.brand.toLowerCase().includes(filmSearch.toLowerCase()),
-    );
-  }, [allFilms, filmSearch, isFilmSearchFocused]);
+
+    let filtered = allFilms;
+    if (debouncedFilmSearch.trim()) {
+      filtered = allFilms.filter(
+        (film) =>
+          film.name.toLowerCase().includes(debouncedFilmSearch.toLowerCase()) ||
+          film.brand.toLowerCase().includes(debouncedFilmSearch.toLowerCase()),
+      );
+    }
+
+    // Limit initial results for better performance - show top 50 results
+    return filtered.slice(0, 50);
+  }, [allFilms, debouncedFilmSearch, isFilmSearchFocused]);
 
   const filteredDevelopers = React.useMemo(() => {
     if (!isDeveloperSearchFocused) return [];
-    if (!developerSearch.trim()) return allDevelopers;
-    return allDevelopers.filter(
-      (dev) =>
-        dev.name.toLowerCase().includes(developerSearch.toLowerCase()) ||
-        dev.manufacturer.toLowerCase().includes(developerSearch.toLowerCase()),
-    );
-  }, [allDevelopers, developerSearch, isDeveloperSearchFocused]);
+
+    let filtered = allDevelopers;
+    if (debouncedDeveloperSearch.trim()) {
+      filtered = allDevelopers.filter(
+        (dev) =>
+          dev.name
+            .toLowerCase()
+            .includes(debouncedDeveloperSearch.toLowerCase()) ||
+          dev.manufacturer
+            .toLowerCase()
+            .includes(debouncedDeveloperSearch.toLowerCase()),
+      );
+    }
+
+    // Limit initial results for better performance - show top 50 results
+    return filtered.slice(0, 50);
+  }, [allDevelopers, debouncedDeveloperSearch, isDeveloperSearchFocused]);
 
   // Convert to SearchDropdownItem format
   const filmDropdownItems = React.useMemo(
