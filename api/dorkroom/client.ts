@@ -127,8 +127,8 @@ export class DorkroomClient {
   private readonly logger: Logger;
   private readonly cacheTTL: number;
 
-  // Data cache TTL (10 minutes)
-  private static readonly DATA_CACHE_TTL = 600000;
+  // Data cache TTL (30 minutes as requested)
+  private static readonly DATA_CACHE_TTL = 1800000; // 30 minutes in milliseconds
 
   // Data storage
   private films: Film[] = [];
@@ -191,6 +191,123 @@ export class DorkroomClient {
     setInterval(() => {
       this.searchCache.cleanup();
     }, 60000); // Every minute
+  }
+
+  /**
+   * Check if we have internet connectivity by trying a simple network request.
+   * This is used to determine if we should bypass cache when offline.
+   */
+  private async hasNetworkConnectivity(): Promise<boolean> {
+    try {
+      // Try a simple HEAD request to the API base URL with a short timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+
+      const response = await fetch(this.baseUrl, {
+        method: "HEAD",
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      return response.ok || response.status < 500; // Even 4xx responses indicate connectivity
+    } catch (error) {
+      this.logger.debug("Network connectivity check failed:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Store data in persistent local cache using AsyncStorage.
+   */
+  private async storeLocalCache(
+    films: Film[],
+    developers: Developer[],
+    combinations: Combination[],
+  ): Promise<void> {
+    try {
+      const cacheData = {
+        films,
+        developers,
+        combinations,
+        timestamp: Date.now(),
+      };
+
+      const AsyncStorage =
+        require("@react-native-async-storage/async-storage").default;
+      await AsyncStorage.setItem(
+        "dorkroom_development_data",
+        JSON.stringify(cacheData),
+      );
+      this.logger.debug("Data cached to local storage");
+    } catch (error) {
+      this.logger.warn("Failed to store local cache:", error);
+    }
+  }
+
+  /**
+   * Retrieve data from persistent local cache using AsyncStorage.
+   */
+  private async getLocalCache(): Promise<{
+    films: Film[];
+    developers: Developer[];
+    combinations: Combination[];
+    timestamp: number;
+  } | null> {
+    try {
+      const AsyncStorage =
+        require("@react-native-async-storage/async-storage").default;
+      const cachedData = await AsyncStorage.getItem(
+        "dorkroom_development_data",
+      );
+
+      if (!cachedData) {
+        return null;
+      }
+
+      const parsed = JSON.parse(cachedData);
+
+      // Validate cache structure
+      if (
+        !parsed.films ||
+        !parsed.developers ||
+        !parsed.combinations ||
+        !parsed.timestamp
+      ) {
+        this.logger.warn("Invalid cache structure, ignoring");
+        return null;
+      }
+
+      // Check if cache is expired (30 minutes)
+      const cacheAge = Date.now() - parsed.timestamp;
+      if (cacheAge > DorkroomClient.DATA_CACHE_TTL) {
+        this.logger.debug(
+          `Local cache expired (age: ${Math.round(cacheAge / 1000)}s), ignoring`,
+        );
+        return null;
+      }
+
+      this.logger.debug(
+        `Using local cache (age: ${Math.round(cacheAge / 1000)}s)`,
+      );
+      return parsed;
+    } catch (error) {
+      this.logger.warn("Failed to retrieve local cache:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Clear the persistent local cache.
+   */
+  private async clearLocalCache(): Promise<void> {
+    try {
+      const AsyncStorage =
+        require("@react-native-async-storage/async-storage").default;
+      await AsyncStorage.removeItem("dorkroom_development_data");
+      this.logger.debug("Local cache cleared");
+    } catch (error) {
+      this.logger.warn("Failed to clear local cache:", error);
+    }
   }
 
   /**
@@ -288,26 +405,88 @@ export class DorkroomClient {
    * Fetch and parse all JSON data, building internal indexes.
    *
    * This method must be called before using any other client methods.
-   * Will only reload if data is expired (older than 10 minutes) or not loaded.
+   * Will use local cache if available and valid, or fetch from API if needed.
+   * When offline and cache is expired, will continue using expired cache data.
    */
   async loadAll(): Promise<void> {
-    // Check if data is already loaded and not expired
-    if (this.loaded && !this.isDataExpired()) {
+    // Check if we should use local cache
+    const localCache = await this.getLocalCache();
+    const hasNetwork = await this.hasNetworkConnectivity();
+
+    // If we have valid local cache and either no network or data isn't expired, use cache
+    if (localCache && (!hasNetwork || !this.isDataExpired())) {
+      this.films = localCache.films;
+      this.developers = localCache.developers;
+      this.combinations = localCache.combinations;
+      this.buildIndexes();
+      this.loaded = true;
+      this.lastLoadedTimestamp = localCache.timestamp;
+
       this.logger.debug(
-        `Data cache still valid (age: ${Math.round(this.getCacheAge() / 1000)}s), ` +
-          `skipping reload`,
+        `Using local cache data (${this.films.length} films, ${this.developers.length} developers, ${this.combinations.length} combinations)`,
       );
       return;
     }
 
-    await this.performLoad();
+    // If we have network but cache is expired, try to fetch fresh data
+    if (hasNetwork) {
+      try {
+        await this.performLoad();
+        return;
+      } catch (error) {
+        this.logger.warn(
+          "Failed to fetch fresh data, falling back to local cache if available:",
+          error,
+        );
+
+        // If API fails but we have local cache (even if expired), use it
+        if (localCache) {
+          this.films = localCache.films;
+          this.developers = localCache.developers;
+          this.combinations = localCache.combinations;
+          this.buildIndexes();
+          this.loaded = true;
+          this.lastLoadedTimestamp = localCache.timestamp;
+
+          this.logger.info("Using expired local cache due to API failure");
+          return;
+        }
+
+        // No cache available, re-throw the error
+        throw error;
+      }
+    }
+
+    // No network and no cache - this is an error state
+    if (!localCache) {
+      throw new DataFetchError(
+        "No network connectivity and no local cache available",
+      );
+    }
+
+    // Use expired cache when offline
+    this.films = localCache.films;
+    this.developers = localCache.developers;
+    this.combinations = localCache.combinations;
+    this.buildIndexes();
+    this.loaded = true;
+    this.lastLoadedTimestamp = localCache.timestamp;
+
+    this.logger.info(
+      "Using expired local cache due to no network connectivity",
+    );
   }
 
   /**
    * Force reload all data from the API, bypassing cache.
+   * This method will clear local cache and always fetch fresh data.
    */
   async forceReload(): Promise<void> {
     this.logger.info("Force reloading data from API");
+
+    // Clear local cache when force reloading
+    await this.clearLocalCache();
+
     await this.performLoad();
   }
 
@@ -471,6 +650,13 @@ export class DorkroomClient {
       this.loaded = true;
       this.lastLoadedTimestamp = Date.now();
 
+      // Store data in local cache for future use
+      await this.storeLocalCache(
+        this.films,
+        this.developers,
+        this.combinations,
+      );
+
       debugLog("[DorkroomClient] Data loading completed successfully:", {
         films: this.films.length,
         developers: this.developers.length,
@@ -511,7 +697,7 @@ export class DorkroomClient {
   }
 
   /**
-   * Check if the cached data has expired (older than 10 minutes).
+   * Check if the cached data has expired (older than 30 minutes).
    */
   isDataExpired(): boolean {
     if (!this.loaded || this.lastLoadedTimestamp === null) {
