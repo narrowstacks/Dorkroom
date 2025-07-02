@@ -64,7 +64,6 @@ export const SearchDropdown = React.memo(function SearchDropdown(
   const variant = props.variant || (isDesktop ? "desktop" : "mobile");
 
   // Sort items alphabetically by manufacturer (subtitle) - memoized for performance
-  // Only compute this for desktop variant, but always call the hook
   const sortedItems = React.useMemo(() => {
     if (variant === "desktop") {
       const desktopProps = props as DesktopSearchDropdownProps;
@@ -73,7 +72,10 @@ export const SearchDropdown = React.memo(function SearchDropdown(
         .sort((a, b) => a.subtitle.localeCompare(b.subtitle));
     }
     return [];
-  }, [variant, props]);
+  }, [
+    variant,
+    variant === "desktop" ? (props as DesktopSearchDropdownProps).items : [],
+  ]);
 
   if (variant === "mobile") {
     const mobileProps = props as MobileSearchDropdownProps;

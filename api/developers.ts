@@ -85,7 +85,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Only allow GET requests
   if (req.method !== "GET") {
-    console.warn(`[${requestId}] Method not allowed: ${req.method}`);
+    logApiError(requestId, `Method not allowed: ${req.method}`, 405, {
+      method: req.method,
+      allowed: ["GET", "OPTIONS"],
+    });
     return res.status(405).json({
       error: "Method not allowed",
       allowed: ["GET", "OPTIONS"],

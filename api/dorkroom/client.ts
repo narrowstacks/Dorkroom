@@ -211,7 +211,7 @@ export class DorkroomClient {
       clearTimeout(timeoutId);
       return response.ok || response.status < 500; // Even 4xx responses indicate connectivity
     } catch (error) {
-      this.logger.debug("Network connectivity check failed:", error);
+      this.logger.debug(`Network connectivity check failed: ${error}`);
       return false;
     }
   }
@@ -240,7 +240,7 @@ export class DorkroomClient {
       );
       this.logger.debug("Data cached to local storage");
     } catch (error) {
-      this.logger.warn("Failed to store local cache:", error);
+      this.logger.warn(`Failed to store local cache: ${error}`);
     }
   }
 
@@ -291,7 +291,7 @@ export class DorkroomClient {
       );
       return parsed;
     } catch (error) {
-      this.logger.warn("Failed to retrieve local cache:", error);
+      this.logger.warn(`Failed to retrieve local cache: ${error}`);
       return null;
     }
   }
@@ -306,7 +306,7 @@ export class DorkroomClient {
       await AsyncStorage.removeItem("dorkroom_development_data");
       this.logger.debug("Local cache cleared");
     } catch (error) {
-      this.logger.warn("Failed to clear local cache:", error);
+      this.logger.warn(`Failed to clear local cache: ${error}`);
     }
   }
 
@@ -435,8 +435,7 @@ export class DorkroomClient {
         return;
       } catch (error) {
         this.logger.warn(
-          "Failed to fetch fresh data, falling back to local cache if available:",
-          error,
+          `Failed to fetch fresh data, falling back to local cache if available: ${error}`,
         );
 
         // If API fails but we have local cache (even if expired), use it
