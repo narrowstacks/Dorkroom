@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/calculator/InfoSection";
 import { StyledSelect } from "@/components/ui/select/StyledSelect";
 import { SearchInput, SearchDropdown } from "@/components/ui/search";
+import { PaginationControls } from "@/components/ui/pagination";
 import {
   RecipeDetail,
   CustomRecipeForm,
@@ -59,6 +60,7 @@ import { useCustomRecipes } from "@/hooks/useCustomRecipes";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useDebounce } from "@/hooks/useDebounce";
+import { usePagination } from "@/hooks/usePagination";
 import { DEVELOPER_TYPES, formatTime } from "@/constants/developmentRecipes";
 import { formatDilution } from "@/utils/dilutionUtils";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
@@ -637,6 +639,21 @@ export default function DevelopmentRecipes() {
     getDeveloperById,
     customRecipes,
   ]);
+
+  // Pagination logic
+  const {
+    paginatedItems: paginatedCombinations,
+    currentPage,
+    totalPages,
+    totalItems,
+    startIndex,
+    endIndex,
+    hasNext,
+    hasPrevious,
+    goToPage,
+    goToNext,
+    goToPrevious,
+  } = usePagination(allCombinations, 50);
 
   // Custom recipe helpers
   const getCustomRecipeFilm = (recipeId: string): Film | undefined => {
@@ -1316,8 +1333,21 @@ export default function DevelopmentRecipes() {
                 { color: textColor, textAlign: isDesktop ? "left" : "center" },
               ]}
             >
-              {allCombinations.length} Development Recipe
-              {allCombinations.length !== 1 ? "s" : ""}
+              {totalItems} Development Recipe
+              {totalItems !== 1 ? "s" : ""}
+              {totalPages > 1 && (
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "normal",
+                    color: textColor,
+                    opacity: 0.7,
+                  }}
+                >
+                  {" "}
+                  (Page {currentPage} of {totalPages})
+                </Text>
+              )}
               {customRecipes.length > 0 && showCustomRecipes && (
                 <Text
                   style={{
@@ -1502,6 +1532,20 @@ export default function DevelopmentRecipes() {
             ) : (
               // Cards or Table View
               <>
+                {/* Pagination Controls - Top */}
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  startIndex={startIndex}
+                  endIndex={endIndex}
+                  hasNext={hasNext}
+                  hasPrevious={hasPrevious}
+                  goToPage={goToPage}
+                  goToNext={goToNext}
+                  goToPrevious={goToPrevious}
+                />
+
                 {isDesktop && viewMode === "table" ? (
                   // Table view for desktop
                   <Box style={styles.tableContainer}>
@@ -1551,7 +1595,7 @@ export default function DevelopmentRecipes() {
                     </Box>
 
                     <ScrollView style={styles.tableScrollView}>
-                      {allCombinations.map((combination, index) => {
+                      {paginatedCombinations.map((combination, index) => {
                         const isCustom = customRecipes.some(
                           (r) => r.id === combination.id,
                         );
@@ -1589,7 +1633,7 @@ export default function DevelopmentRecipes() {
                 ) : (
                   // Cards view (default for mobile, optional for desktop)
                   <Box style={styles.cardsContainer}>
-                    {allCombinations.map((combination) => {
+                    {paginatedCombinations.map((combination) => {
                       const isCustom = customRecipes.some(
                         (r) => r.id === combination.id,
                       );
@@ -1624,6 +1668,20 @@ export default function DevelopmentRecipes() {
                     })}
                   </Box>
                 )}
+
+                {/* Pagination Controls - Bottom */}
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  startIndex={startIndex}
+                  endIndex={endIndex}
+                  hasNext={hasNext}
+                  hasPrevious={hasPrevious}
+                  goToPage={goToPage}
+                  goToNext={goToNext}
+                  goToPrevious={goToPrevious}
+                />
               </>
             )}
           </Box>
