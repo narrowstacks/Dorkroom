@@ -1,7 +1,7 @@
 import React, { ReactNode } from "react";
 import { StyleSheet, Platform } from "react-native";
 import { Box, Text } from "@gluestack-ui/themed";
-import { useWindowDimensions } from "@/hooks/useWindowDimensions";
+import { useWindowDimensions } from "@/hooks/ui/detection";
 
 interface FormGroupProps {
   label: string;

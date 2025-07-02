@@ -1,7 +1,7 @@
 import React, { ReactNode } from "react";
 import { StyleSheet } from "react-native";
 import { Box, Text } from "@gluestack-ui/themed";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useThemeColor } from "@/hooks/ui/theming";
 
 interface InfoSectionProps {
   title: string;

@@ -3,8 +3,8 @@ import { StyleSheet, TouchableOpacity, Platform } from "react-native";
 import { Box, Text, HStack, VStack } from "@gluestack-ui/themed";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { StyledTextInput } from "@/components/ui/forms/StyledTextInput";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { useWindowDimensions } from "@/hooks/useWindowDimensions";
+import { useThemeColor } from "@/hooks/ui/theming";
+import { useWindowDimensions } from "@/hooks/ui/detection";
 import type { PaginationState, PaginationActions } from "@/hooks/usePagination";
 
 interface PaginationControlsProps extends PaginationState, PaginationActions {

@@ -1,5 +1,5 @@
 import { Text, TextProps, TextStyle } from "react-native";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useThemeColor } from "@/hooks/ui/theming";
 
 export type TextType =
   | "default"

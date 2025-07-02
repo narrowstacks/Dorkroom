@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Box, Text, Modal } from "@gluestack-ui/themed";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { useWindowDimensions } from "@/hooks/useWindowDimensions";
+import { useThemeColor } from "@/hooks/ui/theming";
+import { useWindowDimensions } from "@/hooks/ui/detection";
 import { MobileSelectionModal } from "../select/MobileSelectionModal";
 import type { Film, Developer } from "@/api/dorkroom/types";
 
@@ -72,10 +72,7 @@ export const SearchDropdown = React.memo(function SearchDropdown(
         .sort((a, b) => a.subtitle.localeCompare(b.subtitle));
     }
     return [];
-  }, [
-    variant,
-    variant === "desktop" ? (props as DesktopSearchDropdownProps).items : [],
-  ]);
+  }, [variant, props]);
 
   if (variant === "mobile") {
     const mobileProps = props as MobileSearchDropdownProps;

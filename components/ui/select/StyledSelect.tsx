@@ -10,7 +10,7 @@ import {
   SelectItem,
   SelectScrollView,
 } from "@/components/ui/select";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useThemeColor } from "@/hooks/ui/theming";
 import { ChevronDownIcon } from "@/components/ui/icon";
 import { debugLog } from "@/utils/debugLogger";
 

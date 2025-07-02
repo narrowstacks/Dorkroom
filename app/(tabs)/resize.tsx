@@ -13,7 +13,7 @@ import {
   FormControlLabel,
   FormControlLabelText,
 } from "@gluestack-ui/themed";
-import { useResizeCalculator } from "@/hooks/useResizeCalculator";
+import { useResizeCalculator } from "@/hooks/calculators/resize";
 import { NumberInput } from "@/components/ui/forms/NumberInput";
 import { CalculatorLayout } from "@/components/ui/layout/CalculatorLayout";
 import {

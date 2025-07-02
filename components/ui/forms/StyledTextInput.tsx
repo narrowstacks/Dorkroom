@@ -1,6 +1,6 @@
 import React from "react";
 import { Platform, TextInput } from "react-native";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useThemeColor } from "@/hooks/ui/theming";
 
 type StyledTextInputProps = React.ComponentProps<typeof TextInput>;
 

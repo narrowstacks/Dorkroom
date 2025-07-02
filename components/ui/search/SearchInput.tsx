@@ -7,8 +7,8 @@ import {
 } from "react-native";
 import { Box, HStack } from "@gluestack-ui/themed";
 import { Search, X } from "lucide-react-native";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { useWindowDimensions } from "@/hooks/useWindowDimensions";
+import { useThemeColor } from "@/hooks/ui/theming";
+import { useWindowDimensions } from "@/hooks/ui/detection";
 import { MobileSelectButton } from "@/components/ui/select/MobileSelectButton";
 import type { Film, Developer } from "@/api/dorkroom/types";
 

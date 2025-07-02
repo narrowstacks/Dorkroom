@@ -8,7 +8,7 @@ import {
   VStack,
   HStack,
 } from "@gluestack-ui/themed";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useThemeColor } from "@/hooks/ui/theming";
 
 interface AlertButton {
   text: string;

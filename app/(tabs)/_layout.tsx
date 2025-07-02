@@ -10,8 +10,8 @@ import {
   Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useColorScheme } from "@/hooks/useColorScheme";
-import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useColorScheme } from "@/hooks/ui/theming";
+import { useDocumentTitle } from "@/hooks/ui/navigation";
 import { Colors } from "@/constants/Colors";
 import * as Haptics from "expo-haptics";
 

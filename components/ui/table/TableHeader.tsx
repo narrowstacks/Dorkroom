@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, TouchableOpacity, Platform } from "react-native";
 import { Text } from "@gluestack-ui/themed";
 import { ChevronUp, ChevronDown } from "lucide-react-native";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useThemeColor } from "@/hooks/ui/theming";
 
 interface TableHeaderProps {
   title: string;

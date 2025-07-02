@@ -47,20 +47,20 @@ import {
   RecipeDetail,
   CustomRecipeForm,
   RecipeCard,
-} from "@/components/development-recipes";
+} from "@/components/recipes/development";
 import {
   getRecipeDetailModalConfig,
   getCustomRecipeDetailModalConfig,
   getRecipeFormModalConfig,
-} from "@/components/development-recipes/ModalStyles";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { useDevelopmentRecipes } from "@/hooks/useDevelopmentRecipes";
-import { useRecipeUrlState } from "@/hooks/useRecipeUrlState";
-import { useCustomRecipes } from "@/hooks/useCustomRecipes";
-import { useWindowDimensions } from "@/hooks/useWindowDimensions";
-import { useFeatureFlags } from "@/hooks/useFeatureFlags";
-import { useDebounce } from "@/hooks/useDebounce";
-import { usePagination } from "@/hooks/usePagination";
+} from "@/components/recipes/development/ModalStyles";
+import { useThemeColor } from "@/hooks/ui/theming";
+import { useDevelopmentRecipes } from "@/hooks/recipes/development-recipes";
+import { useRecipeUrlState } from "@/hooks/data/url-state";
+import { useCustomRecipes } from "@/hooks/recipes/custom-recipes";
+import { useWindowDimensions } from "@/hooks/ui/detection";
+import { useFeatureFlags } from "@/hooks/utils";
+import { useDebounce } from "@/hooks/utils/debounce";
+import { usePagination } from "@/hooks/data/pagination";
 import { DEVELOPER_TYPES, formatTime } from "@/constants/developmentRecipes";
 import { formatDilution } from "@/utils/dilutionUtils";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";

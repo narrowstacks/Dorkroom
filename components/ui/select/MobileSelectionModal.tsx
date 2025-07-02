@@ -15,8 +15,8 @@ import {
   FlatList,
 } from "@gluestack-ui/themed";
 import { Search, X } from "lucide-react-native";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useThemeColor } from "@/hooks/ui/theming";
+import { useDebounce } from "@/hooks/utils/debounce";
 import type { Film, Developer } from "@/api/dorkroom/types";
 
 interface DilutionOption {

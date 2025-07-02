@@ -9,7 +9,7 @@ import {
 import { Text, HStack } from "@gluestack-ui/themed";
 import { Minus, Plus } from "lucide-react-native";
 import { ThemedText } from "@/components/ui/core/ThemedText";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useThemeColor } from "@/hooks/ui/theming";
 import {
   useMobileInputDetection,
   MobileInputTrigger,

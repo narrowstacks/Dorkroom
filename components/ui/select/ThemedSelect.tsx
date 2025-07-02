@@ -15,7 +15,7 @@ import {
   Box, // Using Gluestack Box for layout
   Divider,
 } from "@gluestack-ui/themed";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useThemeColor } from "@/hooks/ui/theming";
 
 interface Item {
   label: string;

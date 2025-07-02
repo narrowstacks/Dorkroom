@@ -1,8 +1,8 @@
 import React, { ReactNode } from "react";
 import { StyleSheet, Platform } from "react-native";
 import { Box, Text } from "@gluestack-ui/themed";
-import { useWindowDimensions } from "@/hooks/useWindowDimensions";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useWindowDimensions } from "@/hooks/ui/detection";
+import { useThemeColor } from "@/hooks/ui/theming";
 
 interface ResultRowProps {
   label: string;

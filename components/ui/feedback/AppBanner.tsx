@@ -9,7 +9,7 @@ import {
   VStack,
 } from "@gluestack-ui/themed";
 import { Smartphone, X } from "lucide-react-native";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useThemeColor } from "@/hooks/ui/theming";
 
 interface AppBannerProps {
   message: string;

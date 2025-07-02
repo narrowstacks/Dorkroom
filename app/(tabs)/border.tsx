@@ -19,11 +19,11 @@ import { ResultRow } from "@/components/ui/calculator";
 import {
   AnimatedPreview,
   BorderInfoSection,
-} from "@/components/border-calculator";
+} from "@/components/calculators/border";
 import {
   MobileBorderCalculator,
   useResponsiveDetection,
-} from "@/components/border-calculator/mobile";
+} from "@/components/calculators/border/mobile";
 
 import {
   DESKTOP_BREAKPOINT,
@@ -37,12 +37,12 @@ import {
   OFFSET_SLIDER_LABELS,
 } from "@/constants/borderCalc";
 
-import { useWindowDimensions } from "@/hooks/useWindowDimensions";
+import { useWindowDimensions } from "@/hooks/ui/detection";
 import {
   useBorderCalculator,
   useBorderPresets,
-} from "@/hooks/borderCalculator";
-import { useThemeColor } from "@/hooks/useThemeColor";
+} from "@/hooks/calculators/border";
+import { useThemeColor } from "@/hooks/ui/theming";
 import { ASPECT_RATIOS, PAPER_SIZES } from "@/constants/border";
 import { ThemedSelect } from "@/components/ui/select/ThemedSelect";
 import { DEFAULT_BORDER_PRESETS } from "@/constants/borderPresets";
@@ -59,9 +59,9 @@ import {
 import type { BorderPreset } from "@/types/borderPresetTypes";
 import * as Clipboard from "expo-clipboard";
 import { encodePreset } from "@/utils/presetSharing";
-import { useSharedPresetLoader } from "@/hooks/useSharedPresetLoader";
+import { useSharedPresetLoader } from "@/hooks/recipes/sharing";
 import { generateSharingUrls } from "@/utils/urlHelpers";
-import { useAppDetection } from "@/hooks/useAppDetection";
+import { useAppDetection } from "@/hooks/ui/detection";
 import { AppBanner } from "@/components/ui/feedback/AppBanner";
 
 import {

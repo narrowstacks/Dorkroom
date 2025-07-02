@@ -12,8 +12,8 @@ import {
   ModalContent,
 } from "@gluestack-ui/themed";
 import { X, Check } from "lucide-react-native";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { useWindowDimensions } from "@/hooks/useWindowDimensions";
+import { useThemeColor } from "@/hooks/ui/theming";
+import { useWindowDimensions } from "@/hooks/ui/detection";
 
 // Hook for detecting if mobile input should be used
 export const useMobileInputDetection = () => {

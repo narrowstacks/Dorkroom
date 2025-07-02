@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import { Text, VStack } from "@gluestack-ui/themed";
 import { ChevronDown } from "lucide-react-native";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useThemeColor } from "@/hooks/ui/theming";
 import type { Film, Developer } from "@/api/dorkroom/types";
 
 interface MobileSelectButtonProps {

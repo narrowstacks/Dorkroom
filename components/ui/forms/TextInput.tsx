@@ -4,7 +4,7 @@ import {
   TextInputProps as RNTextInputProps,
 } from "react-native";
 import { Input, InputField } from "@gluestack-ui/themed";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useThemeColor } from "@/hooks/ui/theming";
 import {
   useMobileInputDetection,
   MobileInputTrigger,

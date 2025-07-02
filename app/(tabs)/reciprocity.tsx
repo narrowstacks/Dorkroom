@@ -8,9 +8,9 @@ import {
   Box,
   Text,
 } from "@gluestack-ui/themed";
-import { useReciprocityCalculator } from "@/hooks/useReciprocityCalculator";
+import { useReciprocityCalculator } from "@/hooks/calculators/reciprocity";
 import { FILM_TYPES, EXPOSURE_PRESETS } from "@/constants/reciprocity";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useThemeColor } from "@/hooks/ui/theming";
 import { fonts } from "@/styles/common";
 import { CalculatorLayout } from "@/components/ui/layout/CalculatorLayout";
 import {

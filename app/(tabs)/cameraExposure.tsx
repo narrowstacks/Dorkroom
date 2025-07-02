@@ -3,7 +3,7 @@ import { Platform, StyleSheet } from "react-native";
 import {
   useCameraExposureCalculator,
   ExposureSetting,
-} from "@/hooks/useCameraExposureCalculator";
+} from "@/hooks/calculators/camera-exposure";
 import {
   APERTURE_VALUES,
   ISO_VALUES,

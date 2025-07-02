@@ -1,7 +1,7 @@
 import React from "react";
 import { Platform } from "react-native";
-import { useExposureCalculator } from "@/hooks/useExposureCalculator";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useExposureCalculator } from "@/hooks/calculators/exposure";
+import { useThemeColor } from "@/hooks/ui/theming";
 import { Button, ButtonText, HStack } from "@gluestack-ui/themed";
 import { CalculatorLayout } from "@/components/ui/layout/CalculatorLayout";
 import {

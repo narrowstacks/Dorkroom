@@ -1,7 +1,7 @@
 import React from "react";
 import { Platform, Switch } from "react-native";
 import { HStack, Text } from "@gluestack-ui/themed";
-import { useThemeColor } from "@/hooks/useThemeColor";
+import { useThemeColor } from "@/hooks/ui/theming";
 
 interface ToggleSwitchProps {
   label: string;
