@@ -36,7 +36,7 @@ export const FILM_TYPES = [
   {
     label: "Ilford FP4+",
     value: "fp4",
-    factor: 1.33,
+    factor: 1.26,
   },
   {
     label: "Fuji Acros 100",
