@@ -6,17 +6,17 @@ export const FILM_TYPES = [
   {
     label: "Kodak Tri-X 400",
     value: "tri-x",
-    factor: 1.31,
+    factor: 1.54,
   },
   {
     label: "Kodak T-Max 100",
     value: "tmax100",
-    factor: 1.26,
+    factor: 1.15,
   },
   {
     label: "Kodak T-Max 400",
     value: "tmax400",
-    factor: 1.22,
+    factor: 1.24,
   },
   {
     label: "Ilford HP5+",
@@ -72,26 +72,6 @@ export const FILM_TYPES = [
     label: "Kentmere 400",
     value: "kentmere400",
     factor: 1.3,
-  },
-  {
-    label: "Fuji Acros 100",
-    value: "acros",
-    factor: 1.14, // Has minimal reciprocity failure
-  },
-  {
-    label: "Fuji Neopan 400",
-    value: "neopan",
-    factor: 1.29,
-  },
-  {
-    label: "Foma 100",
-    value: "foma100",
-    factor: 1.35,
-  },
-  {
-    label: "Shanghai GP3 100",
-    value: "gp3",
-    factor: 1.35,
   },
   {
     label: "Custom",
