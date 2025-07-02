@@ -13,7 +13,7 @@ import {
   clampOffsets,
   bordersFromGaps,
   bladeReadings,
-} from '../utils/borderCalculations';
+} from "../utils/borderCalculations";
 
 export interface WorkerInput {
   orientedDimensions: {
@@ -74,13 +74,13 @@ export interface WorkerOutput {
 
 // Helper function to perform all calculations
 function performCalculations(input: WorkerInput): WorkerOutput {
-  const { 
-    orientedDimensions, 
-    minBorderData, 
-    paperEntry, 
-    paperSizeWarning, 
-    state, 
-    previewScale 
+  const {
+    orientedDimensions,
+    minBorderData,
+    paperEntry,
+    paperSizeWarning,
+    state,
+    previewScale,
   } = input;
 
   const { orientedPaper, orientedRatio } = orientedDimensions;
@@ -96,7 +96,13 @@ function performCalculations(input: WorkerInput): WorkerOutput {
   );
 
   // Step 2: Offset calculations
-  const { h: offH, v: offV, halfW, halfH, warning: offsetWarning } = clampOffsets(
+  const {
+    h: offH,
+    v: offV,
+    halfW,
+    halfH,
+    warning: offsetWarning,
+  } = clampOffsets(
     orientedPaper.w,
     orientedPaper.h,
     printW,
@@ -111,11 +117,8 @@ function performCalculations(input: WorkerInput): WorkerOutput {
   const borders = bordersFromGaps(halfW, halfH, offH, offV);
 
   // Step 4: Easel fitting calculations
-  const { easelSize, effectiveSlot, isNonStandardPaperSize } = findCenteringOffsets(
-    paperEntry.w,
-    paperEntry.h,
-    state.isLandscape,
-  );
+  const { easelSize, effectiveSlot, isNonStandardPaperSize } =
+    findCenteringOffsets(paperEntry.w, paperEntry.h, state.isLandscape);
 
   // Step 5: Paper shift calculations
   const spX = isNonStandardPaperSize
@@ -126,20 +129,16 @@ function performCalculations(input: WorkerInput): WorkerOutput {
     : 0;
 
   // Step 6: Blade readings and warnings
-  const blades = bladeReadings(
-    printW,
-    printH,
-    spX + offH,
-    spY + offV,
-  );
+  const blades = bladeReadings(printW, printH, spX + offH, spY + offV);
 
   let bladeWarning: string | null = null;
   const values = Object.values(blades);
-  if (values.some(v => v < 0))
-    bladeWarning = 'Negative blade reading – use opposite side of scale.';
-  if (values.some(v => Math.abs(v) < 3 && v !== 0))
-    bladeWarning = (bladeWarning ? bladeWarning + '\n' : '') +
-      'Many easels have no markings below about 3 in.';
+  if (values.some((v) => v < 0))
+    bladeWarning = "Negative blade reading – use opposite side of scale.";
+  if (values.some((v) => Math.abs(v) < 3 && v !== 0))
+    bladeWarning =
+      (bladeWarning ? bladeWarning + "\n" : "") +
+      "Many easels have no markings below about 3 in.";
 
   // Step 7: Build final result
   return {
@@ -155,10 +154,18 @@ function performCalculations(input: WorkerInput): WorkerOutput {
 
     printWidthPercent: orientedPaper.w ? (printW / orientedPaper.w) * 100 : 0,
     printHeightPercent: orientedPaper.h ? (printH / orientedPaper.h) * 100 : 0,
-    leftBorderPercent: orientedPaper.w ? (borders.left / orientedPaper.w) * 100 : 0,
-    rightBorderPercent: orientedPaper.w ? (borders.right / orientedPaper.w) * 100 : 0,
-    topBorderPercent: orientedPaper.h ? (borders.top / orientedPaper.h) * 100 : 0,
-    bottomBorderPercent: orientedPaper.h ? (borders.bottom / orientedPaper.h) * 100 : 0,
+    leftBorderPercent: orientedPaper.w
+      ? (borders.left / orientedPaper.w) * 100
+      : 0,
+    rightBorderPercent: orientedPaper.w
+      ? (borders.right / orientedPaper.w) * 100
+      : 0,
+    topBorderPercent: orientedPaper.h
+      ? (borders.top / orientedPaper.h) * 100
+      : 0,
+    bottomBorderPercent: orientedPaper.h
+      ? (borders.bottom / orientedPaper.h) * 100
+      : 0,
 
     leftBladeReading: blades.left,
     rightBladeReading: blades.right,
@@ -173,9 +180,10 @@ function performCalculations(input: WorkerInput): WorkerOutput {
 
     offsetWarning,
     bladeWarning,
-    minBorderWarning: minBorderData.minBorder !== minBorder
-      ? minBorderData.minBorderWarning
-      : null,
+    minBorderWarning:
+      minBorderData.minBorder !== minBorder
+        ? minBorderData.minBorderWarning
+        : null,
     paperSizeWarning: paperSizeWarning,
     lastValidMinBorder: minBorderData.lastValid,
     clampedHorizontalOffset: offH,
@@ -188,14 +196,16 @@ function performCalculations(input: WorkerInput): WorkerOutput {
 }
 
 // Web Worker message handler
-self.onmessage = function(e: MessageEvent<WorkerInput>) {
+self.onmessage = function (e: MessageEvent<WorkerInput>) {
   try {
     const result = performCalculations(e.data);
     self.postMessage(result);
   } catch (error) {
-    self.postMessage({ error: error instanceof Error ? error.message : String(error) });
+    self.postMessage({
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
 // For module exports in non-worker environments
-export { performCalculations }; 
+export { performCalculations };

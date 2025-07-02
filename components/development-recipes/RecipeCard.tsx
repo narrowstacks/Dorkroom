@@ -5,6 +5,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { formatTime } from "@/constants/developmentRecipes";
 import { formatDilution } from "@/utils/dilutionUtils";
+import { ShareButton } from "@/components/ShareButton";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
 
 interface RecipeCardProps {
@@ -13,6 +14,7 @@ interface RecipeCardProps {
   developer: Developer | undefined;
   onPress: () => void;
   isCustomRecipe: boolean;
+  onShare?: (e: any) => void; // Optional share handler to prevent card press
 }
 
 export function RecipeCard({
@@ -21,6 +23,7 @@ export function RecipeCard({
   developer,
   onPress,
   isCustomRecipe,
+  onShare,
 }: RecipeCardProps) {
   const textColor = useThemeColor({}, "text");
   const developmentTint = useThemeColor({}, "developmentRecipesTint");
@@ -52,16 +55,22 @@ export function RecipeCard({
   // Check if shooting ISO is different from film stock ISO
   const isNonStandardISO = film && combination.shootingIso !== film.isoSpeed;
 
-  // Format push/pull value if present
+  // Format push/pull value if present. Accepts undefined and treats it as 0.
   const formatPushPullNumber = (num: number): string => {
+    if (num === undefined || num === null) return "";
     return num % 1 === 0
       ? num.toString()
-      : num.toFixed(2).replace(/\.?0+$/, "");
+      : Number(num)
+          .toFixed(2)
+          .replace(/\.?0+$/, "");
   };
 
+  // Safely derive the push/pull value (default-to-0 to avoid NaN / undefined issues).
+  const pushPullValue = combination.pushPull ?? 0;
+
   const pushPullDisplay =
-    combination.pushPull !== 0
-      ? ` ${combination.pushPull > 0 ? `+${formatPushPullNumber(combination.pushPull)}` : formatPushPullNumber(combination.pushPull)}`
+    pushPullValue !== 0
+      ? ` ${pushPullValue > 0 ? `+${formatPushPullNumber(pushPullValue)}` : formatPushPullNumber(pushPullValue)}`
       : null;
 
   const developerName = developer
@@ -121,13 +130,30 @@ export function RecipeCard({
               </Text>
             )}
           </Text>
-          {isCustomRecipe && (
-            <Box
-              style={[styles.customBadge, { backgroundColor: developmentTint }]}
-            >
-              <Text style={styles.customBadgeText}>●</Text>
-            </Box>
-          )}
+
+          <Box style={styles.cardHeaderActions}>
+            {isCustomRecipe && (
+              <Box
+                style={[
+                  styles.customBadge,
+                  { backgroundColor: developmentTint },
+                ]}
+              >
+                <Text style={styles.customBadgeText}>●</Text>
+              </Box>
+            )}
+
+            {/* Share Button */}
+            <ShareButton
+              recipe={combination}
+              size="xs"
+              style={styles.shareButton}
+              onShareStart={() => {
+                // Prevent card press when sharing
+                onShare?.(null);
+              }}
+            />
+          </Box>
         </Box>
 
         {/* Developer and Dilution Parameters */}
@@ -223,6 +249,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     minHeight: 24,
   },
+  cardHeaderActions: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+  },
   cardFilmName: {
     fontSize: 16,
     fontWeight: "600",
@@ -242,8 +273,10 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginLeft: 8,
     marginTop: 6,
+  },
+  shareButton: {
+    opacity: 0.8,
   },
   customBadgeText: {
     fontSize: 6,

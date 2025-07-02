@@ -464,8 +464,6 @@ describe("ThemedSelect Logic Functions", () => {
     });
 
     it("should handle malformed item objects", () => {
-      type Item = { label: string; value: string };
-
       const validateItem = (item: any): boolean => {
         return !!(
           item &&
@@ -609,8 +607,6 @@ describe("ThemedSelect Logic Functions", () => {
     });
 
     it("should handle complete component lifecycle", () => {
-      type Item = { label: string; value: string };
-
       // Simulate complete component behavior
       const componentLifecycle = (
         items: string[],

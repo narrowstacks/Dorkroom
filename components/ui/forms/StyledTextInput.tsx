@@ -1,13 +1,13 @@
-import React from 'react';
-import { Platform, TextInput } from 'react-native';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import React from "react";
+import { Platform, TextInput } from "react-native";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 type StyledTextInputProps = React.ComponentProps<typeof TextInput>;
 
 export const StyledTextInput = (props: StyledTextInputProps) => {
-  const textColor = useThemeColor({}, 'text');
-  const borderColor = useThemeColor({}, 'icon');
-  
+  const textColor = useThemeColor({}, "text");
+  const borderColor = useThemeColor({}, "icon");
+
   return (
     <TextInput
       style={{
@@ -21,8 +21,8 @@ export const StyledTextInput = (props: StyledTextInputProps) => {
         borderColor,
       }}
       placeholderTextColor={borderColor}
-      keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
+      keyboardType={Platform.OS === "ios" ? "decimal-pad" : "numeric"}
       {...props}
     />
   );
-}; 
+};

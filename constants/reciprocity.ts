@@ -65,9 +65,7 @@ export const FILM_TYPES = [
 ];
 
 // Common exposure time presets in seconds
-export const EXPOSURE_PRESETS = [
-  1, 2, 4, 8, 15, 30, 60, 120, 240, 480
-];
+export const EXPOSURE_PRESETS = [1, 2, 4, 8, 15, 30, 60, 120, 240, 480];
 
 // Blade thickness in pixels for the visual representation
 export const BLADE_THICKNESS = 8;
@@ -75,5 +73,5 @@ export const BLADE_THICKNESS = 8;
 export default {
   FILM_TYPES,
   EXPOSURE_PRESETS,
-  BLADE_THICKNESS
-}; 
+  BLADE_THICKNESS,
+};

@@ -41,7 +41,13 @@ export const useResizeCalculator = () => {
     const newRatio = (newW / newL).toFixed(3);
 
     setIsAspectRatioMatched(originalRatio === newRatio);
-  }, [originalWidth, originalLength, newWidth, newLength, isEnlargerHeightMode]);
+  }, [
+    originalWidth,
+    originalLength,
+    newWidth,
+    newLength,
+    isEnlargerHeightMode,
+  ]);
 
   // Calculate exposure directly using useMemo
   const { newTime, stopsDifference } = useMemo(() => {
@@ -63,11 +69,11 @@ export const useResizeCalculator = () => {
       ) {
         const oldMagnification = origHeight;
         const newMagnification = newH;
-        
+
         const numerator = Math.pow(newMagnification, 2);
-        const denominator = Math.pow(oldMagnification , 2);
+        const denominator = Math.pow(oldMagnification, 2);
         const ratio = numerator / denominator;
-        
+
         const newTimeValue = origTime * ratio;
         const stops = Math.log2(ratio);
 
@@ -105,16 +111,19 @@ export const useResizeCalculator = () => {
         }
       }
     }
-    return { newTime: calculatedNewTime, stopsDifference: calculatedStopsDifference };
+    return {
+      newTime: calculatedNewTime,
+      stopsDifference: calculatedStopsDifference,
+    };
   }, [
-    isEnlargerHeightMode, 
-    originalWidth, 
-    originalLength, 
-    newWidth, 
-    newLength, 
-    originalTime, 
-    originalHeight, 
-    newHeight
+    isEnlargerHeightMode,
+    originalWidth,
+    originalLength,
+    newWidth,
+    newLength,
+    originalTime,
+    originalHeight,
+    newHeight,
   ]);
 
   // Check aspect ratio when dimensions or mode change
@@ -145,4 +154,4 @@ export const useResizeCalculator = () => {
   };
 };
 
-export default useResizeCalculator; 
+export default useResizeCalculator;

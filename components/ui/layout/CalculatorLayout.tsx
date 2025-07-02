@@ -1,9 +1,5 @@
 import React, { ReactNode } from "react";
-import {
-  StyleSheet,
-  ScrollView,
-  Platform,
-} from "react-native";
+import { StyleSheet, ScrollView, Platform } from "react-native";
 import { Box, Text } from "@gluestack-ui/themed";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { useThemeColor } from "@/hooks/useThemeColor";
@@ -14,7 +10,11 @@ interface CalculatorLayoutProps {
   infoSection?: ReactNode;
 }
 
-export function CalculatorLayout({ title, children, infoSection }: CalculatorLayoutProps) {
+export function CalculatorLayout({
+  title,
+  children,
+  infoSection,
+}: CalculatorLayoutProps) {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
   const backgroundColor = useThemeColor({}, "background");
@@ -27,17 +27,23 @@ export function CalculatorLayout({ title, children, infoSection }: CalculatorLay
       keyboardShouldPersistTaps="handled"
     >
       <Box
-        className="flex-1 p-4 web:max-w-5xl web:mx-auto web:w-full web:p-6"
+        className="flex-1 p-4 web:mx-auto web:w-full web:max-w-5xl web:p-6"
         style={[styles.content, Platform.OS === "web" && styles.webContent]}
       >
-        <Box className="flex-row justify-center items-center w-full mb-6 pb-4 border-b" style={[styles.header, { borderBottomColor: outline }]}>
-          <Text className="text-3xl text-center font-semibold" style={styles.title}>
+        <Box
+          className="mb-6 w-full flex-row items-center justify-center border-b pb-4"
+          style={[styles.header, { borderBottomColor: outline }]}
+        >
+          <Text
+            className="text-center text-3xl font-semibold"
+            style={styles.title}
+          >
             {title}
           </Text>
         </Box>
 
         <Box
-          className="w-full web:flex-row web:gap-10 web:items-start"
+          className="w-full web:flex-row web:items-start web:gap-10"
           style={[
             styles.mainContent,
             Platform.OS === "web" && isDesktop && styles.webMainContent,
@@ -45,11 +51,11 @@ export function CalculatorLayout({ title, children, infoSection }: CalculatorLay
         >
           {children}
         </Box>
-        
+
         {/* Info Section - Full width on desktop */}
         {infoSection && (
           <Box
-            className="w-full mt-8"
+            className="mt-8 w-full"
             style={[
               styles.infoContainer,
               Platform.OS === "web" && isDesktop && styles.webInfoContainer,

@@ -7,8 +7,8 @@
      - useWarningSystem: Debounced warning state management
 \* ------------------------------------------------------------------ */
 
-import { useEffect, useRef, useCallback } from 'react';
-import type { BorderCalculatorState, WarningTimeouts } from './types';
+import { useEffect, useRef, useCallback } from "react";
+import type { BorderCalculatorState, WarningTimeouts } from "./types";
 
 export const useWarningSystem = (
   state: BorderCalculatorState,
@@ -19,7 +19,7 @@ export const useWarningSystem = (
     minBorderWarning: string | null;
     paperSizeWarning: string | null;
     lastValidMinBorder: number;
-  }
+  },
 ) => {
   const warningTimeouts = useRef<WarningTimeouts>({
     offset: null,
@@ -28,46 +28,74 @@ export const useWarningSystem = (
     paperSize: null,
   });
 
-  const debouncedWarningUpdate = useCallback((
-    warningType: keyof WarningTimeouts,
-    newValue: string | null,
-    currentValue: string | null,
-    stateKey: keyof BorderCalculatorState
-  ) => {
-    // Clear existing timeout
-    if (warningTimeouts.current[warningType]) {
-      clearTimeout(warningTimeouts.current[warningType]!);
-    }
+  const debouncedWarningUpdate = useCallback(
+    (
+      warningType: keyof WarningTimeouts,
+      newValue: string | null,
+      currentValue: string | null,
+      stateKey: keyof BorderCalculatorState,
+    ) => {
+      // Clear existing timeout
+      if (warningTimeouts.current[warningType]) {
+        clearTimeout(warningTimeouts.current[warningType]!);
+      }
 
-    // If warning is being cleared (newValue is null), update immediately
-    if (newValue === null && currentValue !== null) {
-      dispatch({ type: 'SET_FIELD', key: stateKey, value: null });
-      return;
-    }
+      // If warning is being cleared (newValue is null), update immediately
+      if (newValue === null && currentValue !== null) {
+        dispatch({ type: "SET_FIELD", key: stateKey, value: null });
+        return;
+      }
 
-    // If warning is appearing or changing, debounce it
-    if (newValue !== currentValue) {
-      warningTimeouts.current[warningType] = setTimeout(() => {
-        dispatch({ type: 'SET_FIELD', key: stateKey, value: newValue });
-      }, 250); // 250ms debounce for warning appearance
-    }
-  }, [dispatch]);
+      // If warning is appearing or changing, debounce it
+      if (newValue !== currentValue) {
+        warningTimeouts.current[warningType] = setTimeout(() => {
+          dispatch({ type: "SET_FIELD", key: stateKey, value: newValue });
+        }, 250); // 250ms debounce for warning appearance
+      }
+    },
+    [dispatch],
+  );
 
   useEffect(() => {
     // Handle each warning type with debouncing
-    debouncedWarningUpdate('offset', warnings.offsetWarning, state.offsetWarning, 'offsetWarning');
-    debouncedWarningUpdate('blade', warnings.bladeWarning, state.bladeWarning, 'bladeWarning');
-    debouncedWarningUpdate('minBorder', warnings.minBorderWarning, state.minBorderWarning, 'minBorderWarning');
-    debouncedWarningUpdate('paperSize', warnings.paperSizeWarning, state.paperSizeWarning, 'paperSizeWarning');
+    debouncedWarningUpdate(
+      "offset",
+      warnings.offsetWarning,
+      state.offsetWarning,
+      "offsetWarning",
+    );
+    debouncedWarningUpdate(
+      "blade",
+      warnings.bladeWarning,
+      state.bladeWarning,
+      "bladeWarning",
+    );
+    debouncedWarningUpdate(
+      "minBorder",
+      warnings.minBorderWarning,
+      state.minBorderWarning,
+      "minBorderWarning",
+    );
+    debouncedWarningUpdate(
+      "paperSize",
+      warnings.paperSizeWarning,
+      state.paperSizeWarning,
+      "paperSizeWarning",
+    );
 
     // Update lastValidMinBorder immediately (not a UI warning)
     if (warnings.lastValidMinBorder !== state.lastValidMinBorder) {
-      dispatch({ type: 'SET_FIELD', key: 'lastValidMinBorder', value: warnings.lastValidMinBorder });
+      dispatch({
+        type: "SET_FIELD",
+        key: "lastValidMinBorder",
+        value: warnings.lastValidMinBorder,
+      });
     }
 
     // Cleanup timeouts on unmount
     return () => {
-      Object.values(warningTimeouts.current).forEach(timeout => {
+      const timeouts = warningTimeouts.current;
+      Object.values(timeouts).forEach((timeout) => {
         if (timeout) clearTimeout(timeout);
       });
     };
@@ -89,4 +117,4 @@ export const useWarningSystem = (
   return {
     // No return value needed, this hook manages side effects
   };
-}; 
+};

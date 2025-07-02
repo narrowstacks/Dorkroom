@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect } from 'react';
-import { View, Platform } from 'react-native';
+import React, { useCallback, useEffect } from "react";
+import { View, Platform } from "react-native";
 
 interface SliderProps {
   value: number;
@@ -24,16 +24,19 @@ const Slider: React.FC<SliderProps> = ({
   onValueChange,
   onSlidingStart,
   onSlidingComplete,
-  minimumTrackTintColor = '#007AFF',
-  maximumTrackTintColor = '#D3D3D3',
-  thumbTintColor = '#007AFF',
+  minimumTrackTintColor = "#007AFF",
+  maximumTrackTintColor = "#D3D3D3",
+  thumbTintColor = "#007AFF",
   style,
   disabled = false,
 }) => {
-  const handleChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = parseFloat(event.target.value);
-    onValueChange?.(newValue);
-  }, [onValueChange]);
+  const handleChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = parseFloat(event.target.value);
+      onValueChange?.(newValue);
+    },
+    [onValueChange],
+  );
 
   const handleMouseDown = useCallback(() => {
     onSlidingStart?.(value);
@@ -45,8 +48,8 @@ const Slider: React.FC<SliderProps> = ({
 
   // Add CSS styles for slider thumb
   useEffect(() => {
-    if (Platform.OS === 'web') {
-      const style = document.createElement('style');
+    if (Platform.OS === "web") {
+      const style = document.createElement("style");
       style.textContent = `
         .custom-slider::-webkit-slider-thumb {
           appearance: none;
@@ -77,11 +80,14 @@ const Slider: React.FC<SliderProps> = ({
   }, [thumbTintColor]);
 
   // Web-specific slider using HTML input range
-  if (Platform.OS === 'web') {
-    const percentage = ((value - minimumValue) / (maximumValue - minimumValue)) * 100;
-    
+  if (Platform.OS === "web") {
+    const percentage =
+      ((value - minimumValue) / (maximumValue - minimumValue)) * 100;
+
     return (
-      <View style={[{ width: '100%', height: 40, justifyContent: 'center' }, style]}>
+      <View
+        style={[{ width: "100%", height: 40, justifyContent: "center" }, style]}
+      >
         <input
           type="range"
           min={minimumValue}
@@ -95,14 +101,14 @@ const Slider: React.FC<SliderProps> = ({
           onTouchEnd={handleMouseUp}
           disabled={disabled}
           style={{
-            width: '100%',
-            height: '6px',
-            borderRadius: '3px',
+            width: "100%",
+            height: "6px",
+            borderRadius: "3px",
             background: `linear-gradient(to right, ${minimumTrackTintColor} 0%, ${minimumTrackTintColor} ${percentage}%, ${maximumTrackTintColor} ${percentage}%, ${maximumTrackTintColor} 100%)`,
-            outline: 'none',
-            appearance: 'none',
-            WebkitAppearance: 'none',
-            cursor: disabled ? 'not-allowed' : 'pointer',
+            outline: "none",
+            appearance: "none",
+            WebkitAppearance: "none",
+            cursor: disabled ? "not-allowed" : "pointer",
           }}
           className="custom-slider"
         />

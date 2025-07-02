@@ -1,6 +1,6 @@
 // Tree-shakable debug logging - production builds will remove these entirely
-const DEBUG_ENABLED =
-  (typeof __DEV__ !== "undefined" ? __DEV__ : false) || false;
+const DEBUG_ENABLED = true;
+// (typeof __DEV__ !== "undefined" ? __DEV__ : false) || false;
 const PERF_MONITORING_ENABLED = false;
 
 // Use conditional compilation for better tree-shaking

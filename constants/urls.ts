@@ -4,8 +4,8 @@
 
 // Base URLs for different environments
 export const BASE_URLS = {
-  DEVELOPMENT: 'http://localhost:8081',
-  PRODUCTION: 'https://beta.dorkroom.art',
+  DEVELOPMENT: "http://localhost:8081",
+  PRODUCTION: "https://beta.dorkroom.art",
 } as const;
 
 // Sharing URLs for different calculators
@@ -23,10 +23,10 @@ export const SHARING_URLS = {
 
 /**
  * Configuration for mobile web app functionality
- * 
+ *
  * 🚀 TO ENABLE APP LINKS WHEN THE NATIVE APP LAUNCHES:
  * Simply change ENABLE_APP_LINKS_IN_PRODUCTION from false to true
- * 
+ *
  * This will:
  * - Enable "Open in Dorkroom App" button on mobile web
  * - Show the "Get the Dorkroom app" banner on mobile web
@@ -36,14 +36,14 @@ export const MOBILE_WEB_APP_CONFIG = {
   // 🎯 MAIN TOGGLE: Set to true when the native app is available in app stores
   // Currently disabled for production until app launch
   ENABLE_APP_LINKS_IN_PRODUCTION: false,
-  
+
   // Always enable in development for testing
   get ENABLE_APP_LINKS() {
     return __DEV__ || this.ENABLE_APP_LINKS_IN_PRODUCTION;
   },
-  
+
   // Control app banner/popup visibility
   get SHOW_APP_BANNER() {
     return __DEV__ || this.ENABLE_APP_LINKS_IN_PRODUCTION;
-  }
-}; 
+  },
+};

@@ -4,9 +4,12 @@
    Hook for managing web worker calculations with fallback
 \* ------------------------------------------------------------------ */
 
-import { useState, useEffect, useRef, useMemo } from 'react';
-import type { WorkerInput, WorkerOutput } from '../workers/borderCalculations.worker';
-import { performCalculations } from '../workers/borderCalculations.worker';
+import { useState, useEffect, useRef, useMemo } from "react";
+import type {
+  WorkerInput,
+  WorkerOutput,
+} from "../workers/borderCalculations.worker";
+import { performCalculations } from "../workers/borderCalculations.worker";
 
 interface UseWorkerCalculationOptions {
   enabled?: boolean;
@@ -15,29 +18,31 @@ interface UseWorkerCalculationOptions {
 
 export function useWorkerCalculation(
   input: WorkerInput | null,
-  options: UseWorkerCalculationOptions = {}
+  options: UseWorkerCalculationOptions = {},
 ) {
   const { enabled = true, fallbackToSync = true } = options;
-  
+
   const [result, setResult] = useState<WorkerOutput | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const workerRef = useRef<Worker | null>(null);
   const pendingInputRef = useRef<WorkerInput | null>(null);
 
   // Initialize worker
   const worker = useMemo(() => {
-    if (!enabled || typeof Worker === 'undefined') return null;
-    
+    if (!enabled || typeof Worker === "undefined") return null;
+
     try {
       // Create worker from the compiled worker file
-      const worker = new Worker('/workers/borderCalculations.worker.js');
-      
-      worker.onmessage = (e: MessageEvent<WorkerOutput | { error: string }>) => {
+      const worker = new Worker("/workers/borderCalculations.worker.js");
+
+      worker.onmessage = (
+        e: MessageEvent<WorkerOutput | { error: string }>,
+      ) => {
         setIsCalculating(false);
-        
-        if ('error' in e.data) {
+
+        if ("error" in e.data) {
           setError(e.data.error);
           // Fallback to synchronous calculation if worker fails
           if (fallbackToSync && pendingInputRef.current) {
@@ -46,7 +51,11 @@ export function useWorkerCalculation(
               setResult(syncResult);
               setError(null);
             } catch (syncError) {
-              setError(syncError instanceof Error ? syncError.message : String(syncError));
+              setError(
+                syncError instanceof Error
+                  ? syncError.message
+                  : String(syncError),
+              );
             }
           }
         } else {
@@ -54,11 +63,11 @@ export function useWorkerCalculation(
           setError(null);
         }
       };
-      
+
       worker.onerror = (error) => {
         setIsCalculating(false);
-        setError(error.message || 'Worker error');
-        
+        setError(error.message || "Worker error");
+
         // Fallback to synchronous calculation
         if (fallbackToSync && pendingInputRef.current) {
           try {
@@ -66,14 +75,20 @@ export function useWorkerCalculation(
             setResult(syncResult);
             setError(null);
           } catch (syncError) {
-            setError(syncError instanceof Error ? syncError.message : String(syncError));
+            setError(
+              syncError instanceof Error
+                ? syncError.message
+                : String(syncError),
+            );
           }
         }
       };
-      
+
       return worker;
-    } catch (error) {
-      console.warn('Failed to create web worker, falling back to synchronous calculation');
+    } catch {
+      console.warn(
+        "Failed to create web worker, falling back to synchronous calculation",
+      );
       return null;
     }
   }, [enabled, fallbackToSync]);
@@ -81,7 +96,7 @@ export function useWorkerCalculation(
   // Store worker reference
   useEffect(() => {
     workerRef.current = worker;
-    
+
     return () => {
       if (workerRef.current) {
         workerRef.current.terminate();
@@ -115,13 +130,19 @@ export function useWorkerCalculation(
             setResult(syncResult);
             setError(null);
           } catch (syncError) {
-            setError(syncError instanceof Error ? syncError.message : String(syncError));
+            setError(
+              syncError instanceof Error
+                ? syncError.message
+                : String(syncError),
+            );
           } finally {
             setIsCalculating(false);
           }
         });
       } catch (syncError) {
-        setError(syncError instanceof Error ? syncError.message : String(syncError));
+        setError(
+          syncError instanceof Error ? syncError.message : String(syncError),
+        );
         setIsCalculating(false);
       }
     }
@@ -133,4 +154,4 @@ export function useWorkerCalculation(
     error,
     isWorkerSupported: worker !== null,
   };
-} 
+}

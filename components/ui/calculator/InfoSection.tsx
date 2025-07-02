@@ -22,7 +22,10 @@ interface InfoListProps {
 
 export function InfoSubtitle({ children }: InfoSubtitleProps) {
   return (
-    <Text className="text-base mt-4 mb-2 font-semibold" style={styles.infoSubtitle}>
+    <Text
+      className="mb-2 mt-4 text-base font-semibold"
+      style={styles.infoSubtitle}
+    >
       {children}
     </Text>
   );
@@ -30,9 +33,12 @@ export function InfoSubtitle({ children }: InfoSubtitleProps) {
 
 export function InfoText({ children }: InfoTextProps) {
   const textSecondary = useThemeColor({}, "textSecondary");
-  
+
   return (
-    <Text className="text-base leading-6" style={[styles.infoContentText, { color: textSecondary }]}>
+    <Text
+      className="text-base leading-6"
+      style={[styles.infoContentText, { color: textSecondary }]}
+    >
       {children}
     </Text>
   );
@@ -40,13 +46,13 @@ export function InfoText({ children }: InfoTextProps) {
 
 export function InfoList({ items }: InfoListProps) {
   const textSecondary = useThemeColor({}, "textSecondary");
-  
+
   return (
     <>
       {items.map((item, index) => (
-        <Text 
-          key={index} 
-          className="text-base leading-6" 
+        <Text
+          key={index}
+          className="text-base leading-6"
           style={[styles.infoContentText, { color: textSecondary }]}
         >
           {item}
@@ -59,20 +65,20 @@ export function InfoList({ items }: InfoListProps) {
 export function InfoFormula({ children }: InfoTextProps) {
   const textColor = useThemeColor({}, "text");
   const cardBackground = useThemeColor({}, "cardBackground");
-  
+
   return (
-    <Box 
-      className="p-3 rounded-lg mb-4" 
+    <Box
+      className="mb-4 rounded-lg p-3"
       style={[
         styles.formulaBox,
-        { 
+        {
           backgroundColor: cardBackground,
           borderColor: useThemeColor({}, "outline"),
-        }
+        },
       ]}
     >
-      <Text 
-        className="text-sm font-semibold text-center" 
+      <Text
+        className="text-center text-sm font-semibold"
         style={[styles.formulaText, { color: textColor }]}
       >
         {children}
@@ -87,15 +93,18 @@ export function InfoSection({ title, children }: InfoSectionProps) {
   const shadowColor = useThemeColor({}, "shadowColor");
 
   return (
-    <Box className="p-5 rounded-2xl mt-8 border shadow-sm" style={[
-      styles.infoSection,
-      {
-        borderColor: outline,
-        backgroundColor: cardBackground,
-        shadowColor,
-      },
-    ]}>
-      <Text className="text-lg mb-3 font-semibold" style={styles.infoTitle}>
+    <Box
+      className="mt-8 rounded-2xl border p-5 shadow-sm"
+      style={[
+        styles.infoSection,
+        {
+          borderColor: outline,
+          backgroundColor: cardBackground,
+          shadowColor,
+        },
+      ]}
+    >
+      <Text className="mb-3 text-lg font-semibold" style={styles.infoTitle}>
         {title}
       </Text>
       {children}
@@ -121,7 +130,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginBottom: 16,
     fontWeight: "600",
-    
   },
   infoSubtitle: {
     fontSize: 16,

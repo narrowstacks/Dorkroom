@@ -27,16 +27,13 @@ export function SelectList({
   placeholder = "Select an option",
 }: SelectListProps) {
   return (
-    <Select
-      selectedValue={value}
-      onValueChange={onValueChange}
-    >
+    <Select selectedValue={value} onValueChange={onValueChange}>
       <SelectTrigger variant="outline" size="md">
         <SelectInput placeholder={placeholder} />
         <SelectIcon className="mr-3" as={ChevronDownIcon} />
       </SelectTrigger>
       <SelectPortal>
-        <SelectBackdrop/>
+        <SelectBackdrop />
         <SelectContent>
           <SelectDragIndicatorWrapper>
             <SelectDragIndicator />

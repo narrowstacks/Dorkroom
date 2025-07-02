@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { 
-  isRunningOnMobileWeb, 
-  checkNativeAppAvailability, 
+import { useState, useEffect } from "react";
+import {
+  isRunningOnMobileWeb,
+  checkNativeAppAvailability,
   openInNativeApp,
-  createAppDetectionMessage 
-} from '@/utils/appDetection';
-import { MOBILE_WEB_APP_CONFIG } from '@/constants/urls';
+  createAppDetectionMessage,
+} from "@/utils/appDetection";
+import { MOBILE_WEB_APP_CONFIG } from "@/constants/urls";
 
 interface UseAppDetectionResult {
   isOnMobileWeb: boolean;
@@ -21,12 +21,14 @@ interface UseAppDetectionOptions {
   autoCheck?: boolean;
 }
 
-export const useAppDetection = (options: UseAppDetectionOptions = {}): UseAppDetectionResult => {
+export const useAppDetection = (
+  options: UseAppDetectionOptions = {},
+): UseAppDetectionResult => {
   const { hasSharedContent = false, autoCheck = true } = options;
-  
+
   const [isAppAvailable, setIsAppAvailable] = useState<boolean | null>(null);
   const [showAppBanner, setShowAppBanner] = useState(false);
-  
+
   const isOnMobileWeb = isRunningOnMobileWeb();
 
   useEffect(() => {
@@ -42,14 +44,18 @@ export const useAppDetection = (options: UseAppDetectionOptions = {}): UseAppDet
       try {
         const available = await checkNativeAppAvailability();
         setIsAppAvailable(available);
-        
+
         // Show banner if app is available and we have shared content or it's mobile web
         // AND if the feature is enabled in configuration
-        if (available && (hasSharedContent || isOnMobileWeb) && MOBILE_WEB_APP_CONFIG.SHOW_APP_BANNER) {
+        if (
+          available &&
+          (hasSharedContent || isOnMobileWeb) &&
+          MOBILE_WEB_APP_CONFIG.SHOW_APP_BANNER
+        ) {
           setShowAppBanner(true);
         }
       } catch (error) {
-        console.warn('App detection failed:', error);
+        console.warn("App detection failed:", error);
         setIsAppAvailable(false);
       }
     };
@@ -68,8 +74,8 @@ export const useAppDetection = (options: UseAppDetectionOptions = {}): UseAppDet
   const dismissBanner = () => {
     setShowAppBanner(false);
     // Store dismissal in localStorage to remember user preference
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('dorkroom-app-banner-dismissed', 'true');
+    if (typeof window !== "undefined") {
+      localStorage.setItem("dorkroom-app-banner-dismissed", "true");
     }
   };
 
@@ -78,7 +84,11 @@ export const useAppDetection = (options: UseAppDetectionOptions = {}): UseAppDet
   return {
     isOnMobileWeb,
     isAppAvailable,
-    showAppBanner: showAppBanner && isOnMobileWeb && isAppAvailable === true && MOBILE_WEB_APP_CONFIG.SHOW_APP_BANNER,
+    showAppBanner:
+      showAppBanner &&
+      isOnMobileWeb &&
+      isAppAvailable === true &&
+      MOBILE_WEB_APP_CONFIG.SHOW_APP_BANNER,
     openInApp,
     dismissBanner,
     appMessage,

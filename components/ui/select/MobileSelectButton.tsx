@@ -11,16 +11,16 @@ interface MobileSelectButtonProps {
   selectedValue?: string;
   selectedLabel?: string;
   onPress: () => void;
-  type: 'film' | 'developer' | 'dilution';
+  type: "film" | "developer" | "dilution";
 }
 
-export function MobileSelectButton({ 
-  label, 
-  selectedItem, 
-  selectedValue, 
-  selectedLabel, 
-  onPress, 
-  type 
+export function MobileSelectButton({
+  label,
+  selectedItem,
+  selectedValue,
+  selectedLabel,
+  onPress,
+  type,
 }: MobileSelectButtonProps) {
   const textColor = useThemeColor({}, "text");
   const cardBackground = useThemeColor({}, "cardBackground");
@@ -28,14 +28,14 @@ export function MobileSelectButton({
   const developmentTint = useThemeColor({}, "developmentRecipesTint");
 
   const getDisplayText = () => {
-    if (type === 'dilution') {
+    if (type === "dilution") {
       if (!selectedValue) return `Select ${label}`;
       return selectedLabel || selectedValue;
     }
-    
+
     if (!selectedItem) return `Select ${label}`;
-    
-    if (type === 'film') {
+
+    if (type === "film") {
       const film = selectedItem as Film;
       return `${film.brand} ${film.name}`;
     } else {
@@ -43,8 +43,8 @@ export function MobileSelectButton({
       return `${dev.manufacturer} ${dev.name}`;
     }
   };
-  
-  const hasSelection = type === 'dilution' ? !!selectedValue : !!selectedItem;
+
+  const hasSelection = type === "dilution" ? !!selectedValue : !!selectedItem;
 
   return (
     <TouchableOpacity
@@ -54,43 +54,48 @@ export function MobileSelectButton({
           backgroundColor: cardBackground,
           borderColor: hasSelection ? developmentTint : borderColor,
           borderWidth: hasSelection ? 2 : 1,
-        }
+        },
       ]}
       onPress={onPress}
     >
       <VStack space="xs" style={{ flex: 1 }}>
-        <Text style={[styles.mobileSelectLabel, { color: textColor, opacity: 0.7 }]}>
+        <Text
+          style={[styles.mobileSelectLabel, { color: textColor, opacity: 0.7 }]}
+        >
           {label}
         </Text>
-        <Text 
+        <Text
           style={[
-            styles.mobileSelectText, 
-            { color: hasSelection ? developmentTint : textColor }
-          ]} 
+            styles.mobileSelectText,
+            { color: hasSelection ? developmentTint : textColor },
+          ]}
           numberOfLines={1}
         >
           {getDisplayText()}
         </Text>
       </VStack>
-      <ChevronDown size={20} color={hasSelection ? developmentTint : textColor} />
+      <ChevronDown
+        size={20}
+        color={hasSelection ? developmentTint : textColor}
+      />
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   mobileSelectButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
   },
   mobileSelectLabel: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   mobileSelectText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

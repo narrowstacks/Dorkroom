@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Platform, Alert, Modal, TouchableOpacity } from 'react-native';
+import React, { useState } from "react";
+import { Platform, Alert, Modal, TouchableOpacity } from "react-native";
 import {
   Box,
   Text,
@@ -7,12 +7,12 @@ import {
   ButtonText,
   VStack,
   HStack,
-} from '@gluestack-ui/themed';
-import { useThemeColor } from '@/hooks/useThemeColor';
+} from "@gluestack-ui/themed";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 interface AlertButton {
   text: string;
-  style?: 'default' | 'cancel' | 'destructive';
+  style?: "default" | "cancel" | "destructive";
   onPress?: () => void;
 }
 
@@ -36,9 +36,9 @@ const WebModalAlert: React.FC<{
   buttons: AlertButton[];
   onHide: () => void;
 }> = ({ visible, title, message, buttons, onHide }) => {
-  const textColor = useThemeColor({}, 'text');
-  const cardBackground = useThemeColor({}, 'cardBackground');
-  const outline = useThemeColor({}, 'outline');
+  const textColor = useThemeColor({}, "text");
+  const cardBackground = useThemeColor({}, "cardBackground");
+  const outline = useThemeColor({}, "outline");
 
   const handleButtonPress = (button: AlertButton) => {
     onHide();
@@ -57,9 +57,9 @@ const WebModalAlert: React.FC<{
       <TouchableOpacity
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          justifyContent: 'center',
-          alignItems: 'center',
+          backgroundColor: "rgba(0, 0, 0, 0.6)",
+          justifyContent: "center",
+          alignItems: "center",
           padding: 24,
         }}
         activeOpacity={1}
@@ -70,9 +70,9 @@ const WebModalAlert: React.FC<{
             backgroundColor: cardBackground,
             borderRadius: 20,
             maxWidth: 400,
-            width: '100%',
+            width: "100%",
             padding: 24,
-            shadowColor: '#000',
+            shadowColor: "#000",
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.25,
             shadowRadius: 16,
@@ -86,10 +86,10 @@ const WebModalAlert: React.FC<{
               <Text
                 style={{
                   fontSize: 20,
-                  fontWeight: '600',
+                  fontWeight: "600",
                   color: textColor,
                   marginBottom: 8,
-                  textAlign: 'center',
+                  textAlign: "center",
                 }}
               >
                 {title}
@@ -98,7 +98,7 @@ const WebModalAlert: React.FC<{
                 style={{
                   fontSize: 16,
                   color: textColor,
-                  textAlign: 'center',
+                  textAlign: "center",
                   lineHeight: 22,
                 }}
               >
@@ -106,31 +106,32 @@ const WebModalAlert: React.FC<{
               </Text>
             </Box>
 
-            <HStack space="md" style={{ justifyContent: 'center' }}>
+            <HStack space="md" style={{ justifyContent: "center" }}>
               {buttons.map((button, index) => (
                 <Button
                   key={index}
-                  variant={button.style === 'cancel' ? 'outline' : 'solid'}
+                  variant={button.style === "cancel" ? "outline" : "solid"}
                   onPress={() => handleButtonPress(button)}
                   style={{
                     flex: 1,
                     backgroundColor:
-                      button.style === 'destructive'
-                        ? '#ff4444'
-                        : button.style === 'cancel'
-                        ? 'transparent'
-                        : undefined,
-                    borderColor: button.style === 'cancel' ? outline : undefined,
+                      button.style === "destructive"
+                        ? "#ff4444"
+                        : button.style === "cancel"
+                          ? "transparent"
+                          : undefined,
+                    borderColor:
+                      button.style === "cancel" ? outline : undefined,
                   }}
                 >
                   <ButtonText
                     style={{
                       color:
-                        button.style === 'destructive'
-                          ? '#fff'
-                          : button.style === 'cancel'
-                          ? textColor
-                          : undefined,
+                        button.style === "destructive"
+                          ? "#fff"
+                          : button.style === "cancel"
+                            ? textColor
+                            : undefined,
                     }}
                   >
                     {button.text}
@@ -147,20 +148,22 @@ const WebModalAlert: React.FC<{
 
 // Global state for web modals
 let webModalState: {
-  setModalData: React.Dispatch<React.SetStateAction<{
-    visible: boolean;
-    title: string;
-    message: string;
-    buttons: AlertButton[];
-  }>> | null;
+  setModalData: React.Dispatch<
+    React.SetStateAction<{
+      visible: boolean;
+      title: string;
+      message: string;
+      buttons: AlertButton[];
+    }>
+  > | null;
 } = { setModalData: null };
 
 // Global Web Modal Manager
 export const WebModalManager: React.FC = () => {
   const [modalData, setModalData] = useState({
     visible: false,
-    title: '',
-    message: '',
+    title: "",
+    message: "",
     buttons: [] as AlertButton[],
   });
 
@@ -172,10 +175,10 @@ export const WebModalManager: React.FC = () => {
   }, []);
 
   const handleHide = () => {
-    setModalData(prev => ({ ...prev, visible: false }));
+    setModalData((prev) => ({ ...prev, visible: false }));
   };
 
-  if (Platform.OS !== 'web') return null;
+  if (Platform.OS !== "web") return null;
 
   return (
     <WebModalAlert
@@ -190,13 +193,13 @@ export const WebModalManager: React.FC = () => {
 
 // Simple alert function for single button alerts
 export const showAlert = (title: string, message: string) => {
-  if (Platform.OS === 'web') {
+  if (Platform.OS === "web") {
     if (webModalState.setModalData) {
       webModalState.setModalData({
         visible: true,
         title,
         message,
-        buttons: [{ text: 'OK', style: 'default' }],
+        buttons: [{ text: "OK", style: "default" }],
       });
     } else {
       // Fallback to browser alert if modal manager not available
@@ -211,9 +214,9 @@ export const showAlert = (title: string, message: string) => {
 export const showConfirmAlert = (
   title: string,
   message: string,
-  buttons: AlertButton[] = [{ text: 'OK', style: 'default' }]
+  buttons: AlertButton[] = [{ text: "OK", style: "default" }],
 ) => {
-  if (Platform.OS === 'web') {
+  if (Platform.OS === "web") {
     if (webModalState.setModalData) {
       webModalState.setModalData({
         visible: true,
@@ -226,10 +229,10 @@ export const showConfirmAlert = (
       if (buttons.length === 2) {
         const confirmed = confirm(`${title}\n\n${message}`);
         if (confirmed) {
-          const confirmButton = buttons.find(b => b.style !== 'cancel');
+          const confirmButton = buttons.find((b) => b.style !== "cancel");
           confirmButton?.onPress?.();
         } else {
-          const cancelButton = buttons.find(b => b.style === 'cancel');
+          const cancelButton = buttons.find((b) => b.style === "cancel");
           cancelButton?.onPress?.();
         }
       } else {
@@ -243,12 +246,24 @@ export const showConfirmAlert = (
 };
 
 // Advanced modal-based alert component for complex scenarios
-export const ConfirmAlert = React.forwardRef<ConfirmAlertRef, ConfirmAlertProps>(
-  ({ title, message, buttons = [{ text: 'OK', style: 'default' }], onShow, onHide }, ref) => {
+export const ConfirmAlert = React.forwardRef<
+  ConfirmAlertRef,
+  ConfirmAlertProps
+>(
+  (
+    {
+      title,
+      message,
+      buttons = [{ text: "OK", style: "default" }],
+      onShow,
+      onHide,
+    },
+    ref,
+  ) => {
     const [isVisible, setIsVisible] = useState(false);
 
     const show = () => {
-      if (Platform.OS === 'web') {
+      if (Platform.OS === "web") {
         setIsVisible(true);
         onShow?.();
       } else {
@@ -266,7 +281,7 @@ export const ConfirmAlert = React.forwardRef<ConfirmAlertRef, ConfirmAlertProps>
     }));
 
     // Only render modal on web
-    if (Platform.OS !== 'web') {
+    if (Platform.OS !== "web") {
       return null;
     }
 
@@ -279,7 +294,7 @@ export const ConfirmAlert = React.forwardRef<ConfirmAlertRef, ConfirmAlertProps>
         onHide={hide}
       />
     );
-  }
+  },
 );
 
-ConfirmAlert.displayName = 'ConfirmAlert'; 
+ConfirmAlert.displayName = "ConfirmAlert";

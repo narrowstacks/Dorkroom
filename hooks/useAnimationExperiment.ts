@@ -1,10 +1,14 @@
-import { useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { debugLog, debugLogPerformance, debugLogMemory } from '@/utils/debugLogger';
+import { useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  debugLog,
+  debugLogPerformance,
+  debugLogMemory,
+} from "@/utils/debugLogger";
 
-const ANIMATION_EXPERIMENT_KEY = '@animation_experiment';
+const ANIMATION_EXPERIMENT_KEY = "@animation_experiment";
 
-export type AnimationEngine = 'legacy' | 'reanimated';
+export type AnimationEngine = "legacy" | "reanimated";
 
 interface AnimationExperimentState {
   engine: AnimationEngine;
@@ -17,7 +21,7 @@ interface AnimationExperimentState {
  * Only available in development environment
  */
 export const useAnimationExperiment = (): AnimationExperimentState => {
-  const [engine, setEngineState] = useState<AnimationEngine>('legacy');
+  const [engine, setEngineState] = useState<AnimationEngine>("legacy");
   const [isLoading, setIsLoading] = useState(true);
 
   // Load saved preference on mount
@@ -30,13 +34,16 @@ export const useAnimationExperiment = (): AnimationExperimentState => {
 
       try {
         const saved = await AsyncStorage.getItem(ANIMATION_EXPERIMENT_KEY);
-        const savedEngine = (saved as AnimationEngine) || 'legacy';
-        
-        debugLog('🔬 [ANIMATION EXPERIMENT] Loaded saved engine:', savedEngine);
+        const savedEngine = (saved as AnimationEngine) || "legacy";
+
+        debugLog("🔬 [ANIMATION EXPERIMENT] Loaded saved engine:", savedEngine);
         setEngineState(savedEngine);
       } catch (error) {
-        debugLog('🔬 [ANIMATION EXPERIMENT] Failed to load saved engine:', error);
-        setEngineState('legacy');
+        debugLog(
+          "🔬 [ANIMATION EXPERIMENT] Failed to load saved engine:",
+          error,
+        );
+        setEngineState("legacy");
       } finally {
         setIsLoading(false);
       }
@@ -47,52 +54,56 @@ export const useAnimationExperiment = (): AnimationExperimentState => {
 
   const setEngine = async (newEngine: AnimationEngine) => {
     if (!__DEV__) {
-      debugLog('🔬 [ANIMATION EXPERIMENT] Not in dev mode, ignoring engine change');
+      debugLog(
+        "🔬 [ANIMATION EXPERIMENT] Not in dev mode, ignoring engine change",
+      );
       return;
     }
 
     const previousEngine = engine;
-    
+
     try {
       // Log performance before switch
       debugLogMemory(`Animation Engine Switch - Before (${previousEngine})`);
-      
+
       // Save to AsyncStorage
       await AsyncStorage.setItem(ANIMATION_EXPERIMENT_KEY, newEngine);
-      
+
       // Update state
       setEngineState(newEngine);
-      
+
       // Log the switch
-      debugLogPerformance('Animation Engine Switch', {
+      debugLogPerformance("Animation Engine Switch", {
         from: previousEngine,
         to: newEngine,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-      
+
       // Log performance after switch
       setTimeout(() => {
         debugLogMemory(`Animation Engine Switch - After (${newEngine})`);
       }, 100);
-      
     } catch (error) {
-      debugLog('🔬 [ANIMATION EXPERIMENT] Failed to save engine preference:', error);
+      debugLog(
+        "🔬 [ANIMATION EXPERIMENT] Failed to save engine preference:",
+        error,
+      );
     }
   };
 
   // In production, always return legacy engine
   if (!__DEV__) {
     return {
-      engine: 'legacy',
+      engine: "legacy",
       setEngine: () => {},
-      isLoading: false
+      isLoading: false,
     };
   }
 
   return {
     engine,
     setEngine,
-    isLoading
+    isLoading,
   };
 };
 
@@ -101,5 +112,5 @@ export const useAnimationExperiment = (): AnimationExperimentState => {
  */
 export const useIsReanimatedEnabled = (): boolean => {
   const { engine } = useAnimationExperiment();
-  return __DEV__ && engine === 'reanimated';
+  return __DEV__ && engine === "reanimated";
 };

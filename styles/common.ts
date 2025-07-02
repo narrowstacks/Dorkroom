@@ -1,22 +1,22 @@
-import { Platform } from 'react-native';
+import { Platform } from "react-native";
 
 // Platform-specific font configurations
 export const fonts = {
   android: {
-    primary: 'Roboto',
+    primary: "Roboto",
   },
   ios: {
-    primary: 'San Francisco',
+    primary: "San Francisco",
   },
   web: {
-    primary: 'Arial',
+    primary: "Arial",
   },
 };
 
 // Helper function to get the current platform's font
 export const getPlatformFont = () => {
-  if (Platform.OS === 'ios') return fonts.ios.primary;
-  if (Platform.OS === 'android') return fonts.android.primary;
+  if (Platform.OS === "ios") return fonts.ios.primary;
+  if (Platform.OS === "android") return fonts.android.primary;
   return fonts.web.primary;
 };
 

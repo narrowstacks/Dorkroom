@@ -19,24 +19,38 @@ interface ResultsSectionProps {
 export function ResultRow({ label, value, isLast = false }: ResultRowProps) {
   const textSecondary = useThemeColor({}, "textSecondary");
   const outline = useThemeColor({}, "outline");
-  const resultRowBackground = useThemeColor({}, "resultRowBackground"); 
+  const resultRowBackground = useThemeColor({}, "resultRowBackground");
 
   return (
     <Box
-      className={`flex-row w-full justify-between rounded-2xl gap-4 py-2 ${!isLast ? "border-b" : ""}`}
-      style={[styles.resultRow, !isLast && { borderBottomColor: outline }, { backgroundColor: resultRowBackground }]}
+      className={`w-full flex-row justify-between gap-4 rounded-2xl py-2 ${!isLast ? "border-b" : ""}`}
+      style={[
+        styles.resultRow,
+        !isLast && { borderBottomColor: outline },
+        { backgroundColor: resultRowBackground },
+      ]}
     >
-      <Text className="text-base text-right flex-1 font-medium" style={[styles.resultLabel, { color: textSecondary }]}>
+      <Text
+        className="flex-1 text-right text-base font-medium"
+        style={[styles.resultLabel, { color: textSecondary }]}
+      >
         {label}:
       </Text>
-      <Text className="text-base text-left flex-1 font-semibold" style={styles.resultValue}>
+      <Text
+        className="flex-1 text-left text-base font-semibold"
+        style={styles.resultValue}
+      >
         {value}
       </Text>
     </Box>
   );
 }
 
-export function ResultsSection({ title = "Result", children, show = true }: ResultsSectionProps) {
+export function ResultsSection({
+  title = "Result",
+  children,
+  show = true,
+}: ResultsSectionProps) {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
   const cardBackground = useThemeColor({}, "cardBackground");
@@ -46,18 +60,21 @@ export function ResultsSection({ title = "Result", children, show = true }: Resu
 
   return (
     <Box
-      className="gap-5 items-center w-full mb-8 web:flex-1 web:self-stretch web:mb-0"
+      className="mb-8 w-full items-center gap-5 web:mb-0 web:flex-1 web:self-stretch"
       style={[
         // styles.resultsSection,
         Platform.OS === "web" && isDesktop && styles.webResultsSection,
       ]}
     >
-      <Text className="text-2xl mb-2 text-center font-semibold" style={styles.subtitle}>
+      <Text
+        className="mb-2 text-center text-2xl font-semibold"
+        style={styles.subtitle}
+      >
         {title}
       </Text>
 
       <Box
-        className="items-center gap-4 w-full max-w-lg p-6 rounded-2xl shadow-lg"
+        className="w-full max-w-lg items-center gap-4 rounded-2xl p-6 shadow-lg"
         style={[
           styles.resultContainer,
           {

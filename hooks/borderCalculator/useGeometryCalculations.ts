@@ -7,10 +7,9 @@
      - useGeometryCalculations: All geometry-related calculations
 \* ------------------------------------------------------------------ */
 
-import React, { useMemo } from 'react';
-import { useWindowDimensions } from 'react-native';
-import { debugLogPerformance, debugLogTiming } from '@/utils/debugLogger';
-import { EASEL_SIZE_MAP } from '@/constants/border';
+import { useMemo } from "react";
+import { useWindowDimensions } from "react-native";
+import { EASEL_SIZE_MAP } from "@/constants/border";
 import {
   calculateBladeThickness,
   findCenteringOffsets,
@@ -18,7 +17,7 @@ import {
   clampOffsets,
   bordersFromGaps,
   bladeReadings,
-} from '@/utils/borderCalculations';
+} from "@/utils/borderCalculations";
 import type {
   BorderCalculatorState,
   OrientedDimensions,
@@ -30,31 +29,31 @@ import type {
   EaselData,
   PaperShift,
   BladeData,
-} from './types';
+} from "./types";
 
 export const useGeometryCalculations = (
   state: BorderCalculatorState,
   orientedDimensions: OrientedDimensions,
   minBorderData: MinBorderData,
   paperEntry: PaperEntry,
-  paperSizeWarning: string | null
+  paperSizeWarning: string | null,
 ) => {
   const { width: winW, height: winH } = useWindowDimensions();
-  
+
   // Optimized preview scale calculation with better caching
   const previewScale = useMemo(() => {
     const { w, h } = orientedDimensions.orientedPaper;
     if (!w || !h) return 1;
-    
+
     // Use more efficient calculations
     const maxW = winW > 444 ? 400 : winW * 0.9; // Avoid Math.min for common case
     const maxH = winH > 800 ? 400 : winH * 0.5;
-    
+
     const scaleW = maxW / w;
     const scaleH = maxH / h;
-    
+
     return scaleW < scaleH ? scaleW : scaleH; // More efficient than Math.min
-  }, [orientedDimensions.orientedPaper.w, orientedDimensions.orientedPaper.h, winW, winH]);
+  }, [orientedDimensions.orientedPaper, winW, winH]);
 
   // Optimized print size calculation with simpler memoization
   const printSize = useMemo((): PrintSize => {
@@ -68,13 +67,7 @@ export const useGeometryCalculations = (
       orientedRatio.h,
       minBorder,
     );
-  }, [
-    orientedDimensions.orientedPaper.w,
-    orientedDimensions.orientedPaper.h,
-    orientedDimensions.orientedRatio.w,
-    orientedDimensions.orientedRatio.h,
-    minBorderData.minBorder
-  ]);
+  }, [orientedDimensions, minBorderData]);
 
   // Offset calculations
   const offsetData = useMemo((): OffsetData => {
@@ -92,21 +85,25 @@ export const useGeometryCalculations = (
       state.enableOffset ? state.verticalOffset : 0,
       state.ignoreMinBorder,
     );
-  }, [orientedDimensions, minBorderData, printSize, state.enableOffset, state.horizontalOffset, state.verticalOffset, state.ignoreMinBorder]);
+  }, [
+    orientedDimensions,
+    minBorderData,
+    printSize,
+    state.enableOffset,
+    state.horizontalOffset,
+    state.verticalOffset,
+    state.ignoreMinBorder,
+  ]);
 
   // Optimized border calculations without heavy caching overhead
   const borders = useMemo((): Borders => {
     const { halfW, halfH, h: offH, v: offV } = offsetData;
     return bordersFromGaps(halfW, halfH, offH, offV);
-  }, [offsetData.halfW, offsetData.halfH, offsetData.h, offsetData.v]);
+  }, [offsetData]);
 
   // Easel fitting calculations
   const easelData = useMemo((): EaselData => {
-    return findCenteringOffsets(
-      paperEntry.w,
-      paperEntry.h,
-      state.isLandscape,
-    );
+    return findCenteringOffsets(paperEntry.w, paperEntry.h, state.isLandscape);
   }, [paperEntry, state.isLandscape]);
 
   // Paper shift calculations
@@ -130,20 +127,16 @@ export const useGeometryCalculations = (
     const { h: offH, v: offV } = offsetData;
     const { spX, spY } = paperShift;
 
-    const blades = bladeReadings(
-      printW,
-      printH,
-      spX + offH,
-      spY + offV,
-    );
+    const blades = bladeReadings(printW, printH, spX + offH, spY + offV);
 
     let bladeWarning: string | null = null;
     const values = Object.values(blades);
-    if (values.some(v => v < 0))
-      bladeWarning = 'Negative blade reading – use opposite side of scale.';
-    if (values.some(v => Math.abs(v) < 3 && v !== 0))
-      bladeWarning = (bladeWarning ? bladeWarning + '\n' : '') +
-        'Many easels have no markings below about 3 in.';
+    if (values.some((v) => v < 0))
+      bladeWarning = "Negative blade reading – use opposite side of scale.";
+    if (values.some((v) => Math.abs(v) < 3 && v !== 0))
+      bladeWarning =
+        (bladeWarning ? bladeWarning + "\n" : "") +
+        "Many easels have no markings below about 3 in.";
 
     return { blades, bladeWarning };
   }, [printSize, offsetData, paperShift]);
@@ -155,13 +148,13 @@ export const useGeometryCalculations = (
     const { h: offH, v: offV, warning: offsetWarning } = offsetData;
     const { easelSize, isNonStandardPaperSize } = easelData;
     const { blades, bladeWarning } = bladeData;
-    
+
     // Cache paper dimensions to avoid repeated property access
     const paperW = orientedPaper.w;
     const paperH = orientedPaper.h;
     const invPaperW = paperW ? 100 / paperW : 0; // Pre-calculate inverse for efficiency
     const invPaperH = paperH ? 100 / paperH : 0;
-    
+
     // Calculate preview dimensions once
     const previewW = paperW * previewScale;
     const previewH = paperH * previewScale;
@@ -200,9 +193,10 @@ export const useGeometryCalculations = (
       // Additional calculation data for warnings and offsets
       offsetWarning,
       bladeWarning,
-      minBorderWarning: minBorderData.minBorder !== state.minBorder
-        ? minBorderData.minBorderWarning
-        : null,
+      minBorderWarning:
+        minBorderData.minBorder !== state.minBorder
+          ? minBorderData.minBorderWarning
+          : null,
       paperSizeWarning,
       lastValidMinBorder: minBorderData.lastValid,
       clampedHorizontalOffset: offH,
@@ -213,24 +207,13 @@ export const useGeometryCalculations = (
       previewHeight: previewH,
     };
   }, [
-    orientedDimensions.orientedPaper.w,
-    orientedDimensions.orientedPaper.h,
-    printSize.printW,
-    printSize.printH,
-    offsetData.h,
-    offsetData.v,
-    offsetData.warning,
-    easelData.easelSize,
-    easelData.isNonStandardPaperSize,
-    bladeData.blades,
-    bladeData.bladeWarning,
-    borders.left,
-    borders.right,
-    borders.top,
-    borders.bottom,
-    minBorderData.minBorder,
-    minBorderData.minBorderWarning,
-    minBorderData.lastValid,
+    bladeData,
+    easelData,
+    offsetData,
+    orientedDimensions,
+    printSize,
+    borders,
+    minBorderData,
     paperSizeWarning,
     previewScale,
     state.minBorder,
@@ -240,4 +223,4 @@ export const useGeometryCalculations = (
     calculation,
     previewScale,
   };
-}; 
+};

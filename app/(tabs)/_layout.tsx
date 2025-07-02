@@ -1,14 +1,22 @@
-import { Tabs , useRouter, useSegments } from "expo-router";
+import { Tabs, useRouter, useSegments } from "expo-router";
 import React, { useState, useEffect } from "react";
-import { Platform, View, TouchableOpacity, Text, StyleSheet, Dimensions, Animated } from "react-native";
+import {
+  Platform,
+  View,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  Dimensions,
+  Animated,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Colors } from "@/constants/Colors";
-import * as Haptics from 'expo-haptics';
+import * as Haptics from "expo-haptics";
 
 import { HapticTab } from "@/components/ui/feedback/HapticTab";
-import { 
+import {
   Home,
   Crop,
   Move,
@@ -17,8 +25,8 @@ import {
   Settings,
   Menu,
   Aperture,
-  FlaskConical
-} from 'lucide-react-native';
+  FlaskConical,
+} from "lucide-react-native";
 import TabBarBackground from "@/components/ui/core/TabBarBackground";
 
 // Navigation items configuration
@@ -89,7 +97,7 @@ const getPageTintColor = (routeName: string, colors: typeof Colors.light) => {
 
 // Function to get the page title for document title
 const getPageTitle = (routeName: string) => {
-  const item = navigationItems.find(item => item.name === routeName);
+  const item = navigationItems.find((item) => item.name === routeName);
   const pageTitle = item?.title || "Home";
   return `${pageTitle} - Dorkroom`;
 };
@@ -99,7 +107,8 @@ function TopNavigation() {
   const segments = useSegments();
   // Handle home page route detection - when on /(tabs) root, treat as "index"
   const lastSegment = segments[segments.length - 1];
-  const currentRoute = lastSegment === "(tabs)" || !lastSegment ? "index" : lastSegment;
+  const currentRoute =
+    lastSegment === "(tabs)" || !lastSegment ? "index" : lastSegment;
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
 
@@ -117,8 +126,11 @@ function TopNavigation() {
               <TouchableOpacity
                 key={item.name}
                 style={[
-                  styles.navItem, 
-                  isActive && { ...styles.activeNavItem, backgroundColor: tintColor }
+                  styles.navItem,
+                  isActive && {
+                    ...styles.activeNavItem,
+                    backgroundColor: tintColor,
+                  },
                 ]}
                 onPress={() => {
                   if (item.name === "index") {
@@ -132,10 +144,12 @@ function TopNavigation() {
                   size={20}
                   color={isActive ? colors.background : colors.icon}
                 />
-                <Text style={[
-                  styles.navItemText, 
-                  isActive && { color: colors.background }
-                ]}>
+                <Text
+                  style={[
+                    styles.navItemText,
+                    isActive && { color: colors.background },
+                  ]}
+                >
                   {item.title}
                 </Text>
               </TouchableOpacity>
@@ -146,8 +160,6 @@ function TopNavigation() {
     </View>
   );
 }
-
-
 
 export default function TabLayout() {
   // Initialize with safe default values to avoid useInsertionEffect warning
@@ -161,20 +173,21 @@ export default function TabLayout() {
   const segments = useSegments();
   // Handle home page route detection - when on /(tabs) root, treat as "index"
   const lastSegment = segments[segments.length - 1];
-  const currentRoute = lastSegment === "(tabs)" || !lastSegment ? "index" : lastSegment;
-  
+  const currentRoute =
+    lastSegment === "(tabs)" || !lastSegment ? "index" : lastSegment;
+
   // Set document title for web
   useDocumentTitle(getPageTitle(currentRoute));
 
   useEffect(() => {
     // Get initial dimensions after mount
-    setScreenData(Dimensions.get('window'));
-    
+    setScreenData(Dimensions.get("window"));
+
     const onChange = (result: { window: any }) => {
       setScreenData(result.window);
     };
 
-    const subscription = Dimensions.addEventListener('change', onChange);
+    const subscription = Dimensions.addEventListener("change", onChange);
     return () => subscription?.remove();
   }, []);
 
@@ -186,23 +199,23 @@ export default function TabLayout() {
   const showModal = () => {
     // Add haptic feedback for hamburger menu tap
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
+
     setMobileMenuVisible(true);
-    
+
     // Reset to starting position
     modalScale.setValue(0.1);
     modalOpacity.setValue(0);
-    
+
     Animated.parallel([
       Animated.spring(modalScale, {
         toValue: 1,
-        tension: 80,  // Higher tension for less bounce
+        tension: 80, // Higher tension for less bounce
         friction: 10, // Higher friction for less oscillation
         useNativeDriver: true,
       }),
       Animated.timing(modalOpacity, {
         toValue: 1,
-        duration: 250,  // Slightly shorter duration
+        duration: 250, // Slightly shorter duration
         useNativeDriver: true,
       }),
     ]).start();
@@ -211,8 +224,8 @@ export default function TabLayout() {
   const hideModal = () => {
     Animated.parallel([
       Animated.spring(modalScale, {
-        toValue: 0.1,  // Shrink to small size like dock icon
-        tension: 120,  // Faster collapse
+        toValue: 0.1, // Shrink to small size like dock icon
+        tension: 120, // Faster collapse
         friction: 8,
         useNativeDriver: true,
       }),
@@ -226,10 +239,10 @@ export default function TabLayout() {
     });
   };
 
-  const navigateToPage = (item: typeof navigationItems[0]) => {
+  const navigateToPage = (item: (typeof navigationItems)[0]) => {
     // Add haptic feedback for navigation item selection
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
+
     if (item.name === "index") {
       router.push("/(tabs)" as any);
     } else {
@@ -264,61 +277,57 @@ export default function TabLayout() {
         </View>
 
         {/* Floating Hamburger Button */}
-        <TouchableOpacity
-          style={styles.floatingMenuButton}
-          onPress={showModal}
-        >
-          <Menu
-            size={24}
-            color={colors.background}
-          />
+        <TouchableOpacity style={styles.floatingMenuButton} onPress={showModal}>
+          <Menu size={24} color={colors.background} />
         </TouchableOpacity>
 
         {/* Animated Navigation Modal */}
         {mobileMenuVisible && (
-          <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
-            <TouchableOpacity 
-              style={styles.modalBackdrop} 
+          <Animated.View
+            style={[styles.modalOverlay, { opacity: modalOpacity }]}
+          >
+            <TouchableOpacity
+              style={styles.modalBackdrop}
               onPress={hideModal}
               activeOpacity={1}
             />
-            <Animated.View 
+            <Animated.View
               style={[
                 styles.modalContent,
                 {
                   transform: [
                     { scale: modalScale },
-                    { 
+                    {
                       translateX: modalScale.interpolate({
                         inputRange: [0.1, 1],
                         outputRange: [120, 0], // Start from hamburger button position
-                        extrapolate: 'clamp',
-                      })
+                        extrapolate: "clamp",
+                      }),
                     },
-                    { 
+                    {
                       translateY: modalScale.interpolate({
                         inputRange: [0.1, 1],
                         outputRange: [180, 0], // Start from hamburger button position
-                        extrapolate: 'clamp',
-                      })
+                        extrapolate: "clamp",
+                      }),
                     },
                     {
                       scaleX: modalScale.interpolate({
                         inputRange: [0.1, 0.5, 1],
                         outputRange: [0.3, 1.05, 1], // Subtle horizontal stretch
-                        extrapolate: 'clamp',
-                      })
+                        extrapolate: "clamp",
+                      }),
                     },
                     {
                       scaleY: modalScale.interpolate({
                         inputRange: [0.1, 0.5, 1],
                         outputRange: [0.3, 0.95, 1], // Subtle vertical compression
-                        extrapolate: 'clamp',
-                      })
-                    }
+                        extrapolate: "clamp",
+                      }),
+                    },
                   ],
                   opacity: modalOpacity,
-                }
+                },
               ]}
             >
               <View style={styles.modalNavItems}>
@@ -330,10 +339,10 @@ export default function TabLayout() {
                       key={item.name}
                       style={[
                         styles.modalNavItem,
-                        isActive && { 
+                        isActive && {
                           ...styles.activeModalNavItem,
-                          backgroundColor: tintColor 
-                        }
+                          backgroundColor: tintColor,
+                        },
                       ]}
                       onPress={() => navigateToPage(item)}
                     >
@@ -341,10 +350,12 @@ export default function TabLayout() {
                         size={24}
                         color={isActive ? colors.background : colors.icon}
                       />
-                      <Text style={[
-                        styles.modalNavItemText,
-                        isActive && { color: colors.background }
-                      ]}>
+                      <Text
+                        style={[
+                          styles.modalNavItemText,
+                          isActive && { color: colors.background },
+                        ]}
+                      >
                         {item.title}
                       </Text>
                     </TouchableOpacity>
@@ -381,21 +392,15 @@ export default function TabLayout() {
         </View>
 
         {/* Floating Hamburger Button */}
-        <TouchableOpacity
-          style={styles.floatingMenuButton}
-          onPress={showModal}
-        >
-          <Menu
-            size={24}
-            color={colors.background}
-          />
+        <TouchableOpacity style={styles.floatingMenuButton} onPress={showModal}>
+          <Menu size={24} color={colors.background} />
         </TouchableOpacity>
 
         {/* Animated Navigation Modal */}
         {mobileMenuVisible && (
           <View style={styles.webModalOverlay}>
-            <TouchableOpacity 
-              style={styles.modalBackdrop} 
+            <TouchableOpacity
+              style={styles.modalBackdrop}
               onPress={hideModal}
               activeOpacity={1}
             />
@@ -409,10 +414,10 @@ export default function TabLayout() {
                       key={item.name}
                       style={[
                         styles.modalNavItem,
-                        isActive && { 
+                        isActive && {
                           ...styles.activeModalNavItem,
-                          backgroundColor: tintColor 
-                        }
+                          backgroundColor: tintColor,
+                        },
                       ]}
                       onPress={() => navigateToPage(item)}
                     >
@@ -420,10 +425,12 @@ export default function TabLayout() {
                         size={24}
                         color={isActive ? colors.background : colors.icon}
                       />
-                      <Text style={[
-                        styles.modalNavItemText,
-                        isActive && { color: colors.background }
-                      ]}>
+                      <Text
+                        style={[
+                          styles.modalNavItemText,
+                          isActive && { color: colors.background },
+                        ]}
+                      >
                         {item.title}
                       </Text>
                     </TouchableOpacity>
@@ -488,9 +495,7 @@ export default function TabLayout() {
           options={{
             title: "Home",
             tabBarActiveTintColor: getPageTintColor("index", colors),
-            tabBarIcon: ({ color }) => (
-              <Home size={28} color={color} />
-            ),
+            tabBarIcon: ({ color }) => <Home size={28} color={color} />,
           }}
         />
         <Tabs.Screen
@@ -498,9 +503,7 @@ export default function TabLayout() {
           options={{
             title: "Border",
             tabBarActiveTintColor: getPageTintColor("border", colors),
-            tabBarIcon: ({ color }) => (
-              <Crop size={28} color={color} />
-            ),
+            tabBarIcon: ({ color }) => <Crop size={28} color={color} />,
           }}
         />
         <Tabs.Screen
@@ -508,9 +511,7 @@ export default function TabLayout() {
           options={{
             title: "Resize",
             tabBarActiveTintColor: getPageTintColor("resize", colors),
-            tabBarIcon: ({ color }) => (
-              <Move size={28} color={color} />
-            ),
+            tabBarIcon: ({ color }) => <Move size={28} color={color} />,
           }}
         />
         <Tabs.Screen
@@ -518,9 +519,7 @@ export default function TabLayout() {
           options={{
             title: "Stops",
             tabBarActiveTintColor: getPageTintColor("exposure", colors),
-            tabBarIcon: ({ color }) => (
-              <Timer size={28} color={color} />
-            ),
+            tabBarIcon: ({ color }) => <Timer size={28} color={color} />,
           }}
         />
         <Tabs.Screen
@@ -528,9 +527,7 @@ export default function TabLayout() {
           options={{
             title: "Exposure",
             tabBarActiveTintColor: getPageTintColor("cameraExposure", colors),
-            tabBarIcon: ({ color }) => (
-              <Aperture size={28} color={color} />
-            ),
+            tabBarIcon: ({ color }) => <Aperture size={28} color={color} />,
           }}
         />
         <Tabs.Screen
@@ -538,19 +535,18 @@ export default function TabLayout() {
           options={{
             title: "Reciprocity",
             tabBarActiveTintColor: getPageTintColor("reciprocity", colors),
-            tabBarIcon: ({ color }) => (
-              <Clock size={28} color={color} />
-            ),
+            tabBarIcon: ({ color }) => <Clock size={28} color={color} />,
           }}
         />
         <Tabs.Screen
           name="developmentRecipes"
           options={{
             title: "Development",
-            tabBarActiveTintColor: getPageTintColor("developmentRecipes", colors),
-            tabBarIcon: ({ color }) => (
-              <FlaskConical size={28} color={color} />
+            tabBarActiveTintColor: getPageTintColor(
+              "developmentRecipes",
+              colors,
             ),
+            tabBarIcon: ({ color }) => <FlaskConical size={28} color={color} />,
           }}
         />
         <Tabs.Screen
@@ -558,9 +554,7 @@ export default function TabLayout() {
           options={{
             title: "Settings",
             tabBarActiveTintColor: getPageTintColor("settings", colors),
-            tabBarIcon: ({ color }) => (
-              <Settings size={28} color={color} />
-            ),
+            tabBarIcon: ({ color }) => <Settings size={28} color={color} />,
           }}
         />
       </Tabs>
@@ -569,176 +563,175 @@ export default function TabLayout() {
 }
 
 // Dynamic styles function that takes colors as parameter
-const createDynamicStyles = (colors: typeof Colors.light) => StyleSheet.create({
-  // Desktop top navigation styles
-  topNavContainer: {
-    backgroundColor: colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.tabIconDefault,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  topNavContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    maxWidth: 1200,
-    marginHorizontal: "auto",
-    width: "100%",
-  },
-  appTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: colors.text,
-  },
-  navItems: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  navItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 6,
-  },
-  activeNavItem: {
-    // backgroundColor will be set dynamically to tint color
-  },
-  navItemText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: colors.icon,
-  },
-  activeNavItemText: {
-    color: "#4CAF50",
-  },
-
-
-
-  // Native mobile floating menu styles
-  floatingMenuButton: {
-    position: "absolute",
-    bottom: 32,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.tint,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
+const createDynamicStyles = (colors: typeof Colors.light) =>
+  StyleSheet.create({
+    // Desktop top navigation styles
+    topNavContainer: {
+      backgroundColor: colors.background,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.tabIconDefault,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    zIndex: 100,
-  },
-
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    alignItems: "flex-end",
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 1000,
-  },
-  modalBackdrop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalContent: {
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    marginRight: 24,
-    marginBottom: 100, // Position above the hamburger button
-    maxWidth: 200,
-    width: 280,
-    maxHeight: "70%",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
+    topNavContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      maxWidth: 1200,
+      marginHorizontal: "auto",
+      width: "100%",
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: colors.text,
-  },
-  modalCloseButton: {
-    padding: 4,
-  },
-  modalNavItems: {
-    paddingVertical: 16,
-  },
-  modalNavItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    gap: 16,
-  },
-  activeModalNavItem: {
-    // backgroundColor will be set dynamically to tint color
-  },
-  modalNavItemText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: colors.icon,
-  },
-
-  // Web modal styles (simpler version without animations)
-  webModalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    alignItems: "flex-end",
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 1000,
-  },
-  webModalContent: {
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    marginRight: 24,
-    marginBottom: 100, // Position above the hamburger button
-    maxWidth: 200,
-    width: 280,
-    maxHeight: "70%",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
+    appTitle: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: colors.text,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
-  },
-});
+    navItems: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    navItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
+      gap: 6,
+    },
+    activeNavItem: {
+      // backgroundColor will be set dynamically to tint color
+    },
+    navItemText: {
+      fontSize: 14,
+      fontWeight: "500",
+      color: colors.icon,
+    },
+    activeNavItemText: {
+      color: "#4CAF50",
+    },
+
+    // Native mobile floating menu styles
+    floatingMenuButton: {
+      position: "absolute",
+      bottom: 32,
+      right: 24,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.tint,
+      justifyContent: "center",
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+      zIndex: 100,
+    },
+
+    // Modal styles
+    modalOverlay: {
+      flex: 1,
+      justifyContent: "flex-end",
+      alignItems: "flex-end",
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 1000,
+    },
+    modalBackdrop: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+    },
+    modalContent: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      marginRight: 24,
+      marginBottom: 100, // Position above the hamburger button
+      maxWidth: 200,
+      width: 280,
+      maxHeight: "70%",
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
+      elevation: 8,
+    },
+    modalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-end",
+      paddingTop: 16,
+      paddingHorizontal: 16,
+      paddingBottom: 8,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: "bold",
+      color: colors.text,
+    },
+    modalCloseButton: {
+      padding: 4,
+    },
+    modalNavItems: {
+      paddingVertical: 16,
+    },
+    modalNavItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      gap: 16,
+    },
+    activeModalNavItem: {
+      // backgroundColor will be set dynamically to tint color
+    },
+    modalNavItemText: {
+      fontSize: 16,
+      fontWeight: "500",
+      color: colors.icon,
+    },
+
+    // Web modal styles (simpler version without animations)
+    webModalOverlay: {
+      flex: 1,
+      justifyContent: "flex-end",
+      alignItems: "flex-end",
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 1000,
+    },
+    webModalContent: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      marginRight: 24,
+      marginBottom: 100, // Position above the hamburger button
+      maxWidth: 200,
+      width: 280,
+      maxHeight: "70%",
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
+      elevation: 8,
+    },
+  });

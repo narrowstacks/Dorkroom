@@ -9,7 +9,7 @@ import {
   ScrollView,
   Center,
 } from "@gluestack-ui/themed";
-import { 
+import {
   CropIcon,
   MoveIcon,
   TimerIcon,
@@ -21,9 +21,6 @@ import {
   ZapIcon,
 } from "lucide-react-native";
 import { Colors } from "@/constants/Colors";
-
-
-
 
 interface ModernLinkButtonProps {
   href: string;
@@ -81,17 +78,13 @@ const ModernLinkButton = ({
         </Box>
       )}
       <Box style={textContainerStyle}>
-        <Text className="text-white font-semibold text-base">{children}</Text>
+        <Text className="text-base font-semibold text-white">{children}</Text>
       </Box>
     </>
   );
 
   if (disabled) {
-    return (
-      <Box style={buttonStyle}>
-        {ButtonContent}
-      </Box>
-    );
+    return <Box style={buttonStyle}>{ButtonContent}</Box>;
   }
 
   if (href.startsWith("http")) {
@@ -104,35 +97,33 @@ const ModernLinkButton = ({
 
   return (
     <Link href={href as any} asChild>
-      <Pressable style={buttonStyle}>
-        {ButtonContent}
-      </Pressable>
+      <Pressable style={buttonStyle}>{ButtonContent}</Pressable>
     </Link>
   );
 };
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
 
   return (
     <ScrollView className="flex-1">
-      <Box className="flex-1 items-center px-4 py-6 w-full">
-        <VStack 
-          space="2xl" 
-          className="items-center"
-        >
+      <Box className="w-full flex-1 items-center px-4 py-6">
+        <VStack space="2xl" className="items-center">
           {/* Header Section */}
           <VStack space="sm" className="items-center">
             <Heading size="3xl" className="text-center font-bold">
               dorkroom.art
             </Heading>
-            <Heading size="lg" className="text-center text-typography-600 italic">
+            <Heading
+              size="lg"
+              className="text-center italic text-typography-600"
+            >
               darkroom and photography calculators
             </Heading>
             <Heading size="sm" className="text-center text-typography-500">
               by{" "}
-              <Text 
+              <Text
                 className="text-primary-600 underline"
                 onPress={() => Linking.openURL("https://www.affords.art")}
               >
@@ -144,80 +135,80 @@ export default function HomeScreen() {
           {/* All Buttons Centered */}
           <Center>
             <VStack space="sm" className="items-center">
-            <ModernLinkButton
-              href="/border"
-              color={colors.borderCalcTint}
-              icon={CropIcon}
-              title="border calculator"
-            >
-              border calculator
-            </ModernLinkButton>
-            <ModernLinkButton
-              href="/exposure"
-              color={colors.stopCalcTint}
-              icon={TimerIcon}
-              title="stop-based exposure calculator"
-            >
-              stop-based exposure calculator
-            </ModernLinkButton>
-            <ModernLinkButton
-              href="/resize"
-              color={colors.resizeCalcTint}
-              icon={MoveIcon}
-              title="print resize calculator"
-            >
-              print resize calculator
-            </ModernLinkButton>
-            <ModernLinkButton
-              href="/cameraExposure"
-              color={colors.cameraExposureCalcTint}
-              icon={CameraIcon}
-              title="exposure calculator"
-            >
-              exposure calculator
-            </ModernLinkButton>
-            <ModernLinkButton 
-              href="#" 
-              color="#666"
-              disabled 
-              icon={FlaskConicalIcon}
-              title="coming soon!"
-            >
-              developer dilution calculator
-            </ModernLinkButton>
-            <ModernLinkButton 
-              href="#" 
-              color="#666"
-              disabled 
-              icon={ZapIcon}
-              title="coming soon!"
-            >
-              push/pull calculator
-            </ModernLinkButton>
-            <ModernLinkButton
-              href="/reciprocity"
-              color={colors.reciprocityCalcTint}
-              icon={ClockIcon}
-              title="reciprocity calculator"
-            >
-              reciprocity calculator
-            </ModernLinkButton>
-            <ModernLinkButton
-              href="https://github.com/narrowstacks/DorkroomReact"
-              color="#24292e"
-              icon={GitBranchIcon}
-              title="contribute on github"
-            >
-              contribute on github
-            </ModernLinkButton>
-            <ModernLinkButton
-              href="https://ko-fi.com/affords"
-              color="#FF5E5B"
-              icon={HeartIcon}
-              title="support this site!"
-            >
-              support this site!
-            </ModernLinkButton>
+              <ModernLinkButton
+                href="/border"
+                color={colors.borderCalcTint}
+                icon={CropIcon}
+                title="border calculator"
+              >
+                border calculator
+              </ModernLinkButton>
+              <ModernLinkButton
+                href="/exposure"
+                color={colors.stopCalcTint}
+                icon={TimerIcon}
+                title="stop-based exposure calculator"
+              >
+                stop-based exposure calculator
+              </ModernLinkButton>
+              <ModernLinkButton
+                href="/resize"
+                color={colors.resizeCalcTint}
+                icon={MoveIcon}
+                title="print resize calculator"
+              >
+                print resize calculator
+              </ModernLinkButton>
+              <ModernLinkButton
+                href="/cameraExposure"
+                color={colors.cameraExposureCalcTint}
+                icon={CameraIcon}
+                title="exposure calculator"
+              >
+                exposure calculator
+              </ModernLinkButton>
+              <ModernLinkButton
+                href="#"
+                color="#666"
+                disabled
+                icon={FlaskConicalIcon}
+                title="coming soon!"
+              >
+                developer dilution calculator
+              </ModernLinkButton>
+              <ModernLinkButton
+                href="#"
+                color="#666"
+                disabled
+                icon={ZapIcon}
+                title="coming soon!"
+              >
+                push/pull calculator
+              </ModernLinkButton>
+              <ModernLinkButton
+                href="/reciprocity"
+                color={colors.reciprocityCalcTint}
+                icon={ClockIcon}
+                title="reciprocity calculator"
+              >
+                reciprocity calculator
+              </ModernLinkButton>
+              <ModernLinkButton
+                href="https://github.com/narrowstacks/DorkroomReact"
+                color="#24292e"
+                icon={GitBranchIcon}
+                title="contribute on github"
+              >
+                contribute on github
+              </ModernLinkButton>
+              <ModernLinkButton
+                href="https://ko-fi.com/affords"
+                color="#FF5E5B"
+                icon={HeartIcon}
+                title="support this site!"
+              >
+                support this site!
+              </ModernLinkButton>
             </VStack>
           </Center>
         </VStack>
@@ -225,4 +216,3 @@ export default function HomeScreen() {
     </ScrollView>
   );
 }
-
