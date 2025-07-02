@@ -19,13 +19,13 @@ describe("Enhanced DorkroomClient", () => {
 
   afterEach(() => {
     // Suppress expected cancellation errors
-    const originalConsoleError = debugError;
-    debugError = jest.fn();
+    const originalConsoleError = console.error;
+    console.error = jest.fn();
 
     client.reset();
 
-    // Restore debugError
-    debugError = originalConsoleError;
+    // Restore console.error
+    console.error = originalConsoleError;
   });
 
   describe("Debouncing", () => {

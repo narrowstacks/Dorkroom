@@ -213,11 +213,11 @@ try {
   await client.loadAll();
 } catch (error) {
   if (error instanceof DataFetchError) {
-    debugError("Network error:", error.message);
+    console.error("Network error:", error.message);
   } else if (error instanceof DataParseError) {
-    debugError("Invalid JSON response:", error.message);
+    console.error("Invalid JSON response:", error.message);
   } else if (error instanceof DataNotLoadedError) {
-    debugError("Must call loadAll() first:", error.message);
+    console.error("Must call loadAll() first:", error.message);
   }
 }
 ```
