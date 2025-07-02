@@ -57,6 +57,7 @@ import { useDevelopmentRecipes } from "@/hooks/useDevelopmentRecipes";
 import { useRecipeUrlState } from "@/hooks/useRecipeUrlState";
 import { useCustomRecipes } from "@/hooks/useCustomRecipes";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { DEVELOPER_TYPES, formatTime } from "@/constants/developmentRecipes";
 import { formatDilution } from "@/utils/dilutionUtils";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
@@ -277,6 +278,7 @@ export default function DevelopmentRecipes() {
   } = useDevelopmentRecipes();
 
   const { customRecipes, forceRefresh, addCustomRecipe } = useCustomRecipes();
+  const { isRecipeImportEnabled } = useFeatureFlags();
 
   // Convert custom recipes to combination-like format for display
   const customRecipesAsCombinations = React.useMemo(() => {
@@ -445,13 +447,14 @@ export default function DevelopmentRecipes() {
   // Track if we've already shown the import modal for this shared recipe
   const sharedRecipeModalShownRef = useRef<string | null>(null);
 
-  // Show import modal when a shared custom recipe is detected
+  // Show import modal when a shared custom recipe is detected (only if import is enabled)
   React.useEffect(() => {
     if (
       hasSharedCustomRecipe &&
       sharedCustomRecipe &&
       !showCustomRecipeImportModal &&
-      !isLoadingSharedRecipe
+      !isLoadingSharedRecipe &&
+      isRecipeImportEnabled
     ) {
       // Create a unique identifier for this shared recipe
       const recipeKey = `${sharedCustomRecipe.name}_${sharedCustomRecipe.filmId}_${sharedCustomRecipe.developerId}_${sharedCustomRecipe.timeMinutes}`;
@@ -467,6 +470,7 @@ export default function DevelopmentRecipes() {
     sharedCustomRecipe,
     showCustomRecipeImportModal,
     isLoadingSharedRecipe,
+    isRecipeImportEnabled,
   ]);
   const [selectedCombination, setSelectedCombination] =
     useState<Combination | null>(null);
@@ -711,7 +715,7 @@ export default function DevelopmentRecipes() {
   };
 
   const handleImportCustomRecipe = async () => {
-    if (!sharedCustomRecipe) return;
+    if (!sharedCustomRecipe || !isRecipeImportEnabled) return;
 
     try {
       // Importing custom recipe

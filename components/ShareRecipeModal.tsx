@@ -19,6 +19,7 @@ import {
 } from "@gluestack-ui/themed";
 import { X, Share, Copy, Check } from "lucide-react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useShareLink, ShareLinkOptions } from "@/hooks/useShareLink";
 import {
   useCustomRecipeSharing,
@@ -52,6 +53,7 @@ export function ShareRecipeModal({
   const [copySuccess, setCopySuccess] = useState(false);
 
   const toast = useToast();
+  const { isCustomRecipeSharingEnabled } = useFeatureFlags();
   const { generateShareUrl, shareRecipe, copyToClipboard } = useShareLink();
   const {
     generateCustomRecipeShareUrl,
@@ -69,15 +71,15 @@ export function ShareRecipeModal({
   // Generate share URL when modal opens
   useEffect(() => {
     if (isOpen && recipe) {
-      if (isCustomRecipe && customRecipe) {
-        // For custom recipes, use the custom recipe sharing
+      if (isCustomRecipe && customRecipe && isCustomRecipeSharingEnabled) {
+        // For custom recipes, use the custom recipe sharing (only if enabled)
         const customShareOptions: CustomRecipeShareOptions = {
           recipe: customRecipe,
           includeSource: true,
         };
         const url = generateCustomRecipeShareUrl(customShareOptions);
         setShareUrl(url || "");
-      } else {
+      } else if (!isCustomRecipe) {
         // For database recipes, use the regular sharing
         const shareOptions: ShareLinkOptions = {
           recipe,
@@ -85,6 +87,9 @@ export function ShareRecipeModal({
         };
         const url = generateShareUrl(shareOptions);
         setShareUrl(url);
+      } else {
+        // Custom recipe sharing is disabled
+        setShareUrl("");
       }
     }
   }, [
@@ -92,6 +97,7 @@ export function ShareRecipeModal({
     recipe,
     customRecipe,
     isCustomRecipe,
+    isCustomRecipeSharingEnabled,
     generateShareUrl,
     generateCustomRecipeShareUrl,
   ]);
@@ -107,20 +113,33 @@ export function ShareRecipeModal({
     try {
       let result;
 
-      if (isCustomRecipe && customRecipe) {
-        // Share custom recipe
+      if (isCustomRecipe && customRecipe && isCustomRecipeSharingEnabled) {
+        // Share custom recipe (only if enabled)
         const customShareOptions: CustomRecipeShareOptions = {
           recipe: customRecipe,
           includeSource: true,
         };
         result = await shareCustomRecipe(customShareOptions);
-      } else {
+      } else if (!isCustomRecipe) {
         // Share database recipe
         const shareOptions: ShareLinkOptions = {
           recipe,
           includeSource: true,
         };
         result = await shareRecipe(shareOptions);
+      } else {
+        // Custom recipe sharing is disabled
+        toast.show({
+          placement: "top",
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="warning" variant="solid">
+              <ToastTitle>
+                Custom recipe sharing is currently disabled
+              </ToastTitle>
+            </Toast>
+          ),
+        });
+        return;
       }
 
       if (result.success) {
@@ -175,20 +194,33 @@ export function ShareRecipeModal({
     try {
       let result;
 
-      if (isCustomRecipe && customRecipe) {
-        // Copy custom recipe link
+      if (isCustomRecipe && customRecipe && isCustomRecipeSharingEnabled) {
+        // Copy custom recipe link (only if enabled)
         const customShareOptions: CustomRecipeShareOptions = {
           recipe: customRecipe,
           includeSource: true,
         };
         result = await copyCustomRecipeToClipboard(customShareOptions);
-      } else {
+      } else if (!isCustomRecipe) {
         // Copy database recipe link
         const shareOptions: ShareLinkOptions = {
           recipe,
           includeSource: true,
         };
         result = await copyToClipboard(shareOptions);
+      } else {
+        // Custom recipe sharing is disabled
+        toast.show({
+          placement: "top",
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="warning" variant="solid">
+              <ToastTitle>
+                Custom recipe sharing is currently disabled
+              </ToastTitle>
+            </Toast>
+          ),
+        });
+        return;
       }
 
       if (result.success) {
@@ -326,83 +358,104 @@ export function ShareRecipeModal({
                 Share Options
               </Text>
 
-              {/* Native Share Button */}
-              {Platform.OS !== "web" && (
-                <Button
-                  variant="solid"
-                  onPress={handleShare}
+              {/* Show disabled message for custom recipes when sharing is disabled */}
+              {isCustomRecipe && !isCustomRecipeSharingEnabled ? (
+                <Box
                   style={[
-                    styles.shareButton,
-                    { backgroundColor: developmentTint },
+                    styles.disabledMessage,
+                    {
+                      backgroundColor: resultRowBackground,
+                      borderColor: borderColor,
+                    },
                   ]}
                 >
-                  <Share size={16} color="white" />
-                  <ButtonText style={styles.shareButtonText}>
-                    Share Recipe
-                  </ButtonText>
-                </Button>
-              )}
+                  <Text style={[styles.disabledText, { color: textSecondary }]}>
+                    Custom recipe sharing is currently disabled.
+                  </Text>
+                </Box>
+              ) : (
+                <>
+                  {/* Native Share Button */}
+                  {Platform.OS !== "web" && (
+                    <Button
+                      variant="solid"
+                      onPress={handleShare}
+                      style={[
+                        styles.shareButton,
+                        { backgroundColor: developmentTint },
+                      ]}
+                    >
+                      <Share size={16} color="white" />
+                      <ButtonText style={styles.shareButtonText}>
+                        Share Recipe
+                      </ButtonText>
+                    </Button>
+                  )}
 
-              {/* Copy Link Button */}
-              <Button
-                variant="outline"
-                onPress={handleCopyLink}
-                style={[styles.shareButton, { borderColor: borderColor }]}
-              >
-                {copySuccess ? (
-                  <Check size={16} color={developmentTint} />
-                ) : (
-                  <Copy size={16} color={textColor} />
-                )}
-                <ButtonText
-                  style={[
-                    styles.shareButtonText,
-                    { color: copySuccess ? developmentTint : textColor },
-                  ]}
-                >
-                  {copySuccess ? "Copied!" : "Copy Link"}
-                </ButtonText>
-              </Button>
+                  {/* Copy Link Button */}
+                  <Button
+                    variant="outline"
+                    onPress={handleCopyLink}
+                    style={[styles.shareButton, { borderColor: borderColor }]}
+                  >
+                    {copySuccess ? (
+                      <Check size={16} color={developmentTint} />
+                    ) : (
+                      <Copy size={16} color={textColor} />
+                    )}
+                    <ButtonText
+                      style={[
+                        styles.shareButtonText,
+                        { color: copySuccess ? developmentTint : textColor },
+                      ]}
+                    >
+                      {copySuccess ? "Copied!" : "Copy Link"}
+                    </ButtonText>
+                  </Button>
 
-              {/* Web Share Button (Web only) */}
-              {Platform.OS === "web" && (
-                <Button
-                  variant="solid"
-                  onPress={handleShare}
-                  style={[
-                    styles.shareButton,
-                    { backgroundColor: developmentTint },
-                  ]}
-                >
-                  <Share size={16} color="white" />
-                  <ButtonText style={styles.shareButtonText}>
-                    Share Recipe
-                  </ButtonText>
-                </Button>
+                  {/* Web Share Button (Web only) */}
+                  {Platform.OS === "web" && (
+                    <Button
+                      variant="solid"
+                      onPress={handleShare}
+                      style={[
+                        styles.shareButton,
+                        { backgroundColor: developmentTint },
+                      ]}
+                    >
+                      <Share size={16} color="white" />
+                      <ButtonText style={styles.shareButtonText}>
+                        Share Recipe
+                      </ButtonText>
+                    </Button>
+                  )}
+                </>
               )}
             </VStack>
 
-            {/* Share URL Preview */}
-            <Box
-              style={[
-                styles.urlPreview,
-                {
-                  backgroundColor: resultRowBackground,
-                  borderColor: borderColor,
-                },
-              ]}
-            >
-              <Text style={[styles.urlLabel, { color: textSecondary }]}>
-                Share URL:
-              </Text>
-              <Text
-                style={[styles.urlText, { color: textColor }]}
-                numberOfLines={2}
-                selectable
+            {/* Share URL Preview - only show if sharing is enabled or it's not a custom recipe */}
+            {(!isCustomRecipe || isCustomRecipeSharingEnabled) && shareUrl && (
+              <Box
+                style={[
+                  styles.urlPreview,
+                  {
+                    backgroundColor: resultRowBackground,
+                    borderColor: borderColor,
+                  },
+                ]}
               >
-                {shareUrl}
-              </Text>
-            </Box>
+                <Text style={[styles.urlLabel, { color: textSecondary }]}>
+                  Share URL:
+                </Text>
+                <Text
+                  style={[styles.urlText, { color: textColor }]}
+                  numberOfLines={2}
+                  selectable
+                >
+                  {shareUrl}
+                </Text>
+              </Box>
+            )}
           </VStack>
         </ModalBody>
       </ModalContent>
@@ -470,5 +523,16 @@ const styles = StyleSheet.create({
   urlText: {
     fontSize: 12,
     fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+  },
+  disabledMessage: {
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  disabledText: {
+    fontSize: 14,
+    fontWeight: "500",
+    textAlign: "center",
   },
 });

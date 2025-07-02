@@ -38,6 +38,7 @@ import { showConfirmAlert } from "@/components/ui/layout/ConfirmAlert";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useChemistryCalculator } from "@/hooks/useChemistryCalculator";
 import { useCustomRecipes } from "@/hooks/useCustomRecipes";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { debugLog } from "@/utils/debugLogger";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
 import type { CustomRecipe } from "@/types/customRecipeTypes";
@@ -88,6 +89,7 @@ export function RecipeDetail({
 
   const chemistry = useChemistryCalculator();
   const { deleteCustomRecipe, forceRefresh } = useCustomRecipes();
+  const { isCustomRecipeSharingEnabled } = useFeatureFlags();
   const toast = useToast();
 
   // Get film and developer names
@@ -286,15 +288,17 @@ export function RecipeDetail({
         </VStack>
 
         <HStack space="xs" style={styles.headerActions}>
-          {/* Share button for all recipes */}
-          <Button
-            variant="outline"
-            size="sm"
-            onPress={() => setShowShareModal(true)}
-            style={styles.actionButton}
-          >
-            <Share size={16} color={textColor} />
-          </Button>
+          {/* Share button - conditional based on recipe type and feature flags */}
+          {(!isCustomRecipe || isCustomRecipeSharingEnabled) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onPress={() => setShowShareModal(true)}
+              style={styles.actionButton}
+            >
+              <Share size={16} color={textColor} />
+            </Button>
+          )}
 
           {/* Edit button for custom recipes */}
           {isCustomRecipe && onEdit && (
