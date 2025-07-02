@@ -33,7 +33,7 @@ import {
   getApiEndpointConfig,
   getEnvironmentConfig,
 } from "../../utils/platformDetection";
-import { debugLog } from "../../utils/debugLogger";
+import { debugLog } from "@/utils/debugLogger";
 
 /**
  * Cache entry with expiration.

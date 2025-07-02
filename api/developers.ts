@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { debugLog, debugWarn, debugError } from "../utils/debugLogger";
+import { debugLog, debugWarn, debugError } from "@/utils/debugLogger";
 
 // The master API key that has high rate limits
 const SUPABASE_MASTER_API_KEY = process.env.SUPABASE_MASTER_API_KEY;
