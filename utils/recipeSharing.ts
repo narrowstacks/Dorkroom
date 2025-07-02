@@ -4,7 +4,7 @@ import type {
   CustomFilmData,
   CustomDeveloperData,
 } from "@/types/customRecipeTypes";
-import { debugLog } from "@/utils/debugLogger";
+import { debugLog, debugError } from "@/utils/debugLogger";
 
 const CURRENT_RECIPE_SHARING_VERSION = 1;
 
