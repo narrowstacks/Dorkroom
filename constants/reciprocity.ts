@@ -26,17 +26,52 @@ export const FILM_TYPES = [
   {
     label: "Ilford Delta 100",
     value: "delta100",
-    factor: 1.29,
+    factor: 1.26,
   },
   {
     label: "Ilford Delta 400",
     value: "delta400",
-    factor: 1.26,
+    factor: 1.41,
+  },
+  {
+    label: "Ilford Delta 3200",
+    value: "delta3200",
+    factor: 1.33,
   },
   {
     label: "Ilford FP4+",
     value: "fp4",
     factor: 1.26,
+  },
+  {
+    label: "Ilford Ortho+",
+    value: "ortho",
+    factor: 1.25,
+  },
+  {
+    label: "Ilford Pan F+",
+    value: "panf",
+    factor: 1.33,
+  },
+  {
+    label: "Ilford SFX",
+    value: "sfx",
+    factor: 1.43,
+  },
+  {
+    label: "Ilford XP2",
+    value: "xp2",
+    factor: 1.31,
+  },
+  {
+    label: "Kentmere 100",
+    value: "kentmere100",
+    factor: 1.26,
+  },
+  {
+    label: "Kentmere 400",
+    value: "kentmere400",
+    factor: 1.3,
   },
   {
     label: "Fuji Acros 100",
