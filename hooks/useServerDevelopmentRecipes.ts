@@ -103,11 +103,12 @@ export function useServerDevelopmentRecipes(
 
       debugLog("useServerDevelopmentRecipes", "Loading initial data...");
 
-      // Load films and developers in parallel (these are smaller datasets)
-      const [films, developers] = await Promise.all([
-        Promise.resolve(client.getAllFilms()),
-        Promise.resolve(client.getAllDevelopers()),
-      ]);
+      // Initialize the client first - this loads all data including films and developers
+      await client.loadAll();
+
+      // Get the loaded films and developers from the client
+      const films = client.getAllFilms();
+      const developers = client.getAllDevelopers();
 
       setAllFilms(films);
       setAllDevelopers(developers);
