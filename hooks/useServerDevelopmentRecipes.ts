@@ -105,8 +105,8 @@ export function useServerDevelopmentRecipes(
 
       // Load films and developers in parallel (these are smaller datasets)
       const [films, developers] = await Promise.all([
-        client.getFilms(),
-        client.getDevelopers(),
+        Promise.resolve(client.getAllFilms()),
+        Promise.resolve(client.getAllDevelopers()),
       ]);
 
       setAllFilms(films);

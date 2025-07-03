@@ -13,6 +13,10 @@ export { ChemistryCalculator } from "./ChemistryCalculator";
 export { RecipeSearchFilters } from "./RecipeSearchFilters";
 export { RecipeResultsView } from "./RecipeResultsView";
 
+// Container components for improved organization
+export { RecipeSearchContainer } from "./RecipeSearchContainer";
+export { RecipeDisplayContainer } from "./RecipeDisplayContainer";
+
 // Virtualized components for performance optimization
 export { VirtualizedRecipeTable } from "./VirtualizedRecipeTable";
 export { VirtualizedRecipeCards } from "./VirtualizedRecipeCards";
