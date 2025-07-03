@@ -10,6 +10,12 @@ export { RecipeDetail } from "./RecipeDetail";
 export { CustomRecipeForm } from "./CustomRecipeForm";
 export { RecipeCard } from "./RecipeCard";
 export { ChemistryCalculator } from "./ChemistryCalculator";
+export { RecipeSearchFilters } from "./RecipeSearchFilters";
+export { RecipeResultsView } from "./RecipeResultsView";
+
+// Virtualized components for performance optimization
+export { VirtualizedRecipeTable } from "./VirtualizedRecipeTable";
+export { VirtualizedRecipeCards } from "./VirtualizedRecipeCards";
 
 // Recipe steps - re-export all recipe step components
 export * from "./recipe-steps";

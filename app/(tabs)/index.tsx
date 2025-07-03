@@ -168,32 +168,6 @@ export default function HomeScreen() {
                 exposure calculator
               </ModernLinkButton>
               <ModernLinkButton
-                href="#"
-                color="#666"
-                disabled
-                icon={FlaskConicalIcon}
-                title="coming soon!"
-              >
-                developer dilution calculator
-              </ModernLinkButton>
-              <ModernLinkButton
-                href="#"
-                color="#666"
-                disabled
-                icon={ZapIcon}
-                title="coming soon!"
-              >
-                push/pull calculator
-              </ModernLinkButton>
-              <ModernLinkButton
-                href="/reciprocity"
-                color={colors.reciprocityCalcTint}
-                icon={ClockIcon}
-                title="reciprocity calculator"
-              >
-                reciprocity calculator
-              </ModernLinkButton>
-              <ModernLinkButton
                 href="https://github.com/narrowstacks/DorkroomReact"
                 color="#24292e"
                 icon={GitBranchIcon}

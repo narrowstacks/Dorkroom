@@ -15,7 +15,8 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
-    "nativewind-env.d.ts"
+    "nativewind-env.d.ts",
+    "app/(tabs)/developmentRecipes.tsx.backup"
   ],
   "exclude": ["__tests__/**/*-test.ts"]
 }

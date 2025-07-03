@@ -39,15 +39,24 @@ export function isNativePlatform(): boolean {
  * Get the appropriate API endpoint configuration based on the platform
  */
 export function getApiEndpointConfig(): ApiEndpointConfig {
+  // When running in development mode (expo dev server), always use the beta API directly
+  if (__DEV__) {
+    return {
+      baseUrl: "https://beta.dorkroom.art/api",
+      platform: isWebPlatform() ? "web" : "native",
+      requiresAuth: false,
+    };
+  }
+
   if (isWebPlatform()) {
-    // For web platform, use the local API route which proxies to Supabase
+    // For web platform in production, use the local API route which proxies to Supabase
     return {
       baseUrl: "/api",
       platform: "web",
       requiresAuth: false, // No auth required since the proxy handles the API key
     };
   } else {
-    // For native platform, use the deployed Vercel function
+    // For native platform in production, use the deployed Vercel function
     // This should be the deployed URL of your Vercel app
     const deployedUrl =
       process.env.EXPO_PUBLIC_VERCEL_URL ||
