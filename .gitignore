@@ -95,3 +95,4 @@ yarn-error.*
 
 # @end expo-cli
 .cursor/mcp.json
+PACKAGE_OPTIMIZATION_PLAN.md
