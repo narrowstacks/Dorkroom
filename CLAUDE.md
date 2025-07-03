@@ -13,7 +13,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Assume the expo server is already running-- don't try to run `bun run dev`.
 - We should aim for consistency in styling, including libraries used.
-- When grepping the codebase, use ripgrep `rg` instead of standard grep.
 - Add new libraries using `bun install`, do not edit the dependencies of @project.json directly. Other parts of the @projects.json file can be modified, but never the dependencies.
 - Refrain from using emojis in documentation (.md files) and code, unless specificially specified.
 - Use the tools at your disposal listed in the next section.

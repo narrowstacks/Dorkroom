@@ -5,7 +5,10 @@ import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { StyledTextInput } from "@/components/ui/forms/StyledTextInput";
 import { useThemeColor } from "@/hooks/ui/theming";
 import { useWindowDimensions } from "@/hooks/ui/detection";
-import type { PaginationState, PaginationActions } from "@/hooks/usePagination";
+import type {
+  PaginationState,
+  PaginationActions,
+} from "@/hooks/data/pagination/usePagination";
 
 interface PaginationControlsProps extends PaginationState, PaginationActions {
   className?: string;

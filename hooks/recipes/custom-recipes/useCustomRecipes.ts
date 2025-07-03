@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { debugLog } from "@/utils/debugLogger";
+import { debugLog, debugError } from "@/utils/debugLogger";
 import type {
   CustomRecipe,
   CustomRecipeFormData,

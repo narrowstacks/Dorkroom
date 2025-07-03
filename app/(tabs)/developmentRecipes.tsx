@@ -63,6 +63,7 @@ import { useDebounce } from "@/hooks/utils/debounce";
 import { usePagination } from "@/hooks/data/pagination";
 import { DEVELOPER_TYPES, formatTime } from "@/constants/developmentRecipes";
 import { formatDilution } from "@/utils/dilutionUtils";
+import { debugError } from "@/utils/debugLogger";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
 import type { CustomRecipe } from "@/types/customRecipeTypes";
 
@@ -650,9 +651,11 @@ export default function DevelopmentRecipes() {
     endIndex,
     hasNext,
     hasPrevious,
+    pageSize,
     goToPage,
     goToNext,
     goToPrevious,
+    resetToFirstPage,
   } = usePagination(allCombinations, 50);
 
   // Custom recipe helpers
@@ -1541,9 +1544,11 @@ export default function DevelopmentRecipes() {
                   endIndex={endIndex}
                   hasNext={hasNext}
                   hasPrevious={hasPrevious}
+                  pageSize={pageSize}
                   goToPage={goToPage}
                   goToNext={goToNext}
                   goToPrevious={goToPrevious}
+                  resetToFirstPage={resetToFirstPage}
                 />
 
                 {isDesktop && viewMode === "table" ? (
@@ -1678,9 +1683,11 @@ export default function DevelopmentRecipes() {
                   endIndex={endIndex}
                   hasNext={hasNext}
                   hasPrevious={hasPrevious}
+                  pageSize={pageSize}
                   goToPage={goToPage}
                   goToNext={goToNext}
                   goToPrevious={goToPrevious}
+                  resetToFirstPage={resetToFirstPage}
                 />
               </>
             )}
