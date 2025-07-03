@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, useCallback } from "react";
 import { StyleSheet, TouchableOpacity, Platform } from "react-native";
 import { Box, Text } from "@gluestack-ui/themed";
 import { useThemeColor } from "@/hooks/useThemeColor";
@@ -25,16 +25,39 @@ export const RecipeCard = React.memo(function RecipeCard({
   isCustomRecipe,
   onShare,
 }: RecipeCardProps) {
+  // Get theme colors (hooks must be called at top level)
   const textColor = useThemeColor({}, "text");
   const developmentTint = useThemeColor({}, "developmentRecipesTint");
   const cardBackground = useThemeColor({}, "cardBackground");
   const borderColor = useThemeColor({}, "borderColor");
   const resultRowBackground = useThemeColor({}, "resultRowBackground");
-  const { width } = useWindowDimensions();
-  const isMobile = Platform.OS !== "web" || width <= 768;
 
-  // Calculate card width based on screen size
-  const getCardWidth = () => {
+  // Consolidate theme colors into one object
+  const colors = useMemo(
+    () => ({
+      text: textColor,
+      developmentTint,
+      cardBackground,
+      borderColor,
+      resultRowBackground,
+    }),
+    [
+      textColor,
+      developmentTint,
+      cardBackground,
+      borderColor,
+      resultRowBackground,
+    ],
+  );
+
+  const { width } = useWindowDimensions();
+  const isMobile = useMemo(
+    () => Platform.OS !== "web" || width <= 768,
+    [width],
+  );
+
+  // Memoize card width calculation
+  const cardWidth = useMemo(() => {
     if (isMobile) {
       return "46%"; // 2 cards per row on mobile with more space
     } else if (width > 1600) {
@@ -44,101 +67,138 @@ export const RecipeCard = React.memo(function RecipeCard({
     } else {
       return "47%"; // 2 cards per row on medium desktop
     }
-  };
+  }, [isMobile, width]);
 
-  const filmName = film
-    ? isMobile
-      ? film.name
-      : `${film.brand} ${film.name}`
-    : "Unknown Film";
+  // Memoize film name calculation
+  const filmName = useMemo(() => {
+    return film
+      ? isMobile
+        ? film.name
+        : `${film.brand} ${film.name}`
+      : "Unknown Film";
+  }, [film, isMobile]);
 
-  // Check if shooting ISO is different from film stock ISO
-  const isNonStandardISO = film && combination.shootingIso !== film.isoSpeed;
+  // Memoize ISO calculations
+  const isoInfo = useMemo(() => {
+    const isNonStandardISO = film && combination.shootingIso !== film.isoSpeed;
+    return {
+      isNonStandardISO,
+      display: combination.shootingIso,
+    };
+  }, [film, combination.shootingIso]);
 
-  // Format push/pull value if present. Accepts undefined and treats it as 0.
-  const formatPushPullNumber = (num: number): string => {
-    if (num === undefined || num === null) return "";
-    return num % 1 === 0
-      ? num.toString()
-      : Number(num)
-          .toFixed(2)
-          .replace(/\.?0+$/, "");
-  };
+  // Memoize push/pull calculations
+  const pushPullInfo = useMemo(() => {
+    const formatPushPullNumber = (num: number): string => {
+      if (num === undefined || num === null) return "";
+      return num % 1 === 0
+        ? num.toString()
+        : Number(num)
+            .toFixed(2)
+            .replace(/\.?0+$/, "");
+    };
 
-  // Safely derive the push/pull value (default-to-0 to avoid NaN / undefined issues).
-  const pushPullValue = combination.pushPull ?? 0;
+    const pushPullValue = combination.pushPull ?? 0;
+    const display =
+      pushPullValue !== 0
+        ? ` ${pushPullValue > 0 ? `+${formatPushPullNumber(pushPullValue)}` : formatPushPullNumber(pushPullValue)}`
+        : null;
 
-  const pushPullDisplay =
-    pushPullValue !== 0
-      ? ` ${pushPullValue > 0 ? `+${formatPushPullNumber(pushPullValue)}` : formatPushPullNumber(pushPullValue)}`
-      : null;
+    return { pushPullValue, display };
+  }, [combination.pushPull]);
 
-  const developerName = developer
-    ? isMobile
-      ? developer.name
-      : `${developer.name}`
-    : "Unknown Developer";
+  // Memoize developer name
+  const developerName = useMemo(() => {
+    return developer
+      ? isMobile
+        ? developer.name
+        : `${developer.name}`
+      : "Unknown Developer";
+  }, [developer, isMobile]);
 
-  // Get dilution info
-  const dilutionInfo = formatDilution(
-    combination.customDilution ||
-      developer?.dilutions.find((d) => d.id === combination.dilutionId)
-        ?.dilution ||
-      "Stock",
+  // Memoize dilution info
+  const dilutionInfo = useMemo(() => {
+    return formatDilution(
+      combination.customDilution ||
+        developer?.dilutions.find((d) => d.id === combination.dilutionId)
+          ?.dilution ||
+        "Stock",
+    );
+  }, [
+    combination.customDilution,
+    combination.dilutionId,
+    developer?.dilutions,
+  ]);
+
+  // Memoize temperature info
+  const temperatureInfo = useMemo(() => {
+    const isNonStandardTemp = combination.temperatureF !== 68;
+    const display = `${combination.temperatureF}°F`;
+    return { isNonStandardTemp, display };
+  }, [combination.temperatureF]);
+
+  // Memoize style objects to prevent recreation
+  const dynamicStyles = useMemo(
+    () => ({
+      cardTouchable: [styles.cardTouchable, { width: cardWidth as any }],
+      recipeCard: [
+        styles.recipeCard,
+        {
+          backgroundColor: colors.cardBackground,
+          borderColor: colors.borderColor,
+        },
+      ],
+      customBadge: [
+        styles.customBadge,
+        { backgroundColor: colors.developmentTint },
+      ],
+      paramBox: [
+        styles.paramBox,
+        { backgroundColor: colors.resultRowBackground },
+      ],
+    }),
+    [cardWidth, colors],
   );
 
-  // Check if temperature is non-standard (not 68°F)
-  const isNonStandardTemp = combination.temperatureF !== 68;
-  const tempDisplay = `${combination.temperatureF}°F`;
+  // Optimize callback to prevent recreation
+  const handleShareStart = useCallback(() => {
+    onShare?.(null);
+  }, [onShare]);
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={[styles.cardTouchable, { width: getCardWidth() }]}
-    >
-      <Box
-        style={[
-          styles.recipeCard,
-          {
-            backgroundColor: cardBackground,
-            borderColor: borderColor,
-          },
-        ]}
-      >
+    <TouchableOpacity onPress={onPress} style={dynamicStyles.cardTouchable}>
+      <Box style={dynamicStyles.recipeCard}>
         {/* Header with Film and ISO */}
         <Box style={styles.cardHeader}>
           <Text
-            style={[styles.cardFilmName, { color: textColor }]}
+            style={[styles.cardFilmName, { color: colors.text }]}
             numberOfLines={2}
           >
             {filmName}
-            {isNonStandardISO && (
-              <Text style={[styles.cardISO, { color: developmentTint }]}>
+            {isoInfo.isNonStandardISO && (
+              <Text style={[styles.cardISO, { color: colors.developmentTint }]}>
                 {" @ "}
-                {combination.shootingIso} ISO
+                {isoInfo.display} ISO
               </Text>
             )}
-            {!isNonStandardISO && (
-              <Text style={[styles.cardISO, { color: textColor }]}>
+            {!isoInfo.isNonStandardISO && (
+              <Text style={[styles.cardISO, { color: colors.text }]}>
                 {" @ "}
-                {combination.shootingIso} ISO
+                {isoInfo.display} ISO
               </Text>
             )}
-            {pushPullDisplay && (
-              <Text style={[styles.pushPullText, { color: developmentTint }]}>
-                {pushPullDisplay}
+            {pushPullInfo.display && (
+              <Text
+                style={[styles.pushPullText, { color: colors.developmentTint }]}
+              >
+                {pushPullInfo.display}
               </Text>
             )}
           </Text>
 
           <Box style={styles.cardHeaderActions}>
             {isCustomRecipe && (
-              <Box
-                style={[
-                  styles.customBadge,
-                  { backgroundColor: developmentTint },
-                ]}
-              >
+              <Box style={dynamicStyles.customBadge}>
                 <Text style={styles.customBadgeText}>●</Text>
               </Box>
             )}
@@ -148,36 +208,29 @@ export const RecipeCard = React.memo(function RecipeCard({
               recipe={combination}
               size="xs"
               style={styles.shareButton}
-              onShareStart={() => {
-                // Prevent card press when sharing
-                onShare?.(null);
-              }}
+              onShareStart={handleShareStart}
             />
           </Box>
         </Box>
 
         {/* Developer and Dilution Parameters */}
         <Box style={[styles.cardParams, styles.firstParamSection]}>
-          <Box
-            style={[styles.paramBox, { backgroundColor: resultRowBackground }]}
-          >
-            <Text style={[styles.cardParamLabel, { color: textColor }]}>
+          <Box style={dynamicStyles.paramBox}>
+            <Text style={[styles.cardParamLabel, { color: colors.text }]}>
               Developer
             </Text>
             <Text
-              style={[styles.cardParamValue, { color: textColor }]}
+              style={[styles.cardParamValue, { color: colors.text }]}
               numberOfLines={1}
             >
               {developerName}
             </Text>
           </Box>
-          <Box
-            style={[styles.paramBox, { backgroundColor: resultRowBackground }]}
-          >
-            <Text style={[styles.cardParamLabel, { color: textColor }]}>
+          <Box style={dynamicStyles.paramBox}>
+            <Text style={[styles.cardParamLabel, { color: colors.text }]}>
               Dilution
             </Text>
-            <Text style={[styles.cardParamValue, { color: textColor }]}>
+            <Text style={[styles.cardParamValue, { color: colors.text }]}>
               {dilutionInfo}
             </Text>
           </Box>
@@ -185,23 +238,23 @@ export const RecipeCard = React.memo(function RecipeCard({
 
         {/* Time and Temperature Parameters */}
         <Box style={styles.cardParams}>
-          <Box
-            style={[styles.paramBox, { backgroundColor: resultRowBackground }]}
-          >
-            <Text style={[styles.cardParamLabel, { color: textColor }]}>
+          <Box style={dynamicStyles.paramBox}>
+            <Text style={[styles.cardParamLabel, { color: colors.text }]}>
               Time
             </Text>
-            <Text style={[styles.cardParamValue, { color: textColor }]}>
+            <Text style={[styles.cardParamValue, { color: colors.text }]}>
               {formatTime(combination.timeMinutes)}
             </Text>
           </Box>
-          <Box
-            style={[styles.paramBox, { backgroundColor: resultRowBackground }]}
-          >
+          <Box style={dynamicStyles.paramBox}>
             <Text
               style={[
                 styles.cardParamLabel,
-                { color: isNonStandardTemp ? developmentTint : textColor },
+                {
+                  color: temperatureInfo.isNonStandardTemp
+                    ? colors.developmentTint
+                    : colors.text,
+                },
               ]}
             >
               Temperature
@@ -209,11 +262,15 @@ export const RecipeCard = React.memo(function RecipeCard({
             <Text
               style={[
                 styles.cardParamValue,
-                { color: isNonStandardTemp ? developmentTint : textColor },
+                {
+                  color: temperatureInfo.isNonStandardTemp
+                    ? colors.developmentTint
+                    : colors.text,
+                },
               ]}
             >
-              {tempDisplay}
-              {isNonStandardTemp && " ⚠"}
+              {temperatureInfo.display}
+              {temperatureInfo.isNonStandardTemp && " ⚠"}
             </Text>
           </Box>
         </Box>
