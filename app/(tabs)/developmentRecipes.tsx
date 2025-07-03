@@ -1,58 +1,39 @@
 import React, { useState, useMemo, useRef } from "react";
-import {
-  Platform,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
+import { Platform, StyleSheet, ScrollView } from "react-native";
 import { router } from "expo-router";
-import {
-  Box,
-  Text,
-  Button,
-  ButtonText,
-  VStack,
-  HStack,
-  Modal,
-  ModalBackdrop,
-  ModalContent,
-  ModalCloseButton,
-  ModalHeader,
-  ModalBody,
-} from "@gluestack-ui/themed";
+import { Box, Text, Button, ButtonText, VStack } from "@gluestack-ui/themed";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  X,
-  Filter,
-  RefreshCw,
-  ChevronDown,
-  ChevronUp,
-  Plus,
-  Grid3X3,
-  Table,
-} from "lucide-react-native";
+import { RefreshCw } from "lucide-react-native";
 
 import { CalculatorLayout } from "@/components/ui/layout/CalculatorLayout";
-import { FormSection, FormGroup } from "@/components/ui/forms/FormSection";
+import { FormSection } from "@/components/ui/forms/FormSection";
 import {
   InfoSection,
   InfoText,
   InfoSubtitle,
   InfoList,
 } from "@/components/ui/calculator/InfoSection";
-import { StyledSelect } from "@/components/ui/select/StyledSelect";
-import { SearchInput, SearchDropdown } from "@/components/ui/search";
+import { SearchDropdown } from "@/components/ui/search";
 import { PaginationControls } from "@/components/ui/pagination";
+import { RecipeCard } from "@/components/development-recipes";
+
+// Import new componentized parts
+import { SearchSection } from "@/components/development-recipes/filters/SearchSection";
+import { SelectedItemsDisplay } from "@/components/development-recipes/filters/SelectedItemsDisplay";
+import { FiltersSection } from "@/components/development-recipes/filters/FiltersSection";
+import { ResultsHeader } from "@/components/development-recipes/results/ResultsHeader";
+import { ActionButtons } from "@/components/development-recipes/results/ActionButtons";
+import { TableView } from "@/components/development-recipes/results/TableView";
+import { CardsView } from "@/components/development-recipes/results/CardsView";
+import { RecipeImportModal } from "@/components/development-recipes/modals/RecipeImportModal";
+import { ApiRecipeModal } from "@/components/development-recipes/modals/ApiRecipeModal";
+import { CustomRecipeModal } from "@/components/development-recipes/modals/CustomRecipeModal";
+import { CustomRecipeFormModal } from "@/components/development-recipes/modals/CustomRecipeFormModal";
+import { MobileSearchModals } from "@/components/development-recipes/modals/MobileSearchModals";
 import {
-  RecipeDetail,
-  CustomRecipeForm,
-  RecipeCard,
-} from "@/components/development-recipes";
-import {
-  getRecipeDetailModalConfig,
-  getCustomRecipeDetailModalConfig,
-  getRecipeFormModalConfig,
-} from "@/components/development-recipes/ModalStyles";
+  getCustomRecipeFilm,
+  getCustomRecipeDeveloper,
+} from "@/components/development-recipes/utils/RecipeHelpers";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useDevelopmentRecipes } from "@/hooks/useDevelopmentRecipes";
 import { useRecipeUrlState } from "@/hooks/useRecipeUrlState";
@@ -61,186 +42,8 @@ import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePagination } from "@/hooks/usePagination";
-import { DEVELOPER_TYPES, formatTime } from "@/constants/developmentRecipes";
-import { formatDilution } from "@/utils/dilutionUtils";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
 import type { CustomRecipe } from "@/types/customRecipeTypes";
-
-interface TableHeaderProps {
-  title: string;
-  sortKey: string;
-  currentSort: string;
-  sortDirection: "asc" | "desc";
-  onSort: (sortKey: string) => void;
-}
-
-const TableHeader = React.memo(function TableHeader({
-  title,
-  sortKey,
-  currentSort,
-  sortDirection,
-  onSort,
-}: TableHeaderProps) {
-  const textColor = useThemeColor({}, "text");
-  const developmentTint = useThemeColor({}, "developmentRecipesTint");
-  const isActive = currentSort === sortKey;
-
-  // Define flex values to match the row cells
-  const getHeaderStyle = () => {
-    switch (sortKey) {
-      case "filmName":
-        return { flex: 2.5 };
-      case "developerName":
-        return { flex: 2 };
-      case "timeMinutes":
-        return { flex: 1 };
-      case "temperatureF":
-        return { flex: 1 };
-      case "shootingIso":
-        return { flex: 0.8 };
-      case "dilution":
-        return { flex: 1.2 };
-      default:
-        return { flex: 1 };
-    }
-  };
-
-  return (
-    <TouchableOpacity
-      style={[styles.tableHeader, getHeaderStyle()]}
-      onPress={() => onSort(sortKey)}
-    >
-      <Text
-        style={[
-          styles.tableHeaderText,
-          { color: isActive ? developmentTint : textColor },
-        ]}
-      >
-        {title}
-      </Text>
-      {isActive &&
-        (sortDirection === "asc" ? (
-          <ChevronUp
-            size={12}
-            color={developmentTint}
-            style={styles.sortIcon}
-          />
-        ) : (
-          <ChevronDown
-            size={12}
-            color={developmentTint}
-            style={styles.sortIcon}
-          />
-        ))}
-    </TouchableOpacity>
-  );
-});
-
-interface RecipeRowProps {
-  combination: Combination;
-  film: Film | undefined;
-  developer: Developer | undefined;
-  onPress: () => void;
-  isEven: boolean;
-}
-
-const RecipeRow = React.memo(function RecipeRow({
-  combination,
-  film,
-  developer,
-  onPress,
-  isEven,
-}: RecipeRowProps) {
-  const textColor = useThemeColor({}, "text");
-  const developmentTint = useThemeColor({}, "developmentRecipesTint");
-  const rowBackground = useThemeColor(
-    {},
-    isEven ? "cardBackground" : "background",
-  );
-  const { width } = useWindowDimensions();
-  const isMobile = Platform.OS !== "web" || width <= 768;
-
-  const filmName = film
-    ? isMobile
-      ? film.name
-      : `${film.brand} ${film.name}`
-    : "Unknown Film";
-
-  // Format push/pull value if present
-  const pushPullDisplay =
-    combination.pushPull !== 0
-      ? ` ${combination.pushPull > 0 ? `+${combination.pushPull}` : combination.pushPull}`
-      : null;
-
-  const developerName = developer ? developer.name : "Unknown Developer";
-
-  // Get dilution info
-  const dilutionInfo = formatDilution(
-    combination.customDilution ||
-      developer?.dilutions.find((d) => d.id === combination.dilutionId)
-        ?.dilution ||
-      "Stock",
-  );
-
-  // Format temperature more compactly
-  const tempDisplay = `${combination.temperatureF}°F`;
-
-  // Format temperature for display
-
-  return (
-    <TouchableOpacity onPress={onPress}>
-      <Box style={[styles.tableRow, { backgroundColor: rowBackground }]}>
-        <Box style={styles.filmCell}>
-          <Text
-            style={[styles.filmText, { color: textColor }]}
-            numberOfLines={1}
-          >
-            {filmName}
-            {pushPullDisplay && (
-              <Text style={{ color: developmentTint }}>{pushPullDisplay}</Text>
-            )}
-          </Text>
-        </Box>
-
-        <Box style={styles.developerCell}>
-          <Text
-            style={[styles.developerText, { color: textColor }]}
-            numberOfLines={1}
-          >
-            {developerName}
-          </Text>
-        </Box>
-
-        <Box style={styles.timeCell}>
-          <Text style={[styles.paramText, { color: textColor }]}>
-            {formatTime(combination.timeMinutes)}
-          </Text>
-        </Box>
-
-        <Box style={styles.tempCell}>
-          <Text style={[styles.paramText, { color: textColor }]}>
-            {tempDisplay}
-          </Text>
-        </Box>
-
-        <Box style={styles.isoCell}>
-          <Text style={[styles.paramText, { color: textColor }]}>
-            {combination.shootingIso}
-          </Text>
-        </Box>
-
-        <Box style={styles.dilutionCell}>
-          <Text
-            style={[styles.paramText, { color: textColor }]}
-            numberOfLines={1}
-          >
-            {dilutionInfo}
-          </Text>
-        </Box>
-      </Box>
-    </TouchableOpacity>
-  );
-});
 
 export default function DevelopmentRecipes() {
   // Get development recipes data (this loads the data and provides films/developers for URL parsing)
@@ -655,66 +458,15 @@ export default function DevelopmentRecipes() {
     goToPrevious,
   } = usePagination(allCombinations, 50);
 
-  // Custom recipe helpers
-  const getCustomRecipeFilm = (recipeId: string): Film | undefined => {
-    const recipe = customRecipes.find((r) => r.id === recipeId);
-    if (!recipe) return undefined;
-
-    if (recipe.isCustomFilm && recipe.customFilm) {
-      // Convert custom film data to Film interface
-      return {
-        uuid: `custom_film_${recipe.id}`,
-        id: `custom_film_${recipe.id}`,
-        slug: `custom_film_${recipe.id}`,
-        brand: recipe.customFilm.brand,
-        name: recipe.customFilm.name,
-        isoSpeed: recipe.customFilm.isoSpeed,
-        colorType: recipe.customFilm.colorType,
-        grainStructure: recipe.customFilm.grainStructure,
-        description: recipe.customFilm.description,
-        discontinued: 0, // Fix: discontinued should be a number according to Film type
-        manufacturerNotes: [],
-        staticImageURL: undefined,
-        dateAdded: recipe.dateCreated,
-      } as Film;
-    } else {
-      return getFilmById(recipe.filmId);
-    }
+  // Custom recipe helpers using imported utilities
+  const getCustomRecipeFilmHelper = (recipeId: string): Film | undefined => {
+    return getCustomRecipeFilm(recipeId, customRecipes, getFilmById);
   };
 
-  const getCustomRecipeDeveloper = (
+  const getCustomRecipeDeveloperHelper = (
     recipeId: string,
   ): Developer | undefined => {
-    const recipe = customRecipes.find((r) => r.id === recipeId);
-    if (!recipe) return undefined;
-
-    if (recipe.isCustomDeveloper && recipe.customDeveloper) {
-      // Convert custom developer data to Developer interface
-      return {
-        uuid: `custom_dev_${recipe.id}`,
-        id: `custom_dev_${recipe.id}`,
-        slug: `custom_dev_${recipe.id}`,
-        name: recipe.customDeveloper.name,
-        manufacturer: recipe.customDeveloper.manufacturer,
-        type: recipe.customDeveloper.type,
-        filmOrPaper: recipe.customDeveloper.filmOrPaper,
-        workingLifeHours: recipe.customDeveloper.workingLifeHours,
-        stockLifeMonths: recipe.customDeveloper.stockLifeMonths,
-        notes: recipe.customDeveloper.notes,
-        mixingInstructions: recipe.customDeveloper.mixingInstructions,
-        safetyNotes: recipe.customDeveloper.safetyNotes,
-        discontinued: 0, // Fix: discontinued should be a number according to Developer type
-        datasheetUrl: [],
-        dilutions: recipe.customDeveloper.dilutions.map((d, idx) => ({
-          id: idx,
-          name: d.name,
-          dilution: d.dilution,
-        })),
-        dateAdded: recipe.dateCreated,
-      } as Developer;
-    } else {
-      return getDeveloperById(recipe.developerId);
-    }
+    return getCustomRecipeDeveloper(recipeId, customRecipes, getDeveloperById);
   };
 
   // Get current version of selected custom recipe (to handle updates)
@@ -1109,415 +861,94 @@ export default function DevelopmentRecipes() {
           <FormSection>
             <VStack space="md" style={{ overflow: "visible" }}>
               {/* Search/Selection Fields */}
-              <Box>
-                <Text style={[styles.sectionLabel, { color: textColor }]}>
-                  {isDesktop ? "Search" : "Select Film & Developer"}
-                </Text>
-
-                <Box
-                  style={[
-                    styles.searchFieldsContainer,
-                    isDesktop && styles.searchFieldsDesktop,
-                    {
-                      overflow: "visible",
-                      zIndex: 999999,
-                      position: "relative",
-                    },
-                  ]}
-                >
-                  <Box
-                    ref={filmSearchRef}
-                    style={[
-                      styles.searchField,
-                      isDesktop && styles.searchFieldDesktop,
-                      {
-                        overflow: "visible",
-                        zIndex: 999999,
-                        position: "relative",
-                      },
-                    ]}
-                    onLayout={handleFilmSearchLayout}
-                  >
-                    <Box style={styles.searchDropdownContainer}>
-                      {isDesktop ? (
-                        <SearchInput
-                          variant="desktop"
-                          type="film"
-                          placeholder="Type to search films..."
-                          value={filmSearch}
-                          onChangeText={setFilmSearch}
-                          onClear={() => setFilmSearch("")}
-                          onFocus={() => {
-                            setIsFilmSearchFocused(true);
-                            handleFilmSearchLayout();
-                          }}
-                          onBlur={() => {
-                            // Delay hiding to allow item selection
-                            setTimeout(
-                              () => setIsFilmSearchFocused(false),
-                              150,
-                            );
-                          }}
-                        />
-                      ) : (
-                        <SearchInput
-                          variant="mobile"
-                          type="film"
-                          placeholder="Type to search films..."
-                          selectedItem={selectedFilm}
-                          onPress={() => setShowMobileFilmModal(true)}
-                          onClear={() => setSelectedFilm(null)}
-                        />
-                      )}
-                    </Box>
-                  </Box>
-
-                  <Box
-                    ref={developerSearchRef}
-                    style={[
-                      styles.searchField,
-                      isDesktop && styles.searchFieldDesktop,
-                      {
-                        overflow: "visible",
-                        zIndex: 999999,
-                        position: "relative",
-                      },
-                    ]}
-                    onLayout={handleDeveloperSearchLayout}
-                  >
-                    <Box style={styles.searchDropdownContainer}>
-                      {isDesktop ? (
-                        <SearchInput
-                          variant="desktop"
-                          type="developer"
-                          placeholder="Type to search developers..."
-                          value={developerSearch}
-                          onChangeText={setDeveloperSearch}
-                          onClear={() => setDeveloperSearch("")}
-                          onFocus={() => {
-                            setIsDeveloperSearchFocused(true);
-                            handleDeveloperSearchLayout();
-                          }}
-                          onBlur={() => {
-                            // Delay hiding to allow item selection
-                            setTimeout(
-                              () => setIsDeveloperSearchFocused(false),
-                              150,
-                            );
-                          }}
-                        />
-                      ) : (
-                        <SearchInput
-                          variant="mobile"
-                          type="developer"
-                          placeholder="Type to search developers..."
-                          selectedItem={selectedDeveloper}
-                          onPress={() => setShowMobileDeveloperModal(true)}
-                          onClear={() => setSelectedDeveloper(null)}
-                        />
-                      )}
-                    </Box>
-                  </Box>
-                </Box>
-              </Box>
+              <SearchSection
+                filmSearch={filmSearch}
+                developerSearch={developerSearch}
+                selectedFilm={selectedFilm}
+                selectedDeveloper={selectedDeveloper}
+                onFilmSearchChange={setFilmSearch}
+                onDeveloperSearchChange={setDeveloperSearch}
+                onFilmClear={() => setFilmSearch("")}
+                onDeveloperClear={() => setDeveloperSearch("")}
+                onFilmFocus={() => {
+                  setIsFilmSearchFocused(true);
+                  handleFilmSearchLayout();
+                }}
+                onFilmBlur={() => {
+                  setTimeout(() => setIsFilmSearchFocused(false), 150);
+                }}
+                onDeveloperFocus={() => {
+                  setIsDeveloperSearchFocused(true);
+                  handleDeveloperSearchLayout();
+                }}
+                onDeveloperBlur={() => {
+                  setTimeout(() => setIsDeveloperSearchFocused(false), 150);
+                }}
+                onShowMobileFilmModal={() => setShowMobileFilmModal(true)}
+                onShowMobileDeveloperModal={() =>
+                  setShowMobileDeveloperModal(true)
+                }
+                filmSearchRef={filmSearchRef}
+                developerSearchRef={developerSearchRef}
+                onFilmSearchLayout={handleFilmSearchLayout}
+                onDeveloperSearchLayout={handleDeveloperSearchLayout}
+              />
 
               {/* Selected Items Display - Desktop only */}
               {isDesktop && (selectedFilm || selectedDeveloper) && (
-                <Box style={styles.selectedItemsContainer}>
-                  <HStack space="sm" style={styles.selectedItemsHeader}>
-                    <Text style={[styles.sectionLabel, { color: textColor }]}>
-                      Selected:
-                    </Text>
-                    <TouchableOpacity onPress={clearFilters}>
-                      <Text
-                        style={[
-                          styles.clearAllText,
-                          { color: developmentTint },
-                        ]}
-                      >
-                        Clear All
-                      </Text>
-                    </TouchableOpacity>
-                  </HStack>
-
-                  {selectedFilm && (
-                    <Box style={styles.selectedItem}>
-                      <Text
-                        style={[styles.selectedItemText, { color: textColor }]}
-                      >
-                        Film: {selectedFilm.brand} {selectedFilm.name}
-                      </Text>
-                      <TouchableOpacity onPress={() => setSelectedFilm(null)}>
-                        <X size={16} color={textColor} />
-                      </TouchableOpacity>
-                    </Box>
-                  )}
-
-                  {selectedDeveloper && (
-                    <Box style={styles.selectedItem}>
-                      <Text
-                        style={[styles.selectedItemText, { color: textColor }]}
-                      >
-                        Developer: {selectedDeveloper.manufacturer}{" "}
-                        {selectedDeveloper.name}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => setSelectedDeveloper(null)}
-                      >
-                        <X size={16} color={textColor} />
-                      </TouchableOpacity>
-                    </Box>
-                  )}
-                </Box>
+                <SelectedItemsDisplay
+                  selectedFilm={selectedFilm}
+                  selectedDeveloper={selectedDeveloper}
+                  onClearAll={clearFilters}
+                  onClearFilm={() => setSelectedFilm(null)}
+                  onClearDeveloper={() => setSelectedDeveloper(null)}
+                />
               )}
-
-              {/* Filter Toggle */}
-              <TouchableOpacity
-                style={styles.filterToggle}
-                onPress={() => setShowFilters(!showFilters)}
-              >
-                <Filter size={16} color={developmentTint} />
-                <Text
-                  style={[styles.filterToggleText, { color: developmentTint }]}
-                >
-                  {showFilters ? "Hide Filters" : "Show Filters"}
-                </Text>
-              </TouchableOpacity>
 
               {/* Filters */}
-              {showFilters && (
-                <VStack space="sm">
-                  {/* Developer Type Filter - only show when no specific developer is selected */}
-                  {!selectedDeveloper && (
-                    <FormGroup label="Developer Type">
-                      <StyledSelect
-                        value={developerTypeFilter}
-                        onValueChange={setDeveloperTypeFilter}
-                        items={DEVELOPER_TYPES}
-                      />
-                    </FormGroup>
-                  )}
-
-                  {/* Dilution Filter - only show when developer is selected */}
-                  {selectedDeveloper && (
-                    <FormGroup label="Dilution">
-                      <StyledSelect
-                        value={dilutionFilter}
-                        onValueChange={setDilutionFilter}
-                        items={getAvailableDilutions()}
-                      />
-                    </FormGroup>
-                  )}
-
-                  {/* ISO Filter - only show when film is selected */}
-                  {selectedFilm && (
-                    <FormGroup label="Shooting ISO">
-                      <StyledSelect
-                        value={isoFilter}
-                        onValueChange={setIsoFilter}
-                        items={getAvailableISOs()}
-                      />
-                    </FormGroup>
-                  )}
-                </VStack>
-              )}
+              <FiltersSection
+                showFilters={showFilters}
+                onToggleFilters={() => setShowFilters(!showFilters)}
+                selectedFilm={selectedFilm}
+                selectedDeveloper={selectedDeveloper}
+                developerTypeFilter={developerTypeFilter}
+                dilutionFilter={dilutionFilter}
+                isoFilter={isoFilter}
+                onDeveloperTypeFilterChange={setDeveloperTypeFilter}
+                onDilutionFilterChange={setDilutionFilter}
+                onIsoFilterChange={setIsoFilter}
+                getAvailableDilutions={getAvailableDilutions}
+                getAvailableISOs={getAvailableISOs}
+              />
             </VStack>
           </FormSection>
 
           {/* Results Section */}
           <Box style={styles.resultsSection}>
-            {/* Title */}
-            <Text
-              style={[
-                styles.resultsHeader,
-                { color: textColor, textAlign: isDesktop ? "left" : "center" },
-              ]}
-            >
-              {totalItems} Development Recipe
-              {totalItems !== 1 ? "s" : ""}
-              {totalPages > 1 && (
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "normal",
-                    color: textColor,
-                    opacity: 0.7,
-                  }}
-                >
-                  {" "}
-                  (Page {currentPage} of {totalPages})
-                </Text>
-              )}
-              {customRecipes.length > 0 && showCustomRecipes && (
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "normal",
-                    color: textColor,
-                    opacity: 0.7,
-                  }}
-                >
-                  {" "}
-                  ({customRecipes.length} custom)
-                </Text>
-              )}
-            </Text>
+            {/* Results Header */}
+            <ResultsHeader
+              totalItems={totalItems}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              customRecipesCount={customRecipes.length}
+              showCustomRecipes={showCustomRecipes}
+            />
 
-            {/* Buttons - Different layouts for mobile vs desktop */}
-            {isDesktop ? (
-              /* Desktop: Buttons in top right */
-              <Box style={styles.desktopButtonsContainer}>
-                <HStack style={{ gap: 8, alignItems: "center" }}>
-                  <TouchableOpacity
-                    onPress={() =>
-                      setViewMode(viewMode === "cards" ? "table" : "cards")
-                    }
-                    style={styles.desktopButton}
-                  >
-                    {viewMode === "cards" ? (
-                      <Table size={14} color={developmentTint} />
-                    ) : (
-                      <Grid3X3 size={14} color={developmentTint} />
-                    )}
-                    <Text
-                      style={[
-                        styles.desktopButtonText,
-                        { color: developmentTint },
-                      ]}
-                    >
-                      {viewMode === "cards" ? "Table" : "Cards"}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={handleForceRefresh}
-                    style={styles.desktopButton}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Spinner size="small" color={developmentTint} />
-                    ) : (
-                      <RefreshCw size={14} color={developmentTint} />
-                    )}
-                    <Text
-                      style={[
-                        styles.desktopButtonText,
-                        {
-                          color: developmentTint,
-                          opacity: isLoading ? 0.5 : 1,
-                        },
-                      ]}
-                    >
-                      {isLoading ? "Loading..." : "Refresh"}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {customRecipes.length > 0 && (
-                    <TouchableOpacity
-                      onPress={() => setShowCustomRecipes(!showCustomRecipes)}
-                      style={[
-                        styles.desktopButton,
-                        {
-                          backgroundColor: showCustomRecipes
-                            ? developmentTint
-                            : "transparent",
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.desktopButtonText,
-                          {
-                            color: showCustomRecipes ? "#fff" : developmentTint,
-                          },
-                        ]}
-                      >
-                        My Recipes
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-
-                  <TouchableOpacity
-                    onPress={handleNewCustomRecipe}
-                    style={[
-                      styles.desktopButton,
-                      { backgroundColor: developmentTint },
-                    ]}
-                  >
-                    <Plus size={14} color="#fff" />
-                    <Text style={[styles.desktopButtonText, { color: "#fff" }]}>
-                      Add Recipe
-                    </Text>
-                  </TouchableOpacity>
-                </HStack>
-              </Box>
-            ) : (
-              /* Mobile: Buttons centered below title */
-              <Box style={styles.mobileButtonsContainer}>
-                <HStack style={styles.mobileButtonsRow}>
-                  <TouchableOpacity
-                    onPress={handleForceRefresh}
-                    style={styles.mobileButton}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Spinner size="small" color={developmentTint} />
-                    ) : (
-                      <RefreshCw size={16} color={developmentTint} />
-                    )}
-                    <Text
-                      style={[
-                        styles.mobileButtonText,
-                        {
-                          color: developmentTint,
-                          opacity: isLoading ? 0.5 : 1,
-                        },
-                      ]}
-                    >
-                      {isLoading ? "Loading..." : "Refresh"}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {customRecipes.length > 0 && (
-                    <TouchableOpacity
-                      onPress={() => setShowCustomRecipes(!showCustomRecipes)}
-                      style={[
-                        styles.mobileButton,
-                        {
-                          backgroundColor: showCustomRecipes
-                            ? developmentTint
-                            : "transparent",
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.mobileButtonText,
-                          {
-                            color: showCustomRecipes ? "#fff" : developmentTint,
-                          },
-                        ]}
-                      >
-                        My Recipes
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-
-                  <TouchableOpacity
-                    onPress={handleNewCustomRecipe}
-                    style={[
-                      styles.mobileButton,
-                      { backgroundColor: developmentTint },
-                    ]}
-                  >
-                    <Plus size={16} color="#fff" />
-                    <Text style={[styles.mobileButtonText, { color: "#fff" }]}>
-                      Add Recipe
-                    </Text>
-                  </TouchableOpacity>
-                </HStack>
-              </Box>
-            )}
+            {/* Action Buttons */}
+            <ActionButtons
+              isLoading={isLoading}
+              customRecipesCount={customRecipes.length}
+              showCustomRecipes={showCustomRecipes}
+              viewMode={viewMode}
+              onRefresh={handleForceRefresh}
+              onToggleCustomRecipes={() =>
+                setShowCustomRecipes(!showCustomRecipes)
+              }
+              onNewCustomRecipe={handleNewCustomRecipe}
+              onToggleViewMode={() =>
+                setViewMode(viewMode === "cards" ? "table" : "cards")
+              }
+            />
 
             {allCombinations.length === 0 ? (
               <Box style={styles.noResultsContainer}>
@@ -1547,126 +978,50 @@ export default function DevelopmentRecipes() {
                 />
 
                 {isDesktop && viewMode === "table" ? (
-                  // Table view for desktop
-                  <Box style={styles.tableContainer}>
-                    <Box style={styles.tableHeaderRow}>
-                      <TableHeader
-                        title="Film"
-                        sortKey="filmName"
-                        currentSort={sortBy}
-                        sortDirection={sortDirection}
-                        onSort={handleSort}
-                      />
-                      <TableHeader
-                        title="Developer"
-                        sortKey="developerName"
-                        currentSort={sortBy}
-                        sortDirection={sortDirection}
-                        onSort={handleSort}
-                      />
-                      <TableHeader
-                        title="Time"
-                        sortKey="timeMinutes"
-                        currentSort={sortBy}
-                        sortDirection={sortDirection}
-                        onSort={handleSort}
-                      />
-                      <TableHeader
-                        title="Temp"
-                        sortKey="temperatureF"
-                        currentSort={sortBy}
-                        sortDirection={sortDirection}
-                        onSort={handleSort}
-                      />
-                      <TableHeader
-                        title="ISO"
-                        sortKey="shootingIso"
-                        currentSort={sortBy}
-                        sortDirection={sortDirection}
-                        onSort={handleSort}
-                      />
-                      <TableHeader
-                        title="Dilution"
-                        sortKey="dilution"
-                        currentSort={sortBy}
-                        sortDirection={sortDirection}
-                        onSort={handleSort}
-                      />
-                    </Box>
-
-                    <ScrollView style={styles.tableScrollView}>
-                      {paginatedCombinations.map((combination, index) => {
-                        const isCustom = customRecipes.some(
+                  <TableView
+                    paginatedCombinations={paginatedCombinations}
+                    customRecipes={customRecipes}
+                    sortBy={sortBy}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                    onRowPress={(combination, isCustom) => {
+                      if (isCustom) {
+                        const customRecipe = customRecipes.find(
                           (r) => r.id === combination.id,
                         );
-                        const film = isCustom
-                          ? getCustomRecipeFilm(combination.id)
-                          : getFilmById(combination.filmStockId);
-                        const developer = isCustom
-                          ? getCustomRecipeDeveloper(combination.id)
-                          : getDeveloperById(combination.developerId);
-
-                        return (
-                          <RecipeRow
-                            key={combination.uuid}
-                            combination={combination}
-                            film={film}
-                            developer={developer}
-                            onPress={() => {
-                              if (isCustom) {
-                                const customRecipe = customRecipes.find(
-                                  (r) => r.id === combination.id,
-                                );
-                                if (customRecipe) {
-                                  handleCustomRecipePress(customRecipe);
-                                }
-                              } else {
-                                setSelectedCombination(combination);
-                              }
-                            }}
-                            isEven={index % 2 === 0}
-                          />
-                        );
-                      })}
-                    </ScrollView>
-                  </Box>
+                        if (customRecipe) {
+                          handleCustomRecipePress(customRecipe);
+                        }
+                      } else {
+                        setSelectedCombination(combination);
+                      }
+                    }}
+                    getFilmById={getFilmById}
+                    getDeveloperById={getDeveloperById}
+                    getCustomRecipeFilm={getCustomRecipeFilmHelper}
+                    getCustomRecipeDeveloper={getCustomRecipeDeveloperHelper}
+                  />
                 ) : (
-                  // Cards view (default for mobile, optional for desktop)
-                  <Box style={styles.cardsContainer}>
-                    {paginatedCombinations.map((combination) => {
-                      const isCustom = customRecipes.some(
-                        (r) => r.id === combination.id,
-                      );
-                      const film = isCustom
-                        ? getCustomRecipeFilm(combination.id)
-                        : getFilmById(combination.filmStockId);
-                      const developer = isCustom
-                        ? getCustomRecipeDeveloper(combination.id)
-                        : getDeveloperById(combination.developerId);
-
-                      return (
-                        <RecipeCard
-                          key={combination.uuid}
-                          combination={combination}
-                          film={film}
-                          developer={developer}
-                          onPress={() => {
-                            if (isCustom) {
-                              const customRecipe = customRecipes.find(
-                                (r) => r.id === combination.id,
-                              );
-                              if (customRecipe) {
-                                handleCustomRecipePress(customRecipe);
-                              }
-                            } else {
-                              setSelectedCombination(combination);
-                            }
-                          }}
-                          isCustomRecipe={isCustom}
-                        />
-                      );
-                    })}
-                  </Box>
+                  <CardsView
+                    paginatedCombinations={paginatedCombinations}
+                    customRecipes={customRecipes}
+                    onCardPress={(combination, isCustom) => {
+                      if (isCustom) {
+                        const customRecipe = customRecipes.find(
+                          (r) => r.id === combination.id,
+                        );
+                        if (customRecipe) {
+                          handleCustomRecipePress(customRecipe);
+                        }
+                      } else {
+                        setSelectedCombination(combination);
+                      }
+                    }}
+                    getFilmById={getFilmById}
+                    getDeveloperById={getDeveloperById}
+                    getCustomRecipeFilm={getCustomRecipeFilmHelper}
+                    getCustomRecipeDeveloper={getCustomRecipeDeveloperHelper}
+                  />
                 )}
 
                 {/* Pagination Controls - Bottom */}
@@ -1688,396 +1043,51 @@ export default function DevelopmentRecipes() {
         </Box>
 
         {/* API Recipe Detail Modal */}
-        <Modal
+        <ApiRecipeModal
           isOpen={selectedCombination !== null}
           onClose={() => setSelectedCombination(null)}
-          size={getRecipeDetailModalConfig(isDesktop).size}
-        >
-          <ModalBackdrop />
-          <ModalContent
-            className={getRecipeDetailModalConfig(isDesktop).className}
-            style={getRecipeDetailModalConfig(isDesktop).style}
-          >
-            {selectedCombination && (
-              <RecipeDetail
-                combination={selectedCombination}
-                film={getFilmById(selectedCombination.filmStockId)}
-                developer={getDeveloperById(selectedCombination.developerId)}
-                onClose={() => setSelectedCombination(null)}
-                onDuplicate={() =>
-                  handleDuplicateRecipe(selectedCombination, false)
-                }
-                isCustomRecipe={false}
-              />
-            )}
-          </ModalContent>
-        </Modal>
+          selectedCombination={selectedCombination}
+          onDuplicate={(combination) =>
+            handleDuplicateRecipe(combination, false)
+          }
+          getFilmById={getFilmById}
+          getDeveloperById={getDeveloperById}
+          isDesktop={isDesktop}
+        />
 
         {/* Custom Recipe Detail Modal */}
-        <Modal
+        <CustomRecipeModal
           isOpen={selectedCustomRecipe !== null}
           onClose={() => setSelectedCustomRecipe(null)}
-          size={getCustomRecipeDetailModalConfig(isDesktop).size}
-        >
-          <ModalBackdrop />
-          <ModalContent
-            className={getCustomRecipeDetailModalConfig(isDesktop).className}
-            style={getCustomRecipeDetailModalConfig(isDesktop).style}
-          >
-            {currentSelectedCustomRecipe && (
-              <RecipeDetail
-                combination={{
-                  id: currentSelectedCustomRecipe.id,
-                  name: currentSelectedCustomRecipe.name,
-                  uuid: currentSelectedCustomRecipe.id,
-                  slug: currentSelectedCustomRecipe.id,
-                  filmStockId: currentSelectedCustomRecipe.filmId,
-                  developerId: currentSelectedCustomRecipe.developerId,
-                  temperatureF: currentSelectedCustomRecipe.temperatureF,
-                  timeMinutes: currentSelectedCustomRecipe.timeMinutes,
-                  shootingIso: currentSelectedCustomRecipe.shootingIso,
-                  pushPull: currentSelectedCustomRecipe.pushPull,
-                  agitationSchedule:
-                    currentSelectedCustomRecipe.agitationSchedule,
-                  notes: currentSelectedCustomRecipe.notes,
-                  customDilution: currentSelectedCustomRecipe.customDilution,
-                  dateAdded: currentSelectedCustomRecipe.dateCreated,
-                }}
-                film={getCustomRecipeFilm(currentSelectedCustomRecipe.id)}
-                developer={getCustomRecipeDeveloper(
-                  currentSelectedCustomRecipe.id,
-                )}
-                onClose={() => setSelectedCustomRecipe(null)}
-                onEdit={() =>
-                  handleEditCustomRecipe(currentSelectedCustomRecipe)
-                }
-                onDuplicate={() =>
-                  handleDuplicateRecipe(
-                    {
-                      id: currentSelectedCustomRecipe.id,
-                      name: currentSelectedCustomRecipe.name,
-                      uuid: currentSelectedCustomRecipe.id,
-                      slug: currentSelectedCustomRecipe.id,
-                      filmStockId: currentSelectedCustomRecipe.filmId,
-                      developerId: currentSelectedCustomRecipe.developerId,
-                      temperatureF: currentSelectedCustomRecipe.temperatureF,
-                      timeMinutes: currentSelectedCustomRecipe.timeMinutes,
-                      shootingIso: currentSelectedCustomRecipe.shootingIso,
-                      pushPull: currentSelectedCustomRecipe.pushPull,
-                      agitationSchedule:
-                        currentSelectedCustomRecipe.agitationSchedule,
-                      notes: currentSelectedCustomRecipe.notes,
-                      customDilution:
-                        currentSelectedCustomRecipe.customDilution,
-                      dateAdded: currentSelectedCustomRecipe.dateCreated,
-                    },
-                    true,
-                  )
-                }
-                onDelete={handleCustomRecipeDelete}
-                isCustomRecipe={true}
-              />
-            )}
-          </ModalContent>
-        </Modal>
+          currentSelectedCustomRecipe={currentSelectedCustomRecipe}
+          onEdit={handleEditCustomRecipe}
+          onDuplicate={(combination) =>
+            handleDuplicateRecipe(combination, true)
+          }
+          onDelete={handleCustomRecipeDelete}
+          getCustomRecipeFilm={getCustomRecipeFilmHelper}
+          getCustomRecipeDeveloper={getCustomRecipeDeveloperHelper}
+          isDesktop={isDesktop}
+        />
 
-        {/* Custom Recipe Form Modal - Both Mobile and Desktop */}
-        <Modal
+        {/* Custom Recipe Form Modal */}
+        <CustomRecipeFormModal
           isOpen={showCustomRecipeForm}
           onClose={handleCustomRecipeFormClose}
-          size={getRecipeFormModalConfig(isDesktop).size}
-        >
-          <ModalBackdrop />
-          <ModalContent
-            className={getRecipeFormModalConfig(isDesktop).className}
-            style={getRecipeFormModalConfig(isDesktop).style}
-          >
-            {isDesktop && (
-              <ModalHeader className="pb-4">
-                <Text className="text-lg font-semibold">
-                  {editingCustomRecipe ? "Edit Recipe" : "New Recipe"}
-                </Text>
-                <ModalCloseButton>
-                  <X size={20} />
-                </ModalCloseButton>
-              </ModalHeader>
-            )}
-            <ModalBody className="flex-1 p-0">
-              <CustomRecipeForm
-                recipe={editingCustomRecipe}
-                onClose={handleCustomRecipeFormClose}
-                onSave={handleCustomRecipeSave}
-                isDesktop={isDesktop}
-                isMobileWeb={Platform.OS === "web" && !isDesktop}
-              />
-            </ModalBody>
-          </ModalContent>
-        </Modal>
+          editingCustomRecipe={editingCustomRecipe}
+          onSave={handleCustomRecipeSave}
+          isDesktop={isDesktop}
+        />
 
         {/* Custom Recipe Import Modal */}
-        <Modal
+        <RecipeImportModal
           isOpen={showCustomRecipeImportModal}
           onClose={handleCancelImportCustomRecipe}
-          size="md"
-        >
-          <ModalBackdrop />
-          <ModalContent style={{ backgroundColor: cardBackground }}>
-            <ModalHeader>
-              <Text
-                style={[
-                  { fontSize: 18, fontWeight: "600" },
-                  { color: textColor },
-                ]}
-              >
-                Import Shared Recipe
-              </Text>
-              <ModalCloseButton>
-                <X size={20} color={textColor} />
-              </ModalCloseButton>
-            </ModalHeader>
-
-            <ModalBody>
-              <VStack space="lg">
-                {sharedCustomRecipe && (
-                  <>
-                    {/* Recipe Preview */}
-                    <Box
-                      style={[
-                        {
-                          padding: 16,
-                          borderRadius: 12,
-                          borderWidth: 1,
-                        },
-                        {
-                          backgroundColor: inputBackground,
-                          borderColor: borderColor,
-                        },
-                      ]}
-                    >
-                      <VStack space="sm">
-                        <Text
-                          style={[
-                            { fontSize: 16, fontWeight: "600" },
-                            { color: developmentTint },
-                          ]}
-                        >
-                          {sharedCustomRecipe.name}
-                        </Text>
-
-                        {/* Film and Developer Information */}
-                        <HStack
-                          space="md"
-                          style={{ justifyContent: "space-around" }}
-                        >
-                          <VStack
-                            space="xs"
-                            style={{ alignItems: "center", flex: 1 }}
-                          >
-                            <Text
-                              style={[
-                                { fontSize: 12, fontWeight: "500" },
-                                { color: textSecondary },
-                              ]}
-                            >
-                              Film
-                            </Text>
-                            <Text
-                              style={[
-                                { fontSize: 14, fontWeight: "600" },
-                                { color: textColor },
-                              ]}
-                              numberOfLines={2}
-                              textAlign="center"
-                            >
-                              {(() => {
-                                if (
-                                  sharedCustomRecipe.isCustomFilm &&
-                                  sharedCustomRecipe.customFilm
-                                ) {
-                                  return `${sharedCustomRecipe.customFilm.brand} ${sharedCustomRecipe.customFilm.name}`;
-                                } else {
-                                  const film = getFilmById(
-                                    sharedCustomRecipe.filmId,
-                                  );
-                                  return film
-                                    ? `${film.brand} ${film.name}`
-                                    : "Unknown Film";
-                                }
-                              })()}
-                            </Text>
-                          </VStack>
-
-                          <VStack
-                            space="xs"
-                            style={{ alignItems: "center", flex: 1 }}
-                          >
-                            <Text
-                              style={[
-                                { fontSize: 12, fontWeight: "500" },
-                                { color: textSecondary },
-                              ]}
-                            >
-                              Developer
-                            </Text>
-                            <Text
-                              style={[
-                                { fontSize: 14, fontWeight: "600" },
-                                { color: textColor },
-                              ]}
-                              numberOfLines={2}
-                              textAlign="center"
-                            >
-                              {(() => {
-                                if (
-                                  sharedCustomRecipe.isCustomDeveloper &&
-                                  sharedCustomRecipe.customDeveloper
-                                ) {
-                                  return `${sharedCustomRecipe.customDeveloper.manufacturer} ${sharedCustomRecipe.customDeveloper.name}`;
-                                } else {
-                                  const developer = getDeveloperById(
-                                    sharedCustomRecipe.developerId,
-                                  );
-                                  return developer
-                                    ? `${developer.manufacturer} ${developer.name}`
-                                    : "Unknown Developer";
-                                }
-                              })()}
-                            </Text>
-                          </VStack>
-                        </HStack>
-
-                        <HStack
-                          space="md"
-                          style={{ justifyContent: "space-around" }}
-                        >
-                          <VStack
-                            space="xs"
-                            style={{ alignItems: "center", flex: 1 }}
-                          >
-                            <Text
-                              style={[
-                                { fontSize: 12, fontWeight: "500" },
-                                { color: textSecondary },
-                              ]}
-                            >
-                              Time
-                            </Text>
-                            <Text
-                              style={[
-                                { fontSize: 14, fontWeight: "600" },
-                                { color: textColor },
-                              ]}
-                            >
-                              {formatTime(sharedCustomRecipe.timeMinutes)}
-                            </Text>
-                          </VStack>
-
-                          <VStack
-                            space="xs"
-                            style={{ alignItems: "center", flex: 1 }}
-                          >
-                            <Text
-                              style={[
-                                { fontSize: 12, fontWeight: "500" },
-                                { color: textSecondary },
-                              ]}
-                            >
-                              Temperature
-                            </Text>
-                            <Text
-                              style={[
-                                { fontSize: 14, fontWeight: "600" },
-                                { color: textColor },
-                              ]}
-                            >
-                              {sharedCustomRecipe.temperatureF}°F
-                            </Text>
-                          </VStack>
-
-                          <VStack
-                            space="xs"
-                            style={{ alignItems: "center", flex: 1 }}
-                          >
-                            <Text
-                              style={[
-                                { fontSize: 12, fontWeight: "500" },
-                                { color: textSecondary },
-                              ]}
-                            >
-                              ISO
-                            </Text>
-                            <Text
-                              style={[
-                                { fontSize: 14, fontWeight: "600" },
-                                { color: textColor },
-                              ]}
-                            >
-                              {sharedCustomRecipe.shootingIso}
-                            </Text>
-                          </VStack>
-                        </HStack>
-
-                        {sharedCustomRecipe.notes && (
-                          <VStack space="xs">
-                            <Text
-                              style={[
-                                { fontSize: 12, fontWeight: "500" },
-                                { color: textSecondary },
-                              ]}
-                            >
-                              Notes
-                            </Text>
-                            <Text
-                              style={[{ fontSize: 14 }, { color: textColor }]}
-                            >
-                              {sharedCustomRecipe.notes}
-                            </Text>
-                          </VStack>
-                        )}
-                      </VStack>
-                    </Box>
-
-                    {/* Import Options */}
-                    <VStack space="md">
-                      <Text
-                        style={[
-                          { fontSize: 16, fontWeight: "600" },
-                          { color: textColor },
-                        ]}
-                      >
-                        Import this recipe to your collection?
-                      </Text>
-
-                      <HStack space="md">
-                        <Button
-                          variant="outline"
-                          onPress={handleCancelImportCustomRecipe}
-                          style={[{ flex: 1, borderColor: borderColor }]}
-                        >
-                          <ButtonText style={[{ color: textColor }]}>
-                            Cancel
-                          </ButtonText>
-                        </Button>
-
-                        <Button
-                          variant="solid"
-                          onPress={handleImportCustomRecipe}
-                          style={[
-                            { flex: 1, backgroundColor: developmentTint },
-                          ]}
-                        >
-                          <ButtonText style={[{ color: "white" }]}>
-                            Import Recipe
-                          </ButtonText>
-                        </Button>
-                      </HStack>
-                    </VStack>
-                  </>
-                )}
-              </VStack>
-            </ModalBody>
-          </ModalContent>
-        </Modal>
+          onImport={handleImportCustomRecipe}
+          sharedCustomRecipe={sharedCustomRecipe}
+          getFilmById={getFilmById}
+          getDeveloperById={getDeveloperById}
+        />
 
         {/* Film Search Dropdown - Desktop only */}
         {isDesktop && (
@@ -2105,33 +1115,18 @@ export default function DevelopmentRecipes() {
           />
         )}
 
-        {/* Mobile Selection Modals - handled by SearchInput component now */}
+        {/* Mobile Selection Modals */}
         {!isDesktop && (
-          <>
-            <SearchDropdown
-              variant="mobile"
-              type="film"
-              isOpen={showMobileFilmModal}
-              onClose={() => setShowMobileFilmModal(false)}
-              films={allFilms}
-              onFilmSelect={(film: Film) => {
-                setSelectedFilm(film);
-              }}
-              onItemSelect={() => {}} // Not used for mobile variant
-            />
-
-            <SearchDropdown
-              variant="mobile"
-              type="developer"
-              isOpen={showMobileDeveloperModal}
-              onClose={() => setShowMobileDeveloperModal(false)}
-              developers={allDevelopers}
-              onDeveloperSelect={(developer: Developer) => {
-                setSelectedDeveloper(developer);
-              }}
-              onItemSelect={() => {}} // Not used for mobile variant
-            />
-          </>
+          <MobileSearchModals
+            showFilmModal={showMobileFilmModal}
+            showDeveloperModal={showMobileDeveloperModal}
+            onCloseFilmModal={() => setShowMobileFilmModal(false)}
+            onCloseDeveloperModal={() => setShowMobileDeveloperModal(false)}
+            allFilms={allFilms}
+            allDevelopers={allDevelopers}
+            onFilmSelect={setSelectedFilm}
+            onDeveloperSelect={setSelectedDeveloper}
+          />
         )}
       </Box>
     </CalculatorLayout>
@@ -2148,174 +1143,11 @@ const styles = StyleSheet.create({
     flex: 1,
     overflow: "visible",
   },
-
-  // Cards Container - Minimal layout container for cards
-  cardsContainer: {
-    flex: 1,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    paddingVertical: 8,
-  },
-
-  sectionLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-
-  // Search Fields Layout Styles
-  searchFieldsContainer: {
-    gap: 16,
-  },
-  searchFieldsDesktop: {
-    flexDirection: "row",
-    gap: 16,
-  },
-  searchField: {
-    flex: 1,
-  },
-  searchFieldDesktop: {
-    flex: 1,
-    minWidth: 0, // Allows flex items to shrink below content size
-  },
-
-  // Search Dropdown Styles (for desktop)
-  searchDropdownContainer: {
-    position: "relative",
-  },
-
-  // Selected Items Styles
-  selectedItemsContainer: {
-    marginTop: 8,
-  },
-  selectedItemsHeader: {
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  clearAllText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  selectedItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 8,
-    backgroundColor: "rgba(0,0,0,0.05)",
-    borderRadius: 8,
-    marginBottom: 4,
-  },
-  selectedItemText: {
-    fontSize: 14,
-    flex: 1,
-  },
-
-  // Filter Toggle Styles
-  filterToggle: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 8,
-    gap: 8,
-  },
-  filterToggleText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-
-  // Results Styles
   resultsSection: {
     flex: 1,
     marginTop: 16,
     position: "relative",
   },
-  resultsHeader: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
-  // Table Styles
-  tableContainer: {
-    flex: 1,
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: "transparent",
-  },
-  tableHeaderRow: {
-    flexDirection: "row",
-    borderBottomWidth: 2,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-  },
-  tableHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Platform.OS === "web" ? 8 : 4,
-    paddingVertical: 4,
-    justifyContent: "center",
-  },
-  tableHeaderText: {
-    fontSize: Platform.OS === "web" ? 14 : 12,
-    fontWeight: "600",
-    marginRight: 4,
-    textAlign: "center",
-  },
-  sortIcon: {
-    marginLeft: 2,
-  },
-  tableScrollView: {
-    flex: 1,
-  },
-  tableRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: Platform.OS === "web" ? 12 : 8,
-    paddingHorizontal: Platform.OS === "web" ? 8 : 4,
-    minHeight: Platform.OS === "web" ? 48 : 40,
-  },
-  filmCell: {
-    flex: 2.5,
-    paddingRight: 8,
-  },
-  filmText: {
-    fontSize: Platform.OS === "web" ? 14 : 12,
-    fontWeight: "600",
-  },
-  developerCell: {
-    flex: 2,
-    paddingRight: 8,
-  },
-  developerText: {
-    fontSize: Platform.OS === "web" ? 13 : 11,
-    fontWeight: "500",
-  },
-  timeCell: {
-    flex: 1,
-    paddingRight: 8,
-    alignItems: "center",
-  },
-  tempCell: {
-    flex: 1,
-    paddingRight: 8,
-    alignItems: "center",
-  },
-  isoCell: {
-    flex: 0.8,
-    paddingRight: 8,
-    alignItems: "center",
-  },
-  dilutionCell: {
-    flex: 1.2,
-    paddingRight: 8,
-    alignItems: "center",
-  },
-  paramText: {
-    fontSize: Platform.OS === "web" ? 13 : 11,
-    fontWeight: "500",
-    textAlign: "center",
-  },
-
   // Loading and Error Styles
   loadingContainer: {
     flex: 1,
@@ -2367,54 +1199,5 @@ const styles = StyleSheet.create({
   noResultsSubtext: {
     fontSize: 14,
     textAlign: "center",
-  },
-
-  // Desktop Button Styles
-  desktopButtonsContainer: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    zIndex: 1,
-  },
-  desktopButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 8,
-    borderRadius: 6,
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: "currentColor",
-    gap: 4,
-  },
-  desktopButtonText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-
-  // Mobile Button Styles
-  mobileButtonsContainer: {
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  mobileButtonsRow: {
-    gap: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  mobileButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "currentColor",
-    gap: 6,
-    minWidth: 120,
-    justifyContent: "center",
-  },
-  mobileButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
   },
 });
