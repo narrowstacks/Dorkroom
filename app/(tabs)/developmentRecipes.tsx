@@ -24,11 +24,13 @@ import {
   InfoList,
 } from "@/components/ui/calculator/InfoSection";
 import {
-  RecipeDetail,
-  CustomRecipeForm,
   RecipeSearchContainer,
   RecipeDisplayContainer,
 } from "@/components/development-recipes";
+import {
+  LazyRecipeDetail,
+  LazyCustomRecipeForm,
+} from "@/components/development-recipes/LazyComponents";
 import {
   getRecipeDetailModalConfig,
   getCustomRecipeDetailModalConfig,
@@ -335,7 +337,7 @@ export default function DevelopmentRecipes() {
             </ModalCloseButton>
             <ModalHeader />
             <ModalBody>
-              <RecipeDetail
+              <LazyRecipeDetail
                 combination={selectedCombination}
                 film={recipeUtils.getFilmById(selectedCombination.filmStockId)}
                 developer={recipeUtils.getDeveloperById(
@@ -361,7 +363,7 @@ export default function DevelopmentRecipes() {
             </ModalCloseButton>
             <ModalHeader />
             <ModalBody>
-              <RecipeDetail
+              <LazyRecipeDetail
                 combination={
                   customRecipeManagement.customRecipesAsCombinations.find(
                     (c) => c.id === selectedCustomRecipe.id,
@@ -405,7 +407,7 @@ export default function DevelopmentRecipes() {
             </ModalCloseButton>
             <ModalHeader />
             <ModalBody>
-              <CustomRecipeForm
+              <LazyCustomRecipeForm
                 recipe={editingCustomRecipe}
                 onClose={() => {
                   setShowCustomRecipeForm(false);

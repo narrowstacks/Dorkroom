@@ -1,11 +1,12 @@
 import React from "react";
-import { Platform, TouchableOpacity, ScrollView } from "react-native";
+import { Platform, TouchableOpacity } from "react-native";
 import { Box, Text, HStack } from "@gluestack-ui/themed";
 import { RefreshCw, Plus, Grid3X3, Table } from "lucide-react-native";
 
 import { Spinner } from "@/components/ui/spinner";
 import { PaginationControls } from "@/components/ui/pagination";
-import { RecipeCard } from "@/components/development-recipes/RecipeCard";
+import { VirtualizedRecipeTable } from "@/components/development-recipes/VirtualizedRecipeTable";
+import { VirtualizedRecipeCards } from "@/components/development-recipes/VirtualizedRecipeCards";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { formatTime } from "@/constants/developmentRecipes";
@@ -716,61 +717,29 @@ export const RecipeResultsView = React.memo(function RecipeResultsView({
                 />
               </Box>
 
-              <ScrollView style={{ flex: 1 }}>
-                {paginatedCombinations.map((combination, index) => {
-                  const isCustom = isCustomRecipe(combination);
-                  const film = isCustom
-                    ? getCustomRecipeFilm(combination.id)
-                    : getFilmById(combination.filmStockId);
-                  const developer = isCustom
-                    ? getCustomRecipeDeveloper(combination.id)
-                    : getDeveloperById(combination.developerId);
-
-                  return (
-                    <RecipeRow
-                      key={combination.uuid}
-                      combination={combination}
-                      film={film}
-                      developer={developer}
-                      onPress={() => onRecipePress(combination, isCustom)}
-                      isEven={index % 2 === 0}
-                    />
-                  );
-                })}
-              </ScrollView>
+              <VirtualizedRecipeTable
+                combinations={paginatedCombinations}
+                getFilmById={getFilmById}
+                getDeveloperById={getDeveloperById}
+                getCustomRecipeFilm={getCustomRecipeFilm}
+                getCustomRecipeDeveloper={getCustomRecipeDeveloper}
+                isCustomRecipe={isCustomRecipe}
+                onRecipePress={onRecipePress}
+                isLoading={isLoading}
+              />
             </Box>
           ) : (
             // Cards view (default for mobile, optional for desktop)
-            <Box
-              style={{
-                flex: 1,
-                flexDirection: "row",
-                flexWrap: "wrap",
-                justifyContent: "center",
-                paddingVertical: 8,
-              }}
-            >
-              {paginatedCombinations.map((combination) => {
-                const isCustom = isCustomRecipe(combination);
-                const film = isCustom
-                  ? getCustomRecipeFilm(combination.id)
-                  : getFilmById(combination.filmStockId);
-                const developer = isCustom
-                  ? getCustomRecipeDeveloper(combination.id)
-                  : getDeveloperById(combination.developerId);
-
-                return (
-                  <RecipeCard
-                    key={combination.uuid}
-                    combination={combination}
-                    film={film}
-                    developer={developer}
-                    onPress={() => onRecipePress(combination, isCustom)}
-                    isCustomRecipe={isCustom}
-                  />
-                );
-              })}
-            </Box>
+            <VirtualizedRecipeCards
+              combinations={paginatedCombinations}
+              getFilmById={getFilmById}
+              getDeveloperById={getDeveloperById}
+              getCustomRecipeFilm={getCustomRecipeFilm}
+              getCustomRecipeDeveloper={getCustomRecipeDeveloper}
+              isCustomRecipe={isCustomRecipe}
+              onRecipePress={onRecipePress}
+              isLoading={isLoading}
+            />
           )}
 
           {/* Pagination Controls - Bottom */}

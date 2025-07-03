@@ -43,6 +43,15 @@ export function useCustomRecipeManagement({
   const debouncedFilmSearch = useDebounce(filmSearch, debounceMs);
   const debouncedDeveloperSearch = useDebounce(developerSearch, debounceMs);
 
+  // Create recipe lookup cache for performance optimization
+  const recipeLookupCache = useMemo(() => {
+    const cache = new Map<string, CustomRecipe>();
+    customRecipes.forEach((recipe) => {
+      cache.set(recipe.id, recipe);
+    });
+    return cache;
+  }, [customRecipes]);
+
   // Convert custom recipes to combination format for display
   const customRecipesAsCombinations = useMemo(() => {
     if (!showCustomRecipes) return [];
@@ -68,136 +77,123 @@ export function useCustomRecipeManagement({
     );
   }, [customRecipes, showCustomRecipes]);
 
-  // Film filtering logic
-  const filmFilteredRecipes = useMemo(() => {
-    let filtered = customRecipesAsCombinations;
-
-    // Apply film filter
+  // Create film filter predicate to optimize performance
+  const filmFilterPredicate = useMemo(() => {
     if (selectedFilm) {
-      filtered = filtered.filter((combo) => {
-        const recipe = customRecipes.find((r) => r.id === combo.id);
+      return (combo: Combination) => {
+        const recipe = recipeLookupCache.get(combo.id);
         if (!recipe) return false;
 
         if (recipe.isCustomFilm) {
+          const customFilm = recipe.customFilm;
           return (
-            recipe.customFilm?.brand
+            customFilm?.brand
               ?.toLowerCase()
               .includes(selectedFilm.brand.toLowerCase()) ||
-            recipe.customFilm?.name
+            customFilm?.name
               ?.toLowerCase()
               .includes(selectedFilm.name.toLowerCase())
           );
-        } else {
-          return combo.filmStockId === selectedFilm.uuid;
         }
-      });
+        return combo.filmStockId === selectedFilm.uuid;
+      };
     } else if (debouncedFilmSearch.trim()) {
-      filtered = filtered.filter((combo) => {
-        const recipe = customRecipes.find((r) => r.id === combo.id);
+      const searchLower = debouncedFilmSearch.toLowerCase();
+      return (combo: Combination) => {
+        const recipe = recipeLookupCache.get(combo.id);
         if (!recipe) return false;
 
         if (recipe.isCustomFilm && recipe.customFilm) {
           return (
-            recipe.customFilm.brand
-              .toLowerCase()
-              .includes(debouncedFilmSearch.toLowerCase()) ||
-            recipe.customFilm.name
-              .toLowerCase()
-              .includes(debouncedFilmSearch.toLowerCase())
+            recipe.customFilm.brand.toLowerCase().includes(searchLower) ||
+            recipe.customFilm.name.toLowerCase().includes(searchLower)
           );
         } else {
           const film = getFilmById(combo.filmStockId);
           return (
             film &&
-            (film.name
-              .toLowerCase()
-              .includes(debouncedFilmSearch.toLowerCase()) ||
-              film.brand
-                .toLowerCase()
-                .includes(debouncedFilmSearch.toLowerCase()))
+            (film.name.toLowerCase().includes(searchLower) ||
+              film.brand.toLowerCase().includes(searchLower))
           );
         }
-      });
+      };
     }
+    return null;
+  }, [selectedFilm, debouncedFilmSearch, recipeLookupCache, getFilmById]);
 
-    return filtered;
-  }, [
-    customRecipesAsCombinations,
-    selectedFilm,
-    debouncedFilmSearch,
-    customRecipes,
-    getFilmById,
-  ]);
+  // Film filtering logic using predicate
+  const filmFilteredRecipes = useMemo(() => {
+    return filmFilterPredicate
+      ? customRecipesAsCombinations.filter(filmFilterPredicate)
+      : customRecipesAsCombinations;
+  }, [customRecipesAsCombinations, filmFilterPredicate]);
 
-  // Developer filtering logic
-  const developerFilteredRecipes = useMemo(() => {
-    let filtered = filmFilteredRecipes;
-
-    // Apply developer filter
+  // Create developer filter predicate to optimize performance
+  const developerFilterPredicate = useMemo(() => {
     if (selectedDeveloper) {
-      filtered = filtered.filter((combo) => {
-        const recipe = customRecipes.find((r) => r.id === combo.id);
+      return (combo: Combination) => {
+        const recipe = recipeLookupCache.get(combo.id);
         if (!recipe) return false;
 
         if (recipe.isCustomDeveloper) {
+          const customDev = recipe.customDeveloper;
           return (
-            recipe.customDeveloper?.manufacturer
+            customDev?.manufacturer
               ?.toLowerCase()
               .includes(selectedDeveloper.manufacturer.toLowerCase()) ||
-            recipe.customDeveloper?.name
+            customDev?.name
               ?.toLowerCase()
               .includes(selectedDeveloper.name.toLowerCase())
           );
-        } else {
-          return combo.developerId === selectedDeveloper.uuid;
         }
-      });
+        return combo.developerId === selectedDeveloper.uuid;
+      };
     } else if (debouncedDeveloperSearch.trim()) {
-      filtered = filtered.filter((combo) => {
-        const recipe = customRecipes.find((r) => r.id === combo.id);
+      const searchLower = debouncedDeveloperSearch.toLowerCase();
+      return (combo: Combination) => {
+        const recipe = recipeLookupCache.get(combo.id);
         if (!recipe) return false;
 
         if (recipe.isCustomDeveloper && recipe.customDeveloper) {
           return (
             recipe.customDeveloper.manufacturer
               .toLowerCase()
-              .includes(debouncedDeveloperSearch.toLowerCase()) ||
-            recipe.customDeveloper.name
-              .toLowerCase()
-              .includes(debouncedDeveloperSearch.toLowerCase())
+              .includes(searchLower) ||
+            recipe.customDeveloper.name.toLowerCase().includes(searchLower)
           );
         } else {
           const dev = getDeveloperById(combo.developerId);
           return (
             dev &&
-            (dev.name
-              .toLowerCase()
-              .includes(debouncedDeveloperSearch.toLowerCase()) ||
-              dev.manufacturer
-                .toLowerCase()
-                .includes(debouncedDeveloperSearch.toLowerCase()))
+            (dev.name.toLowerCase().includes(searchLower) ||
+              dev.manufacturer.toLowerCase().includes(searchLower))
           );
         }
-      });
+      };
     }
-
-    return filtered;
+    return null;
   }, [
-    filmFilteredRecipes,
     selectedDeveloper,
     debouncedDeveloperSearch,
-    customRecipes,
+    recipeLookupCache,
     getDeveloperById,
   ]);
 
-  // Additional server-based filters
-  const filteredCustomRecipes = useMemo(() => {
-    let filtered = developerFilteredRecipes;
+  // Developer filtering logic using predicate
+  const developerFilteredRecipes = useMemo(() => {
+    return developerFilterPredicate
+      ? filmFilteredRecipes.filter(developerFilterPredicate)
+      : filmFilteredRecipes;
+  }, [filmFilteredRecipes, developerFilterPredicate]);
 
-    // Apply developer type filter
+  // Create server filter predicates for better performance
+  const serverFilterPredicates = useMemo(() => {
+    const predicates: Array<(combo: Combination) => boolean> = [];
+
+    // Developer type filter predicate
     if (filters.developerType && filters.developerType !== "all") {
-      filtered = filtered.filter((combo) => {
-        const recipe = customRecipes.find((r) => r.id === combo.id);
+      predicates.push((combo) => {
+        const recipe = recipeLookupCache.get(combo.id);
         if (!recipe) return false;
 
         if (recipe.isCustomDeveloper) {
@@ -209,28 +205,38 @@ export function useCustomRecipeManagement({
       });
     }
 
-    // Apply ISO filter
+    // ISO filter predicate
     if (filters.shootingIso && filters.shootingIso !== "all") {
-      filtered = filtered.filter(
+      predicates.push(
         (combo) => combo.shootingIso.toString() === filters.shootingIso,
       );
     }
 
-    return filtered;
+    return predicates;
   }, [
-    developerFilteredRecipes,
     filters.developerType,
     filters.shootingIso,
-    customRecipes,
+    recipeLookupCache,
     getDeveloperById,
   ]);
+
+  // Apply all server-based filters efficiently
+  const filteredCustomRecipes = useMemo(() => {
+    if (serverFilterPredicates.length === 0) {
+      return developerFilteredRecipes;
+    }
+
+    return developerFilteredRecipes.filter((combo) =>
+      serverFilterPredicates.every((predicate) => predicate(combo)),
+    );
+  }, [developerFilteredRecipes, serverFilterPredicates]);
 
   // Helper function to check if a combination is a custom recipe
   const isCustomRecipe = useMemo(() => {
     return (combination: Combination) => {
-      return customRecipes.some((r) => r.id === combination.id);
+      return recipeLookupCache.has(combination.id);
     };
-  }, [customRecipes]);
+  }, [recipeLookupCache]);
 
   return {
     customRecipesAsCombinations,

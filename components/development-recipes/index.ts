@@ -17,6 +17,9 @@ export { RecipeResultsView } from "./RecipeResultsView";
 export { RecipeSearchContainer } from "./RecipeSearchContainer";
 export { RecipeDisplayContainer } from "./RecipeDisplayContainer";
 
+// Lazy-loaded components for code splitting and performance
+export { LazyRecipeDetail, LazyCustomRecipeForm } from "./LazyComponents";
+
 // Virtualized components for performance optimization
 export { VirtualizedRecipeTable } from "./VirtualizedRecipeTable";
 export { VirtualizedRecipeCards } from "./VirtualizedRecipeCards";
