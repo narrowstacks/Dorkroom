@@ -37,6 +37,22 @@ export interface Film {
   uuid: string;
   /** URL-friendly slug for the film */
   slug: string;
+
+  // Snake_case variants from actual API response
+  /** ISO speed rating (snake_case) */
+  iso_speed?: number;
+  /** Type of film (snake_case) */
+  color_type?: string;
+  /** List of notes from manufacturer (snake_case) */
+  manufacturer_notes?: string[];
+  /** Description of grain characteristics (snake_case) */
+  grain_structure?: string | null;
+  /** Information about reciprocity failure (snake_case) */
+  reciprocity_failure?: number | null;
+  /** URL for a static image of the film box (snake_case) */
+  static_image_url?: string;
+  /** Date the film was added to the database (snake_case) */
+  date_added?: string;
 }
 
 /**

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Platform, StyleSheet, TouchableOpacity } from "react-native";
 import {
   Box,
@@ -8,7 +8,15 @@ import {
   Badge,
   BadgeText,
 } from "@gluestack-ui/themed";
-import { Camera, Calendar, AlertTriangle, Info } from "lucide-react-native";
+import {
+  Camera,
+  Calendar,
+  AlertTriangle,
+  Info,
+  Clock,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react-native";
 import type { Film } from "@/api/dorkroom/types";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
@@ -32,6 +40,7 @@ export function FilmCard({
 }: FilmCardProps) {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
+  const [showNotes, setShowNotes] = useState(false);
 
   const cardBackground = useThemeColor({}, "cardBackground");
   const textColor = useThemeColor({}, "text");
@@ -48,7 +57,7 @@ export function FilmCard({
     Colors[colorScheme][brandColorKey] || Colors[colorScheme].genericBrandColor;
 
   // Get type color
-  const typeColor = getFilmTypeColor(film.colorType);
+  const typeColor = getFilmTypeColor(film.color_type || film.colorType);
   const typeTextColor = getContrastingTextColor(typeColor);
 
   const handlePress = () => {
@@ -83,8 +92,11 @@ export function FilmCard({
   };
 
   const formatISO = (iso?: number) => {
-    if (iso === undefined || iso === null || Number.isNaN(iso)) return "N/A";
-    return iso.toString();
+    // Handle both camelCase and snake_case
+    const isoValue = iso || film.iso_speed || film.isoSpeed;
+    if (isoValue === undefined || isoValue === null || Number.isNaN(isoValue))
+      return "N/A";
+    return isoValue.toString();
   };
 
   const Component = onPress ? TouchableOpacity : Box;
@@ -130,13 +142,13 @@ export function FilmCard({
           <HStack space="xs" alignItems="center">
             <Camera size={14} color={textSecondary} />
             <Text style={[styles.detailText, { color: textSecondary }]}>
-              ISO {formatISO(film.isoSpeed)}
+              ISO {formatISO()}
             </Text>
           </HStack>
 
           <Badge style={[styles.typeBadge, { backgroundColor: typeColor }]}>
             <BadgeText style={[styles.typeText, { color: typeTextColor }]}>
-              {film.colorType}
+              {film.color_type || film.colorType}
             </BadgeText>
           </Badge>
         </HStack>
@@ -155,13 +167,26 @@ export function FilmCard({
         {variant !== "compact" && (
           <VStack space="xs">
             {/* Grain Structure */}
-            {film.grainStructure && (
+            {(film.grain_structure || film.grainStructure) && (
               <HStack space="xs" alignItems="center">
                 <Info size={12} color={textSecondary} />
                 <Text
                   style={[styles.smallDetailText, { color: textSecondary }]}
                 >
-                  Grain: {film.grainStructure}
+                  Grain: {film.grain_structure || film.grainStructure}
+                </Text>
+              </HStack>
+            )}
+
+            {/* Reciprocity Failure */}
+            {(film.reciprocity_failure || film.reciprocityFailure) && (
+              <HStack space="xs" alignItems="center">
+                <Clock size={12} color={textSecondary} />
+                <Text
+                  style={[styles.smallDetailText, { color: textSecondary }]}
+                >
+                  Reciprocity:{" "}
+                  {film.reciprocity_failure || film.reciprocityFailure}s
                 </Text>
               </HStack>
             )}
@@ -170,22 +195,53 @@ export function FilmCard({
             <HStack space="xs" alignItems="center">
               <Calendar size={12} color={textSecondary} />
               <Text style={[styles.smallDetailText, { color: textSecondary }]}>
-                Added {formatDate(film.dateAdded)}
+                Added {formatDate(film.date_added || film.dateAdded)}
               </Text>
             </HStack>
           </VStack>
         )}
       </VStack>
 
-      {/* Manufacturer Notes Indicator */}
-      {Array.isArray(film.manufacturerNotes) &&
-        film.manufacturerNotes.length > 0 && (
-          <Box style={styles.notesIndicator}>
-            <Text style={[styles.notesCount, { color: textSecondary }]}>
-              {film.manufacturerNotes.length} note
-              {film.manufacturerNotes.length !== 1 ? "s" : ""}
-            </Text>
-          </Box>
+      {/* Manufacturer Notes Section */}
+      {Array.isArray(film.manufacturer_notes || film.manufacturerNotes) &&
+        (film.manufacturer_notes || film.manufacturerNotes).length > 0 && (
+          <VStack space="xs" style={styles.notesSection}>
+            <TouchableOpacity
+              onPress={() => setShowNotes(!showNotes)}
+              style={styles.notesToggle}
+            >
+              <HStack space="xs" alignItems="center">
+                <Text style={[styles.notesCount, { color: textSecondary }]}>
+                  {(film.manufacturer_notes || film.manufacturerNotes).length}{" "}
+                  note
+                  {(film.manufacturer_notes || film.manufacturerNotes)
+                    .length !== 1
+                    ? "s"
+                    : ""}
+                </Text>
+                {showNotes ? (
+                  <ChevronUp size={14} color={textSecondary} />
+                ) : (
+                  <ChevronDown size={14} color={textSecondary} />
+                )}
+              </HStack>
+            </TouchableOpacity>
+
+            {showNotes && (
+              <VStack space="xs" style={styles.notesList}>
+                {(film.manufacturer_notes || film.manufacturerNotes).map(
+                  (note, index) => (
+                    <Text
+                      key={index}
+                      style={[styles.noteText, { color: textSecondary }]}
+                    >
+                      • {note}
+                    </Text>
+                  ),
+                )}
+              </VStack>
+            )}
+          </VStack>
         )}
     </Component>
   );
@@ -252,13 +308,26 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "400",
   },
-  notesIndicator: {
-    alignSelf: "flex-end",
-    marginTop: 4,
+  notesSection: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.1)",
+  },
+  notesToggle: {
+    paddingVertical: 4,
   },
   notesCount: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  notesList: {
+    paddingLeft: 8,
+    marginTop: 4,
+  },
+  noteText: {
     fontSize: 10,
-    fontStyle: "italic",
+    lineHeight: 14,
   },
 });
 
