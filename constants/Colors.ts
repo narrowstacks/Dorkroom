@@ -3,9 +3,27 @@
  * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
  */
 
+// global colors
 const tintColorLight = "#0a7ea4";
 const tintColorDark = "#fff";
+// global brand colors (except darkroom and eInk)
+const brandColors = {
+  genericBrandColor: "#000000",
+  kodakBrandColor: "#e7a62e",
+  fujiBrandColor: "#1f9d62",
+  ilfordBrandColor: "#15d422",
+  cinestillBrandColor: "#ff0000",
+  lomographyBrandColor: "#7a33d7",
+  rolleiBrandColor: "#2c3e50",
+  adoxBrandColor: "#ff6b35",
+  agfaBrandColor: "#8b4513",
+  aristaBrandColor: "#708090",
+  efkeBrandColor: "#c0392b",
+  fomapanBrandColor: "#27ae60",
+  holgaBrandColor: "#e74c3c",
+};
 
+// global page tints
 const pageTints = {
   stopCalcTint: "#9C27B0",
   resizeCalcTint: "#2196F3",
@@ -13,8 +31,10 @@ const pageTints = {
   reciprocityCalcTint: "#FF9800",
   borderCalcTint: "#4CAF50",
   developmentRecipesTint: "#ad1b1d",
+  infobaseTint: "#607D8B",
 };
 
+// theme specific colors
 type ColorScheme = {
   // general colors
   text: string;
@@ -64,6 +84,9 @@ type ColorScheme = {
 
   // development recipes
   developmentRecipesTint: string;
+
+  // infobase
+  infobaseTint: string;
 
   // brand colors
   genericBrandColor: string;
@@ -131,20 +154,23 @@ export const Colors: {
     // development recipes
     developmentRecipesTint: pageTints.developmentRecipesTint,
 
+    // infobase
+    infobaseTint: pageTints.infobaseTint,
+
     // brand colors
-    genericBrandColor: "#000000",
-    kodakBrandColor: "#000000",
-    fujiBrandColor: "#000000",
-    ilfordBrandColor: "#000000",
-    cinestillBrandColor: "#000000",
-    lomographyBrandColor: "#000000",
-    rolleiBrandColor: "#000000",
-    adoxBrandColor: "#000000",
-    agfaBrandColor: "#000000",
-    aristaBrandColor: "#000000",
-    efkeBrandColor: "#000000",
-    fomapanBrandColor: "#000000",
-    holgaBrandColor: "#000000",
+    genericBrandColor: brandColors.genericBrandColor,
+    kodakBrandColor: brandColors.kodakBrandColor,
+    fujiBrandColor: brandColors.fujiBrandColor,
+    ilfordBrandColor: brandColors.ilfordBrandColor,
+    cinestillBrandColor: brandColors.cinestillBrandColor,
+    lomographyBrandColor: brandColors.lomographyBrandColor,
+    rolleiBrandColor: brandColors.rolleiBrandColor,
+    adoxBrandColor: brandColors.adoxBrandColor,
+    agfaBrandColor: brandColors.agfaBrandColor,
+    aristaBrandColor: brandColors.aristaBrandColor,
+    efkeBrandColor: brandColors.efkeBrandColor,
+    fomapanBrandColor: brandColors.fomapanBrandColor,
+    holgaBrandColor: brandColors.holgaBrandColor,
   },
   dark: {
     text: "#ECEDEE",
@@ -195,20 +221,23 @@ export const Colors: {
     // development recipes
     developmentRecipesTint: pageTints.developmentRecipesTint,
 
+    // infobase
+    infobaseTint: pageTints.infobaseTint,
+
     // brand colors
-    genericBrandColor: "#000000",
-    kodakBrandColor: "#000000",
-    fujiBrandColor: "#000000",
-    ilfordBrandColor: "#000000",
-    cinestillBrandColor: "#000000",
-    lomographyBrandColor: "#000000",
-    rolleiBrandColor: "#000000",
-    adoxBrandColor: "#000000",
-    agfaBrandColor: "#000000",
-    aristaBrandColor: "#000000",
-    efkeBrandColor: "#000000",
-    fomapanBrandColor: "#000000",
-    holgaBrandColor: "#000000",
+    genericBrandColor: brandColors.genericBrandColor,
+    kodakBrandColor: brandColors.kodakBrandColor,
+    fujiBrandColor: brandColors.fujiBrandColor,
+    ilfordBrandColor: brandColors.ilfordBrandColor,
+    cinestillBrandColor: brandColors.cinestillBrandColor,
+    lomographyBrandColor: brandColors.lomographyBrandColor,
+    rolleiBrandColor: brandColors.rolleiBrandColor,
+    adoxBrandColor: brandColors.adoxBrandColor,
+    agfaBrandColor: brandColors.agfaBrandColor,
+    aristaBrandColor: brandColors.aristaBrandColor,
+    efkeBrandColor: brandColors.efkeBrandColor,
+    fomapanBrandColor: brandColors.fomapanBrandColor,
+    holgaBrandColor: brandColors.holgaBrandColor,
   },
   darkroom: {
     background: "#000000",
@@ -254,6 +283,9 @@ export const Colors: {
 
     // development recipes
     developmentRecipesTint: "#8f0000",
+
+    // infobase
+    infobaseTint: "#8f0000",
 
     // brand colors
     genericBrandColor: "#000000",
@@ -313,6 +345,9 @@ export const Colors: {
 
     // development recipes
     developmentRecipesTint: "#000000",
+
+    // infobase
+    infobaseTint: "#000000",
 
     // brand colors
     genericBrandColor: "#000000",

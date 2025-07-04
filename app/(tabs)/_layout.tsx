@@ -26,6 +26,7 @@ import {
   Menu,
   Aperture,
   FlaskConical,
+  Database,
 } from "lucide-react-native";
 import TabBarBackground from "@/components/ui/core/TabBarBackground";
 
@@ -66,6 +67,11 @@ const navigationItems = [
     title: "Development",
     icon: FlaskConical,
   },
+  {
+    name: "infobase",
+    title: "Infobase",
+    icon: Database,
+  },
   // {
   //   name: "settings",
   //   title: "Settings",
@@ -88,6 +94,8 @@ const getPageTintColor = (routeName: string, colors: typeof Colors.light) => {
       return colors.reciprocityCalcTint;
     case "developmentRecipes":
       return colors.developmentRecipesTint;
+    case "infobase":
+      return colors.infobaseTint;
     case "index":
     case "settings":
     default:

@@ -1,0 +1,265 @@
+import React from "react";
+import { Platform, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  Box,
+  Text,
+  HStack,
+  VStack,
+  Badge,
+  BadgeText,
+} from "@gluestack-ui/themed";
+import { Camera, Calendar, AlertTriangle, Info } from "lucide-react-native";
+import type { Film } from "@/api/dorkroom/types";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { useWindowDimensions } from "@/hooks/useWindowDimensions";
+import {
+  getBrandKey,
+  getFilmTypeColor,
+  getContrastingTextColor,
+} from "@/constants/brands";
+import { Colors } from "@/constants/Colors";
+
+interface FilmCardProps {
+  film: Film;
+  onPress?: (film: Film) => void;
+  variant?: "default" | "compact";
+}
+
+export function FilmCard({
+  film,
+  onPress,
+  variant = "default",
+}: FilmCardProps) {
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width > 768;
+
+  const cardBackground = useThemeColor({}, "cardBackground");
+  const textColor = useThemeColor({}, "text");
+  const textSecondary = useThemeColor({}, "textSecondary");
+  const borderColor = useThemeColor({}, "borderColor");
+  const shadowColor = useThemeColor({}, "shadowColor");
+
+  // Get brand color from theme
+  const colorScheme =
+    useThemeColor({}, "background") === "#fff" ? "light" : "dark";
+  const brandKey = getBrandKey(film.brand);
+  const brandColorKey = `${brandKey}BrandColor` as keyof typeof Colors.light;
+  const brandColor =
+    Colors[colorScheme][brandColorKey] || Colors[colorScheme].genericBrandColor;
+
+  // Get type color
+  const typeColor = getFilmTypeColor(film.colorType);
+  const typeTextColor = getContrastingTextColor(typeColor);
+
+  const handlePress = () => {
+    if (onPress) {
+      onPress(film);
+    }
+  };
+
+  const cardStyle = {
+    backgroundColor: cardBackground,
+    borderColor,
+    shadowColor,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: variant === "compact" ? 12 : 16,
+    marginBottom: 12,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    ...(isDesktop && {
+      maxWidth: variant === "compact" ? 280 : 320,
+    }),
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return "N/A";
+    }
+  };
+
+  const formatISO = (iso?: number) => {
+    if (iso === undefined || iso === null || Number.isNaN(iso)) return "N/A";
+    return iso.toString();
+  };
+
+  const Component = onPress ? TouchableOpacity : Box;
+
+  return (
+    <Component
+      style={cardStyle}
+      onPress={onPress ? handlePress : undefined}
+      activeOpacity={onPress ? 0.7 : 1}
+    >
+      {/* Brand Header */}
+      <HStack space="sm" style={styles.brandHeader} alignItems="center">
+        <Box style={[styles.brandBadge, { backgroundColor: brandColor }]}>
+          <Text
+            style={[
+              styles.brandText,
+              { color: getContrastingTextColor(brandColor) },
+            ]}
+          >
+            {film.brand}
+          </Text>
+        </Box>
+
+        {film.discontinued === 1 && (
+          <Badge
+            style={[styles.discontinuedBadge, { backgroundColor: "#ff6b6b" }]}
+          >
+            <AlertTriangle size={12} color="#fff" />
+            <BadgeText style={styles.discontinuedText}>Discontinued</BadgeText>
+          </Badge>
+        )}
+      </HStack>
+
+      {/* Film Name */}
+      <Text style={[styles.filmName, { color: textColor }]} numberOfLines={2}>
+        {film.name}
+      </Text>
+
+      {/* Film Details */}
+      <VStack space="xs" style={styles.detailsContainer}>
+        {/* ISO and Type */}
+        <HStack space="md" alignItems="center">
+          <HStack space="xs" alignItems="center">
+            <Camera size={14} color={textSecondary} />
+            <Text style={[styles.detailText, { color: textSecondary }]}>
+              ISO {formatISO(film.isoSpeed)}
+            </Text>
+          </HStack>
+
+          <Badge style={[styles.typeBadge, { backgroundColor: typeColor }]}>
+            <BadgeText style={[styles.typeText, { color: typeTextColor }]}>
+              {film.colorType}
+            </BadgeText>
+          </Badge>
+        </HStack>
+
+        {/* Description */}
+        {film.description && variant !== "compact" && (
+          <Text
+            style={[styles.description, { color: textSecondary }]}
+            numberOfLines={2}
+          >
+            {film.description}
+          </Text>
+        )}
+
+        {/* Additional Details */}
+        {variant !== "compact" && (
+          <VStack space="xs">
+            {/* Grain Structure */}
+            {film.grainStructure && (
+              <HStack space="xs" alignItems="center">
+                <Info size={12} color={textSecondary} />
+                <Text
+                  style={[styles.smallDetailText, { color: textSecondary }]}
+                >
+                  Grain: {film.grainStructure}
+                </Text>
+              </HStack>
+            )}
+
+            {/* Date Added */}
+            <HStack space="xs" alignItems="center">
+              <Calendar size={12} color={textSecondary} />
+              <Text style={[styles.smallDetailText, { color: textSecondary }]}>
+                Added {formatDate(film.dateAdded)}
+              </Text>
+            </HStack>
+          </VStack>
+        )}
+      </VStack>
+
+      {/* Manufacturer Notes Indicator */}
+      {Array.isArray(film.manufacturerNotes) &&
+        film.manufacturerNotes.length > 0 && (
+          <Box style={styles.notesIndicator}>
+            <Text style={[styles.notesCount, { color: textSecondary }]}>
+              {film.manufacturerNotes.length} note
+              {film.manufacturerNotes.length !== 1 ? "s" : ""}
+            </Text>
+          </Box>
+        )}
+    </Component>
+  );
+}
+
+const styles = StyleSheet.create({
+  brandHeader: {
+    marginBottom: 8,
+    flexWrap: "wrap",
+  },
+  brandBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    flexShrink: 1,
+  },
+  brandText: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  discontinuedBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  discontinuedText: {
+    fontSize: 10,
+    fontWeight: "500",
+    color: "#fff",
+  },
+  filmName: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  detailsContainer: {
+    marginBottom: 8,
+  },
+  detailText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  typeBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  typeText: {
+    fontSize: 11,
+    fontWeight: "500",
+    textTransform: "capitalize",
+  },
+  description: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 4,
+  },
+  smallDetailText: {
+    fontSize: 11,
+    fontWeight: "400",
+  },
+  notesIndicator: {
+    alignSelf: "flex-end",
+    marginTop: 4,
+  },
+  notesCount: {
+    fontSize: 10,
+    fontStyle: "italic",
+  },
+});
+
+export default FilmCard;

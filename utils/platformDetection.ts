@@ -40,19 +40,36 @@ export function isNativePlatform(): boolean {
  */
 export function getApiEndpointConfig(): ApiEndpointConfig {
   if (isWebPlatform()) {
-    // For web platform, use the local API route which proxies to Supabase
-    return {
-      baseUrl: "/api",
-      platform: "web",
-      requiresAuth: false, // No auth required since the proxy handles the API key
-    };
+    // For web platform, check if we're in development mode
+    if (__DEV__) {
+      // In development, use beta.dorkroom.art/api directly
+      return {
+        baseUrl: "https://beta.dorkroom.art/api",
+        platform: "web",
+        requiresAuth: false,
+      };
+    } else {
+      // In production web, use the local API route which proxies to Supabase
+      return {
+        baseUrl: "/api",
+        platform: "web",
+        requiresAuth: false, // No auth required since the proxy handles the API key
+      };
+    }
   } else {
-    // For native platform, use the deployed Vercel function
-    // This should be the deployed URL of your Vercel app
-    const deployedUrl =
-      process.env.EXPO_PUBLIC_VERCEL_URL ||
-      process.env.EXPO_PUBLIC_API_URL ||
-      "https://your-app.vercel.app";
+    // For native platform, determine the API endpoint based on environment
+    let deployedUrl: string;
+
+    if (__DEV__) {
+      // In development, use beta.dorkroom.art/api
+      deployedUrl = "https://beta.dorkroom.art";
+    } else {
+      // In production, use the deployed Vercel function
+      deployedUrl =
+        process.env.EXPO_PUBLIC_VERCEL_URL ||
+        process.env.EXPO_PUBLIC_API_URL ||
+        "https://your-app.vercel.app";
+    }
 
     return {
       baseUrl: `${deployedUrl}/api`,

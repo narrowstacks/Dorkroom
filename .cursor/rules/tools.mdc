@@ -1,8 +1,7 @@
 ---
-description: 
-globs: 
-alwaysApply: true
+alwaysApply: false
 ---
+
 # Tools
 
 - **Context7**: Use context7 to grab the latest versions of docs and sample code.
