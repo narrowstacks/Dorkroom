@@ -64,6 +64,21 @@ type ColorScheme = {
 
   // development recipes
   developmentRecipesTint: string;
+
+  // brand colors
+  genericBrandColor: string;
+  kodakBrandColor: string;
+  fujiBrandColor: string;
+  ilfordBrandColor: string;
+  cinestillBrandColor: string;
+  lomographyBrandColor: string;
+  rolleiBrandColor: string;
+  adoxBrandColor: string;
+  agfaBrandColor: string;
+  aristaBrandColor: string;
+  efkeBrandColor: string;
+  fomapanBrandColor: string;
+  holgaBrandColor: string;
 };
 
 export const Colors: {
@@ -115,6 +130,21 @@ export const Colors: {
 
     // development recipes
     developmentRecipesTint: pageTints.developmentRecipesTint,
+
+    // brand colors
+    genericBrandColor: "#000000",
+    kodakBrandColor: "#000000",
+    fujiBrandColor: "#000000",
+    ilfordBrandColor: "#000000",
+    cinestillBrandColor: "#000000",
+    lomographyBrandColor: "#000000",
+    rolleiBrandColor: "#000000",
+    adoxBrandColor: "#000000",
+    agfaBrandColor: "#000000",
+    aristaBrandColor: "#000000",
+    efkeBrandColor: "#000000",
+    fomapanBrandColor: "#000000",
+    holgaBrandColor: "#000000",
   },
   dark: {
     text: "#ECEDEE",
@@ -164,6 +194,21 @@ export const Colors: {
 
     // development recipes
     developmentRecipesTint: pageTints.developmentRecipesTint,
+
+    // brand colors
+    genericBrandColor: "#000000",
+    kodakBrandColor: "#000000",
+    fujiBrandColor: "#000000",
+    ilfordBrandColor: "#000000",
+    cinestillBrandColor: "#000000",
+    lomographyBrandColor: "#000000",
+    rolleiBrandColor: "#000000",
+    adoxBrandColor: "#000000",
+    agfaBrandColor: "#000000",
+    aristaBrandColor: "#000000",
+    efkeBrandColor: "#000000",
+    fomapanBrandColor: "#000000",
+    holgaBrandColor: "#000000",
   },
   darkroom: {
     background: "#000000",
@@ -209,6 +254,21 @@ export const Colors: {
 
     // development recipes
     developmentRecipesTint: "#8f0000",
+
+    // brand colors
+    genericBrandColor: "#000000",
+    kodakBrandColor: "#000000",
+    fujiBrandColor: "#000000",
+    ilfordBrandColor: "#000000",
+    cinestillBrandColor: "#000000",
+    lomographyBrandColor: "#000000",
+    rolleiBrandColor: "#000000",
+    adoxBrandColor: "#000000",
+    agfaBrandColor: "#000000",
+    aristaBrandColor: "#000000",
+    efkeBrandColor: "#000000",
+    fomapanBrandColor: "#000000",
+    holgaBrandColor: "#000000",
   },
   eInk: {
     background: "#FFFFFF",
@@ -253,6 +313,21 @@ export const Colors: {
 
     // development recipes
     developmentRecipesTint: "#000000",
+
+    // brand colors
+    genericBrandColor: "#000000",
+    kodakBrandColor: "#000000",
+    fujiBrandColor: "#000000",
+    ilfordBrandColor: "#000000",
+    cinestillBrandColor: "#000000",
+    lomographyBrandColor: "#000000",
+    rolleiBrandColor: "#000000",
+    adoxBrandColor: "#000000",
+    agfaBrandColor: "#000000",
+    aristaBrandColor: "#000000",
+    efkeBrandColor: "#000000",
+    fomapanBrandColor: "#000000",
+    holgaBrandColor: "#000000",
   },
 };
 
