@@ -103,8 +103,8 @@ export function DeveloperCard({
       onPress={onPress ? handlePress : undefined}
       activeOpacity={onPress ? 0.7 : 1}
     >
-      {/* Brand Header */}
-      <HStack space="sm" style={styles.brandHeader} alignItems="center">
+      {/* Developer Name with Brand Badge */}
+      <HStack space="sm" alignItems="center" style={styles.nameContainer}>
         <Box style={[styles.brandBadge, { backgroundColor: brandColor }]}>
           <Text
             style={[
@@ -115,7 +115,12 @@ export function DeveloperCard({
             {developer.manufacturer}
           </Text>
         </Box>
-
+        <Text
+          style={[styles.developerName, { color: textColor }]}
+          numberOfLines={1}
+        >
+          {developer.name}
+        </Text>
         {developer.discontinued === 1 && (
           <Badge
             style={[styles.discontinuedBadge, { backgroundColor: "#ff6b6b" }]}
@@ -125,14 +130,6 @@ export function DeveloperCard({
           </Badge>
         )}
       </HStack>
-
-      {/* Developer Name */}
-      <Text
-        style={[styles.developerName, { color: textColor }]}
-        numberOfLines={2}
-      >
-        {developer.name}
-      </Text>
 
       {/* Developer Details */}
       <VStack space="xs" style={styles.detailsContainer}>
@@ -250,9 +247,8 @@ export function DeveloperCard({
 }
 
 const styles = StyleSheet.create({
-  brandHeader: {
+  nameContainer: {
     marginBottom: 8,
-    flexWrap: "wrap",
   },
   brandBadge: {
     paddingHorizontal: 8,
@@ -280,9 +276,9 @@ const styles = StyleSheet.create({
   },
   developerName: {
     fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
+    fontWeight: "500",
     lineHeight: 20,
+    flex: 1,
   },
   detailsContainer: {
     marginBottom: 8,

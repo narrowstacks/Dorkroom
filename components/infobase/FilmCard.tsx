@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Platform, StyleSheet, TouchableOpacity } from "react-native";
+import { Platform, StyleSheet, TouchableOpacity, Image } from "react-native";
 import {
   Box,
   Text,
@@ -107,8 +107,19 @@ export function FilmCard({
       onPress={onPress ? handlePress : undefined}
       activeOpacity={onPress ? 0.7 : 1}
     >
-      {/* Brand Header */}
-      <HStack space="sm" style={styles.brandHeader} alignItems="center">
+      {/* Film Image */}
+      {(film.static_image_url || film.staticImageURL) && (
+        <Box style={[styles.imageContainer, { borderColor }]}>
+          <Image
+            source={{ uri: film.static_image_url || film.staticImageURL }}
+            style={styles.filmImage}
+            resizeMode="cover"
+          />
+        </Box>
+      )}
+
+      {/* Film Name with Brand Badge */}
+      <HStack space="sm" alignItems="center" style={styles.nameContainer}>
         <Box style={[styles.brandBadge, { backgroundColor: brandColor }]}>
           <Text
             style={[
@@ -119,7 +130,9 @@ export function FilmCard({
             {film.brand}
           </Text>
         </Box>
-
+        <Text style={[styles.filmName, { color: textColor }]} numberOfLines={1}>
+          {film.name}
+        </Text>
         {film.discontinued === 1 && (
           <Badge
             style={[styles.discontinuedBadge, { backgroundColor: "#ff6b6b" }]}
@@ -129,11 +142,6 @@ export function FilmCard({
           </Badge>
         )}
       </HStack>
-
-      {/* Film Name */}
-      <Text style={[styles.filmName, { color: textColor }]} numberOfLines={2}>
-        {film.name}
-      </Text>
 
       {/* Film Details */}
       <VStack space="xs" style={styles.detailsContainer}>
@@ -248,9 +256,20 @@ export function FilmCard({
 }
 
 const styles = StyleSheet.create({
-  brandHeader: {
+  imageContainer: {
+    width: "100%",
+    height: 120,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 12,
+    overflow: "hidden",
+  },
+  filmImage: {
+    width: "100%",
+    height: "100%",
+  },
+  nameContainer: {
     marginBottom: 8,
-    flexWrap: "wrap",
   },
   brandBadge: {
     paddingHorizontal: 8,
@@ -278,9 +297,9 @@ const styles = StyleSheet.create({
   },
   filmName: {
     fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
+    fontWeight: "500",
     lineHeight: 20,
+    flex: 1,
   },
   detailsContainer: {
     marginBottom: 8,

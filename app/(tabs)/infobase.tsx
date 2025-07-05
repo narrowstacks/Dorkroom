@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from "react";
-import { Platform, StyleSheet, FlatList } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import {
   Box,
   Text,
   HStack,
+  VStack,
   Button,
   ButtonText,
-  Spinner,
+  ButtonIcon,
 } from "@gluestack-ui/themed";
-import { Film, FlaskConical, RefreshCw, Grid, List } from "lucide-react-native";
+import { Film, FlaskConical } from "lucide-react-native";
 
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
@@ -17,8 +18,8 @@ import { useDevelopersData } from "@/hooks/useDevelopersData";
 
 import { InfobaseSearch } from "@/components/infobase/InfobaseSearch";
 import { InfobaseFilters } from "@/components/infobase/InfobaseFilters";
-import { FilmCard } from "@/components/infobase/FilmCard";
-import { DeveloperCard } from "@/components/infobase/DeveloperCard";
+import { InfobaseDesktopLayout } from "@/components/infobase/InfobaseDesktopLayout";
+import { InfobaseMobileLayout } from "@/components/infobase/InfobaseMobileLayout";
 
 import type {
   Film as FilmType,
@@ -26,13 +27,15 @@ import type {
 } from "@/api/dorkroom/types";
 
 type TabType = "films" | "developers";
-type ViewMode = "grid" | "list";
 
 export default function InfobaseScreen() {
   const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width > 768;
 
   const [activeTab, setActiveTab] = useState<TabType>("films");
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [selectedFilm, setSelectedFilm] = useState<FilmType | null>(null);
+  const [selectedDeveloper, setSelectedDeveloper] =
+    useState<DeveloperType | null>(null);
 
   const backgroundColor = useThemeColor({}, "background");
   const cardBackground = useThemeColor({}, "cardBackground");
@@ -91,17 +94,6 @@ export default function InfobaseScreen() {
     activeTab === "films" ? clearFilmFilters : clearDeveloperFilters;
   const forceRefresh = activeTab === "films" ? refreshFilms : refreshDevelopers;
 
-  // Get grid columns based on screen size
-  const getNumColumns = () => {
-    if (viewMode === "list") return 1;
-    if (width > 1200) return 4;
-    if (width > 768) return 3;
-    if (width > 480) return 2;
-    return 1;
-  };
-
-  const numColumns = getNumColumns();
-
   // Memoized data for performance
   const displayData = useMemo(() => {
     return activeTab === "films" ? filteredFilms : filteredDevelopers;
@@ -112,90 +104,13 @@ export default function InfobaseScreen() {
 
   const handleTabPress = (tab: TabType) => {
     setActiveTab(tab);
+    // Clear selections when switching tabs
+    setSelectedFilm(null);
+    setSelectedDeveloper(null);
   };
 
   const handleRefresh = async () => {
     await forceRefresh();
-  };
-
-  const renderFilmItem = ({ item }: { item: FilmType }) => (
-    <Box style={[styles.cardContainer, { width: `${100 / numColumns}%` }]}>
-      <FilmCard
-        film={item}
-        variant={viewMode === "list" ? "default" : "compact"}
-      />
-    </Box>
-  );
-
-  const renderDeveloperItem = ({ item }: { item: DeveloperType }) => (
-    <Box style={[styles.cardContainer, { width: `${100 / numColumns}%` }]}>
-      <DeveloperCard
-        developer={item}
-        variant={viewMode === "list" ? "default" : "compact"}
-      />
-    </Box>
-  );
-
-  const renderContent = () => {
-    if (error) {
-      return (
-        <Box style={styles.centerContainer}>
-          <Text style={[styles.errorText, { color: textColor }]}>
-            Error loading {activeTab}: {error}
-          </Text>
-          <Button onPress={handleRefresh} style={styles.retryButton}>
-            <RefreshCw size={16} color="#fff" />
-            <ButtonText style={styles.retryButtonText}>Retry</ButtonText>
-          </Button>
-        </Box>
-      );
-    }
-
-    if (isLoading && displayData.length === 0) {
-      return (
-        <Box style={styles.centerContainer}>
-          <Spinner
-            size="large"
-            color={infobaseTint}
-            style={{ marginBottom: 16 }}
-          />
-          <Text style={[styles.loadingText, { color: textColor }]}>
-            Loading {activeTab}...
-          </Text>
-        </Box>
-      );
-    }
-
-    if (displayData.length === 0) {
-      return (
-        <Box style={styles.centerContainer}>
-          <Text style={[styles.noResultsText, { color: textColor }]}>
-            No {activeTab} found.
-          </Text>
-          <Text style={[styles.noResultsSubtext, { color: textSecondary }]}>
-            Try adjusting your search terms or filters.
-          </Text>
-        </Box>
-      );
-    }
-
-    return (
-      <FlatList
-        data={displayData}
-        renderItem={
-          activeTab === "films" ? renderFilmItem : renderDeveloperItem
-        }
-        keyExtractor={(item) => item.id}
-        numColumns={numColumns}
-        key={`${activeTab}-${numColumns}`} // Force re-render when columns change
-        contentContainerStyle={styles.flatListContent}
-        showsVerticalScrollIndicator={false}
-        initialNumToRender={20}
-        maxToRenderPerBatch={20}
-        windowSize={10}
-        removeClippedSubviews={Platform.OS === "android"}
-      />
-    );
   };
 
   const tabButtonStyle = (isActive: boolean) => ({
@@ -203,21 +118,22 @@ export default function InfobaseScreen() {
     backgroundColor: isActive ? infobaseTint : "transparent",
     borderColor: infobaseTint,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginHorizontal: 4,
+    borderRadius: isDesktop ? 8 : 6,
+    paddingVertical: isDesktop ? 12 : 8,
+    paddingHorizontal: isDesktop ? 16 : 8,
+    marginHorizontal: isDesktop ? 4 : 2,
+    minHeight: isDesktop ? 48 : 44,
   });
 
   const tabTextStyle = (isActive: boolean) => ({
     color: isActive ? "#fff" : infobaseTint,
-    fontSize: 14,
+    fontSize: isDesktop ? 14 : 12,
     fontWeight: "600" as const,
-    textAlign: "center" as const,
+    marginLeft: 6,
   });
 
   return (
-    <Box style={[styles.container, { backgroundColor }]}>
+    <VStack style={[styles.container, { backgroundColor }]} space="lg">
       {/* Header */}
       <Box style={[styles.header, { borderBottomColor: borderColor }]}>
         <Text style={[styles.title, { color: textColor }]}>
@@ -227,40 +143,34 @@ export default function InfobaseScreen() {
           Browse comprehensive film and developer information
         </Text>
       </Box>
+      <VStack style={styles.searchContainer} space="none">
+        {/* Tab Navigation */}
+        <Box style={[styles.tabContainer, { backgroundColor: cardBackground }]}>
+          <HStack space="none" style={styles.tabRow}>
+            <Button
+              style={tabButtonStyle(activeTab === "films")}
+              onPress={() => handleTabPress("films")}
+            >
+              <ButtonIcon as={Film} size="sm" />
+              <ButtonText style={tabTextStyle(activeTab === "films")}>
+                Films ({totalFilms})
+              </ButtonText>
+            </Button>
 
-      {/* Tab Navigation */}
-      <Box style={[styles.tabContainer, { backgroundColor: cardBackground }]}>
-        <HStack space="xs" style={styles.tabRow}>
-          <Button
-            style={tabButtonStyle(activeTab === "films")}
-            onPress={() => handleTabPress("films")}
-          >
-            <Film
-              size={18}
-              color={activeTab === "films" ? "#fff" : infobaseTint}
-            />
-            <ButtonText style={tabTextStyle(activeTab === "films")}>
-              Films ({totalFilms})
-            </ButtonText>
-          </Button>
+            <Button
+              style={tabButtonStyle(activeTab === "developers")}
+              onPress={() => handleTabPress("developers")}
+            >
+              <ButtonIcon as={FlaskConical} size="sm" />
+              <ButtonText style={tabTextStyle(activeTab === "developers")}>
+                Developers ({totalDevelopers})
+              </ButtonText>
+            </Button>
+          </HStack>
+        </Box>
 
-          <Button
-            style={tabButtonStyle(activeTab === "developers")}
-            onPress={() => handleTabPress("developers")}
-          >
-            <FlaskConical
-              size={18}
-              color={activeTab === "developers" ? "#fff" : infobaseTint}
-            />
-            <ButtonText style={tabTextStyle(activeTab === "developers")}>
-              Developers ({totalDevelopers})
-            </ButtonText>
-          </Button>
-        </HStack>
-      </Box>
+        {/* Search and Filters */}
 
-      {/* Search and Filters */}
-      <Box style={styles.searchContainer}>
         <InfobaseSearch
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -312,53 +222,41 @@ export default function InfobaseScreen() {
           }
           onClearFilters={clearFilters}
         />
-      </Box>
-
-      {/* Results Header */}
-      <Box style={[styles.resultsHeader, { backgroundColor: cardBackground }]}>
-        <HStack space="md" alignItems="center" style={styles.resultsRow}>
-          <Text style={[styles.resultsText, { color: textColor }]}>
-            {displayCount} of {totalCount} {activeTab}
-          </Text>
-
-          <Box style={styles.spacer} />
-
-          {/* View Mode Toggle */}
-          <HStack space="xs">
-            <Button
-              size="sm"
-              variant={viewMode === "grid" ? "solid" : "outline"}
-              action={viewMode === "grid" ? "primary" : "secondary"}
-              onPress={() => setViewMode("grid")}
-            >
-              <Grid size={16} />
-            </Button>
-            <Button
-              size="sm"
-              variant={viewMode === "list" ? "solid" : "outline"}
-              action={viewMode === "list" ? "primary" : "secondary"}
-              onPress={() => setViewMode("list")}
-            >
-              <List size={16} />
-            </Button>
-          </HStack>
-
-          {/* Refresh Button */}
-          <Button
-            size="sm"
-            variant="outline"
-            action="secondary"
-            onPress={handleRefresh}
-            disabled={isLoading}
-          >
-            <RefreshCw size={16} />
-          </Button>
-        </HStack>
-      </Box>
+      </VStack>
 
       {/* Content */}
-      <Box style={styles.contentContainer}>{renderContent()}</Box>
-    </Box>
+      <Box style={styles.contentContainer}>
+        {isDesktop ? (
+          <InfobaseDesktopLayout
+            activeTab={activeTab}
+            displayData={displayData}
+            displayCount={displayCount}
+            totalCount={totalCount}
+            isLoading={isLoading}
+            error={error}
+            selectedFilm={selectedFilm}
+            selectedDeveloper={selectedDeveloper}
+            onFilmSelect={setSelectedFilm}
+            onDeveloperSelect={setSelectedDeveloper}
+            onRefresh={handleRefresh}
+          />
+        ) : (
+          <InfobaseMobileLayout
+            activeTab={activeTab}
+            displayData={displayData}
+            displayCount={displayCount}
+            totalCount={totalCount}
+            isLoading={isLoading}
+            error={error}
+            selectedFilm={selectedFilm}
+            selectedDeveloper={selectedDeveloper}
+            onFilmSelect={setSelectedFilm}
+            onDeveloperSelect={setSelectedDeveloper}
+            onRefresh={handleRefresh}
+          />
+        )}
+      </Box>
+    </VStack>
   );
 }
 
@@ -381,79 +279,20 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   tabContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    marginBottom: Platform.OS === "ios" || Platform.OS === "android" ? 16 : 0,
   },
   tabRow: {
     flex: 1,
+    alignItems: "stretch",
   },
   searchContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  resultsHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.1)",
-  },
-  resultsRow: {
-    flex: 1,
-  },
-  resultsText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  spacer: {
-    flex: 1,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   contentContainer: {
     flex: 1,
-    paddingHorizontal: 16,
-  },
-  flatListContent: {
-    paddingVertical: 8,
-  },
-  cardContainer: {
-    paddingHorizontal: 4,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 32,
-  },
-  loadingText: {
-    fontSize: 16,
-    textAlign: "center",
-  },
-  errorText: {
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: 16,
-  },
-  retryButton: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  retryButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  noResultsText: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  noResultsSubtext: {
-    fontSize: 14,
-    textAlign: "center",
   },
 });
