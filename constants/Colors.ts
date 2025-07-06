@@ -21,6 +21,24 @@ const brandColors = {
   efkeBrandColor: "#c0392b",
   fomapanBrandColor: "#27ae60",
   holgaBrandColor: "#e74c3c",
+  // Generic brands - each with unique colors
+  catlabsBrandColor: "#7b68ee",
+  ultrafineBrandColor: "#4169e1",
+  silberraBrandColor: "#c0c0c0",
+  luckyBrandColor: "#ffd700",
+  yodicaBrandColor: "#6b8e23",
+  streetCandyFilmBrandColor: "#ff69b4",
+  shanghaiFilmBrandColor: "#dc143c",
+  berggerBrandColor: "#8b4513",
+  fppBrandColor: "#ff8c00",
+  jchBrandColor: "#191970",
+  konoBrandColor: "#20b2aa",
+  psychedelicBluesBrandColor: "#4b0082",
+  revologBrandColor: "#32cd32",
+  dubblefilmBrandColor: "#00ced1",
+  legacyProBrandColor: "#2f4f4f",
+  washiBrandColor: "#dda0dd",
+  orientalBrandColor: "#800020",
 };
 
 // global page tints
@@ -102,6 +120,24 @@ type ColorScheme = {
   efkeBrandColor: string;
   fomapanBrandColor: string;
   holgaBrandColor: string;
+  // Generic brands
+  catlabsBrandColor: string;
+  ultrafineBrandColor: string;
+  silberraBrandColor: string;
+  luckyBrandColor: string;
+  yodicaBrandColor: string;
+  streetCandyFilmBrandColor: string;
+  shanghaiFilmBrandColor: string;
+  berggerBrandColor: string;
+  fppBrandColor: string;
+  jchBrandColor: string;
+  konoBrandColor: string;
+  psychedelicBluesBrandColor: string;
+  revologBrandColor: string;
+  dubblefilmBrandColor: string;
+  legacyProBrandColor: string;
+  washiBrandColor: string;
+  orientalBrandColor: string;
 };
 
 export const Colors: {
@@ -171,6 +207,23 @@ export const Colors: {
     efkeBrandColor: brandColors.efkeBrandColor,
     fomapanBrandColor: brandColors.fomapanBrandColor,
     holgaBrandColor: brandColors.holgaBrandColor,
+    catlabsBrandColor: brandColors.catlabsBrandColor,
+    ultrafineBrandColor: brandColors.ultrafineBrandColor,
+    silberraBrandColor: brandColors.silberraBrandColor,
+    luckyBrandColor: brandColors.luckyBrandColor,
+    yodicaBrandColor: brandColors.yodicaBrandColor,
+    streetCandyFilmBrandColor: brandColors.streetCandyFilmBrandColor,
+    shanghaiFilmBrandColor: brandColors.shanghaiFilmBrandColor,
+    berggerBrandColor: brandColors.berggerBrandColor,
+    fppBrandColor: brandColors.fppBrandColor,
+    jchBrandColor: brandColors.jchBrandColor,
+    konoBrandColor: brandColors.konoBrandColor,
+    psychedelicBluesBrandColor: brandColors.psychedelicBluesBrandColor,
+    revologBrandColor: brandColors.revologBrandColor,
+    dubblefilmBrandColor: brandColors.dubblefilmBrandColor,
+    legacyProBrandColor: brandColors.legacyProBrandColor,
+    washiBrandColor: brandColors.washiBrandColor,
+    orientalBrandColor: brandColors.orientalBrandColor,
   },
   dark: {
     text: "#ECEDEE",
@@ -238,6 +291,23 @@ export const Colors: {
     efkeBrandColor: brandColors.efkeBrandColor,
     fomapanBrandColor: brandColors.fomapanBrandColor,
     holgaBrandColor: brandColors.holgaBrandColor,
+    catlabsBrandColor: brandColors.catlabsBrandColor,
+    ultrafineBrandColor: brandColors.ultrafineBrandColor,
+    silberraBrandColor: brandColors.silberraBrandColor,
+    luckyBrandColor: brandColors.luckyBrandColor,
+    yodicaBrandColor: brandColors.yodicaBrandColor,
+    streetCandyFilmBrandColor: brandColors.streetCandyFilmBrandColor,
+    shanghaiFilmBrandColor: brandColors.shanghaiFilmBrandColor,
+    berggerBrandColor: brandColors.berggerBrandColor,
+    fppBrandColor: brandColors.fppBrandColor,
+    jchBrandColor: brandColors.jchBrandColor,
+    konoBrandColor: brandColors.konoBrandColor,
+    psychedelicBluesBrandColor: brandColors.psychedelicBluesBrandColor,
+    revologBrandColor: brandColors.revologBrandColor,
+    dubblefilmBrandColor: brandColors.dubblefilmBrandColor,
+    legacyProBrandColor: brandColors.legacyProBrandColor,
+    washiBrandColor: brandColors.washiBrandColor,
+    orientalBrandColor: brandColors.orientalBrandColor,
   },
   darkroom: {
     background: "#000000",
@@ -301,6 +371,23 @@ export const Colors: {
     efkeBrandColor: "#000000",
     fomapanBrandColor: "#000000",
     holgaBrandColor: "#000000",
+    catlabsBrandColor: "#000000",
+    ultrafineBrandColor: "#000000",
+    silberraBrandColor: "#000000",
+    luckyBrandColor: "#000000",
+    yodicaBrandColor: "#000000",
+    streetCandyFilmBrandColor: "#000000",
+    shanghaiFilmBrandColor: "#000000",
+    berggerBrandColor: "#000000",
+    fppBrandColor: "#000000",
+    jchBrandColor: "#000000",
+    konoBrandColor: "#000000",
+    psychedelicBluesBrandColor: "#000000",
+    revologBrandColor: "#000000",
+    dubblefilmBrandColor: "#000000",
+    legacyProBrandColor: "#000000",
+    washiBrandColor: "#000000",
+    orientalBrandColor: "#000000",
   },
   eInk: {
     background: "#FFFFFF",
@@ -363,6 +450,23 @@ export const Colors: {
     efkeBrandColor: "#000000",
     fomapanBrandColor: "#000000",
     holgaBrandColor: "#000000",
+    catlabsBrandColor: "#000000",
+    ultrafineBrandColor: "#000000",
+    silberraBrandColor: "#000000",
+    luckyBrandColor: "#000000",
+    yodicaBrandColor: "#000000",
+    streetCandyFilmBrandColor: "#000000",
+    shanghaiFilmBrandColor: "#000000",
+    berggerBrandColor: "#000000",
+    fppBrandColor: "#000000",
+    jchBrandColor: "#000000",
+    konoBrandColor: "#000000",
+    psychedelicBluesBrandColor: "#000000",
+    revologBrandColor: "#000000",
+    dubblefilmBrandColor: "#000000",
+    legacyProBrandColor: "#000000",
+    washiBrandColor: "#000000",
+    orientalBrandColor: "#000000",
   },
 };
 

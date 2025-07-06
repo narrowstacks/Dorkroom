@@ -28,7 +28,6 @@ export const brandNames = {
     "Kono",
     "Psychedelic Blues",
     "Revolog",
-    "Yodica",
     "Dubblefilm",
     "Legacy Pro",
     "Washi",
@@ -50,6 +49,24 @@ export const brandThemeColorMapping = {
   fomapan: "fomapanBrandColor",
   holga: "holgaBrandColor",
   generic: "genericBrandColor",
+  // Individual generic brands
+  catlabs: "catlabsBrandColor",
+  ultrafine: "ultrafineBrandColor",
+  silberra: "silberraBrandColor",
+  lucky: "luckyBrandColor",
+  yodica: "yodicaBrandColor",
+  "street candy film": "streetCandyFilmBrandColor",
+  "shanghai film": "shanghaiFilmBrandColor",
+  bergger: "berggerBrandColor",
+  fpp: "fppBrandColor",
+  jch: "jchBrandColor",
+  kono: "konoBrandColor",
+  "psychedelic blues": "psychedelicBluesBrandColor",
+  revolog: "revologBrandColor",
+  dubblefilm: "dubblefilmBrandColor",
+  "legacy pro": "legacyProBrandColor",
+  washi: "washiBrandColor",
+  oriental: "orientalBrandColor",
 };
 
 // Film type colors for categorization
@@ -83,8 +100,39 @@ export const developerTypeColors: Record<string, string> = {
 export function getBrandKey(brandName: string): string {
   const normalized = brandName.toLowerCase().trim();
 
+  // Check for individual generic brands first
+  const individualBrandMappings = {
+    catlabs: "catlabs",
+    ultrafine: "ultrafine",
+    silberra: "silberra",
+    lucky: "lucky",
+    yodica: "yodica",
+    "street candy film": "street candy film",
+    "shanghai film": "shanghai film",
+    bergger: "bergger",
+    fpp: "fpp",
+    jch: "jch",
+    kono: "kono",
+    "psychedelic blues": "psychedelic blues",
+    revolog: "revolog",
+    dubblefilm: "dubblefilm",
+    "legacy pro": "legacy pro",
+    washi: "washi",
+    oriental: "oriental",
+  };
+
+  for (const [searchTerm, key] of Object.entries(individualBrandMappings)) {
+    if (normalized.includes(searchTerm)) {
+      return key;
+    }
+  }
+
+  // Check for main brand categories
   for (const [key, aliases] of Object.entries(brandNames)) {
-    if (aliases.some((alias) => normalized.includes(alias.toLowerCase()))) {
+    if (
+      key !== "generic" &&
+      aliases.some((alias) => normalized.includes(alias.toLowerCase()))
+    ) {
       return key;
     }
   }
