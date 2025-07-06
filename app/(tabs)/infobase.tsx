@@ -118,7 +118,7 @@ export default function InfobaseScreen() {
     backgroundColor: isActive ? infobaseTint : "transparent",
     borderColor: infobaseTint,
     borderWidth: 1,
-    borderRadius: isDesktop ? 8 : 6,
+    borderRadius: isDesktop ? 12 : 8,
     paddingVertical: isDesktop ? 12 : 8,
     paddingHorizontal: isDesktop ? 16 : 8,
     marginHorizontal: isDesktop ? 4 : 2,
@@ -145,7 +145,7 @@ export default function InfobaseScreen() {
       </Box>
       <VStack style={styles.searchContainer} space="sm">
         {/* Tab Navigation */}
-        <Box style={[styles.tabContainer, { backgroundColor: cardBackground }]}>
+        <Box style={[styles.tabContainer]}>
           <HStack space="xs" style={styles.tabRow}>
             <Button
               style={tabButtonStyle(activeTab === "films")}
@@ -279,9 +279,8 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   tabContainer: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    marginBottom: Platform.OS === "ios" || Platform.OS === "android" ? 16 : 0,
+    paddingVertical: Platform.OS === "web" ? 6 : 8,
+    marginBottom: Platform.OS === "ios" || Platform.OS === "android" ? 36 : 0,
   },
   tabRow: {
     flex: 1,

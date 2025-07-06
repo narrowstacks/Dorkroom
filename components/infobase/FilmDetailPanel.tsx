@@ -297,7 +297,7 @@ export function FilmDetailPanel({ film, onClose }: FilmDetailPanelProps) {
                     <Text
                       style={[styles.detailLabel, { color: textSecondary }]}
                     >
-                      Manufacturer Notes:
+                      Qualities:
                     </Text>
                     <HStack space="xs" style={{ flexWrap: "wrap" }}>
                       {(film.manufacturer_notes || film.manufacturerNotes).map(

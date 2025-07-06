@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { StyleSheet, TouchableOpacity, Text as RNText } from "react-native";
 import {
   Box,
   Text,
@@ -11,7 +11,13 @@ import {
   ButtonText,
   ButtonIcon,
 } from "@gluestack-ui/themed";
-import { ChevronDown, ChevronUp, Filter, RefreshCw } from "lucide-react-native";
+import {
+  ChevronDown,
+  ChevronUp,
+  Filter,
+  RefreshCw,
+  X,
+} from "lucide-react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ThemedSelect } from "@/components/ui/select/ThemedSelect";
 
@@ -119,7 +125,6 @@ export function InfobaseFilters({
               }
               items={[{ label: "All Brands", value: "" }, ...brandItems]}
               placeholder="All Brands"
-              disabled={disabled}
             />
           </Box>
 
@@ -132,7 +137,6 @@ export function InfobaseFilters({
               }
               items={[{ label: "All Types", value: "" }, ...typeItems]}
               placeholder="All Types"
-              disabled={disabled}
             />
           </Box>
         </HStack>
@@ -176,7 +180,6 @@ export function InfobaseFilters({
                 ...manufacturerItems,
               ]}
               placeholder="All Manufacturers"
-              disabled={disabled}
             />
           </Box>
 
@@ -189,7 +192,6 @@ export function InfobaseFilters({
               }
               items={[{ label: "All Types", value: "" }, ...typeItems]}
               placeholder="All Types"
-              disabled={disabled}
             />
           </Box>
         </HStack>
@@ -203,7 +205,6 @@ export function InfobaseFilters({
             }
             items={[{ label: "Film & Paper", value: "" }, ...filmOrPaperItems]}
             placeholder="Film & Paper"
-            disabled={disabled}
           />
         </Box>
       </VStack>
@@ -221,9 +222,9 @@ export function InfobaseFilters({
       >
         <HStack space="sm" alignItems="center" style={styles.headerContent}>
           <Filter size={18} color={infobaseTint} />
-          <Text style={[styles.filterTitle, { color: textColor }]}>
+          <RNText style={[styles.filterTitle, { color: textColor }]}>
             Filters
-          </Text>
+          </RNText>
 
           {activeFiltersCount > 0 && (
             <Badge
@@ -260,10 +261,15 @@ export function InfobaseFilters({
               variant="outline"
               size="sm"
               action="secondary"
-              style={styles.clearButton}
+              style={[styles.clearButton, { borderColor: infobaseTint }]}
               disabled={disabled}
             >
-              <ButtonIcon as={RefreshCw} size="sm" />
+              <ButtonIcon
+                as={X}
+                size="sm"
+                color={infobaseTint}
+                style={{ marginRight: 4 }}
+              />
               <ButtonText>Clear Filters</ButtonText>
             </Button>
           )}
@@ -314,6 +320,7 @@ const styles = StyleSheet.create({
   clearButton: {
     alignSelf: "flex-start",
     marginTop: 8,
+    borderRadius: 12,
   },
 });
 

@@ -313,7 +313,7 @@ export function FilmDetailModal({
                         <Text
                           style={[styles.detailLabel, { color: textSecondary }]}
                         >
-                          Manufacturer Notes:
+                          Qualities:
                         </Text>
                         <HStack space="xs" style={{ flexWrap: "wrap" }}>
                           {(

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import type { Film } from "@/api/dorkroom/types";
 import { DorkroomClient } from "@/api/dorkroom/client";
+import { fuzzySearchFilms } from "@/utils/fuzzySearch";
 
 export interface FilmsDataState {
   films: Film[];
@@ -156,15 +157,9 @@ export function useFilmsData(): UseFilmsDataReturn {
   const filteredFilms = useMemo(() => {
     let filtered = [...state.films];
 
-    // Apply search filter
+    // Apply search filter using fuzzy search
     if (debouncedSearchQuery.trim()) {
-      const query = debouncedSearchQuery.toLowerCase().trim();
-      filtered = filtered.filter(
-        (film) =>
-          film.name.toLowerCase().includes(query) ||
-          film.brand.toLowerCase().includes(query) ||
-          film.description?.toLowerCase().includes(query),
-      );
+      filtered = fuzzySearchFilms(filtered, debouncedSearchQuery);
     }
 
     // Apply brand filter
@@ -182,30 +177,32 @@ export function useFilmsData(): UseFilmsDataReturn {
       );
     }
 
-    // Apply sorting
-    filtered.sort((a, b) => {
-      let comparison = 0;
+    // Apply sorting (only if no search query, since fuzzy search already provides relevance ordering)
+    if (!debouncedSearchQuery.trim()) {
+      filtered.sort((a, b) => {
+        let comparison = 0;
 
-      switch (state.sortBy) {
-        case "name":
-          comparison = a.name.localeCompare(b.name);
-          break;
-        case "brand":
-          comparison = a.brand.localeCompare(b.brand);
-          break;
-        case "iso":
-          comparison = a.isoSpeed - b.isoSpeed;
-          break;
-        case "dateAdded":
-          comparison =
-            new Date(a.dateAdded).getTime() - new Date(b.dateAdded).getTime();
-          break;
-        default:
-          comparison = 0;
-      }
+        switch (state.sortBy) {
+          case "name":
+            comparison = a.name.localeCompare(b.name);
+            break;
+          case "brand":
+            comparison = a.brand.localeCompare(b.brand);
+            break;
+          case "iso":
+            comparison = a.isoSpeed - b.isoSpeed;
+            break;
+          case "dateAdded":
+            comparison =
+              new Date(a.dateAdded).getTime() - new Date(b.dateAdded).getTime();
+            break;
+          default:
+            comparison = 0;
+        }
 
-      return state.sortDirection === "desc" ? -comparison : comparison;
-    });
+        return state.sortDirection === "desc" ? -comparison : comparison;
+      });
+    }
 
     return filtered;
   }, [

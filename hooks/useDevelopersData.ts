@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import type { Developer } from "@/api/dorkroom/types";
 import { getApiUrl } from "@/utils/platformDetection";
+import { fuzzySearchDevelopers } from "@/utils/fuzzySearch";
 
 export interface DevelopersDataState {
   developers: Developer[];
@@ -192,16 +193,9 @@ export function useDevelopersData(): UseDevelopersDataReturn {
   const filteredDevelopers = useMemo(() => {
     let filtered = [...state.developers];
 
-    // Apply search filter
+    // Apply search filter using fuzzy search
     if (debouncedSearchQuery.trim()) {
-      const query = debouncedSearchQuery.toLowerCase().trim();
-      filtered = filtered.filter(
-        (developer) =>
-          developer.name.toLowerCase().includes(query) ||
-          developer.manufacturer.toLowerCase().includes(query) ||
-          developer.type.toLowerCase().includes(query) ||
-          developer.notes?.toLowerCase().includes(query),
-      );
+      filtered = fuzzySearchDevelopers(filtered, debouncedSearchQuery);
     }
 
     // Apply manufacturer filter
@@ -230,30 +224,32 @@ export function useDevelopersData(): UseDevelopersDataReturn {
       );
     }
 
-    // Apply sorting
-    filtered.sort((a, b) => {
-      let comparison = 0;
+    // Apply sorting (only if no search query, since fuzzy search already provides relevance ordering)
+    if (!debouncedSearchQuery.trim()) {
+      filtered.sort((a, b) => {
+        let comparison = 0;
 
-      switch (state.sortBy) {
-        case "name":
-          comparison = a.name.localeCompare(b.name);
-          break;
-        case "manufacturer":
-          comparison = a.manufacturer.localeCompare(b.manufacturer);
-          break;
-        case "type":
-          comparison = a.type.localeCompare(b.type);
-          break;
-        case "dateAdded":
-          comparison =
-            new Date(a.dateAdded).getTime() - new Date(b.dateAdded).getTime();
-          break;
-        default:
-          comparison = 0;
-      }
+        switch (state.sortBy) {
+          case "name":
+            comparison = a.name.localeCompare(b.name);
+            break;
+          case "manufacturer":
+            comparison = a.manufacturer.localeCompare(b.manufacturer);
+            break;
+          case "type":
+            comparison = a.type.localeCompare(b.type);
+            break;
+          case "dateAdded":
+            comparison =
+              new Date(a.dateAdded).getTime() - new Date(b.dateAdded).getTime();
+            break;
+          default:
+            comparison = 0;
+        }
 
-      return state.sortDirection === "desc" ? -comparison : comparison;
-    });
+        return state.sortDirection === "desc" ? -comparison : comparison;
+      });
+    }
 
     return filtered;
   }, [

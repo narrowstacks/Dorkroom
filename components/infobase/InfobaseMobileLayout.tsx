@@ -183,6 +183,7 @@ export function InfobaseMobileLayout({
             action="secondary"
             onPress={onRefresh}
             disabled={isLoading}
+            style={styles.refreshButton}
           >
             <RefreshCw size={16} />
           </Button>
@@ -217,6 +218,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderTopWidth: 1,
     borderTopColor: "rgba(0,0,0,0.1)",
+    marginBottom: 8,
   },
   resultsRow: {
     flex: 1,
@@ -227,6 +229,11 @@ const styles = StyleSheet.create({
   },
   spacer: {
     flex: 1,
+  },
+  refreshButton: {
+    borderRadius: 8,
+    minWidth: 40,
+    paddingHorizontal: 12,
   },
   contentContainer: {
     flex: 1,
@@ -257,7 +264,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#007AFF",
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 12,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
@@ -266,6 +273,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
     fontWeight: "500",
+    borderRadius: 12,
   },
   noResultsText: {
     fontSize: 18,
