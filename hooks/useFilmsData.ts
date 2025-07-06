@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import type { Film } from "@/api/dorkroom/types";
-import { getApiUrl } from "@/utils/platformDetection";
+import { DorkroomClient } from "@/api/dorkroom/client";
 
 export interface FilmsDataState {
   films: Film[];
@@ -68,40 +68,37 @@ export function useFilmsData(): UseFilmsDataReturn {
   });
 
   const cacheRef = useRef<{ data: Film[]; timestamp: number } | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  // Cache TTL: 5 minutes
-  const CACHE_TTL = 5 * 60 * 1000;
+  const clientRef = useRef<DorkroomClient>(new DorkroomClient());
 
   // Debounce search query to avoid excessive API calls
   const debouncedSearchQuery = useDebounce(state.searchQuery, 300);
 
   /**
-   * Fetch films data from API
+   * Fetch films data using DorkroomClient
    */
   const fetchFilms = useCallback(
     async (forceRefresh = false) => {
-      // Check cache first
-      if (!forceRefresh && cacheRef.current) {
-        const age = Date.now() - cacheRef.current.timestamp;
-        if (age < CACHE_TTL) {
-          setState((prev) => ({
-            ...prev,
-            films: cacheRef.current!.data,
-            isLoading: false,
-            isLoaded: true,
-            error: null,
-          }));
-          return;
-        }
-      }
+      const client = clientRef.current;
 
-      // Cancel any ongoing request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
+      // Check client cache first if not forcing refresh
+      if (!forceRefresh && client.isLoaded() && !client.isDataExpired()) {
+        const filmsData = client.getAllFilms();
 
-      abortControllerRef.current = new AbortController();
+        // Update our local cache
+        cacheRef.current = {
+          data: filmsData,
+          timestamp: Date.now(),
+        };
+
+        setState((prev) => ({
+          ...prev,
+          films: filmsData,
+          isLoading: false,
+          isLoaded: true,
+          error: null,
+        }));
+        return;
+      }
 
       setState((prev) => ({
         ...prev,
@@ -110,33 +107,14 @@ export function useFilmsData(): UseFilmsDataReturn {
       }));
 
       try {
-        const params = new URLSearchParams();
-        if (debouncedSearchQuery.trim()) {
-          params.set("query", debouncedSearchQuery.trim());
-          params.set("fuzzy", "true");
-        }
-        params.set("limit", "1000"); // Get all films
-
-        const queryString = params.toString();
-        const url = getApiUrl(`films${queryString ? `?${queryString}` : ""}`);
-
-        const response = await fetch(url, {
-          signal: abortControllerRef.current.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch films: ${response.status} ${response.statusText}`,
-          );
+        // Load data through DorkroomClient (includes manufacturer notes parsing)
+        if (forceRefresh) {
+          await client.forceReload();
+        } else {
+          await client.loadAll();
         }
 
-        const result = await response.json();
-
-        if (!result.data || !Array.isArray(result.data)) {
-          throw new Error("Invalid response format from films API");
-        }
-
-        const filmsData = result.data as Film[];
+        const filmsData = client.getAllFilms();
 
         // Update cache
         cacheRef.current = {
@@ -152,10 +130,6 @@ export function useFilmsData(): UseFilmsDataReturn {
           error: null,
         }));
       } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") {
-          return; // Request was cancelled, don't update state
-        }
-
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error occurred";
 
@@ -166,7 +140,7 @@ export function useFilmsData(): UseFilmsDataReturn {
         }));
       }
     },
-    [debouncedSearchQuery],
+    [], // No dependencies since we're using DorkroomClient's internal caching
   );
 
   /**
@@ -342,14 +316,7 @@ export function useFilmsData(): UseFilmsDataReturn {
     await fetchFilms(true);
   }, [fetchFilms]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
+  // No cleanup needed for DorkroomClient
 
   return {
     ...state,
