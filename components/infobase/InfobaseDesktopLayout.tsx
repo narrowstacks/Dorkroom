@@ -91,6 +91,14 @@ export function InfobaseDesktopLayout({
     );
   };
 
+  const renderItem = ({ item }: { item: FilmType | DeveloperType }) => {
+    if (activeTab === "films") {
+      return renderFilmItem({ item: item as FilmType });
+    } else {
+      return renderDeveloperItem({ item: item as DeveloperType });
+    }
+  };
+
   const renderContent = () => {
     if (error) {
       return (
@@ -137,9 +145,7 @@ export function InfobaseDesktopLayout({
     return (
       <FlatList
         data={displayData}
-        renderItem={
-          activeTab === "films" ? renderFilmItem : renderDeveloperItem
-        }
+        renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.flatListContent}
         showsVerticalScrollIndicator={true}
