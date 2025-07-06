@@ -541,9 +541,10 @@ export class DorkroomClient {
           colorType: rawFilm.color_type || rawFilm.colorType,
           description: rawFilm.description,
           discontinued: rawFilm.discontinued ? 1 : 0,
-          manufacturerNotes: Array.isArray(rawFilm.manufacturer_notes)
-            ? rawFilm.manufacturer_notes
-            : rawFilm.manufacturerNotes || [],
+          manufacturerNotes:
+            this.parseManufacturerNotes(rawFilm.manufacturer_notes) ||
+            rawFilm.manufacturerNotes ||
+            [],
           grainStructure: rawFilm.grain_structure || rawFilm.grainStructure,
           reciprocityFailure:
             rawFilm.reciprocity_failure || rawFilm.reciprocityFailure,
@@ -672,6 +673,73 @@ export class DorkroomClient {
       this.logger.error(`Failed to load data: ${error}`);
       throw error;
     }
+  }
+
+  /**
+   * Parse PostgreSQL array format string to JavaScript array
+   */
+  private parseManufacturerNotes(notes: any): string[] | null {
+    if (Array.isArray(notes)) {
+      return notes;
+    }
+
+    if (typeof notes === "string") {
+      try {
+        // Handle PostgreSQL array format: {"item1","item2","item3"}
+        if (notes.startsWith("{") && notes.endsWith("}")) {
+          // Remove outer braces and split by comma
+          const inner = notes.slice(1, -1);
+          if (inner.trim() === "") {
+            return [];
+          }
+
+          // Parse quoted items, handling escaped quotes
+          const items: string[] = [];
+          let current = "";
+          let inQuotes = false;
+          let escaped = false;
+
+          for (let i = 0; i < inner.length; i++) {
+            const char = inner[i];
+
+            if (escaped) {
+              current += char;
+              escaped = false;
+              continue;
+            }
+
+            if (char === "\\") {
+              escaped = true;
+              continue;
+            }
+
+            if (char === '"') {
+              inQuotes = !inQuotes;
+              continue;
+            }
+
+            if (char === "," && !inQuotes) {
+              items.push(current.trim());
+              current = "";
+              continue;
+            }
+
+            current += char;
+          }
+
+          if (current.trim()) {
+            items.push(current.trim());
+          }
+
+          return items;
+        }
+      } catch (error) {
+        debugLog("[DorkroomClient] Failed to parse manufacturer notes:", error);
+        return null;
+      }
+    }
+
+    return null;
   }
 
   /**

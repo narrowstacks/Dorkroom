@@ -282,39 +282,50 @@ export function FilmDetailPanel({ film, onClose }: FilmDetailPanelProps) {
                 </VStack>
               </HStack>
             )}
+
+            {/* Manufacturer Notes */}
+            {Array.isArray(film.manufacturer_notes || film.manufacturerNotes) &&
+              (film.manufacturer_notes || film.manufacturerNotes).length >
+                0 && (
+                <HStack space="sm" alignItems="flex-start">
+                  <FileText
+                    size={16}
+                    color={textSecondary}
+                    style={{ marginTop: 2 }}
+                  />
+                  <VStack space="xs" style={{ flex: 1 }}>
+                    <Text
+                      style={[styles.detailLabel, { color: textSecondary }]}
+                    >
+                      Manufacturer Notes:
+                    </Text>
+                    <HStack space="xs" style={{ flexWrap: "wrap" }}>
+                      {(film.manufacturer_notes || film.manufacturerNotes).map(
+                        (note, index) => (
+                          <Box
+                            key={index}
+                            style={[
+                              styles.noteTag,
+                              { backgroundColor: brandColor },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.noteTagText,
+                                { color: getContrastingTextColor(brandColor) },
+                              ]}
+                            >
+                              {note}
+                            </Text>
+                          </Box>
+                        ),
+                      )}
+                    </HStack>
+                  </VStack>
+                </HStack>
+              )}
           </VStack>
         </VStack>
-
-        {/* Manufacturer Notes */}
-        {Array.isArray(film.manufacturer_notes || film.manufacturerNotes) &&
-          (film.manufacturer_notes || film.manufacturerNotes).length > 0 && (
-            <VStack space="md" style={styles.section}>
-              <HStack space="sm" alignItems="center">
-                <FileText size={16} color={textColor} />
-                <Text style={[styles.sectionTitle, { color: textColor }]}>
-                  Manufacturer Notes
-                </Text>
-              </HStack>
-
-              <VStack space="sm">
-                {(film.manufacturer_notes || film.manufacturerNotes).map(
-                  (note, index) => (
-                    <Box
-                      key={index}
-                      style={[
-                        styles.noteCard,
-                        { backgroundColor: cardBackground, borderColor },
-                      ]}
-                    >
-                      <Text style={[styles.noteText, { color: textSecondary }]}>
-                        {note}
-                      </Text>
-                    </Box>
-                  ),
-                )}
-              </VStack>
-            </VStack>
-          )}
 
         {/* Technical IDs */}
         <VStack space="md" style={styles.section}>
@@ -457,6 +468,17 @@ const styles = StyleSheet.create({
   noteText: {
     fontSize: 13,
     lineHeight: 18,
+  },
+  noteTag: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    marginRight: 6,
+    marginBottom: 6,
+  },
+  noteTagText: {
+    fontSize: 11,
+    fontWeight: "500",
   },
   emptyState: {
     flex: 1,
