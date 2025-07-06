@@ -545,6 +545,10 @@ export class DorkroomClient {
             this.parseManufacturerNotes(rawFilm.manufacturer_notes) ||
             rawFilm.manufacturerNotes ||
             [],
+          manufacturer_notes:
+            this.parseManufacturerNotes(rawFilm.manufacturer_notes) ||
+            rawFilm.manufacturerNotes ||
+            [],
           grainStructure: rawFilm.grain_structure || rawFilm.grainStructure,
           reciprocityFailure:
             rawFilm.reciprocity_failure || rawFilm.reciprocityFailure,
@@ -680,6 +684,7 @@ export class DorkroomClient {
    */
   private parseManufacturerNotes(notes: any): string[] | null {
     if (Array.isArray(notes)) {
+      debugLog("[DorkroomClient] Manufacturer notes already an array:", notes);
       return notes;
     }
 
@@ -687,9 +692,12 @@ export class DorkroomClient {
       try {
         // Handle PostgreSQL array format: {"item1","item2","item3"}
         if (notes.startsWith("{") && notes.endsWith("}")) {
+          debugLog("[DorkroomClient] Parsing PostgreSQL array format:", notes);
+
           // Remove outer braces and split by comma
           const inner = notes.slice(1, -1);
           if (inner.trim() === "") {
+            debugLog("[DorkroomClient] Empty array detected");
             return [];
           }
 
@@ -731,7 +739,16 @@ export class DorkroomClient {
             items.push(current.trim());
           }
 
+          debugLog(
+            "[DorkroomClient] Successfully parsed manufacturer notes:",
+            items,
+          );
           return items;
+        } else {
+          debugLog(
+            "[DorkroomClient] String format not recognized as PostgreSQL array:",
+            notes,
+          );
         }
       } catch (error) {
         debugLog("[DorkroomClient] Failed to parse manufacturer notes:", error);
@@ -739,6 +756,11 @@ export class DorkroomClient {
       }
     }
 
+    debugLog(
+      "[DorkroomClient] Manufacturer notes not a string or array:",
+      typeof notes,
+      notes,
+    );
     return null;
   }
 
