@@ -27,6 +27,7 @@ import {
   getContrastingTextColor,
 } from "@/constants/brands";
 import { Colors } from "@/constants/Colors";
+import { formatFilmType } from "@/utils/filmTypeFormatter";
 
 interface FilmDetailPanelProps {
   film: Film | null;
@@ -167,7 +168,7 @@ export function FilmDetailPanel({ film, onClose }: FilmDetailPanelProps) {
 
             <Badge style={[styles.typeBadge, { backgroundColor: typeColor }]}>
               <BadgeText style={[styles.typeText, { color: typeTextColor }]}>
-                {film.color_type || film.colorType}
+                {formatFilmType(film.color_type || film.colorType)}
               </BadgeText>
             </Badge>
 
@@ -210,7 +211,7 @@ export function FilmDetailPanel({ film, onClose }: FilmDetailPanelProps) {
                 Film Type:
               </Text>
               <Text style={[styles.detailValue, { color: textColor }]}>
-                {film.color_type || film.colorType}
+                {formatFilmType(film.color_type || film.colorType)}
               </Text>
             </HStack>
 

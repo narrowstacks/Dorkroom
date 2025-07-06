@@ -143,10 +143,10 @@ export default function InfobaseScreen() {
           Browse comprehensive film and developer information
         </Text>
       </Box>
-      <VStack style={styles.searchContainer} space="none">
+      <VStack style={styles.searchContainer} space="sm">
         {/* Tab Navigation */}
         <Box style={[styles.tabContainer, { backgroundColor: cardBackground }]}>
-          <HStack space="none" style={styles.tabRow}>
+          <HStack space="xs" style={styles.tabRow}>
             <Button
               style={tabButtonStyle(activeTab === "films")}
               onPress={() => handleTabPress("films")}

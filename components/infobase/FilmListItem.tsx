@@ -17,6 +17,7 @@ import {
   getContrastingTextColor,
 } from "@/constants/brands";
 import { Colors } from "@/constants/Colors";
+import { formatFilmType } from "@/utils/filmTypeFormatter";
 
 interface FilmListItemProps {
   film: Film;
@@ -127,7 +128,7 @@ export function FilmListItem({
             {/* Type Badge */}
             <Badge style={[styles.typeBadge, { backgroundColor: typeColor }]}>
               <BadgeText style={[styles.typeText, { color: typeTextColor }]}>
-                {film.color_type || film.colorType}
+                {formatFilmType(film.color_type || film.colorType)}
               </BadgeText>
             </Badge>
 

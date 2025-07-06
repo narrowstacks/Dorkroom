@@ -26,6 +26,7 @@ import {
   getContrastingTextColor,
 } from "@/constants/brands";
 import { Colors } from "@/constants/Colors";
+import { formatFilmType } from "@/utils/filmTypeFormatter";
 
 interface FilmCardProps {
   film: Film;
@@ -156,7 +157,7 @@ export function FilmCard({
 
           <Badge style={[styles.typeBadge, { backgroundColor: typeColor }]}>
             <BadgeText style={[styles.typeText, { color: typeTextColor }]}>
-              {film.color_type || film.colorType}
+              {formatFilmType(film.color_type || film.colorType)}
             </BadgeText>
           </Badge>
         </HStack>

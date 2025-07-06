@@ -48,6 +48,7 @@ import {
   PUSH_PULL_LABELS,
 } from "@/constants/developmentRecipes";
 import { formatDilution } from "@/utils/dilutionUtils";
+import { formatFilmType } from "@/utils/filmTypeFormatter";
 
 interface RecipeDetailProps {
   combination: Combination;
@@ -449,7 +450,7 @@ export function RecipeDetail({
                 </Text>
                 <Text style={[styles.detailText, { color: textColor }]}>
                   <Text style={{ fontWeight: "600" }}>Type:</Text>{" "}
-                  {film.colorType}
+                  {formatFilmType(film.colorType)}
                 </Text>
                 {film.grainStructure && (
                   <Text style={[styles.detailText, { color: textColor }]}>
