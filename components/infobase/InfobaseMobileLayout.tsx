@@ -23,7 +23,6 @@ import type {
 } from "@/api/dorkroom/types";
 
 type TabType = "films" | "developers";
-type ViewMode = "grid" | "list";
 
 interface InfobaseMobileLayoutProps {
   activeTab: TabType;

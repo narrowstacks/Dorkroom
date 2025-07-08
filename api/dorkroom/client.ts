@@ -34,6 +34,11 @@ import {
   getEnvironmentConfig,
 } from "../../utils/platformDetection";
 import { debugLog } from "../../utils/debugLogger";
+import {
+  enhanceFilmResults,
+  enhanceDeveloperResults,
+  DEFAULT_TOKENIZED_CONFIG,
+} from "../../utils/tokenizedSearch";
 
 /**
  * Cache entry with expiration.
@@ -1081,6 +1086,7 @@ export class DorkroomClient {
 
   /**
    * Internal method for performing fuzzy search on films.
+   * Now enhanced with tokenization post-processing for better relevance.
    */
   private async performFuzzySearchFilms(
     query: string,
@@ -1096,11 +1102,31 @@ export class DorkroomClient {
     }
 
     const requestKey = `fuzzy-films-${query}-${JSON.stringify(options)}`;
-    return this.fetch<Film>("films", params, requestKey);
+
+    // Get raw fuzzy results from API
+    const rawResults = await this.fetch<Film>("films", params, requestKey);
+
+    // Apply tokenization post-processing to improve relevance
+    const enhancedResults = enhanceFilmResults(
+      query,
+      rawResults,
+      DEFAULT_TOKENIZED_CONFIG,
+    );
+
+    // Extract just the film items from the scored results
+    const processedResults = enhancedResults.map((result) => result.item);
+
+    // Apply original limit if specified, since tokenization filtering might change count
+    if (options.limit && processedResults.length > options.limit) {
+      return processedResults.slice(0, options.limit);
+    }
+
+    return processedResults;
   }
 
   /**
    * Internal method for performing fuzzy search on developers.
+   * Now enhanced with tokenization post-processing for better relevance.
    */
   private async performFuzzySearchDevelopers(
     query: string,
@@ -1116,7 +1142,30 @@ export class DorkroomClient {
     }
 
     const requestKey = `fuzzy-developers-${query}-${JSON.stringify(options)}`;
-    return this.fetch<Developer>("developers", params, requestKey);
+
+    // Get raw fuzzy results from API
+    const rawResults = await this.fetch<Developer>(
+      "developers",
+      params,
+      requestKey,
+    );
+
+    // Apply tokenization post-processing to improve relevance
+    const enhancedResults = enhanceDeveloperResults(
+      query,
+      rawResults,
+      DEFAULT_TOKENIZED_CONFIG,
+    );
+
+    // Extract just the developer items from the scored results
+    const processedResults = enhancedResults.map((result) => result.item);
+
+    // Apply original limit if specified, since tokenization filtering might change count
+    if (options.limit && processedResults.length > options.limit) {
+      return processedResults.slice(0, options.limit);
+    }
+
+    return processedResults;
   }
 
   /**

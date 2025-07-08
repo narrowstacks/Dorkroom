@@ -12,7 +12,7 @@ export const filmFuseOptions: IFuseOptions<Film> = {
     { name: "description", weight: 0.3 },
   ],
   // Lower threshold = more fuzzy, higher = more exact
-  threshold: 0.4,
+  threshold: 0.5,
   // Include relevance scores in results
   includeScore: true,
   // Minimum characters that must match
@@ -36,7 +36,7 @@ export const developerFuseOptions: IFuseOptions<Developer> = {
     { name: "manufacturer", weight: 0.5 },
     { name: "notes", weight: 0.3 },
   ],
-  threshold: 0.4,
+  threshold: 0.5,
   includeScore: true,
   minMatchCharLength: 1,
   findAllMatches: false,

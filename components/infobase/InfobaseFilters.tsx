@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { StyleSheet, TouchableOpacity, Text as RNText } from "react-native";
 import {
   Box,
-  Text,
   HStack,
   VStack,
   Badge,
@@ -11,13 +10,7 @@ import {
   ButtonText,
   ButtonIcon,
 } from "@gluestack-ui/themed";
-import {
-  ChevronDown,
-  ChevronUp,
-  Filter,
-  RefreshCw,
-  X,
-} from "lucide-react-native";
+import { ChevronDown, ChevronUp, Filter, X } from "lucide-react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ThemedSelect } from "@/components/ui/select/ThemedSelect";
 

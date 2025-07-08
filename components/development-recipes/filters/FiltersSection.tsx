@@ -19,8 +19,8 @@ interface FiltersSectionProps {
   onDeveloperTypeFilterChange: (value: string) => void;
   onDilutionFilterChange: (value: string) => void;
   onIsoFilterChange: (value: string) => void;
-  getAvailableDilutions: () => Array<{ label: string; value: string }>;
-  getAvailableISOs: () => Array<{ label: string; value: string }>;
+  getAvailableDilutions: () => { label: string; value: string }[];
+  getAvailableISOs: () => { label: string; value: string }[];
 }
 
 export function FiltersSection({

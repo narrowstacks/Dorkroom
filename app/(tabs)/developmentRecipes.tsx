@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from "react";
-import { Platform, StyleSheet, ScrollView } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { Box, Text, Button, ButtonText, VStack } from "@gluestack-ui/themed";
 import { Spinner } from "@/components/ui/spinner";
@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/calculator/InfoSection";
 import { SearchDropdown } from "@/components/ui/search";
 import { PaginationControls } from "@/components/ui/pagination";
-import { RecipeCard } from "@/components/development-recipes";
 
 // Import new componentized parts
 import { SearchSection } from "@/components/development-recipes/filters/SearchSection";
@@ -316,11 +315,7 @@ export default function DevelopmentRecipes() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width > 768;
   const textColor = useThemeColor({}, "text");
-  const textSecondary = useThemeColor({}, "textSecondary");
   const developmentTint = useThemeColor({}, "developmentRecipesTint");
-  const cardBackground = useThemeColor({}, "cardBackground");
-  const inputBackground = useThemeColor({}, "inputBackground");
-  const borderColor = useThemeColor({}, "borderColor");
 
   // Combined API + custom recipes for display
   const allCombinations = React.useMemo(() => {

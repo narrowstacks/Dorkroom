@@ -38,7 +38,6 @@ export default function InfobaseScreen() {
     useState<DeveloperType | null>(null);
 
   const backgroundColor = useThemeColor({}, "background");
-  const cardBackground = useThemeColor({}, "cardBackground");
   const textColor = useThemeColor({}, "text");
   const textSecondary = useThemeColor({}, "textSecondary");
   const borderColor = useThemeColor({}, "borderColor");
