@@ -277,7 +277,6 @@ export function FilmDetailPanel({ film, onClose }: FilmDetailPanelProps) {
                   </Text>
                   <Text style={[styles.detailValue, { color: textColor }]}>
                     {film.reciprocity_failure || film.reciprocityFailure}{" "}
-                    seconds
                   </Text>
                 </VStack>
               </HStack>

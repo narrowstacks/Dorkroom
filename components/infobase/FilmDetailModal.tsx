@@ -290,8 +290,7 @@ export function FilmDetailModal({
                         Reciprocity Failure:
                       </Text>
                       <Text style={[styles.detailValue, { color: textColor }]}>
-                        {film.reciprocity_failure || film.reciprocityFailure}{" "}
-                        seconds
+                        {film.reciprocity_failure || film.reciprocityFailure}
                       </Text>
                     </VStack>
                   </HStack>

@@ -68,6 +68,7 @@
     "@react-native-community/slider": "4.5.6",
     "@react-native-picker/picker": "2.11.0",
     "@react-native/normalize-colors": "^0.79.5",
+    "@vercel/speed-insights": "^1.2.0",
     "expo": "53.0.12",
     "expo-blur": "~14.1.5",
     "expo-clipboard": "^7.1.5",
