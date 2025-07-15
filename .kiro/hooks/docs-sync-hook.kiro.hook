@@ -1,0 +1,36 @@
+{
+  "enabled": true,
+  "name": "Documentation Sync",
+  "description": "Monitors all TypeScript/TSX source files, components, hooks, utilities, and configuration files for changes and automatically updates documentation in README.md or docs/ folder to keep it synchronized with code changes",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "*.ts",
+      "*.tsx",
+      "*.js",
+      "*.jsx",
+      "app/**/*.ts",
+      "app/**/*.tsx",
+      "components/**/*.ts",
+      "components/**/*.tsx",
+      "hooks/**/*.ts",
+      "hooks/**/*.tsx",
+      "utils/**/*.ts",
+      "utils/**/*.tsx",
+      "api/**/*.ts",
+      "api/**/*.tsx",
+      "constants/**/*.ts",
+      "types/**/*.ts",
+      "workers/**/*.ts",
+      "package.json",
+      "tsconfig.json",
+      "app.json",
+      "expo-env.d.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Source code files have been modified. Please analyze the changes and update the documentation accordingly. If there's a docs/ folder, update the relevant documentation files there. Otherwise, update the README.md file. Focus on:\n\n1. API changes in hooks, components, or utilities\n2. New features or calculators added\n3. Configuration changes that affect usage\n4. Type definitions that impact the public interface\n5. Architecture changes that affect the project structure\n\nEnsure the documentation accurately reflects the current state of the codebase and maintains consistency with the existing documentation style."
+  }
+}
