@@ -146,11 +146,15 @@ export function InfobaseMobileLayout({
     }
 
     return (
-      <FlatList
+      <FlatList<FilmType | DeveloperType>
         data={displayData}
-        renderItem={
-          activeTab === "films" ? renderFilmItem : renderDeveloperItem
-        }
+        renderItem={({ item }) => {
+          if (activeTab === "films") {
+            return renderFilmItem({ item: item as FilmType });
+          } else {
+            return renderDeveloperItem({ item: item as DeveloperType });
+          }
+        }}
         keyExtractor={(item) => item.id}
         numColumns={numColumns}
         key={`${activeTab}-${numColumns}`} // Force re-render when columns change

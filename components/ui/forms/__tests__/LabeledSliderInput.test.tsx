@@ -4,7 +4,7 @@
 describe("LabeledSliderInput Logic Functions", () => {
   // Mock the throttle utility for testing
   const createMockThrottle = () => {
-    const mockFn = jest.fn();
+    const mockFn = jest.fn() as jest.Mock & { cancel: jest.Mock };
     mockFn.cancel = jest.fn();
     return mockFn;
   };
@@ -404,11 +404,15 @@ describe("LabeledSliderInput Logic Functions", () => {
     it("should handle throttle function creation with options", () => {
       // Simulate throttle creation with options
       const createThrottledFunction = (
-        fn: Function,
+        fn: (...args: any[]) => unknown,
         delay: number,
         options: any,
       ) => {
-        const mockFn = jest.fn(fn);
+        const mockFn = jest.fn(fn) as jest.Mock & {
+          cancel: jest.Mock;
+          delay: number;
+          options: any;
+        };
         mockFn.cancel = jest.fn();
         mockFn.delay = delay;
         mockFn.options = options;

@@ -86,27 +86,25 @@ export const AnimatedBlade = React.memo(
       );
 
       // Position-specific offset adjustments so blades are adjacent to print area
-      let offsetTransform;
+      const transforms = [];
       switch (position) {
         case "left":
-          offsetTransform = { translateX: transformValue - thickness };
+          transforms.push({ translateX: transformValue - thickness });
           break;
         case "right":
-          offsetTransform = { translateX: transformValue };
+          transforms.push({ translateX: transformValue });
           break;
         case "top":
-          offsetTransform = { translateY: transformValue - thickness };
+          transforms.push({ translateY: transformValue - thickness });
           break;
         case "bottom":
-          offsetTransform = { translateY: transformValue };
+          transforms.push({ translateY: transformValue });
           break;
-        default:
-          offsetTransform = {};
       }
 
       return {
         opacity: opacity.value,
-        transform: [offsetTransform],
+        transform: transforms,
       };
     }, [containerWidth, containerHeight, thickness, position]);
 

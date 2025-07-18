@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { calculateNewTime, roundStops } from "./commonFunctions";
+import { roundToStandardPrecision } from "@/utils/precision";
 
 // Helper function to calculate and format the new time
 const getCalculatedNewTime = (time: string, stopChange: string): string => {
@@ -11,7 +12,7 @@ const getCalculatedNewTime = (time: string, stopChange: string): string => {
   }
 
   const calculatedTime = calculateNewTime(numericTime, numericStops);
-  return calculatedTime.toFixed(2);
+  return roundToStandardPrecision(calculatedTime).toString();
 };
 
 export const useExposureCalculator = () => {
@@ -48,9 +49,8 @@ export const useExposureCalculator = () => {
       const numericStops = parseFloat(value);
       if (!isNaN(numericStops)) {
         // Truncate to two decimal places
-        const truncatedStops = (
-          Math.floor(numericStops * 100) / 100
-        ).toString();
+        const truncatedStops =
+          roundToStandardPrecision(numericStops).toString();
         setStopsState(truncatedStops);
         setNewTime(getCalculatedNewTime(originalTime, truncatedStops));
       } else {
@@ -71,7 +71,7 @@ export const useExposureCalculator = () => {
 
       const newStopsValue = roundStops(currentStops + increment);
       // Truncate to two decimal places for display and calculation
-      const truncatedStops = (Math.floor(newStopsValue * 100) / 100).toString();
+      const truncatedStops = roundToStandardPrecision(newStopsValue).toString();
       setStopsState(truncatedStops);
       setNewTime(getCalculatedNewTime(originalTime, truncatedStops)); // Recalculate newTime
     },

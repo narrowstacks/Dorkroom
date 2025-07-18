@@ -35,6 +35,7 @@ import { encodePreset } from "@/utils/presetSharing";
 import { generateSharingUrls } from "@/utils/urlHelpers";
 import { isRunningOnMobileWeb, openInNativeApp } from "@/utils/appDetection";
 import { MOBILE_WEB_APP_CONFIG } from "@/constants/urls";
+import { debugError } from "@/utils/debugLogger";
 import type { BorderPresetSettings } from "@/types/borderPresetTypes";
 
 interface ShareModalProps {

@@ -43,6 +43,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { usePagination } from "@/hooks/usePagination";
 import type { Film, Developer, Combination } from "@/api/dorkroom/types";
 import type { CustomRecipe } from "@/types/customRecipeTypes";
+import { debugError } from "@/utils/debugLogger";
 
 export default function DevelopmentRecipes() {
   // Get development recipes data (this loads the data and provides films/developers for URL parsing)
@@ -442,6 +443,7 @@ export default function DevelopmentRecipes() {
   const {
     paginatedItems: paginatedCombinations,
     currentPage,
+    pageSize,
     totalPages,
     totalItems,
     startIndex,
@@ -451,6 +453,7 @@ export default function DevelopmentRecipes() {
     goToPage,
     goToNext,
     goToPrevious,
+    resetToFirstPage,
   } = usePagination(allCombinations, 50);
 
   // Custom recipe helpers using imported utilities
@@ -604,7 +607,7 @@ export default function DevelopmentRecipes() {
       : undefined;
     const film =
       isCustom && customRecipe
-        ? getCustomRecipeFilm(customRecipe.id)
+        ? getCustomRecipeFilm(customRecipe.id, customRecipes, getFilmById)
         : getFilmById(combination.filmStockId);
 
     // Create a new custom recipe based on the existing one
@@ -961,6 +964,7 @@ export default function DevelopmentRecipes() {
                 {/* Pagination Controls - Top */}
                 <PaginationControls
                   currentPage={currentPage}
+                  pageSize={pageSize}
                   totalPages={totalPages}
                   totalItems={totalItems}
                   startIndex={startIndex}
@@ -970,6 +974,7 @@ export default function DevelopmentRecipes() {
                   goToPage={goToPage}
                   goToNext={goToNext}
                   goToPrevious={goToPrevious}
+                  resetToFirstPage={resetToFirstPage}
                 />
 
                 {isDesktop && viewMode === "table" ? (
@@ -1022,6 +1027,7 @@ export default function DevelopmentRecipes() {
                 {/* Pagination Controls - Bottom */}
                 <PaginationControls
                   currentPage={currentPage}
+                  pageSize={pageSize}
                   totalPages={totalPages}
                   totalItems={totalItems}
                   startIndex={startIndex}
@@ -1031,6 +1037,7 @@ export default function DevelopmentRecipes() {
                   goToPage={goToPage}
                   goToNext={goToNext}
                   goToPrevious={goToPrevious}
+                  resetToFirstPage={resetToFirstPage}
                 />
               </>
             )}

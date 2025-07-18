@@ -1,3 +1,5 @@
+import { debugError } from "@/utils/debugLogger";
+
 export const script = (mode: string) => {
   const documentElement = document.documentElement;
 

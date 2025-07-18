@@ -11,6 +11,7 @@
     "web": "DARK_MODE=media expo start --web",
     "test": "bun test",
     "lint": "expo lint",
+    "type-check": "bunx tsc --noEmit",
     "dev": "expo start --go",
     "build": "expo export -p web",
     "clean": "rm -rf node_modules .expo dist",

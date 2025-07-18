@@ -273,7 +273,10 @@ export const useCustomRecipeSharing = () => {
    */
   const getSharingMethodDescription = useCallback(async (): Promise<string> => {
     if (Platform.OS === "web") {
-      if (typeof navigator !== "undefined" && navigator.share) {
+      if (
+        typeof navigator !== "undefined" &&
+        typeof navigator.share === "function"
+      ) {
         return "Share recipe";
       }
       return "Copy link";

@@ -8,6 +8,7 @@
 \* ------------------------------------------------------------------ */
 
 import { useEffect, useRef, useCallback } from "react";
+import { CALCULATION_CONSTANTS } from "@/constants/calculations";
 import type { BorderCalculatorState, WarningTimeouts } from "./types";
 
 export const useWarningSystem = (
@@ -50,7 +51,7 @@ export const useWarningSystem = (
       if (newValue !== currentValue) {
         warningTimeouts.current[warningType] = setTimeout(() => {
           dispatch({ type: "SET_FIELD", key: stateKey, value: newValue });
-        }, 250); // 250ms debounce for warning appearance
+        }, CALCULATION_CONSTANTS.DEBOUNCE_WARNING_DELAY);
       }
     },
     [dispatch],

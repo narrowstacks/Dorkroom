@@ -101,7 +101,11 @@ DorkroomReact/
 │   └── [calculator-name].ts     # Individual calculator hooks
 ├── api/                         # API clients and data management
 ├── constants/                   # App constants and configuration
+│   ├── calculations.ts          # Mathematical constants and algorithm parameters
+│   └── [feature-name].ts        # Feature-specific constants
 ├── utils/                       # Utility functions and calculations
+│   ├── precision.ts             # Precision and rounding utilities
+│   └── [utility-name].ts        # Feature-specific utilities
 ├── workers/                     # Web Workers for performance
 ├── types/                       # TypeScript type definitions
 └── styles/                      # Global styles and Tailwind config
@@ -143,6 +147,7 @@ DorkroomReact/
 - **Memoization**: React.memo and useMemo for expensive operations
 - **Throttling**: Input throttling to reduce calculation frequency
 - **Bundle Optimization**: Tree-shaking and code splitting for web builds
+- **Centralized Constants**: Mathematical constants and algorithm parameters centralized for consistency and performance tuning
 
 ### Code Quality Tools
 
@@ -188,6 +193,8 @@ DorkroomReact/
 - ✅ All six calculator modules fully implemented
 - ✅ Development recipe database with search and filtering
 - ✅ Performance optimizations with Web Workers
+- ✅ Centralized calculation constants for improved maintainability
+- ✅ Precision utilities for consistent mathematical operations
 - ✅ Comprehensive testing suite
 - ✅ Modern development toolchain with Bun support
 - ✅ Vercel deployment pipeline

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import * as Linking from "expo-linking";
 import { decodePreset } from "@/utils/presetSharing";
 import type { BorderPresetSettings } from "@/types/borderPresetTypes";
-import { debugLog } from "@/utils/debugLogger";
+import { debugLog, debugError } from "@/utils/debugLogger";
 
 export const useSharedPresetLoader = () => {
   const [loadedPreset, setLoadedPreset] = useState<{

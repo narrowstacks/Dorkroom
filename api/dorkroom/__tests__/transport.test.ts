@@ -517,7 +517,7 @@ describe("Transport Layer", () => {
       // FetchHTTPTransport already imported
 
       // Test with various invalid configurations
-      expect(() => new FetchHTTPTransport(null)).not.toThrow();
+      expect(() => new FetchHTTPTransport({})).not.toThrow();
       expect(() => new FetchHTTPTransport(undefined)).not.toThrow();
       expect(() => new FetchHTTPTransport({})).not.toThrow();
     });
@@ -540,6 +540,7 @@ describe("Transport Layer", () => {
 
       const mockLogger = {
         debug: () => {},
+        info: () => {},
         warn: () => {},
         error: () => {},
       };

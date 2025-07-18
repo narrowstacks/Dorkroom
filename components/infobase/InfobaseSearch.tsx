@@ -69,7 +69,7 @@ export function InfobaseSearch({
   const iconStyle = {
     position: "absolute" as const,
     left: 12,
-    top: "50%",
+    top: "50%" as any, // Web-specific percentage positioning
     transform: [{ translateY: -10 }],
     zIndex: 1,
   };
@@ -77,7 +77,7 @@ export function InfobaseSearch({
   const clearButtonStyle = {
     position: "absolute" as const,
     right: 8,
-    top: "50%",
+    top: "50%" as any, // Web-specific percentage positioning
     transform: [{ translateY: -12 }],
     width: 24,
     height: 24,

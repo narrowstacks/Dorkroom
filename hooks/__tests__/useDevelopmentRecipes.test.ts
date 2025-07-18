@@ -445,7 +445,10 @@ describe("useDevelopmentRecipes", () => {
       Array.from(dilutionSet)
         .sort()
         .forEach((dilution) => {
-          dilutions.push({ label: dilution, value: dilution });
+          dilutions.push({
+            label: dilution as string,
+            value: dilution as string,
+          });
         });
 
       expect(dilutions).toEqual([
@@ -474,9 +477,12 @@ describe("useDevelopmentRecipes", () => {
       });
 
       Array.from(isoSet)
-        .sort((a: number, b: number) => a - b)
-        .forEach((iso: number) => {
-          isos.push({ label: iso.toString(), value: iso.toString() });
+        .sort((a, b) => (a as number) - (b as number))
+        .forEach((iso) => {
+          isos.push({
+            label: (iso as number).toString(),
+            value: (iso as number).toString(),
+          });
         });
 
       expect(isos).toEqual([
@@ -509,7 +515,7 @@ describe("useDevelopmentRecipes", () => {
         (film) => film.id === "film_1" || film.uuid === "film_1",
       );
       expect(foundFilm).toBeDefined();
-      expect(foundFilm.uuid).toBe("film_1");
+      expect(foundFilm!.uuid).toBe("film_1");
 
       const notFoundFilm = films.find(
         (film) => film.id === "nonexistent" || film.uuid === "nonexistent",
@@ -527,7 +533,7 @@ describe("useDevelopmentRecipes", () => {
         (dev) => dev.id === "dev_1" || dev.uuid === "dev_1",
       );
       expect(foundDeveloper).toBeDefined();
-      expect(foundDeveloper.uuid).toBe("dev_1");
+      expect(foundDeveloper!.uuid).toBe("dev_1");
 
       const notFoundDeveloper = developers.find(
         (dev) => dev.id === "nonexistent" || dev.uuid === "nonexistent",
@@ -593,8 +599,8 @@ describe("useDevelopmentRecipes", () => {
         developerTypeFilter: "",
         dilutionFilter: "",
         isoFilter: "",
-        selectedFilm: null,
-        selectedDeveloper: null,
+        selectedFilm: createMockFilm(),
+        selectedDeveloper: createMockDeveloper(),
         sortBy: "filmName",
         sortDirection: "asc",
       };
@@ -771,9 +777,9 @@ describe("useDevelopmentRecipes", () => {
     });
 
     it("should handle empty datasets", () => {
-      const emptyFilms = [];
-      const emptyDevelopers = [];
-      const emptyCombinations = [];
+      const emptyFilms: any[] = [];
+      const emptyDevelopers: any[] = [];
+      const emptyCombinations: any[] = [];
 
       expect(emptyFilms).toHaveLength(0);
       expect(emptyDevelopers).toHaveLength(0);

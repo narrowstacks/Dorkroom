@@ -23,7 +23,10 @@ interface RecipeImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onImport: () => void;
-  sharedCustomRecipe: CustomRecipe | null;
+  sharedCustomRecipe: Omit<
+    CustomRecipe,
+    "id" | "dateCreated" | "dateModified"
+  > | null;
   getFilmById: (filmId: string) => Film | undefined;
   getDeveloperById: (developerId: string) => Developer | undefined;
 }

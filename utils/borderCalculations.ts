@@ -3,16 +3,25 @@
 \* ------------------------------------------------------------------ */
 
 import { EASEL_SIZES, BLADE_THICKNESS } from "@/constants/border";
+import {
+  CALCULATION_CONSTANTS,
+  DERIVED_CONSTANTS,
+} from "@/constants/calculations";
+import { roundToStandardPrecision, createMemoKey } from "@/utils/precision";
 
 export type Size = { width: number; height: number };
 
 /* ---------- constants ------------------------------------------- */
 
-const BASE_PAPER_AREA = 20 * 24;
-const STEP = 0.01;
-const SEARCH_SPAN = 0.5;
-const SNAP = 0.25;
-const EPS = 1e-9;
+const { BASE_PAPER_AREA } = DERIVED_CONSTANTS;
+const {
+  STEP,
+  SEARCH_SPAN,
+  SNAP,
+  EPSILON: EPS,
+} = CALCULATION_CONSTANTS.BORDER_OPTIMIZATION;
+const { MAX_MEMO_SIZE } = CALCULATION_CONSTANTS.CACHE;
+const { MAX_SCALE_FACTOR } = CALCULATION_CONSTANTS.PAPER;
 
 /* ---------- helpers --------------------------------------------- */
 
@@ -29,7 +38,6 @@ const SORTED_EASEL_SIZES = [...EASEL_SIZES].sort(
 );
 
 // Optimized memoization with better memory management and performance
-const MAX_MEMO_SIZE = 50; // Reduced cache size for better memory usage
 const fitMemo = new Map<string, ReturnType<typeof computeFit>>();
 
 // Pre-computed exact match lookup for O(1) performance
@@ -117,7 +125,7 @@ export const findCenteringOffsets = (
   landscape: boolean,
 ) => {
   // Use integer keys for better hash performance
-  const key = `${Math.round(paperW * 100)}:${Math.round(paperH * 100)}:${landscape}`;
+  const key = createMemoKey(paperW, paperH, landscape);
   let result = fitMemo.get(key);
 
   if (!result) {
@@ -141,7 +149,10 @@ export const calculateBladeThickness = (paperW: number, paperH: number) => {
   if (paperW <= 0 || paperH <= 0) return BLADE_THICKNESS;
 
   const area = paperW * paperH;
-  const scale = Math.min(BASE_PAPER_AREA / Math.max(area, EPS), 2);
+  const scale = Math.min(
+    BASE_PAPER_AREA / Math.max(area, EPS),
+    MAX_SCALE_FACTOR,
+  );
   return Math.round(BLADE_THICKNESS * scale);
 };
 
@@ -193,7 +204,10 @@ export const calculateOptimalMinBorder = (
   let bestScore = Infinity;
 
   // Adaptive step size for better performance
-  const adaptiveStep = Math.max(STEP, (hi - lo) / 100);
+  const adaptiveStep = Math.max(
+    STEP,
+    (hi - lo) / CALCULATION_CONSTANTS.BORDER_OPTIMIZATION.ADAPTIVE_STEP_DIVISOR,
+  );
 
   for (let mb = lo; mb <= hi; mb += adaptiveStep) {
     const borders = computeBorders(paperW, paperH, ratio, mb);
@@ -214,7 +228,7 @@ export const calculateOptimalMinBorder = (
     }
   }
 
-  return Math.round(best * 100) / 100; // More efficient than toFixed
+  return roundToStandardPrecision(best); // More efficient than toFixed
 };
 
 /* ---------- other helpers (unchanged) --------------------------- */
